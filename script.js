@@ -1,3 +1,8 @@
+/*
+Author: Antony Di Serio
+Created: December 30, 2025
+*/
+
 // Behaviour: subject selection, completion mode, prerequisite gating, tooltips, timetable modal
 (() => {
   const subjects = Array.from(

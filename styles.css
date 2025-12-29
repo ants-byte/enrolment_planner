@@ -1,4 +1,9 @@
-﻿:root {
+﻿/*
+Author: Antony Di Serio
+Created: December 30, 2025
+*/
+
+:root {
       --bg: #0b0b0b;
       --panel: #ffffff;
       --header: #1b1b1b;
@@ -980,7 +985,7 @@ table {
   border: 2px solid #ff9800 !important;
   box-shadow: 0 0 0 3px rgba(255,152,0,0.25);
 }
-}
+
     .elective-placeholder:hover .not-running-tooltip {
       opacity: 1;
     }
