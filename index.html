@@ -1,0 +1,394 @@
+﻿<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bachelor of Business with Network Security major</title>
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+  <div class="page">
+    <div id="drop-zone" class="drop-zone" aria-hidden="true">
+      <div class="drop-zone-text">Drop students workbook here</div>
+    </div>
+    <aside class="sidebar">
+
+      <div class="sidebar-section ">
+        <div class="sidebar-heading-with-text dim-when-complete">
+          <span class="sidebar-heading">1.</span>
+          <span class="sidebar-section-descriptor">Enter your passes and credits</span>
+        </div>
+        <div class="buttons">
+          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Manually</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section reset-section" id="reset-section">
+        <button id="clear-selections" class="clear-button">Reset</button>
+      </div>
+
+        <div class="sidebar-section major-picker dim-when-complete">
+                <div class="sidebar-heading-with-text"><span class="sidebar-heading">2.</span><span id="sidebar-section-descriptor">Choose your (likely) major</span></div>
+                <div class="major-dropdown" id="major-select" data-value="undecided">
+                  <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="major-current-label">Undecided</span>
+                    <span class="major-caret">▾</span>
+                  </button>
+                  <ul class="major-options" role="listbox">
+                    <li role="option" data-value="undecided" class="selected">Undecided</li>
+                    <li role="option" data-value="network">Network Security</li>
+                    <li role="option" data-value="ba">Business Analytics</li>
+                    <li role="option" data-value="sd">Software Development</li>
+                  </ul>
+                </div>
+              </div>
+
+        <div class="sidebar-section timetable-panel dim-when-complete">
+        <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span><span class="sidebar-section-descriptor">Select your timetable by clicking on subjects.</span></div>
+          <div id="selected-list-section">
+            <button class="available-heading" id="available-heading" type="button" aria-label="Show available subjects">Available now</button>
+            <ul id="selected-list" class="available-list"></ul>
+            <button id="show-timetable" class="clear-button secondary" style="display:none">Show timetable</button>
+            <div class="toggle-row load-row">
+              <span id="load-label">Your load = 4</span>
+              <button id="vary-load" class="clear-button secondary load-button" type="button">Vary</button>
+            </div>
+            <div class="toggle-row">
+              <label class="switch">
+                <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label dim-when-complete">Override prerequisites</span>
+            </div>
+                    <div class="toggle-row" id="live-prereq-row" style="display:none">
+                      <label class="switch">
+                        <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
+                        <span class="slider"></span>
+                      </label>
+                      <span class="switch-label">Live prerequisite updates</span>
+                    </div>
+          </div>
+          
+        </div>
+
+        <div class="sidebar-section next-sem-section">
+          <div class="sidebar-heading-with-text">
+            <span class="sidebar-section-descriptor">Satisfied for next semester</span>
+          </div>
+          <ul id="next-sem-list" class="available-list"></ul>
+        </div>
+        <div class="sidebar-section">
+          <button id="toggle-sem-counts" class="clear-button secondary" type="button">Show completion counts</button>
+        </div>
+    </aside>
+
+    <div class="sheet">
+      <div class="title">
+        <div class="title-buttons">
+          <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
+          <button id="btn-warning" class="title-btn btn-warning hidden" aria-expanded="false">Warning</button>
+          <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
+        </div>
+        <span class="title-text">Course Map for Bachelor of Information Technology</span>
+      </div>
+      <div class="subtitle">Choose your likely major in sidebar. <span class="highlight">Network Security</span> currently being used.</div>
+
+      <div class="section">
+        <table class="main-grid">
+          <tr>
+            <td class="core" data-subject="BIT121">
+              <span class="course">BIT121 Network Communication Concepts</span>
+              <span class="note">&nbsp;</span>
+            </td>
+            <td class="network" data-subject="BIT213">
+              <span class="course">BIT213 Network and Cyber Security Essentials</span>
+              <span class="note">Co-requisite: BIT121</span>
+            </td>
+            <td class="network" data-subject="BIT233">
+              <span class="course">BIT233 Network Design</span>
+              <span class="note">Prerequisite: BIT121</span>
+            </td>
+            <td class="network" data-subject="BIT353">
+              <span class="course">BIT353 Network Architecture and Protocols</span>
+              <span class="note">Prerequisite: BIT233</span>
+            </td>
+            <td class="info-cell">
+              <div class="hover-zone"></div>
+              <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
+                <ul><li>14 Core subjects</li> <li>6 major subjects</li> <li>4 Elective subjects.</li></ul>
+            </td>
+
+          </tr>
+          <tr>
+            <td class="core" data-subject="BIT106">
+              <span class="course">BIT106 Foundations of Software, Hardware and Cloud Computing</span>
+              <span class="note">&nbsp;</span>
+              <div class="sas"></div>
+            </td>
+            <td class="core" data-subject="BIT108">
+              <span class="course">BIT108 Foundations of Business</span>
+              <span class="note">&nbsp;</span>
+            </td>
+            <td class="network" data-subject="BIT244">
+              <span class="course">BIT244 IT and Business Crime</span>
+              <span class="note">Prerequisite: BIT106</span>
+            </td>
+            <td class="network" data-subject="BIT362">
+              <span class="course">BIT362 Digital Forensics</span>
+              <span class="note">Prerequisite: BIT213</span>
+            </td>
+            <td class="core" data-subject="BIT314">
+              <span class="course">BIT314 Cybersecurity Management and Governance</span>
+              <span class="note">Prerequisite: BIT241</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="core" data-subject="BIT112">
+              <span class="course">BIT112 Mathematics for Information Technology</span>
+              <span class="note">&nbsp;</span>
+              <div class="sas"></div>
+            </td>
+            <td class="core" data-subject="BIT231">
+              <span class="course">BIT231 Database Systems</span>
+              <span class="note">Prerequisite: BIT111</span>
+              <div class="sas"></div>
+            </td>
+            <td class="core" data-subject="BIT241">
+              <span class="course">BIT241 Professional IT Practice and Ethics</span>
+              <span class="note">Prerequisite: BIT121, BIT106</span>
+            </td>
+            <td class="network" data-subject="BIT313">
+              <span class="course">BIT313 Cyber Vulnerability and Hardening</span>
+              <span class="note">Prerequisite: BIT213</span>
+            </td>
+            <td class="core" data-subject="BIT352">
+              <span class="course">BIT352 System Implementation and Service Management</span>
+              <span class="note">Prerequisite: BIT242</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="core" data-subject="BIT111">
+              <span class="course">BIT111 Programming Concepts</span>
+              <span class="note">&nbsp;</span>
+            </td>
+            <td class="core" data-subject="BIT230">
+              <span class="course">BIT230 System Analysis and Design</span>
+              <span class="note">Prerequisites: BIT106, BIT111</span>
+            </td>
+            <td class="core" data-subject="BIT242">
+              <span class="course">BIT242 IT Project Management</span>
+              <span class="note">Prerequisite: BIT230</span>
+            </td>
+            <td class="core" data-subject="BIT371">
+              <span class="course">BIT371 Capstone Experience 1</span>
+              <span class="note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
+            </td>
+            <td class="core" data-subject="BIT372">
+              <span class="course">BIT372 Capstone Experience 2</span>
+              <span class="note">Prerequisite: BIT371</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="core" data-subject="BIT105">
+              <span class="course">BIT105 Business Enquiry &amp; Communication</span>
+              <span class="note">&nbsp;</span>
+            </td>
+            <td class="elective" data-subject="ELECTIVE1"><span class="course">Elective 1</span></td>
+            <td class="elective" data-subject="ELECTIVE2"><span class="course">Elective 2</span></td>
+            <td class="elective" data-subject="ELECTIVE3"><span class="course">Elective 3</span></td>
+            <td class="elective" data-subject="ELECTIVE4"><span class="course">Elective 4</span></td>
+          </tr>
+        </table>
+
+        <div class="electives-label">Electives: Complete any 4.</div>
+        <table class="electives-grid">
+          <tr>
+            <td class="dual-split" data-slot="r1c1" data-subject="BIT245">
+              <span class="course">BIT245 Web Development</span>
+              <span class="note">Prerequisites: BIT111</span>
+            </td>
+            <td class="elective-spacer" data-slot="r1c2"></td>
+            <td class="elective-spacer" data-slot="r1c3"></td>
+            <td class="elective-spacer" data-slot="r1c4"></td>
+            <td class="elective-spacer" data-slot="r1c5"></td>
+          </tr>
+          <tr>
+            <td class="ba" data-slot="r2c1" data-subject="BIT236">
+              <span class="course">BIT236 Enterprise Resources</span>
+              <span class="note">Prerequisite: BIT106, BIT231</span>
+            </td>
+            <td class="ba" data-slot="r2c2" data-subject="BIT355">
+              <span class="course">BIT355 Business Intelligence</span>
+              <span class="note">Prerequisites: BIT230, BIT236</span>
+              <div class="sas"></div>
+            </td>
+            <td class="ba" data-slot="r2c3" data-subject="BIT356">
+              <span class="course">BIT356 Knowledge Management Systems</span>
+              <span class="note">Prerequisites: BIT230, BIT236</span>
+              <div class="sas"></div>
+            </td>
+            <td class="ba" data-slot="r2c4" data-subject="BIT357">
+              <span class="course">BIT357 Business Analysis</span>
+              <span class="note">Prerequisite: BIT230</span>
+            </td>
+            <td class="ba" data-slot="r2c5" data-subject="BIT363">
+              <span class="course">BIT363 E-Business Systems</span>
+              <span class="note">Prerequisites: BIT230, BIT245</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="software" data-slot="r3c1" data-subject="BIT235">
+              <span class="course">BIT235 Object Oriented Programming</span>
+              <span class="note">Prerequisites: BIT245</span>
+            </td>
+            <td class="software" data-slot="r3c2" data-subject="BIT246">
+              <span class="course">BIT246 Object Oriented RAD</span>
+              <span class="note">Prerequisites: BIT235</span>
+            </td>
+            <td class="software" data-slot="r3c3" data-subject="BIT358">
+              <span class="course">BIT358 Advanced Databases</span>
+              <span class="note">Prerequisites: BIT231</span>
+              <div class="sas"></div>
+            </td>
+            <td class="software" data-slot="r3c4" data-subject="BIT364">
+              <span class="course">BIT364 Non-Relational Database Management</span>
+              <span class="note">Prerequisites: BIT231</span>
+            </td>
+            <td class="software" data-slot="r3c5" data-subject="BIT351">
+              <span class="course">BIT351 Mobile Application Development</span>
+              <span class="note">Prerequisites: BIT231, BIT235</span>
+            </td>
+          </tr>
+        </table>
+
+        <div class="key">
+          <div><strong>Key</strong></div>
+          <div class="key-row">
+            <div class="key-item">
+              <div class="swatch core"></div>
+              A core subject
+            </div>
+            <div class="key-item">
+              <div class="swatch network"></div>
+              A Network Security stream subject
+            </div>
+            <div class="key-item">
+              <div class="swatch software"></div>
+              A Software Development stream subject
+            </div>
+            <div class="key-item">
+              <div class="swatch ba"></div>
+              A Business Analytics stream subject
+            </div>
+            <div class="key-item">
+              <div class="swatch dual"></div>
+              BIT245 belongs to both Business Analytics &amp; Software Development.
+            </div>
+          </div>
+          <div class="footnote">
+            <div class="sas-inline"></div>
+            SAS enabled subjects. Complete any 4 to obtain the SAS Academic Specialisation in IT Analytics.
+            Or you can complete BIT106, BIT231, BIT112 and BIT358 to obtain the SAS Academic Specialisation in
+            Software Development Analytics.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="code-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Paste or type subject codes</div>
+        <button class="modal-close" id="close-code-modal" aria-label="Close modal">X</button>
+      </div>
+      <div class="modal-body">
+        <p>Paste block of text and subject codes will be extracted.  Or type them in.</p>
+        <textarea id="code-input" rows="10"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
+        <button id="apply-code-modal" class="clear-button">Go</button>
+      </div>
+    </div>
+  </div>
+  <div id="alert-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="alert-title">Notice</div>
+        <button class="modal-close" id="close-alert" aria-label="Close alert">X</button>
+      </div>
+      <div class="modal-body" id="alert-body"></div>
+    </div>
+  </div>
+  <div id="timetable-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="timetable-title">Timetable</div>
+        <button class="modal-close" id="close-timetable" aria-label="Close timetable">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="timetable-table-wrapper">
+          <table id="timetable-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Room</th>
+                <th>Lecturer</th>
+                <th>Stream</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="timetable-actions">
+          <button id="copy-timetable" class="clear-button secondary">Copy timetable</button>
+          <button id="hide-timetable" class="clear-button secondary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="load-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Set study load</div>
+        <button class="modal-close" id="close-load-modal" aria-label="Close load modal">X</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Domestic students</strong> can study 1, 2, 3, or 4 subjects each semester.</p>
+        <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement). This can only be varied in exceptional circumstances such as a high failure rate that led to an academic intervention.</p>
+        <p>Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final year or <strong>5 or fewer</strong> subjects remain in the last semester.</p>
+        <div class="toggle-row">
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining. </label>
+        </div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <label><input type="radio" name="load-student-type" id="load-type-international" value="international" checked> International</label>
+          <label style="margin-left:12px;"><input type="radio" name="load-student-type" id="load-type-domestic" value="domestic"> Domestic</label>
+        </div>
+        <div class="toggle-row">
+          <label><input type="checkbox" id="load-exceptional"> Exceptional approval to vary international load</label>
+        </div>
+        <div class="toggle-row">
+          <label for="load-value">Full load subjects:</label>
+          <select id="load-value" style="width:120px;"></select>
+          <span id="load-lock-msg" style="color:#b00020; font-weight:700; margin-left:8px; display:none;">You must study 4 subjects - a full load</span>
+        </div>
+        <div id="load-error" style="color:#b00020; font-weight:700; display:none;"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-load-modal" class="clear-button secondary" type="button">Cancel</button>
+        <button id="apply-load-modal" class="clear-button" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+
+</html>
+
