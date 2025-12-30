@@ -15,8 +15,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT105: [],
     BIT106: [],
     BIT108: [],
-  BIT111: [],
-  BIT112: [],
+    BIT111: [],
+    BIT112: [],
     BIT121: [],
     BIT230: ['BIT111', 'BIT106'],
     BIT231: ['BIT111'],
@@ -42,13 +42,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT362: ['BIT213'],
     BIT363: ['BIT245', 'BIT230'],
     BIT364: ['BIT231'],
-  BIT371: ['BIT242'],
-  BIT372: ['BIT371'],
-};
-const corequisites = {
-  BIT213: ['BIT121'],
-};
-const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
+    BIT371: ['BIT242'],
+    BIT372: ['BIT371'],
+  };
+  const corequisites = {
+    BIT213: ['BIT121'],
+  };
+  const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let currentMajorKey = 'ns';
   const majorConfig = {
     ns: {
@@ -129,6 +129,12 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
   const infoButton = document.getElementById('btn-info');
+  const hideAllAlertButtons = () => {
+    [errorButton, warningButton, infoButton].forEach((btn) => {
+      if (btn) btn.classList.add('hidden');
+    });
+  };
+  hideAllAlertButtons();
   const dropZone = document.getElementById('drop-zone');
   const timetableModal = document.getElementById('timetable-modal');
   const closeTimetable = document.getElementById('close-timetable');
@@ -162,6 +168,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   const resetSection = document.getElementById('reset-section');
   const nextSemList = document.getElementById('next-sem-list');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
+  const electivesLabel = document.getElementById('electives-label');
   let modalLocked = false;
   let modalPrevStyle = null;
   const hoverTooltip = document.createElement('div');
@@ -258,6 +265,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let finalSemWarning = null;
   let warningPayloads = [];
   let showSemCounts = false;
+  let initialLoad = true;
 
   const semTooltip = document.createElement('div');
   semTooltip.className = 'sem-tooltip';
@@ -332,6 +340,36 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     stack.delete(id);
     return result;
   };
+  const computeSemesterDistanceNoDelay = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
+    if (memo.has(id)) return memo.get(id);
+    if (stack.has(id)) return Infinity;
+    const isDone = completedSet.has(id) || (treatPlannedComplete && plannedSet.has(id));
+    if (isDone) {
+      memo.set(id, 0);
+      return 0;
+    }
+    stack.add(id);
+    const prereqs = prerequisites[id] || [];
+    if (!prereqs.length) {
+      memo.set(id, 1);
+      stack.delete(id);
+      return 1;
+    }
+    let maxDepth = 0;
+    for (const pre of prereqs) {
+      const dist = computeSemesterDistanceNoDelay(pre, completedSet, plannedSet, treatPlannedComplete, memo, stack);
+      if (!Number.isFinite(dist)) {
+        memo.set(id, Infinity);
+        stack.delete(id);
+        return Infinity;
+      }
+      maxDepth = Math.max(maxDepth, dist);
+    }
+    const result = maxDepth + 1;
+    memo.set(id, result);
+    stack.delete(id);
+    return result;
+  };
 
   const updateSemesterCounts = (completedSet, plannedSet) => {
     subjects.forEach((cell) => {
@@ -341,6 +379,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     });
     const distanceData = [];
     const memo = new Map();
+    const memoNoDelay = new Map();
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
     const treatPlannedComplete = plannedCount >= loadThreshold;
@@ -351,6 +390,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
       const el = existing || document.createElement('div');
       el.className = 'sem-count';
       const dist = computeSemesterDistance(id, completedSet, plannedSet, treatPlannedComplete, memo);
+      const distNoDelay = computeSemesterDistanceNoDelay(id, completedSet, plannedSet, treatPlannedComplete, memoNoDelay);
       const label = dist === Infinity ? '?' : dist;
       el.textContent = label;
       el.dataset.reason =
@@ -362,7 +402,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
               ? 'Not running this semester; earliest completion next semester.'
               : `Requires at least ${dist} semesters based on prerequisites.`;
       if (!completedSet.has(id) && !isPlaceholder(cell) && Number.isFinite(dist) && dist > 0) {
-        distanceData.push({ cell, dist, el, id });
+        distanceData.push({ cell, dist, distNoDelay, el, id });
       }
       if (!existing) {
         const attachEvents = () => {
@@ -400,9 +440,9 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     const applyDelayHighlight = plannedCount === 0 || plannedCount >= loadThreshold;
     const optimalSemesters = Math.max(1, Math.ceil(remaining / Math.max(1, loadThreshold)));
     chainDelayError = null;
-    if (applyDelayHighlight && !completedMode) {
+    if (applyDelayHighlight && !completedMode && !initialLoad) {
       const chainSet = new Set();
-      const distMap = new Map(distanceData.map((d) => [d.id, d.dist]));
+      const distMap = new Map(distanceData.map((d) => [d.id, d.distNoDelay]));
       const buildChainPath = (startId) => {
         const path = [startId];
         let current = startId;
@@ -442,11 +482,26 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
             if (!chainSet.has(pre)) addPrereqChain(pre);
           });
       };
-      const chainPaths = [];
-      distanceData.forEach(({ id, dist }) => {
-        if (dist > optimalSemesters) {
+      const overrunPaths = [];
+      const equalPaths = [];
+      let longestChainDist = 0;
+      const distNoDelayMap = new Map();
+      const canTakeIfRunningNow = (code) =>
+        !completedSet.has(code) &&
+        notRunningIds.has(code) &&
+        (prerequisites[code] || []).every(
+          (pre) => completedSet.has(pre) || (treatPlannedComplete && plannedSet.has(pre))
+        );
+      distanceData.forEach(({ id, distNoDelay }) => {
+        longestChainDist = Math.max(longestChainDist, distNoDelay);
+        distNoDelayMap.set(id, distNoDelay);
+        if (distNoDelay > optimalSemesters) {
           addPrereqChain(id);
-          chainPaths.push(buildChainPath(id));
+          const path = buildChainPath(id);
+          overrunPaths.push(path);
+        } else if (distNoDelay === optimalSemesters) {
+          const path = buildChainPath(id);
+          equalPaths.push(path);
         }
       });
       subjects.forEach((cell) => {
@@ -454,19 +509,46 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
           cell.classList.add('chain-delay');
         }
       });
-      if (chainSet.size) {
-        const pathStrings = chainPaths
-          .map((path) => [...path].reverse().join(' \u2192 '))
+      const filteredOverrun = overrunPaths.filter((path) => {
+        const head = path[0];
+        return (distNoDelayMap.get(head) ?? 0) > optimalSemesters;
+      });
+      const filteredEqual = equalPaths.filter((path) => {
+        const head = path[0];
+        return (distNoDelayMap.get(head) ?? 0) === optimalSemesters;
+      });
+      const hasOverrun = filteredOverrun.length > 0;
+      const hasEqual = filteredEqual.length > 0;
+      const chainOverrunsPlan = hasOverrun;
+      const severity = hasOverrun ? 'error' : hasEqual ? 'warning' : null;
+      if (severity) {
+        const formatChainSubject = (code) =>
+          canTakeIfRunningNow(code) ? `${code} (not running this semester)` : code;
+        const relevantPaths = hasOverrun ? filteredOverrun : filteredEqual;
+        const pathStrings = relevantPaths
+          .map((path) => [...path].reverse().map(formatChainSubject).join(' \u2192 '))
           .filter((s, idx, arr) => s && arr.indexOf(s) === idx);
         const body =
           pathStrings.length <= 1
-            ? `<p>Affected subjects: <strong>${pathStrings[0] || ''}</strong></p>`
-            : `<p>Affected subjects:<br><strong>${pathStrings.join('<br>')}</strong></p>`;
+            ? pathStrings.length
+              ? `<p>Longest chain: <strong>${pathStrings[0]}</strong></p>`
+              : ''
+            : `<p>Longest chain:<br><strong>${pathStrings.join('<br>')}</strong></p>`;
+        const introColor = chainOverrunsPlan ? ALERT_COLORS.error : ALERT_COLORS.warning;
+        const chainTitle = chainOverrunsPlan
+          ? 'Prerequisite chain exceeds optimal timeline'
+          : 'Prerequisite chain at optimal limit';
+        const chainIntro = chainOverrunsPlan
+          ? `Some subjects extend completion beyond the optimal <strong>${optimalSemesters}</strong> semester plan.`
+          : `Your longest prerequisite chain matches the optimal <strong>${optimalSemesters}</strong> semester plan.`;
         chainDelayError = {
-          title: 'Prerequisite chain exceeds optimal timeline',
-          html: `<p><strong style="color:${ALERT_COLORS.error};">Prerequisite chain exceeds optimal timeline</strong> Some subjects extend completion beyond the optimal <strong>${optimalSemesters}</strong> semester plan.</p>${body}`,
+          title: chainTitle,
+          severity,
+          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-warning'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro} You have <strong>${remaining}</strong> subject${remaining === 1 ? '' : 's'} remaining, which would normally take about <strong>${optimalSemesters}</strong> semester${optimalSemesters === 1 ? '' : 's'} to complete at your current load.</span></p>${body}`,
         };
       }
+    } else {
+      chainDelayError = null;
     }
     if (remaining >= 8 && distanceData.length) {
       const maxDist = distanceData.reduce((max, d) => Math.max(max, d.dist), 0);
@@ -484,7 +566,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
               : subjectList.join(', ');
           finalSemWarning = {
             title: 'Tight prerequisite chain',
-            html: `<p><strong style="color:${ALERT_COLORS.warning};">Tight prerequisite chain</strong> Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${completionSemesters} semester chain: <strong>${formattedList}</strong>.</p>`,
+            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${completionSemesters} semester chain: <strong>${formattedList}</strong>.</span></p>`,
           };
         }
       }
@@ -564,15 +646,17 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let electiveAssignments = [];
 
   const setElectiveCredits = (entries = [], persist = true) => {
-    if (persist) electiveAssignments = [...entries];
+    const normalized = (entries || []).filter((text) => (text ?? '').toString().trim().length > 0);
+    if (persist) electiveAssignments = [...normalized];
     const placeholders = getElectivePlaceholders();
     placeholders.forEach((cell, idx) => {
       cell.querySelectorAll('.elective-credit').forEach((n) => n.remove());
       cell.classList.remove('completed');
       cell.classList.remove('toggled');
       cell.classList.remove('use-credit');
+      cell.classList.remove('filled-elective');
       cell.setAttribute('aria-pressed', 'false');
-      const text = entries[idx];
+      const text = normalized[idx];
       if (text) {
         const note = document.createElement('div');
         note.className = 'elective-credit';
@@ -584,6 +668,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
           cell.appendChild(note);
         }
         cell.classList.add('completed');
+        cell.classList.add('filled-elective');
         if (/^USE\d{3}/i.test(text)) {
           cell.classList.add('use-credit');
         }
@@ -629,7 +714,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
         if (courseSelected && coSelected) {
           warnings.push({
             title: `Concurrent ${course} and ${co}`,
-            html: `<strong style="color:${ALERT_COLORS.warning};">Concurrent ${course} and ${co}</strong> Students who take ${course} and ${co} together often struggle because ${course} relies on ${co} knowledge. Concurrent study is not advised unless necessary.`,
+            html: `<strong class="alert-inline-title alert-title-warning">Concurrent ${course} and ${co}</strong> <span class="alert-inline-text">Students who take ${course} and ${co} together often struggle because ${course} relies on ${co} knowledge. Concurrent study is not advised unless necessary.</span>`,
           });
         }
       });
@@ -848,7 +933,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
           : `Only ${satisfiedCount} subject${satisfiedCount === 1 ? '' : 's'} currently have prerequisites satisfied`;
       nextSemWarning = {
         title: 'Limited availability next semester',
-        html: `<p><strong style="color:${ALERT_COLORS.warning};">Not enough subjects available next semester</strong> ${satisfiedSummary}, but you still have ${remaining} subjects remaining.</p><p>For <strong>international students</strong>: where possible subject selection should be arranged to allow for the selection of a full load in the following semester.</p>`,
+        html: `<p><strong class="alert-inline-title alert-title-warning">Not enough subjects available next semester</strong> <span class="alert-inline-text">${satisfiedSummary}, but you still have ${remaining} subjects remaining.</span></p><p class="alert-inline-text">For <strong>international students</strong>: where possible subject selection should be arranged to allow for the selection of a full load in the following semester.</p>`,
       };
     }
     refreshErrorAlerts();
@@ -886,7 +971,10 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     if (nextSemList) {
       const rows = getNextSemRows();
       nextSemList.innerHTML = '';
-      if (!rows.length) {
+      const plannedCount = getPlannedCount();
+      const threshold = getLoadThreshold();
+      const showList = plannedCount >= threshold;
+      if (!showList || !rows.length) {
         const li = document.createElement('li');
         li.textContent = 'No subjects satisfied for next semester yet.';
         nextSemList.appendChild(li);
@@ -895,6 +983,16 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
           const li = document.createElement('li');
           const name = getSubjectName(item.id);
           li.textContent = `${item.id} - ${name}`;
+          const { category, stream } = describeSubjectCategory(item.cell);
+          if (category === 'Elective') {
+            const streamLabel = stream && stream !== 'Elective' && stream !== 'Other' ? stream : 'Elective';
+            li.title = `Elective (${streamLabel})`;
+          } else if (category === 'Major') {
+            const streamLabel = stream && stream !== 'Other' ? ` (${stream})` : '';
+            li.title = `Major${streamLabel}`;
+          } else {
+            li.title = 'Core subject';
+          }
           nextSemList.appendChild(li);
         });
       }
@@ -982,7 +1080,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     if (!cell.querySelector('.not-this-sem-label')) {
       const label = document.createElement('div');
       label.className = 'not-this-sem-label';
-      label.textContent = 'Running next semester only.';
+      label.textContent = 'Running next semester only';
       cell.appendChild(label);
     }
     if (!cell.querySelector('.not-running-tooltip')) {
@@ -1045,8 +1143,8 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
         prereqList.length === 0
           ? '<div class="pre-block"><span class="inline-strong">Prerequisites:</span> None</div>'
           : `<div class="pre-block"><span class="inline-strong">Prerequisites:</span> ${prereqList
-              .map((code) => `<span class="inline-strong prereq-item">${code}</span>`)
-              .join(', ')}</div>`;
+            .map((code) => `<span class="inline-strong prereq-item">${code}</span>`)
+            .join(', ')}</div>`;
       const slot = timeSlots[data.slot] || data.slot || '';
       const day = data.day || '';
       const timeHtml =
@@ -1249,8 +1347,8 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     const carryover =
       prevMajorKey && prevMajorKey !== majorKey
         ? majorConfig[prevMajorKey].codes.filter(
-            (code) => !config.codes.includes(code) && (state[code]?.toggled || state[code]?.completed)
-          )
+          (code) => !config.codes.includes(code) && (state[code]?.toggled || state[code]?.completed)
+        )
         : [];
     // map slots to new subjects
     config.codes.forEach((code, idx) => {
@@ -1317,13 +1415,23 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
 
   const refreshErrorAlerts = () => {
     const errorPayloads = [];
+    const warningList = [...warningPayloads];
     if (electiveError) errorPayloads.push(electiveError);
     if (prereqError) errorPayloads.push(prereqError);
-    if (chainDelayError) errorPayloads.push(chainDelayError);
-    setAlertMessages('error', errorPayloads);
-    const warningList = [...warningPayloads];
+    if (chainDelayError) {
+      const isWarning = chainDelayError.severity === 'warning';
+      (isWarning ? warningList : errorPayloads).push(chainDelayError);
+    }
+    if (initialLoad) {
+      const chainWarningOnly =
+        warningList.length === 1 && warningList[0] === chainDelayError && chainDelayError?.severity === 'warning';
+      if (chainWarningOnly) {
+        warningList.length = 0;
+      }
+    }
     if (nextSemWarning) warningList.push(nextSemWarning);
     if (finalSemWarning) warningList.push(finalSemWarning);
+    setAlertMessages('error', errorPayloads);
     setAlertMessages('warning', warningList);
     renderAlertButton('error');
     renderAlertButton('warning');
@@ -1333,6 +1441,11 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     const completedSet = new Set(
       subjects
         .filter((cell) => cell.dataset.subject && cell.classList.contains('completed') && !isPlaceholder(cell))
+        .map((cell) => cell.dataset.subject)
+    );
+    const plannedSet = new Set(
+      subjects
+        .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
         .map((cell) => cell.dataset.subject)
     );
     const issues = [];
@@ -1363,19 +1476,26 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     if (issues.length) {
       const detailList = issues
         .map((item) => {
-        const missingList = item.missing
-          .map((code) =>
-            code.startsWith('BIT')
-              ? `<span class="inline-strong" style="color:#b00020;">${code}</span> - ${getSubjectName(code)}`
-              : `<span class="inline-strong" style="color:#b00020;">${code}</span>`
-          )
-          .join('<br>');
-        return `<li><strong>${item.id}</strong> - ${item.name}<div class="tight-lead">Missing: ${missingList}</div></li>`;
+          const concurrent = item.missing.filter((code) => plannedSet.has(code));
+          const absent = item.missing.filter((code) => !plannedSet.has(code));
+          const formatCode = (code) => {
+            const codeLabel = `<strong>${code}</strong>`;
+            return code.startsWith('BIT') ? `${codeLabel} - ${getSubjectName(code)}` : codeLabel;
+          };
+          const segments = [];
+          if (concurrent.length) {
+            segments.push(`Selected now, but should have been completed first: ${concurrent.map(formatCode).join('<br>')}`);
+          }
+          if (absent.length) {
+            segments.push(`Missing: ${absent.map(formatCode).join('<br>')}`);
+          }
+          const detail = segments.join('<br>');
+          return `<li><strong>${item.id}</strong> - ${item.name}<div class="tight-lead">${detail}</div></li>`;
         })
         .join('');
       prereqError = {
         title: 'Prerequisites not satisfied',
-        html: `<p><strong style="color:#b00020;">Prerequisite not satisfied</strong> The following selected subjects have prerequisites not yet satisfied:</p><ul>${detailList}</ul>`,
+        html: `<p><strong class="alert-inline-title alert-title-error">Prerequisites not satisfied</strong> <span class="alert-inline-text">The following selected subjects have prerequisites not yet satisfied:</span></p><ul class="alert-inline-list">${detailList}</ul>`,
       };
     } else {
       prereqError = null;
@@ -1503,17 +1623,17 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       if (clearButton.disabled) return;
-    clearPlanned();
-    clearCompleted();
-    setLivePrereqEnabled(true);
-    conditionalRecompute({ force: true, usePlanned: false });
-    updateResetState();
-    electiveCodesState = [];
-    setElectiveCredits([], true);
-    updateElectiveWarning();
-    updateSelectedList();
-  });
-}
+      clearPlanned();
+      clearCompleted();
+      setLivePrereqEnabled(true);
+      conditionalRecompute({ force: true, usePlanned: false });
+      updateResetState();
+      electiveCodesState = [];
+      setElectiveCredits([], true);
+      updateElectiveWarning();
+      updateSelectedList();
+    });
+  }
 
   const showCodeModal = () => {
     if (!codeModal) return;
@@ -1759,6 +1879,17 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     return 'Other';
   };
 
+  const describeSubjectCategory = (cell) => {
+    if (!cell) return { category: 'Subject', stream: '' };
+    const cls = cell.classList;
+    const isCore = cls.contains('core');
+    const isElective = cls.contains('elective') || isPlaceholder(cell);
+    const stream = buildStreamLabel(cell);
+    if (isCore) return { category: 'Core', stream: '' };
+    if (isElective) return { category: 'Elective', stream };
+    return { category: 'Major', stream };
+  };
+
   let currentTableMode = 'selected';
 
   const renderTimetableTable = (rowsOverride = null, highlightSelection = false) => {
@@ -1794,7 +1925,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
           hoverTooltip.innerHTML = willRemove
             ? 'Click to <span class="remove">remove</span> this subject from the timetable'
             : 'Click to <span class="add">add</span> this subject to the timetable';
-          hoverTooltip.style.left = `${(e?.clientX || 0) + 18}px`;
+          hoverTooltip.style.left = `${(e?.clientX || 0) + 28}px`;
           hoverTooltip.style.top = `${(e?.clientY || 0) + 6}px`;
           if (showNow) hoverTooltip.style.display = 'block';
         };
@@ -1998,9 +2129,25 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     timetableModal.setAttribute('aria-hidden', 'true');
   };
 
+  const getCssVar = (name, fallback = '') => {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return v && v.trim() ? v.trim() : fallback;
+  };
+  const isMobileDevice = () => {
+    const ua = (navigator?.userAgent || '').toLowerCase();
+    const touchHint = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const uaMobile = /mobi|android|iphone|ipad|ipod/.test(ua);
+    const narrow = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    return uaMobile || (touchHint && narrow) || narrow;
+  };
   const alertContent = { error: [], warning: [], info: [] };
   const alertPrevCounts = { error: 0, warning: 0, info: 0 };
-  const ALERT_COLORS = { error: '#d32f2f', warning: '#c25a00', info: '#0b7fab' };
+  const alertPrevSignatures = { error: '', warning: '', info: '' };
+  const ALERT_COLORS = {
+    error: getCssVar('--alert-error', '#d32f2f'),
+    warning: getCssVar('--alert-caution', '#c25a00'),
+    info: getCssVar('--alert-info', '#0b7fab'),
+  };
   const alertState = {
     error: new Map(),
     warning: new Map(),
@@ -2036,11 +2183,16 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   const renderAlertButton = (type) => {
     const btn = getAlertButton(type);
     if (!btn) return;
-    const labels = { error: 'Error', warning: 'Warning', info: 'Info' };
-    const count = alertContent[type]?.length || 0;
+    const labels = { error: 'Error', warning: 'Caution', info: 'Info' };
+    const content = alertContent[type] || [];
+    const count = content.length;
+    const hasUnread = content.some((p) => !p.seen);
+    const signature = content.map((p) => alertId(p)).join('|');
+    const contentChanged = signature !== alertPrevSignatures[type];
     if (count > 0) {
       btn.classList.remove('hidden');
-      btn.innerHTML = `${labels[type] || type} <span class="alert-count">${count}</span>`;
+      btn.innerHTML = `<span class="alert-label">${labels[type] || type}</span><span class="alert-count">${count}</span>`;
+      btn.classList.toggle('has-unread', hasUnread);
       btn.setAttribute('aria-expanded', 'false');
       const prev = alertPrevCounts[type] || 0;
       const delta = count - prev;
@@ -2048,12 +2200,13 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
       if (isOpen) {
         btn.classList.remove('alert-pending', 'alert-flash');
         btn.classList.add('alert-open');
+        btn.classList.remove('has-unread');
       } else {
         btn.classList.remove('alert-open');
-        if (type === 'warning' && delta < 0) {
-          // On warning count decrease, only update text; don't re-trigger animations/colors
-          // Leave existing pending state unchanged
-        } else if (count !== prev) {
+        if (!hasUnread) {
+          btn.classList.remove('has-unread');
+        }
+        if (delta > 0 || (contentChanged && hasUnread)) {
           const rect = btn.getBoundingClientRect();
           btn.style.setProperty('--alert-flash-x', `${rect.left + rect.width / 2}px`);
           btn.style.setProperty('--alert-flash-y', `${rect.top + rect.height / 2}px`);
@@ -2062,16 +2215,22 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
             btn.classList.add('alert-pending', 'alert-flash');
             setTimeout(() => btn.classList.remove('alert-flash'), 500);
           }, 150);
-        } else if (count > 0) {
-          btn.classList.add('alert-pending');
+        } else if (delta < 0) {
+          btn.classList.remove('alert-pending', 'alert-flash');
+        }
+        if (delta === 0 && !hasUnread) {
+          btn.classList.remove('alert-pending', 'alert-flash');
         }
       }
       alertPrevCounts[type] = count;
+      alertPrevSignatures[type] = signature;
     } else {
       btn.classList.add('hidden');
+      btn.classList.remove('has-unread');
       btn.textContent = labels[type] || type;
       btn.classList.remove('alert-pending', 'alert-flash', 'alert-open');
       alertPrevCounts[type] = 0;
+      alertPrevSignatures[type] = '';
       if (alertModal && alertModal.dataset.type === type) {
         hideAlertModal();
       }
@@ -2105,7 +2264,8 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
       )
       .join('');
     alertBody.innerHTML = combined;
-    alertTitle.textContent = type === 'warning' ? 'Warnings' : payloads[0].title || 'Notice';
+    alertTitle.textContent =
+      type === 'warning' ? 'Cautions' : type === 'error' ? 'Errors' : payloads[0].title || 'Notice';
     alertTitle.style.display = 'block';
     alertTitle.style.fontWeight = '700';
     if (type === 'warning') {
@@ -2123,6 +2283,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
       btn.classList.remove('alert-pending', 'alert-flash');
       btn.classList.add('alert-open');
       alertPrevCounts[type] = alertContent[type]?.length || 0;
+      btn.classList.remove('has-unread');
     }
     const state = alertState[type];
     if (state) {
@@ -2247,7 +2408,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
         const dayFull = data.day || '';
         const dayShort = dayFull.slice(0, 3);
         const slot = data.slot || '';
-        return { id, dayShort, slot };
+        return { id, dayShort, slot, cell };
       })
       .sort((a, b) => a.id.localeCompare(b.id));
 
@@ -2289,7 +2450,7 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
         };
         li.addEventListener('mouseenter', (e) => {
           if (sidebarTooltipTimer) clearTimeout(sidebarTooltipTimer);
-          sidebarTooltipTimer = setTimeout(() => showSidebarTooltip(e), 200);
+          sidebarTooltipTimer = setTimeout(() => showSidebarTooltip(e), 50);
         });
         li.addEventListener('mousemove', (e) => {
           if (sidebarTooltip.style.display === 'block') {
@@ -2331,6 +2492,34 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     });
   }
 
+  const getElectiveStreams = (majorKey) => {
+    const key = majorKey === 'network' || majorKey === 'undecided' || majorKey === 'ns' ? 'network' : majorKey;
+    if (key === 'ba') {
+      return [
+        { label: 'Network Security', className: 'stream-network' },
+        { label: 'Software Development', className: 'stream-sd' },
+      ];
+    }
+    if (key === 'sd') {
+      return [
+        { label: 'Network Security', className: 'stream-network' },
+        { label: 'Business Analytics', className: 'stream-ba' },
+      ];
+    }
+    return [
+      { label: 'Business Analytics', className: 'stream-ba' },
+      { label: 'Software Development', className: 'stream-sd' },
+    ];
+  };
+  const updateElectivesLabel = (majorKey) => {
+    const el = electivesLabel;
+    if (!el) return;
+    const streams = getElectiveStreams(majorKey);
+    const streamText = streams
+      .map((s) => `<span class="stream-label ${s.className}"><strong>${s.label}</strong></span>`)
+      .join(' and ');
+    el.innerHTML = `<strong>Electives.</strong> Fill the Elective boxes above with subjects from these ${streamText} streams`;
+  };
   const updateMajor = () => {
     const subtitle = document.querySelector('.subtitle');
     const sheet = document.querySelector('.sheet');
@@ -2338,27 +2527,29 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
     const dualRow = dualKey?.parentElement;
     if (!majorDropdown || !subtitle || !sheet) return;
     sheet.classList.remove('major-ba', 'major-sd');
+    subtitle.classList.remove('subtitle-network', 'subtitle-ba', 'subtitle-sd', 'subtitle-undecided');
     const val = majorDropdown.dataset.value || 'undecided';
     if (val === 'network') {
       subtitle.textContent = 'Network Security';
-      subtitle.style.background = '#ccff99';
+      subtitle.classList.add('subtitle-network');
       if (dualRow) dualRow.style.display = '';
     } else if (val === 'ba') {
       subtitle.textContent = 'Business Analytics';
-      subtitle.style.background = '#b7eafd';
+      subtitle.classList.add('subtitle-ba');
       sheet.classList.add('major-ba');
       if (dualRow) dualRow.style.display = 'none';
     } else if (val === 'sd') {
       subtitle.textContent = 'Software Development';
-      subtitle.style.background = '#ceb4f0';
+      subtitle.classList.add('subtitle-sd');
       sheet.classList.add('major-sd');
       if (dualRow) dualRow.style.display = 'none';
     } else {
       subtitle.innerHTML = 'Major undecided. <span class="highlight">Network Security</span> is being used here.';
-      subtitle.style.background = '#ccff99';
+      subtitle.classList.add('subtitle-undecided');
       if (dualRow) dualRow.style.display = '';
     }
     applyMajorConfig(val);
+    updateElectivesLabel(val);
   };
 
   let electiveWarningEl = null;
@@ -2435,35 +2626,70 @@ const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   updateLiveUI();
   updateResetState();
   setLivePrereqEnabled(true);
-    setElectiveCredits(buildElectiveAssignments());
-    updateElectiveWarning();
-    updateSelectedList();
-    updateMajor();
-    const selectedCount = getSelectedRows().length;
-    if (showTimetableButton) {
-      const threshold = getLoadThreshold();
-      showTimetableButton.textContent = selectedCount > 0 && selectedCount < threshold ? 'Timetable options' : 'Show timetable';
+  const MOBILE_NOTICE_KEY = 'mobile-notice-shown';
+  const showMobileNotice = () => {
+    if (!isMobileDevice()) return;
+    try {
+      if (sessionStorage.getItem(MOBILE_NOTICE_KEY)) return;
+    } catch (e) {
+      // ignore storage errors and continue to show once per session
     }
-    updatePrereqErrors();
-    updateWarnings();
+    const prior = document.getElementById('mobile-notice');
+    if (prior) prior.remove();
+    const notice = document.createElement('div');
+    notice.id = 'mobile-notice';
+    notice.className = 'mobile-notice';
+    notice.innerHTML = `
+      <div class="mobile-notice__title">Desktop recommended</div>
+      <p>This page is designed for larger screens. For the best experience, please use a laptop or desktop computer.</p>
+      <button type="button" class="mobile-notice__dismiss">OK</button>
+    `;
+    document.body.appendChild(notice);
+    const dismiss = () => {
+      if (notice && notice.parentElement) notice.parentElement.removeChild(notice);
+      try {
+        sessionStorage.setItem(MOBILE_NOTICE_KEY, '1');
+      } catch (e) {
+        // ignore storage errors
+      }
+    };
+    const closeBtn = notice.querySelector('.mobile-notice__dismiss');
+    if (closeBtn) closeBtn.addEventListener('click', dismiss);
+    setTimeout(() => notice.classList.add('show'), 10);
+  };
+  setElectiveCredits(buildElectiveAssignments());
+  updateElectiveWarning();
+  updateSelectedList();
+  updateMajor();
+  const selectedCount = getSelectedRows().length;
+  if (showTimetableButton) {
+    const threshold = getLoadThreshold();
+    showTimetableButton.textContent = selectedCount > 0 && selectedCount < threshold ? 'Timetable options' : 'Show timetable';
+  }
+  updatePrereqErrors();
+  updateWarnings();
   updateSemesterCounts(
     new Set(
       subjects
         .filter((cell) => cell.dataset.subject && cell.classList.contains('completed'))
         .map((cell) => cell.dataset.subject)
-      ),
-      new Set(
-        subjects
-          .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
-          .map((cell) => cell.dataset.subject)
-      )
-    );
+    ),
+    new Set(
+      subjects
+        .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
+        .map((cell) => cell.dataset.subject)
+    )
+  );
   // Ensure header alert buttons stay hidden until messages are provided
   refreshErrorAlerts();
   setAlertMessages('info', []);
   renderAlertButton('error');
   renderAlertButton('warning');
   renderAlertButton('info');
+  showMobileNotice();
+  setTimeout(() => {
+    initialLoad = false;
+  }, 0);
 
   const closeMajorDropdown = () => {
     if (majorDropdown) {

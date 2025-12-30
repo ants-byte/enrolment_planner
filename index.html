@@ -39,71 +39,75 @@ Created: December 30, 2025
         <button id="clear-selections" class="clear-button">Reset</button>
       </div>
 
-        <div class="sidebar-section major-picker dim-when-complete">
-                <div class="sidebar-heading-with-text"><span class="sidebar-heading">2.</span><span id="sidebar-section-descriptor">Choose your (likely) major</span></div>
-                <div class="major-dropdown" id="major-select" data-value="undecided">
-                  <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
-                    <span id="major-current-label">Undecided</span>
-                    <span class="major-caret">▾</span>
-                  </button>
-                  <ul class="major-options" role="listbox">
-                    <li role="option" data-value="undecided" class="selected">Undecided</li>
-                    <li role="option" data-value="network">Network Security</li>
-                    <li role="option" data-value="ba">Business Analytics</li>
-                    <li role="option" data-value="sd">Software Development</li>
-                  </ul>
-                </div>
-              </div>
+      <div class="sidebar-section major-picker dim-when-complete">
+        <div class="sidebar-heading-with-text"><span class="sidebar-heading">2.</span><span
+            id="sidebar-section-descriptor">Choose your (likely) major</span></div>
+        <div class="major-dropdown" id="major-select" data-value="undecided">
+          <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
+            <span id="major-current-label">Undecided</span>
+            <span class="major-caret">▾</span>
+          </button>
+          <ul class="major-options" role="listbox">
+            <li role="option" data-value="undecided" class="selected">Undecided</li>
+            <li role="option" data-value="network">Network Security</li>
+            <li role="option" data-value="ba">Business Analytics</li>
+            <li role="option" data-value="sd">Software Development</li>
+          </ul>
+        </div>
+      </div>
 
-        <div class="sidebar-section timetable-panel dim-when-complete">
-        <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span><span class="sidebar-section-descriptor">Select your timetable by clicking on subjects.</span></div>
-          <div id="selected-list-section">
-            <button class="available-heading" id="available-heading" type="button" aria-label="Show available subjects">Available now</button>
-            <ul id="selected-list" class="available-list"></ul>
-            <button id="show-timetable" class="clear-button secondary" style="display:none">Show timetable</button>
-            <div class="toggle-row load-row">
-              <span id="load-label">Your load = 4</span>
-              <button id="vary-load" class="clear-button secondary load-button" type="button">Vary</button>
-            </div>
-            <div class="toggle-row">
-              <label class="switch">
-                <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label dim-when-complete">Override prerequisites</span>
-            </div>
-                    <div class="toggle-row" id="live-prereq-row" style="display:none">
-                      <label class="switch">
-                        <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
-                        <span class="slider"></span>
-                      </label>
-                      <span class="switch-label">Live prerequisite updates</span>
-                    </div>
+      <div class="sidebar-section timetable-panel dim-when-complete">
+        <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span><span
+            class="sidebar-section-descriptor">Select your timetable by clicking on subjects.</span></div>
+        <div id="selected-list-section">
+          <button class="available-heading" id="available-heading" type="button"
+            aria-label="Show available subjects">Available now</button>
+          <ul id="selected-list" class="available-list"></ul>
+          <button id="show-timetable" class="clear-button secondary hidden-initial">Show timetable</button>
+          <div class="toggle-row load-row">
+            <span id="load-label">Your load = 4</span>
+            <button id="vary-load" class="clear-button secondary load-button" type="button">Vary</button>
           </div>
-          
+          <div class="toggle-row">
+            <label class="switch">
+              <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label dim-when-complete">Override prerequisites</span>
+          </div>
+          <div class="toggle-row hidden-initial" id="live-prereq-row">
+            <label class="switch">
+              <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label">Live prerequisite updates</span>
+          </div>
         </div>
 
-        <div class="sidebar-section next-sem-section">
-          <div class="sidebar-heading-with-text">
-            <span class="sidebar-section-descriptor">Satisfied for next semester</span>
-          </div>
-          <ul id="next-sem-list" class="available-list"></ul>
+      </div>
+
+      <div class="sidebar-section next-sem-section">
+        <div class="sidebar-heading-with-text">
+          <span class="sidebar-section-descriptor">Satisfied for next semester</span>
         </div>
-        <div class="sidebar-section">
-          <button id="toggle-sem-counts" class="clear-button secondary" type="button">Show completion counts</button>
-        </div>
+        <ul id="next-sem-list" class="available-list"></ul>
+      </div>
+      <div class="sidebar-section">
+        <button id="toggle-sem-counts" class="clear-button secondary" type="button">Show completion counts</button>
+      </div>
     </aside>
 
     <div class="sheet">
       <div class="title">
         <div class="title-buttons">
           <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
-          <button id="btn-warning" class="title-btn btn-warning hidden" aria-expanded="false">Warning</button>
+          <button id="btn-warning" class="title-btn btn-warning hidden" aria-expanded="false">Caution</button>
           <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
         </div>
         <span class="title-text">Course Map for Bachelor of Information Technology</span>
       </div>
-      <div class="subtitle">Choose your likely major in sidebar. <span class="highlight">Network Security</span> currently being used.</div>
+      <div class="subtitle">Choose your likely major in sidebar. <span class="highlight">Network Security</span>
+        currently being used.</div>
 
       <div class="section">
         <table class="main-grid">
@@ -127,7 +131,11 @@ Created: December 30, 2025
             <td class="info-cell">
               <div class="hover-zone"></div>
               <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
-                <ul><li>14 Core subjects</li> <li>6 major subjects</li> <li>4 Elective subjects.</li></ul>
+                <ul>
+                  <li>14 Core subjects</li>
+                  <li>6 major subjects</li>
+                  <li>4 Elective subjects.</li>
+                </ul>
             </td>
 
           </tr>
@@ -212,7 +220,7 @@ Created: December 30, 2025
           </tr>
         </table>
 
-        <div class="electives-label">Electives: Complete any 4.</div>
+        <div class="electives-label" id="electives-label">Electives. Complete any 4:</div>
         <table class="electives-grid">
           <tr>
             <td class="dual-split" data-slot="r1c1" data-subject="BIT245">
@@ -314,7 +322,7 @@ Created: December 30, 2025
         <button class="modal-close" id="close-code-modal" aria-label="Close modal">X</button>
       </div>
       <div class="modal-body">
-        <p>Paste block of text and subject codes will be extracted.  Or type them in.</p>
+        <p>Paste block of text and subject codes will be extracted. Or type them in.</p>
         <textarea id="code-input" rows="10"></textarea>
       </div>
       <div class="modal-actions">
@@ -370,24 +378,31 @@ Created: December 30, 2025
       </div>
       <div class="modal-body">
         <p><strong>Domestic students</strong> can study 1, 2, 3, or 4 subjects each semester.</p>
-        <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement). This can only be varied in exceptional circumstances such as a high failure rate that led to an academic intervention.</p>
-        <p>Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final year or <strong>5 or fewer</strong> subjects remain in the last semester.</p>
+        <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement).
+          This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
+          intervention.</p>
+        <p>Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final
+          year or <strong>5 or fewer</strong> subjects remain in the last semester.</p>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining. </label>
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining.
+          </label>
         </div>
-        <div class="toggle-row" style="margin-top:8px;">
-          <label><input type="radio" name="load-student-type" id="load-type-international" value="international" checked> International</label>
-          <label style="margin-left:12px;"><input type="radio" name="load-student-type" id="load-type-domestic" value="domestic"> Domestic</label>
+        <div class="toggle-row load-extra-row">
+          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-international" value="international"
+              checked> International</label>
+          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-domestic"
+              value="domestic"> Domestic</label>
         </div>
         <div class="toggle-row">
           <label><input type="checkbox" id="load-exceptional"> Exceptional approval to vary international load</label>
         </div>
         <div class="toggle-row">
           <label for="load-value">Full load subjects:</label>
-          <select id="load-value" style="width:120px;"></select>
-          <span id="load-lock-msg" style="color:#b00020; font-weight:700; margin-left:8px; display:none;">You must study 4 subjects - a full load</span>
+          <select id="load-value" class="load-value-select"></select>
+          <span id="load-lock-msg" class="load-lock-msg">You must study
+            4 subjects - a full load</span>
         </div>
-        <div id="load-error" style="color:#b00020; font-weight:700; display:none;"></div>
+        <div id="load-error" class="load-error"></div>
       </div>
       <div class="modal-actions">
         <button id="cancel-load-modal" class="clear-button secondary" type="button">Cancel</button>
@@ -399,4 +414,3 @@ Created: December 30, 2025
 </body>
 
 </html>
-
