@@ -320,7 +320,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     stack.add(id);
     const prereqs = prerequisites[id] || [];
-    const semDelay = notRunningIds.has(id) ? 1 : 0;
+    const semDelay = notRunningIds.has(id) && !treatPlannedComplete ? 1 : 0;
     if (!prereqs.length) {
       memo.set(id, 1 + semDelay);
       stack.delete(id);
@@ -954,9 +954,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const threshold = getLoadThreshold();
     if (showTimetableButton) {
       const hasSelected = selectedCount > 0;
-      showTimetableButton.style.display = hasSelected ? '' : 'none';
+      // Ensure inline display overrides the hidden-initial class when we have selections.
+      showTimetableButton.style.display = hasSelected ? 'block' : 'none';
+      showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
       if (livePrereqRow) {
-        livePrereqRow.style.display = hasSelected ? '' : 'none';
+        livePrereqRow.style.display = hasSelected ? 'block' : 'none';
+        livePrereqRow.classList.toggle('hidden-initial', !hasSelected);
       }
     }
     if (varyLoadButton) {
@@ -1249,18 +1252,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.classList.add(base || 'elective');
     const hasSas = meta.classes.includes('sas');
     if (hasSas) cell.classList.add('sas');
-    let courseEl = cell.querySelector('.subject-note');
-    let noteEl = cell.querySelector('.prerequsites-note');
-    if (!courseEl) {
-      courseEl = document.createElement('span');
-      courseEl.className = 'course';
-      cell.appendChild(courseEl);
-    }
-    if (!noteEl) {
-      noteEl = document.createElement('span');
-      noteEl.className = 'note';
-      cell.appendChild(noteEl);
-    }
+
+    // Reuse or create content nodes, normalizing old class names.
+    cell
+      .querySelectorAll('.subject-note, .course, .prerequsites-note, .note')
+      .forEach((n) => n.remove());
+    let courseEl = document.createElement('span');
+    let noteEl = document.createElement('span');
+    cell.appendChild(courseEl);
+    cell.appendChild(noteEl);
+    courseEl.className = 'subject-note';
+    noteEl.className = 'prerequsites-note';
     courseEl.textContent = meta.name;
     noteEl.textContent = meta.note;
   };
@@ -1275,39 +1277,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     };
 
-    if (major === 'ba') {
-      // BA major layout - r1c1 is BIT245 (dual-split), r1c2-r1c5 are spacers
-      setSlot('r1c1', 'BIT245');
-      setSlot('r2c1', 'BIT236');
-      setSlot('r2c2', 'BIT355');
-      setSlot('r2c3', 'BIT356');
-      setSlot('r2c4', 'BIT357');
-      setSlot('r2c5', 'BIT363');
-      setSlot('r3c1', 'BIT235');
-      setSlot('r3c2', 'BIT246');
-      setSlot('r3c3', 'BIT358');
-      setSlot('r3c4', 'BIT364');
-      setSlot('r3c5', 'BIT351');
-      return result;
-    }
+    const placeNetworkRows = () => {
+      setSlot('r2c2', 'BIT213');
+      setSlot('r2c3', 'BIT233');
+      setSlot('r2c4', 'BIT353');
+      setSlot('r3c2', 'BIT244');
+      setSlot('r3c3', 'BIT313');
+      setSlot('r3c4', 'BIT362');
+    };
 
     if (major === 'sd') {
-      // SD major layout - r1c1 is BIT245 (dual-split), r1c2-r1c5 are spacers
-      setSlot('r1c1', 'BIT245');
-      setSlot('r2c1', 'BIT235');
-      setSlot('r2c2', 'BIT246');
-      setSlot('r2c3', 'BIT358');
-      setSlot('r2c4', 'BIT364');
-      setSlot('r2c5', 'BIT351');
-      setSlot('r3c1', 'BIT236');
-      setSlot('r3c2', 'BIT355');
-      setSlot('r3c3', 'BIT356');
-      setSlot('r3c4', 'BIT357');
-      setSlot('r3c5', 'BIT363');
+      // Software Development major: show BA electives + Network Security row
+      setSlot('r1c1', 'BIT236');
+      setSlot('r1c2', 'BIT355');
+      setSlot('r1c3', 'BIT356');
+      setSlot('r1c4', 'BIT357');
+      setSlot('r1c5', 'BIT363');
+      placeNetworkRows();
       return result;
     }
 
-    // NS (or undecided): r1c1 is BIT245, r1c2-r1c5 are spacers, then BA row, then SD row
+    if (major === 'ba') {
+      // Business Analytics major: show SD electives + Network Security row
+      setSlot('r1c1', 'BIT235');
+      setSlot('r1c2', 'BIT246');
+      setSlot('r1c3', 'BIT358');
+      setSlot('r1c4', 'BIT364');
+      setSlot('r1c5', 'BIT351');
+      placeNetworkRows();
+      return result;
+    }
+
+    // Network/undecided: show BA row, SD row, and keep BIT245 dual subject
     setSlot('r1c1', 'BIT245');
     setSlot('r2c1', 'BIT236');
     setSlot('r2c2', 'BIT355');
@@ -1356,6 +1357,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const cell = majorSlots[idx];
       if (!cell) return;
       renderSubjectInCell(cell, code, config.typeClass);
+    });
+    // reset electives before reassigning
+    electivesGridCells.forEach((cell) => {
+      clearNotThisSemUI(cell);
+      cell.dataset.subject = '';
+      const courseEl = cell.querySelector('.subject-note') || cell.querySelector('.course');
+      const noteEl = cell.querySelector('.prerequsites-note') || cell.querySelector('.note');
+      if (courseEl) courseEl.textContent = '';
+      if (noteEl) noteEl.textContent = '';
+      cell.className = 'elective-spacer';
+      attachTooltip(cell);
     });
     // electives
     const electiveList = computeElectiveList(majorKey);
@@ -2762,7 +2774,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (toggleSemCountsBtn)
     toggleSemCountsBtn.addEventListener('click', () => {
       showSemCounts = !showSemCounts;
-      toggleSemCountsBtn.textContent = showSemCounts ? 'Hide completion counts' : 'Show completion counts';
+      toggleSemCountsBtn.textContent = showSemCounts ? 'Hide semesters remaining' : 'Show semesters remaining';
       updateSemesterCounts(
         new Set(
           subjects
