@@ -18,6 +18,7 @@ Created: December 30, 2025
 </head>
 
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="page">
     <div id="drop-zone" class="drop-zone" aria-hidden="true">
       <div class="drop-zone-text">Drop students workbook here</div>
@@ -62,10 +63,10 @@ Created: December 30, 2025
         <div id="selected-list-section">
           <button class="available-heading" id="available-heading" type="button"
             aria-label="Show available subjects">Available now</button>
-          <ul id="selected-list" class="available-list"></ul>
+          <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Show timetable</button>
           <div class="toggle-row load-row">
-            <span id="load-label">Your load = 4</span>
+            <span id="load-label">Your load = 4 subjects</span>
             <button id="vary-load" class="clear-button secondary load-button" type="button">Vary</button>
           </div>
           <div class="toggle-row">
@@ -97,11 +98,12 @@ Created: December 30, 2025
       </div>
     </aside>
 
-    <div class="sheet">
+    <main id="main-content" role="main" class="main-content">
+      <div class="sheet">
       <div class="title">
         <div class="title-buttons">
           <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
-          <button id="btn-warning" class="title-btn btn-warning hidden" aria-expanded="false">Caution</button>
+          <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
           <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
         </div>
         <span class="title-text">Course Map for Bachelor of Information Technology</span>
@@ -113,20 +115,20 @@ Created: December 30, 2025
         <table class="main-grid">
           <tr>
             <td class="core" data-subject="BIT121">
-              <span class="course">BIT121 Network Communication Concepts</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT121 Network Communication Concepts</span>
+              <span class="prerequsites-note">&nbsp;</span>
             </td>
             <td class="network" data-subject="BIT213">
-              <span class="course">BIT213 Network and Cyber Security Essentials</span>
-              <span class="note">Co-requisite: BIT121</span>
+              <span class="subject-note">BIT213 Network and Cyber Security Essentials</span>
+              <span class="prerequsites-note">Co-requisite: BIT121</span>
             </td>
             <td class="network" data-subject="BIT233">
-              <span class="course">BIT233 Network Design</span>
-              <span class="note">Prerequisite: BIT121</span>
+              <span class="subject-note">BIT233 Network Design</span>
+              <span class="prerequsites-note">Prerequisite: BIT121</span>
             </td>
             <td class="network" data-subject="BIT353">
-              <span class="course">BIT353 Network Architecture and Protocols</span>
-              <span class="note">Prerequisite: BIT233</span>
+              <span class="subject-note">BIT353 Network Architecture and Protocols</span>
+              <span class="prerequsites-note">Prerequisite: BIT233</span>
             </td>
             <td class="info-cell">
               <div class="hover-zone"></div>
@@ -141,91 +143,91 @@ Created: December 30, 2025
           </tr>
           <tr>
             <td class="core" data-subject="BIT106">
-              <span class="course">BIT106 Foundations of Software, Hardware and Cloud Computing</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT106 Foundations of Software, Hardware and Cloud Computing</span>
+              <span class="prerequsites-note">&nbsp;</span>
               <div class="sas"></div>
             </td>
             <td class="core" data-subject="BIT108">
-              <span class="course">BIT108 Foundations of Business</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT108 Foundations of Business</span>
+              <span class="prerequsites-note">&nbsp;</span>
             </td>
             <td class="network" data-subject="BIT244">
-              <span class="course">BIT244 IT and Business Crime</span>
-              <span class="note">Prerequisite: BIT106</span>
+              <span class="subject-note">BIT244 IT and Business Crime</span>
+              <span class="prerequsites-note">Prerequisite: BIT106</span>
             </td>
             <td class="network" data-subject="BIT362">
-              <span class="course">BIT362 Digital Forensics</span>
-              <span class="note">Prerequisite: BIT213</span>
+              <span class="subject-note">BIT362 Digital Forensics</span>
+              <span class="prerequsites-note">Prerequisite: BIT213</span>
             </td>
             <td class="core" data-subject="BIT314">
-              <span class="course">BIT314 Cybersecurity Management and Governance</span>
-              <span class="note">Prerequisite: BIT241</span>
+              <span class="subject-note">BIT314 Cybersecurity Management and Governance</span>
+              <span class="prerequsites-note">Prerequisite: BIT241</span>
             </td>
           </tr>
           <tr>
             <td class="core" data-subject="BIT112">
-              <span class="course">BIT112 Mathematics for Information Technology</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT112 Mathematics for Information Technology</span>
+              <span class="prerequsites-note">&nbsp;</span>
               <div class="sas"></div>
             </td>
             <td class="core" data-subject="BIT231">
-              <span class="course">BIT231 Database Systems</span>
-              <span class="note">Prerequisite: BIT111</span>
+              <span class="subject-note">BIT231 Database Systems</span>
+              <span class="prerequsites-note">Prerequisite: BIT111</span>
               <div class="sas"></div>
             </td>
             <td class="core" data-subject="BIT241">
-              <span class="course">BIT241 Professional IT Practice and Ethics</span>
-              <span class="note">Prerequisite: BIT121, BIT106</span>
+              <span class="subject-note">BIT241 Professional IT Practice and Ethics</span>
+              <span class="prerequsites-note">Prerequisite: BIT121, BIT106</span>
             </td>
             <td class="network" data-subject="BIT313">
-              <span class="course">BIT313 Cyber Vulnerability and Hardening</span>
-              <span class="note">Prerequisite: BIT213</span>
+              <span class="subject-note">BIT313 Cyber Vulnerability and Hardening</span>
+              <span class="prerequsites-note">Prerequisite: BIT213</span>
             </td>
             <td class="core" data-subject="BIT352">
-              <span class="course">BIT352 System Implementation and Service Management</span>
-              <span class="note">Prerequisite: BIT242</span>
+              <span class="subject-note">BIT352 System Implementation and Service Management</span>
+              <span class="prerequsites-note">Prerequisite: BIT242</span>
             </td>
           </tr>
           <tr>
             <td class="core" data-subject="BIT111">
-              <span class="course">BIT111 Programming Concepts</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT111 Programming Concepts</span>
+              <span class="prerequsites-note">&nbsp;</span>
             </td>
             <td class="core" data-subject="BIT230">
-              <span class="course">BIT230 System Analysis and Design</span>
-              <span class="note">Prerequisites: BIT106, BIT111</span>
+              <span class="subject-note">BIT230 System Analysis and Design</span>
+              <span class="prerequsites-note">Prerequisites: BIT106, BIT111</span>
             </td>
             <td class="core" data-subject="BIT242">
-              <span class="course">BIT242 IT Project Management</span>
-              <span class="note">Prerequisite: BIT230</span>
+              <span class="subject-note">BIT242 IT Project Management</span>
+              <span class="prerequsites-note">Prerequisite: BIT230</span>
             </td>
             <td class="core" data-subject="BIT371">
-              <span class="course">BIT371 Capstone Experience 1</span>
-              <span class="note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
+              <span class="subject-note">BIT371 Capstone Experience 1</span>
+              <span class="prerequsites-note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
             </td>
             <td class="core" data-subject="BIT372">
-              <span class="course">BIT372 Capstone Experience 2</span>
-              <span class="note">Prerequisite: BIT371</span>
+              <span class="subject-note">BIT372 Capstone Experience 2</span>
+              <span class="prerequsites-note">Prerequisite: BIT371</span>
             </td>
           </tr>
           <tr>
             <td class="core" data-subject="BIT105">
-              <span class="course">BIT105 Business Enquiry &amp; Communication</span>
-              <span class="note">&nbsp;</span>
+              <span class="subject-note">BIT105 Business Enquiry &amp; Communication</span>
+              <span class="prerequsites-note">&nbsp;</span>
             </td>
-            <td class="elective" data-subject="ELECTIVE1"><span class="course">Elective 1</span></td>
-            <td class="elective" data-subject="ELECTIVE2"><span class="course">Elective 2</span></td>
-            <td class="elective" data-subject="ELECTIVE3"><span class="course">Elective 3</span></td>
-            <td class="elective" data-subject="ELECTIVE4"><span class="course">Elective 4</span></td>
+            <td class="elective" data-subject="ELECTIVE1"><span class="subject-note">Elective 1</span></td>
+            <td class="elective" data-subject="ELECTIVE2"><span class="subject-note">Elective 2</span></td>
+            <td class="elective" data-subject="ELECTIVE3"><span class="subject-note">Elective 3</span></td>
+            <td class="elective" data-subject="ELECTIVE4"><span class="subject-note">Elective 4</span></td>
           </tr>
         </table>
-
+i
         <div class="electives-label" id="electives-label">Electives. Complete any 4:</div>
         <table class="electives-grid">
           <tr>
-            <td class="dual-split" data-slot="r1c1" data-subject="BIT245">
-              <span class="course">BIT245 Web Development</span>
-              <span class="note">Prerequisites: BIT111</span>
+            <td class="dual-split" data-slot="r1c1" data-subject="BIT245">I
+              <span class="subject-note">BIT245 Web Development</span>
+              <span class="prerequsites-note">Prerequisites: BIT111</span>
             </td>
             <td class="elective-spacer" data-slot="r1c2"></td>
             <td class="elective-spacer" data-slot="r1c3"></td>
@@ -234,49 +236,49 @@ Created: December 30, 2025
           </tr>
           <tr>
             <td class="ba" data-slot="r2c1" data-subject="BIT236">
-              <span class="course">BIT236 Enterprise Resources</span>
-              <span class="note">Prerequisite: BIT106, BIT231</span>
+              <span class="subject-note">BIT236 Enterprise Resources</span>
+              <span class="prerequsites-note">Prerequisite: BIT106, BIT231</span>
             </td>
             <td class="ba" data-slot="r2c2" data-subject="BIT355">
-              <span class="course">BIT355 Business Intelligence</span>
-              <span class="note">Prerequisites: BIT230, BIT236</span>
+              <span class="subject-note">BIT355 Business Intelligence</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
               <div class="sas"></div>
             </td>
             <td class="ba" data-slot="r2c3" data-subject="BIT356">
-              <span class="course">BIT356 Knowledge Management Systems</span>
-              <span class="note">Prerequisites: BIT230, BIT236</span>
+              <span class="subject-note">BIT356 Knowledge Management Systems</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
               <div class="sas"></div>
             </td>
             <td class="ba" data-slot="r2c4" data-subject="BIT357">
-              <span class="course">BIT357 Business Analysis</span>
-              <span class="note">Prerequisite: BIT230</span>
+              <span class="subject-note">BIT357 Business Analysis</span>
+              <span class="prerequsites-note">Prerequisite: BIT230</span>
             </td>
             <td class="ba" data-slot="r2c5" data-subject="BIT363">
-              <span class="course">BIT363 E-Business Systems</span>
-              <span class="note">Prerequisites: BIT230, BIT245</span>
+              <span class="subject-note">BIT363 E-Business Systems</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT245</span>
             </td>
           </tr>
           <tr>
             <td class="software" data-slot="r3c1" data-subject="BIT235">
-              <span class="course">BIT235 Object Oriented Programming</span>
-              <span class="note">Prerequisites: BIT245</span>
+              <span class="subject-note">BIT235 Object Oriented Programming</span>
+              <span class="prerequsites-note">Prerequisites: BIT245</span>
             </td>
             <td class="software" data-slot="r3c2" data-subject="BIT246">
-              <span class="course">BIT246 Object Oriented RAD</span>
-              <span class="note">Prerequisites: BIT235</span>
+              <span class="subject-note">BIT246 Object Oriented RAD</span>
+              <span class="prerequsites-note">Prerequisites: BIT235</span>
             </td>
             <td class="software" data-slot="r3c3" data-subject="BIT358">
-              <span class="course">BIT358 Advanced Databases</span>
-              <span class="note">Prerequisites: BIT231</span>
+              <span class="subject-note">BIT358 Advanced Databases</span>
+              <span class="prerequsites-note">Prerequisites: BIT231</span>
               <div class="sas"></div>
             </td>
             <td class="software" data-slot="r3c4" data-subject="BIT364">
-              <span class="course">BIT364 Non-Relational Database Management</span>
-              <span class="note">Prerequisites: BIT231</span>
+              <span class="subject-note">BIT364 Non-Relational Database Management</span>
+              <span class="prerequsites-note">Prerequisites: BIT231</span>
             </td>
             <td class="software" data-slot="r3c5" data-subject="BIT351">
-              <span class="course">BIT351 Mobile Application Development</span>
-              <span class="note">Prerequisites: BIT231, BIT235</span>
+              <span class="subject-note">BIT351 Mobile Application Development</span>
+              <span class="prerequsites-note">Prerequisites: BIT231, BIT235</span>
             </td>
           </tr>
         </table>
@@ -313,7 +315,8 @@ Created: December 30, 2025
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </main>
   </div>
   <div id="code-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
@@ -369,6 +372,7 @@ Created: December 30, 2025
         </div>
       </div>
     </div>
+    </main>
   </div>
   <div id="load-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">

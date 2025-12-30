@@ -246,6 +246,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorLabel = document.getElementById('major-current-label');
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
+  console.log('majorDropdown:', majorDropdown, 'majorToggle:', majorToggle, 'majorOptions length:', majorOptions.length);
   const creditWarningIds = new Set([
     'BIT313','BIT314','BIT351','BIT352','BIT353','BIT355','BIT356','BIT357','BIT358','BIT362','BIT363','BIT364','BIT371','BIT372','BIT241'
   ]);
@@ -302,8 +303,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const id = cell.dataset.subject;
       if (!id) return;
       if (subjectMeta[id]) return;
-      const name = cell.querySelector('.course')?.textContent?.trim() || id;
-      const note = cell.querySelector('.note')?.textContent || '';
+      const name = cell.querySelector('.subject-note')?.textContent?.trim() || id;
+      const note = cell.querySelector('.prerequsites-note')?.textContent || '';
       const classes = Array.from(cell.classList).filter((c) => baseTypeClasses.includes(c));
       subjectMeta[id] = { name, note, classes };
     });
@@ -635,7 +636,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const data = timetable[code];
     if (data && data.name) return data.name;
     const cell = subjects.find((c) => c.dataset.subject === code);
-    let name = cell?.querySelector('.course')?.textContent?.trim();
+    let name = cell?.querySelector('.subject-note')?.textContent?.trim();
     if (name && name.toUpperCase().startsWith(code.toUpperCase())) {
       // remove leading code and dash if present
       name = name.replace(new RegExp(`^\\s*${code}\\s*[-–—]?\\s*`, 'i'), '');
@@ -661,7 +662,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const note = document.createElement('div');
         note.className = 'elective-credit';
         note.textContent = text;
-        const title = cell.querySelector('.course');
+        const title = cell.querySelector('.subject-note');
         if (title) {
           title.insertAdjacentElement('afterend', note);
         } else {
@@ -796,7 +797,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         capstoneMajorOkPlanned = bitReq.majorConcurrentOk;
         capstoneMajorOkNow = bitReq.majorMetNow;
       }
-      const noteEl = cell.querySelector('.note');
+      const noteEl = cell.querySelector('.prerequsites-note');
       if (noteEl) {
         const txt = (noteEl.textContent || '').toLowerCase();
         const hasReqText = txt.includes('prerequisite') || txt.includes('co-requisite');
@@ -1248,8 +1249,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.classList.add(base || 'elective');
     const hasSas = meta.classes.includes('sas');
     if (hasSas) cell.classList.add('sas');
-    let courseEl = cell.querySelector('.course');
-    let noteEl = cell.querySelector('.note');
+    let courseEl = cell.querySelector('.subject-note');
+    let noteEl = cell.querySelector('.prerequsites-note');
     if (!courseEl) {
       courseEl = document.createElement('span');
       courseEl.className = 'course';
@@ -1275,38 +1276,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
 
     if (major === 'ba') {
-      // BA major layout
-      setSlot('r1c1', 'BIT235');
-      setSlot('r1c2', 'BIT246');
-      setSlot('r1c3', 'BIT358');
-      setSlot('r1c4', 'BIT364');
-      setSlot('r1c5', 'BIT351');
-      setSlot('r2c2', 'BIT213');
-      setSlot('r2c3', 'BIT233');
-      setSlot('r2c4', 'BIT353');
-      setSlot('r3c2', 'BIT244');
-      setSlot('r3c3', 'BIT313');
-      setSlot('r3c4', 'BIT362');
+      // BA major layout - r1c1 is BIT245 (dual-split), r1c2-r1c5 are spacers
+      setSlot('r1c1', 'BIT245');
+      setSlot('r2c1', 'BIT236');
+      setSlot('r2c2', 'BIT355');
+      setSlot('r2c3', 'BIT356');
+      setSlot('r2c4', 'BIT357');
+      setSlot('r2c5', 'BIT363');
+      setSlot('r3c1', 'BIT235');
+      setSlot('r3c2', 'BIT246');
+      setSlot('r3c3', 'BIT358');
+      setSlot('r3c4', 'BIT364');
+      setSlot('r3c5', 'BIT351');
       return result;
     }
 
     if (major === 'sd') {
-      // SD major layout
-      setSlot('r1c1', 'BIT236');
-      setSlot('r1c2', 'BIT355');
-      setSlot('r1c3', 'BIT356');
-      setSlot('r1c4', 'BIT357');
-      setSlot('r1c5', 'BIT363');
-      setSlot('r2c2', 'BIT213');
-      setSlot('r2c3', 'BIT233');
-      setSlot('r2c4', 'BIT353');
-      setSlot('r3c2', 'BIT244');
-      setSlot('r3c3', 'BIT313');
-      setSlot('r3c4', 'BIT362');
+      // SD major layout - r1c1 is BIT245 (dual-split), r1c2-r1c5 are spacers
+      setSlot('r1c1', 'BIT245');
+      setSlot('r2c1', 'BIT235');
+      setSlot('r2c2', 'BIT246');
+      setSlot('r2c3', 'BIT358');
+      setSlot('r2c4', 'BIT364');
+      setSlot('r2c5', 'BIT351');
+      setSlot('r3c1', 'BIT236');
+      setSlot('r3c2', 'BIT355');
+      setSlot('r3c3', 'BIT356');
+      setSlot('r3c4', 'BIT357');
+      setSlot('r3c5', 'BIT363');
       return result;
     }
 
-    // NS (or undecided): NS top row with BIT245 leading, then BA row, then SD row
+    // NS (or undecided): r1c1 is BIT245, r1c2-r1c5 are spacers, then BA row, then SD row
     setSlot('r1c1', 'BIT245');
     setSlot('r2c1', 'BIT236');
     setSlot('r2c2', 'BIT355');
@@ -1365,8 +1366,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isSpacer = cell.classList.contains('elective-spacer');
       if (!code) {
         cell.dataset.subject = '';
-        const courseEl = cell.querySelector('.course');
-        const noteEl = cell.querySelector('.note');
+        const courseEl = cell.querySelector('.subject-note');
+        const noteEl = cell.querySelector('.prerequsites-note');
         if (courseEl) courseEl.textContent = '';
         if (noteEl) noteEl.textContent = '';
         cell.className = 'elective-spacer';
@@ -1908,7 +1909,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         td.colSpan = 7;
         row.appendChild(td);
       } else {
-        const name = data.name || cell?.querySelector('.course')?.textContent?.trim() || 'N/A';
+        const name = data.name || cell?.querySelector('.subject-note')?.textContent?.trim() || 'N/A';
         const day = dayShort || 'N/A';
         const time = data.slot ? (timeSlots[data.slot] || data.slot) : 'N/A';
         const room = data.room || 'N/A';
@@ -2416,13 +2417,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!selectedListSection || !selectedListEl) return;
     const available = getAvailableRows();
     selectedListEl.innerHTML = '';
+    selectedListEl.setAttribute('role', 'list');
     if (!available.length) {
-      const li = document.createElement('li');
+      const li = document.createElement('div');
+      li.className = 'available-item';
+      li.setAttribute('role', 'listitem');
       li.textContent = 'No subjects are available to select right now.';
       selectedListEl.appendChild(li);
     } else {
       available.forEach((item) => {
-        const li = document.createElement('li');
+        const li = document.createElement('div');
+        li.className = 'available-item';
+        li.setAttribute('role', 'listitem');
         li.classList.toggle('chosen', item.isChosen);
         const slotLabel =
           item.slot === 'Morning' ? 'morning' : item.slot === 'Afternoon' ? 'afternoon' : (item.slot || 'N/A').toLowerCase();
@@ -2699,8 +2705,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   if (majorToggle && majorDropdown) {
-    majorToggle.addEventListener('click', () => {
+    majorToggle.addEventListener('click', (e) => {
+      console.log('Major dropdown clicked, current classes:', majorDropdown.classList);
       const isOpen = majorDropdown.classList.toggle('open');
+      console.log('After toggle, isOpen:', isOpen, 'classes:', majorDropdown.classList);
       majorToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
     majorOptions.forEach((opt) => {
