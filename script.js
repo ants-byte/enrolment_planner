@@ -8,8 +8,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 */
 (() => {
   const subjects = Array.from(
-    document.querySelectorAll('.main-grid td:not(.empty), .electives-grid td:not(.empty)')
-  );
+    document.querySelectorAll('.main-grid [data-subject], .electives-grid [data-subject]')
+  ).filter((cell) => cell.dataset.subject);
 
   const prerequisites = {
     BIT105: [],
@@ -168,6 +168,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const resetSection = document.getElementById('reset-section');
   const nextSemList = document.getElementById('next-sem-list');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
+  if (toggleSemCountsBtn) toggleSemCountsBtn.textContent = 'Show semesters remaining';
   const electivesLabel = document.getElementById('electives-label');
   let modalLocked = false;
   let modalPrevStyle = null;
@@ -273,7 +274,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   document.body.appendChild(semTooltip);
   let semTooltipTimer = null;
   const majorSlots = [];
-  const electivesGridCells = Array.from(document.querySelectorAll('.electives-grid td[data-slot]'));
+  const electivesGridCells = Array.from(document.querySelectorAll('.electives-grid [data-slot]'));
 
   const isPlaceholder = (cell) => cell.dataset.subject && cell.dataset.subject.startsWith('ELECTIVE');
 
@@ -303,7 +304,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const id = cell.dataset.subject;
       if (!id) return;
       if (subjectMeta[id]) return;
-      const name = cell.querySelector('.subject-note')?.textContent?.trim() || id;
+      const name =
+        cell.querySelector('.subject-title')?.textContent?.trim() ||
+        cell.querySelector('.subject-note')?.textContent?.trim() ||
+        id;
       const note = cell.querySelector('.prerequsites-note')?.textContent || '';
       const classes = Array.from(cell.classList).filter((c) => baseTypeClasses.includes(c));
       subjectMeta[id] = { name, note, classes };
@@ -651,28 +655,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (persist) electiveAssignments = [...normalized];
     const placeholders = getElectivePlaceholders();
     placeholders.forEach((cell, idx) => {
+      const titleEl = cell.querySelector('.subject-note');
+      const noteEl = cell.querySelector('.prerequsites-note');
+      if (titleEl && !cell.dataset.originalTitle) cell.dataset.originalTitle = titleEl.textContent || '';
+      if (noteEl && !cell.dataset.originalNote) cell.dataset.originalNote = noteEl.textContent || '';
+
       cell.querySelectorAll('.elective-credit').forEach((n) => n.remove());
-      cell.classList.remove('completed');
-      cell.classList.remove('toggled');
       cell.classList.remove('use-credit');
       cell.classList.remove('filled-elective');
-      cell.setAttribute('aria-pressed', 'false');
       const text = normalized[idx];
+      const useMatch = text ? text.match(/^(USE\d{3})/i) : null;
       if (text) {
+        // Update placeholder label to reflect chosen USE code
+        if (useMatch && titleEl && noteEl) {
+          const codeText = useMatch[1].toUpperCase();
+          titleEl.textContent = `Elective ${idx + 1}`;
+          noteEl.textContent = `${codeText} Unspecified Elective`;
+        } else if (titleEl && noteEl) {
+          // Specified elective: mirror into placeholder
+          titleEl.textContent = `Elective ${idx + 1}`;
+          noteEl.textContent = text;
+        }
+
         const note = document.createElement('div');
         note.className = 'elective-credit';
-        note.textContent = text;
-        const title = cell.querySelector('.subject-note');
-        if (title) {
-          title.insertAdjacentElement('afterend', note);
-        } else {
-          cell.appendChild(note);
-        }
+        note.textContent = useMatch ? `${useMatch[1].toUpperCase()} Unspecified Elective` : text;
+        if (titleEl) titleEl.insertAdjacentElement('afterend', note);
+        else cell.appendChild(note);
         cell.classList.add('completed');
         cell.classList.add('filled-elective');
         if (/^USE\d{3}/i.test(text)) {
           cell.classList.add('use-credit');
         }
+      } else {
+        // Restore original label when clearing
+        if (titleEl && cell.dataset.originalTitle) titleEl.textContent = cell.dataset.originalTitle;
+        if (noteEl && cell.dataset.originalNote) noteEl.textContent = cell.dataset.originalNote;
+        cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
+        cell.setAttribute('aria-pressed', 'false');
       }
     });
   };
@@ -680,7 +700,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildElectiveAssignments = () => {
     const entries = [];
     electiveCodesState.forEach((code) => {
-      entries.push(`${code} (Unspecified Elective)`);
+      entries.push(`${code} Unspecified Elective`);
     });
     const electiveSubjects = subjects.filter((cell) => {
       const id = cell.dataset.subject;
@@ -691,7 +711,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     electiveSubjects.forEach((cell) => {
       const id = cell.dataset.subject;
       const name = getSubjectName(id);
-      entries.push(`${id} - ${name}`);
+      const label = `${id} - ${name}`;
+      entries.push(label);
+      // Mirror the specified elective name into the placeholder title/note for clarity
+      const slot = cell.dataset.slot;
+      if (slot) {
+        const placeholderCell = document.querySelector(`.electives-grid [data-slot="${slot}"]`);
+        if (placeholderCell) {
+          const titleEl = placeholderCell.querySelector('.subject-note');
+          const noteEl = placeholderCell.querySelector('.prerequsites-note');
+          if (titleEl) titleEl.textContent = `Elective ${slot.slice(-1)}`;
+          if (noteEl) noteEl.textContent = `${id} ${name}`;
+        }
+      }
     });
     return entries;
   };
@@ -953,7 +985,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     clearButton.style.display = hasAny ? '' : 'none';
     const threshold = getLoadThreshold();
     if (showTimetableButton) {
-      const hasSelected = selectedCount > 0;
+      const hasSelected = selectedCount >= threshold && threshold > 0;
       // Ensure inline display overrides the hidden-initial class when we have selections.
       showTimetableButton.style.display = hasSelected ? 'block' : 'none';
       showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
@@ -1109,7 +1141,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!id || isPlaceholder(cell)) {
       const major = getCurrentMajor();
       const msg =
-        'Elective 4: Fill these Elective boxes with the subjects in the Electives section below.';
+        '<div class="inline-electives-heading">Electives</div><br>Fill these Elective boxes with the subjects from the below Electives section (or with any subject that you have completed at diploma level or higher.").';
       const p = document.createElement('div');
       p.innerHTML = msg;
       tooltip.appendChild(p);
@@ -1162,6 +1194,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : cell.classList.contains('software')
             ? 'Software Development'
             : 'Elective';
+      const majorCoreText = cell.classList.contains('core')
+        ? 'Core'
+        : cell.classList.contains('network')
+          ? 'Network Security'
+          : cell.classList.contains('ba')
+            ? 'Business Analytics'
+            : cell.classList.contains('software')
+              ? 'Software Development'
+              : 'Elective';
       const roomHtml = data.room ? `<div><span class="inline-strong">Room:</span> ${data.room}</div>` : '';
       const lecturerHtml = data.teacher ? `<div><span class="inline-strong">Lecturer:</span> ${data.teacher}</div>` : '';
       const depsList =
@@ -1173,10 +1214,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         depsRaw === 'None'
           ? '<div class="pre-block"><span class="inline-strong">Needed for:</span> None</div>'
           : `<div class="pre-block"><span class="inline-strong">Needed for:</span><br>${depsRaw}</div>`;
-      const streamHtml = streamLabel === 'Elective' ? '' : `<div class="pre-block">${streamLabel}</div>`;
+      const streamHtml =
+        id === 'BIT245'
+          ? `<div class="pre-block"><span class="inline-strong">Major/Core:</span> Both Business Analytics & Software Development</div>`
+          : streamLabel === 'Elective'
+            ? ''
+            : `<div class="pre-block">${streamLabel}</div>`;
       tooltip.insertAdjacentHTML(
         'beforeend',
-        `${timeHtml}${roomHtml}${lecturerHtml}<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}${streamHtml}`
+        `${timeHtml}${roomHtml}${lecturerHtml}<div class="tooltip-gap"></div>${
+          id === 'BIT245'
+            ? `${streamHtml}`
+            : `<div class="pre-block"><span class="inline-strong">Major/Core:</span> ${majorCoreText}</div>`
+        }<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}${
+          id === 'BIT245' ? '' : streamHtml
+        }`
       );
     }
 
@@ -1184,8 +1236,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const rect = cell.getBoundingClientRect();
       const tooltipWidth = tooltip.offsetWidth || rect.width * 0.9;
       const offsetX = event.clientX - rect.left - tooltipWidth / 2;
-      const maxX = rect.width - tooltipWidth;
-      const clampedX = Math.max(0, Math.min(offsetX, maxX));
+      // On smaller screens allow the tooltip to overflow the card so content isn't cramped.
+      const allowOverflow = window.innerWidth < 1300;
+      const minX = allowOverflow ? -tooltipWidth * 0.35 : 0;
+      const maxX = allowOverflow ? rect.width - tooltipWidth * 0.65 : rect.width - tooltipWidth;
+      const clampedX = Math.max(minX, Math.min(offsetX, maxX));
       const offsetY = event.clientY - rect.top + 27;
       tooltip.style.left = `${clampedX}px`;
       tooltip.style.top = `${offsetY}px`;
@@ -1247,24 +1302,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!meta) return;
     clearNotThisSemUI(cell);
     cell.dataset.subject = code;
+    const retained = Array.from(cell.classList).filter((cls) =>
+      ['completed', 'toggled', 'satisfied', 'can-select-now', 'locked', 'not-this-sem'].includes(cls)
+    );
     cell.className = '';
+    retained.forEach((cls) => cell.classList.add(cls));
+    cell.classList.add('subject-card');
+    cell.classList.add('clickable');
     const base = typeClass || meta.classes.find((c) => baseTypeClasses.includes(c)) || '';
     cell.classList.add(base || 'elective');
+    const inElectivesGrid = cell.closest('.electives-grid');
+    const isPlaceholderCode = code.startsWith('ELECTIVE');
+    if (isPlaceholderCode) cell.classList.add('placeholder-card');
+    else if (inElectivesGrid) cell.classList.add('elective-stream');
     const hasSas = meta.classes.includes('sas');
     if (hasSas) cell.classList.add('sas');
 
-    // Reuse or create content nodes, normalizing old class names.
-    cell
-      .querySelectorAll('.subject-note, .course, .prerequsites-note, .note')
-      .forEach((n) => n.remove());
-    let courseEl = document.createElement('span');
-    let noteEl = document.createElement('span');
-    cell.appendChild(courseEl);
-    cell.appendChild(noteEl);
-    courseEl.className = 'subject-note';
+    // Remove existing text nodes and rebuild display
+    cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note').forEach((n) => n.remove());
+
+    const codeEl = document.createElement('span');
+    codeEl.className = 'subject-code';
+    codeEl.textContent = code;
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'subject-note subject-title';
+    const codePrefix = new RegExp(`^${code}\\s*`, 'i');
+    const nameText = (meta.name || '').replace(codePrefix, '').trim() || meta.name || code;
+    titleEl.textContent = nameText;
+
+    const noteEl = document.createElement('span');
     noteEl.className = 'prerequsites-note';
-    courseEl.textContent = meta.name;
-    noteEl.textContent = meta.note;
+    noteEl.textContent = meta.note || '\u00a0';
+
+    cell.appendChild(codeEl);
+    cell.appendChild(titleEl);
+    cell.appendChild(noteEl);
   };
 
   const computeElectiveList = (major) => {
@@ -1325,15 +1398,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const applyElectiveStyling = (cell, code, currentMajor) => {
     clearNotThisSemUI(cell);
-    cell.classList.remove('network', 'ba', 'software', 'dual', 'dual-split', 'elective', 'elective-placeholder');
+    cell.classList.remove(
+      'network',
+      'ba',
+      'software',
+      'dual',
+      'dual-split',
+      'elective',
+      'elective-placeholder',
+      'elective-stream',
+      'placeholder-card',
+      'elective-spacer'
+    );
     cell.classList.add('elective');
+    cell.classList.add('elective-stream');
     const isNS = majorConfig.ns.codes.includes(code);
     const isBA = majorConfig.ba.codes.includes(code);
     const isSD = majorConfig.sd.codes.includes(code);
     if (isNS) cell.classList.add('network');
     else if (isBA) cell.classList.add('ba');
     else if (isSD) cell.classList.add('software', 'sd-elective');
-    else cell.classList.add('elective');
     if (code === 'BIT245') {
       if (currentMajor === 'ns') cell.classList.add('dual-split');
     }
@@ -1366,7 +1450,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const noteEl = cell.querySelector('.prerequsites-note') || cell.querySelector('.note');
       if (courseEl) courseEl.textContent = '';
       if (noteEl) noteEl.textContent = '';
-      cell.className = 'elective-spacer';
+      cell.className = 'subject-card elective-spacer placeholder-card';
       attachTooltip(cell);
     });
     // electives
@@ -1382,7 +1466,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const noteEl = cell.querySelector('.prerequsites-note');
         if (courseEl) courseEl.textContent = '';
         if (noteEl) noteEl.textContent = '';
-        cell.className = 'elective-spacer';
+        cell.className = 'subject-card elective-spacer placeholder-card empty';
         attachTooltip(cell);
         return;
       }
@@ -1801,11 +1885,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         handleToggle(cell);
       }
     });
-    if (majorSlots.length < majorConfig.ns.codes.length && majorConfig.ns.codes.includes(cell.dataset.subject)) {
-      majorSlots.push(cell);
-    }
   });
   captureSubjectMeta();
+  majorSlots.length = 0;
+  majorConfig.ns.codes.forEach((code) => {
+    const slotCell = subjects.find((c) => c.dataset.subject === code);
+    if (slotCell) majorSlots.push(slotCell);
+  });
 
   if (completedModeButton) {
     completedModeButton.addEventListener('click', () => {
@@ -2536,34 +2622,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const streamText = streams
       .map((s) => `<span class="stream-label ${s.className}"><strong>${s.label}</strong></span>`)
       .join(' and ');
-    el.innerHTML = `<strong>Electives.</strong> Fill the Elective boxes above with subjects from these ${streamText} streams`;
+    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill the Elective boxes above with subjects from these ${streamText} streams`;
   };
   const updateMajor = () => {
-    const subtitle = document.querySelector('.subtitle');
     const sheet = document.querySelector('.sheet');
     const dualKey = document.querySelector('.key .dual');
     const dualRow = dualKey?.parentElement;
-    if (!majorDropdown || !subtitle || !sheet) return;
+    if (!majorDropdown || !sheet) return;
     sheet.classList.remove('major-ba', 'major-sd');
-    subtitle.classList.remove('subtitle-network', 'subtitle-ba', 'subtitle-sd', 'subtitle-undecided');
     const val = majorDropdown.dataset.value || 'undecided';
+    majorDropdown.classList.remove('major-network', 'major-ba', 'major-sd', 'major-undecided');
     if (val === 'network') {
-      subtitle.textContent = 'Network Security';
-      subtitle.classList.add('subtitle-network');
+      majorLabel.textContent = 'Network Security';
+      majorDropdown.classList.add('major-network');
       if (dualRow) dualRow.style.display = '';
     } else if (val === 'ba') {
-      subtitle.textContent = 'Business Analytics';
-      subtitle.classList.add('subtitle-ba');
+      majorLabel.textContent = 'Business Analytics';
+      majorDropdown.classList.add('major-ba');
       sheet.classList.add('major-ba');
       if (dualRow) dualRow.style.display = 'none';
     } else if (val === 'sd') {
-      subtitle.textContent = 'Software Development';
-      subtitle.classList.add('subtitle-sd');
+      majorLabel.textContent = 'Software Development';
+      majorDropdown.classList.add('major-sd');
       sheet.classList.add('major-sd');
       if (dualRow) dualRow.style.display = 'none';
     } else {
-      subtitle.innerHTML = 'Major undecided. <span class="highlight">Network Security</span> is being used here.';
-      subtitle.classList.add('subtitle-undecided');
+      majorLabel.textContent = 'Undecided. Network Security used';
+      majorDropdown.classList.add('major-undecided');
       if (dualRow) dualRow.style.display = '';
     }
     applyMajorConfig(val);
@@ -2682,7 +2767,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const selectedCount = getSelectedRows().length;
   if (showTimetableButton) {
     const threshold = getLoadThreshold();
-    showTimetableButton.textContent = selectedCount > 0 && selectedCount < threshold ? 'Timetable options' : 'Show timetable';
+    showTimetableButton.textContent =
+      selectedCount > 0 && selectedCount < threshold ? 'Timetable options' : 'Your semester plan';
   }
   updatePrereqErrors();
   updateWarnings();
