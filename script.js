@@ -33,7 +33,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT352: ['BIT242'],
     BIT353: ['BIT233'],
     BIT313: ['BIT213'],
-    BIT134: ['BIT242'],
     BIT355: ['BIT236', 'BIT230'],
     BIT356: ['BIT236', 'BIT230'],
     BIT357: ['BIT230'],
@@ -71,11 +70,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const timetable = {
-    BIT105: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson', name: 'Effective Business and Communication' },
+    BIT105: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson', name: 'Business Enquiry and Communication' },
     BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Tony (Xiaodong) Wang, Sitalakshmi Venkatraman, Antony Di Serio', name: 'Capstone Experience 2' },
     BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE301', teacher: 'Dominic Mammone', name: 'Network Communication Concepts' },
     BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE110 / PE302', teacher: 'Tony (Xiaodong) Wang, Sitalakshmi Venkatraman, Antony Di Serio', name: 'Capstone Experience 1' },
-    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PE302', teacher: 'TBA', name: 'Mobile Development Concepts' },
+    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PE302', teacher: 'TBA', name: 'Mobile Application Development' },
     BIT111: { day: 'Tuesday', slot: 'Morning', room: 'PE301', teacher: 'Antony Di Serio', name: 'Programming Concepts' },
     BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE227', teacher: 'Tony (Xiaodong) Wang', name: 'Cyber Vulnerability and Hardening' },
     BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars', name: 'Network Architecture and Protocols' },
@@ -84,7 +83,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PE305', teacher: 'Antony Di Serio', name: 'Web Development' },
     BIT108: { day: 'Wednesday', slot: 'Morning', room: 'PE301', teacher: 'David Robinson', name: 'Foundations of Information Technology' },
     BIT244: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni', name: 'IT and Business Crime' },
-    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PE228', teacher: 'Dominic Mammone', name: 'Professional Practice and Ethics' },
+    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PE228', teacher: 'Dominic Mammone', name: 'Professional IT Practice and Ethics' },
     BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE227', teacher: 'Antony Di Serio', name: 'Object Oriented Programming' },
     BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PE302', teacher: 'Russul Al-Anni', name: 'Network Design' },
     BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE301', teacher: 'Nidha Qazi', name: 'Database Systems' },
@@ -610,7 +609,53 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const electiveCodeOrder = ['USE101', 'USE102', 'USE201', 'USE301'];
-  let electiveCodesState = [];
+  const useDisplayNames = {
+    USE101: 'Unspecified Elective Year 1',
+    USE102: 'Unspecified Elective Year 1',
+    USE201: 'Unspecified Elective Year 2',
+    USE301: 'Unspecified Elective Year 3',
+  };
+  // Tracks USE assignment per placeholder slot (ELECTIVE1..4) by index
+  let electivePlaceholderState = ['', '', '', ''];
+
+  const compactElectivePlaceholdersFrom = (startIdx = 0) => {
+    const remainingCount = electivePlaceholderState.filter((code, idx) => idx !== startIdx && !!code).length;
+    electivePlaceholderState = electivePlaceholderState.map((_, idx) => {
+      if (idx <= remainingCount - 1) return electiveCodeOrder[idx] || '';
+      return '';
+    });
+  };
+
+  const getNextAvailableUseSlotIndex = () => {
+    const placeholders = getElectivePlaceholders();
+    return placeholders.findIndex((cell, idx) => {
+      const hasUse = !!electivePlaceholderState[idx];
+      const hasAnyCompleted = cell.classList.contains('completed');
+      return !hasUse && !hasAnyCompleted;
+    });
+  };
+
+  const updatePlaceholderDisplayForMode = () => {
+    const placeholders = getElectivePlaceholders();
+    placeholders.forEach((cell, idx) => {
+      const titleEl = cell.querySelector('.subject-note');
+      const noteEl = cell.querySelector('.prerequsites-note');
+      if (titleEl && !cell.dataset.originalTitle) cell.dataset.originalTitle = titleEl.textContent || '';
+      if (noteEl && !cell.dataset.originalNote) cell.dataset.originalNote = noteEl.textContent || '';
+      const hasUse = !!electivePlaceholderState[idx];
+      const isCompleted = cell.classList.contains('completed');
+      const isEmpty = !hasUse && !isCompleted;
+      cell.classList.remove('hide-tooltip');
+      if (completedMode && isEmpty) {
+        if (titleEl) titleEl.textContent = 'Click to set as a USE (Unspecified Elective)';
+        if (noteEl) noteEl.textContent = '';
+      } else if (isEmpty) {
+        if (titleEl && cell.dataset.originalTitle) titleEl.textContent = cell.dataset.originalTitle;
+        if (noteEl && cell.dataset.originalNote) noteEl.textContent = cell.dataset.originalNote;
+      }
+    });
+    placeholders.forEach((cell) => attachTooltip(cell));
+  };
 
   const getElectivePlaceholders = () =>
     subjects
@@ -650,57 +695,127 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   let electiveAssignments = [];
 
+  // Track elective visual state independently from DOM
+  const electiveSelectionState = new Map();
+
+  const saveElectiveVisuals = () => {
+    electiveSelectionState.clear();
+    // Save state for ALL elective grid cells, not just placeholders
+    electivesGridCells.forEach((cell) => {
+      const slot = cell.dataset.slot;
+      if (slot) {
+        electiveSelectionState.set(slot, {
+          completed: cell.classList.contains('completed'),
+          toggled: cell.classList.contains('toggled'),
+          satisfied: cell.classList.contains('satisfied'),
+          locked: cell.classList.contains('locked'),
+        });
+      }
+    });
+  };
+
+  const restoreElectiveVisuals = () => {
+    // Restore state for ALL elective grid cells
+    electivesGridCells.forEach((cell) => {
+      const slot = cell.dataset.slot;
+      if (!slot) return;
+      const state = electiveSelectionState.get(slot);
+      if (state?.completed) {
+        cell.classList.add('completed');
+      }
+      if (state?.toggled) {
+        cell.classList.add('toggled');
+      }
+      if (state?.satisfied) {
+        cell.classList.add('satisfied');
+      }
+      if (state?.locked) {
+        cell.classList.add('locked');
+      }
+    });
+  };
+
   const setElectiveCredits = (entries = [], persist = true) => {
     const normalized = (entries || []).filter((text) => (text ?? '').toString().trim().length > 0);
-    if (persist) electiveAssignments = [...normalized];
+    // When we refresh visuals only (persist === false), avoid shrinking the visible electives list
+    // if a recompute temporarily drops items (e.g., because prereq chains get recalculated).
+    // The persisted electiveAssignments remain the source of truth until an explicit user action
+    // updates them with persist === true.
+    const stableEntries = !persist && normalized.length < electiveAssignments.length ? electiveAssignments : normalized;
     const placeholders = getElectivePlaceholders();
+    // Build a fresh view of assignments based on current state (USE slots + toggled/completed BIT electives).
+    const displayEntries = (() => {
+      const entries = [];
+      electivePlaceholderState.forEach((code) => {
+        if (!code) return;
+        entries.push(`${code} ${useDisplayNames[code] || 'Unspecified Elective'}`);
+      });
+      const electiveSubjects = subjects.filter((cell) => {
+        const id = cell.dataset.subject;
+        const inElectivesGrid = cell.closest('.electives-grid');
+        const isElectiveSubject = id && id.startsWith('BIT') && !!inElectivesGrid && !isPlaceholder(cell);
+        return isElectiveSubject && (cell.classList.contains('toggled') || cell.classList.contains('completed'));
+      });
+      electiveSubjects.forEach((cell) => {
+        const id = cell.dataset.subject;
+        const name = getSubjectName(id);
+        entries.push(`${id} ${name}`);
+      });
+      return entries;
+    })();
+    // Note: Do not pad from stableEntries for display; rely on live state above to avoid misalignment.
+    if (persist) electiveAssignments = [...normalized];
     placeholders.forEach((cell, idx) => {
       const titleEl = cell.querySelector('.subject-note');
       const noteEl = cell.querySelector('.prerequsites-note');
       if (titleEl && !cell.dataset.originalTitle) cell.dataset.originalTitle = titleEl.textContent || '';
       if (noteEl && !cell.dataset.originalNote) cell.dataset.originalNote = noteEl.textContent || '';
 
+      // Always clear previously injected elective-credit elements before rendering fresh content
       cell.querySelectorAll('.elective-credit').forEach((n) => n.remove());
-      cell.classList.remove('use-credit');
-      cell.classList.remove('filled-elective');
-      const text = normalized[idx];
+
+      const useCode = electivePlaceholderState[idx] || '';
+      const useText = useCode ? `${useCode} ${useDisplayNames[useCode] || 'Unspecified Elective'}` : '';
+      const text = displayEntries[idx] || useText || '';
       const useMatch = text ? text.match(/^(USE\d{3})/i) : null;
+
+      // Only reach here if we have new text content
       if (text) {
         // Update placeholder label to reflect chosen USE code
         if (useMatch && titleEl && noteEl) {
           const codeText = useMatch[1].toUpperCase();
-          titleEl.textContent = `Elective ${idx + 1}`;
-          noteEl.textContent = `${codeText} Unspecified Elective`;
+          const display = useDisplayNames[codeText] || 'Unspecified Elective';
+          titleEl.textContent = `${codeText} ${display}`;
+          noteEl.textContent = '';
         } else if (titleEl && noteEl) {
           // Specified elective: mirror into placeholder
-          titleEl.textContent = `Elective ${idx + 1}`;
-          noteEl.textContent = text;
+          titleEl.textContent = text;
+          noteEl.textContent = '';
         }
-
-        const note = document.createElement('div');
-        note.className = 'elective-credit';
-        note.textContent = useMatch ? `${useMatch[1].toUpperCase()} Unspecified Elective` : text;
-        if (titleEl) titleEl.insertAdjacentElement('afterend', note);
-        else cell.appendChild(note);
         cell.classList.add('completed');
         cell.classList.add('filled-elective');
-        if (/^USE\d{3}/i.test(text)) {
+        if (useCode) {
           cell.classList.add('use-credit');
+        } else {
+          cell.classList.remove('use-credit');
         }
       } else {
-        // Restore original label when clearing
+        // Only restore original label if clearing (no persisted state)
         if (titleEl && cell.dataset.originalTitle) titleEl.textContent = cell.dataset.originalTitle;
         if (noteEl && cell.dataset.originalNote) noteEl.textContent = cell.dataset.originalNote;
-        cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
+        cell.classList.remove('toggled', 'completed', 'filled-elective', 'use-credit');
         cell.setAttribute('aria-pressed', 'false');
       }
     });
+    updatePlaceholderDisplayForMode();
   };
 
   const buildElectiveAssignments = () => {
     const entries = [];
-    electiveCodesState.forEach((code) => {
-      entries.push(`${code} Unspecified Elective`);
+    const placeholders = getElectivePlaceholders();
+    placeholders.forEach((cell, idx) => {
+      const code = electivePlaceholderState[idx];
+      if (code) entries.push(`${code} Unspecified Elective`);
     });
     const electiveSubjects = subjects.filter((cell) => {
       const id = cell.dataset.subject;
@@ -924,12 +1039,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const threshold = getLoadThreshold();
     if (force) {
       recomputeAvailability(usePlanned === null ? true : usePlanned);
+      if (completedMode) {
+        setElectiveCredits(buildElectiveAssignments(), false);
+      }
       document.body.classList.toggle('show-availability', plannedCount >= threshold || livePrereqUpdates);
       updatePrereqErrors();
       return;
     }
     if (livePrereqUpdates || plannedCount >= threshold) {
       recomputeAvailability(usePlanned === null ? true : usePlanned);
+      if (completedMode) {
+        setElectiveCredits(buildElectiveAssignments(), false);
+      }
       document.body.classList.toggle('show-availability', true);
     } else {
       resetAvailabilityVisuals();
@@ -1012,7 +1133,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const showList = plannedCount >= threshold;
       if (!showList || !rows.length) {
         const li = document.createElement('li');
-        li.textContent = 'No subjects satisfied for next semester yet.';
+        li.textContent = 'Select this semester’s subjects first, and next semester’s options will be revealed.';
         nextSemList.appendChild(li);
       } else {
         rows.forEach((item) => {
@@ -1043,6 +1164,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     document.body.classList.toggle('completed-mode', completedMode);
+    updatePlaceholderDisplayForMode();
 
     const disableOthers = (btn, disabled) => {
       if (!btn) return;
@@ -1139,9 +1261,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     hoverZone.className = 'hover-zone';
 
     if (!id || isPlaceholder(cell)) {
-      const major = getCurrentMajor();
-      const msg =
-        '<div class="inline-electives-heading">Electives</div><br>Fill these Elective boxes with the subjects from the below Electives section (or with any subject that you have completed at diploma level or higher.").';
+      const msg = completedMode
+        ? '<div class="inline-electives-heading">Electives</div><br>You have <b>2 options</b> for marking these 4 Elective boxes as complete:<br><br><b>1.</b>&nbsp; Click on the subjects in the streams below to have them appear in these 4 Elective boxes.<br><b>2.</b>&nbsp; If you click on these 4 boxes when they are empty, they will be marked as completed as "Unspecified Electives (USE)"'
+        : '<div class="inline-electives-heading">Electives</div><br>Fill these Elective boxes with the subjects from the below Electives section (or with any subject that you have completed at diploma level or higher.").';
       const p = document.createElement('div');
       p.innerHTML = msg;
       tooltip.appendChild(p);
@@ -1284,6 +1406,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
       if (!id) return;
+      // Skip elective placeholder cells and cells in electives grid - they manage their own state
+      if (isPlaceholder(cell) || cell.closest('.electives-grid')) return;
       const st = state[id];
       cell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now', 'locked', 'coreq-selectable', 'chain-delay', 'final-sem-pill', 'next-sem-warning');
       clearNotThisSemUI(cell);
@@ -1725,7 +1849,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       setLivePrereqEnabled(true);
       conditionalRecompute({ force: true, usePlanned: false });
       updateResetState();
-      electiveCodesState = [];
+      electivePlaceholderState = ['', '', '', ''];
       setElectiveCredits([], true);
       updateElectiveWarning();
       updateSelectedList();
@@ -1761,9 +1885,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     uniqueCodes.forEach((code) => {
       if (code.startsWith('USE')) {
         if (electiveIndex < electivePlaceholders.length) {
-          electivePlaceholders[electiveIndex].classList.add('completed');
-          electivePlaceholders[electiveIndex].classList.remove('toggled');
-          electivePlaceholders[electiveIndex].setAttribute('aria-pressed', 'false');
+          electivePlaceholderState[electiveIndex] = code;
+          const cell = electivePlaceholders[electiveIndex];
+          cell.classList.add('completed');
+          cell.classList.remove('toggled');
+          cell.setAttribute('aria-pressed', 'false');
           electiveIndex += 1;
         }
         return;
@@ -1777,10 +1903,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     codeInput.value = '';
     hideCodeModal();
+    electivePlaceholderState = electivePlaceholderState.map((val, idx) => useCodes[idx] || '');
     conditionalRecompute({ force: true, usePlanned: false });
     updateResetState();
-    electiveCodesState = [...useCodes];
-    setElectiveCredits(buildElectiveAssignments(), true);
+    // Important: Always call setElectiveCredits AFTER storing electivePlaceholderState, and before other updates
+    // This ensures the pills are created/preserved with the latest data
+    const assignments = buildElectiveAssignments();
+    setElectiveCredits(assignments, true);
     updateElectiveWarning();
     updateSelectedList();
   };
@@ -1790,25 +1919,63 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!id) return;
     const placeholder = isPlaceholder(cell);
     const notThisSem = cell.classList.contains('not-this-sem');
-    if (!completedMode && placeholder) return;
     if (!completedMode && notThisSem) return;
+    const placeholders = placeholder ? getElectivePlaceholders() : [];
+    const placeholderIdx = placeholder ? placeholders.indexOf(cell) : -1;
+    if (placeholder && placeholderIdx >= 0) {
+      const slot = cell.dataset.slot;
+      if (slot) {
+        const subjCell = document.querySelector(`.electives-grid [data-slot=\"${slot}\"]`);
+        const subjId = subjCell?.dataset.subject || '';
+        const isBitElective =
+          subjId.startsWith('BIT') && (subjCell.classList.contains('toggled') || subjCell.classList.contains('completed'));
+        if (isBitElective) {
+          subjCell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now');
+          subjCell.setAttribute('aria-pressed', 'false');
+          cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
+          cell.setAttribute('aria-pressed', 'false');
+          electivePlaceholderState[placeholderIdx] = '';
+          setElectiveCredits(buildElectiveAssignments(), true);
+          updateElectiveWarning();
+          updateSelectedList();
+          conditionalRecompute({ force: true, usePlanned: false });
+          updateResetState();
+          return;
+        }
+      }
+    }
     if (completedMode) {
       // Credits mode
       if (placeholder) {
-        const wasCompleted = cell.classList.contains('completed');
-        if (wasCompleted) {
-          // remove the most recently added USE code, if any
-          electiveCodesState.pop();
-        } else {
-          const nextUse = electiveCodeOrder.find((code) => !electiveCodesState.includes(code));
-          if (nextUse) electiveCodesState.push(nextUse);
+        const placeholders = getElectivePlaceholders();
+        const idx = placeholders.indexOf(cell);
+        if (idx >= 0) {
+          const currentCode = electivePlaceholderState[idx];
+          if (currentCode) {
+            // Toggle off always allowed; then compact leftwards
+            electivePlaceholderState[idx] = '';
+            compactElectivePlaceholdersFrom(idx);
+            cell.classList.remove('completed', 'filled-elective', 'use-credit');
+            cell.setAttribute('aria-pressed', 'false');
+          } else {
+            // Only allow turning on the first empty placeholder
+            const firstEmptyIdx = getNextAvailableUseSlotIndex();
+            if (firstEmptyIdx !== idx) return;
+            const nextUse = electiveCodeOrder.find((code) => !electivePlaceholderState.includes(code));
+            if (nextUse) {
+              electivePlaceholderState[idx] = nextUse;
+              cell.classList.add('completed');
+              cell.classList.remove('toggled');
+              cell.setAttribute('aria-pressed', 'false');
+            }
+          }
+          setElectiveCredits(buildElectiveAssignments(), true);
+          updateElectiveWarning();
+          updateSelectedList();
+          conditionalRecompute({ force: true, usePlanned: false });
+          updateResetState();
+          return;
         }
-        setElectiveCredits(buildElectiveAssignments(), true);
-        updateElectiveWarning();
-        updateSelectedList();
-        conditionalRecompute({ force: true, usePlanned: false });
-        updateResetState();
-        return;
       }
 
       const nowCompleted = cell.classList.toggle('completed');
@@ -1819,6 +1986,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.setAttribute('aria-pressed', 'false');
       }
     } else {
+      if (placeholder) {
+        const placeholders = getElectivePlaceholders();
+        const idx = placeholders.indexOf(cell);
+        if (idx >= 0) {
+          const currentCode = electivePlaceholderState[idx];
+          // In planning mode, only allow clearing an existing USE; no turning on
+          if (currentCode) {
+            electivePlaceholderState[idx] = '';
+            compactElectivePlaceholdersFrom(idx);
+            cell.classList.remove('completed', 'filled-elective', 'use-credit');
+            cell.setAttribute('aria-pressed', 'false');
+          } else {
+            return;
+          }
+          setElectiveCredits(buildElectiveAssignments(), true);
+          updateElectiveWarning();
+          updateSelectedList();
+          conditionalRecompute({ force: true, usePlanned: false });
+          updateResetState();
+          return;
+        }
+      }
       if (cell.classList.contains('completed')) return;
       if (!overrideMode) {
         const completed = new Set(
@@ -1869,7 +2058,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.remove('hide-tooltip');
       }
     }
+    // Save elective visual state before recompute
+    saveElectiveVisuals();
     conditionalRecompute({ force: completedMode, usePlanned: completedMode ? false : null });
+    // Restore elective visual state after recompute
+    restoreElectiveVisuals();
     updateResetState();
     updateElectiveWarning();
     updateSelectedList();

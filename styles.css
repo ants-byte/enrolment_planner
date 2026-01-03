@@ -1070,6 +1070,12 @@ input:checked+.slider:before {
   padding: 6px 6px;
 }
 
+.electives-grid td .subject-card {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
 .subject-card.can-select-now {
   box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12), var(--card-shadow);
 }
@@ -1707,6 +1713,13 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   display: none;
 }
 
+/* Allow elective placeholders to show guidance tooltips in completed (credits) mode */
+.completed-mode .elective-placeholder .hover-zone,
+.completed-mode .elective-placeholder .subject-tooltip {
+  pointer-events: auto;
+  display: block;
+}
+
 .hide-tooltip .subject-tooltip {
   display: none !important;
   opacity: 0 !important;
@@ -1974,6 +1987,10 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   content: "Completed via pass";
 }
 
+.subject-card.use-credit.completed::after {
+  content: "Completed via credit";
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -2154,6 +2171,13 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .info-cell .info-tooltip li {
   padding-left: 6px;
+}
+
+.site-footer {
+  margin: 16px auto 12px;
+  text-align: center;
+  color: #ccc;
+  font-size: 12px;
 }
 
 .info-cell:hover .info-tooltip {
