@@ -34,24 +34,8 @@ Created: December 30, 2025
       <div class="drop-zone-text">Drop students workbook here</div>
     </div>
     <aside class="sidebar">
-
-      <div class="sidebar-section ">
-        <div class="sidebar-heading-with-text dim-when-complete">
-          <span class="sidebar-heading">1.</span>
-          <span class="sidebar-section-descriptor">Enter your passes and credits</span>
-        </div>
-        <div class="buttons">
-          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Manually</button>
-        </div>
-      </div>
-
-      <div class="sidebar-section reset-section" id="reset-section">
-        <button id="clear-selections" class="clear-button">Reset</button>
-      </div>
-
       <div class="sidebar-section major-picker dim-when-complete">
-        <div class="sidebar-heading-with-text"><span class="sidebar-heading">2.</span><span
+        <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
             id="sidebar-section-descriptor">Choose your (likely) major</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
@@ -66,6 +50,21 @@ Created: December 30, 2025
           </ul>
         </div>
       </div>
+      <div class="sidebar-section ">
+        <div class="sidebar-heading-with-text dim-when-complete">
+          <span class="sidebar-heading">2.</span>
+          <span class="sidebar-section-descriptor">Enter your pass and credit <b>history</b></span>
+        </div>
+        <div class="buttons">
+          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Manually</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section reset-section" id="reset-section">
+        <button id="clear-selections" class="clear-button">Reset</button>
+      </div>
+
 
       <div class="sidebar-section timetable-panel dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span><span
@@ -113,257 +112,258 @@ Created: December 30, 2025
     </aside>
     <main id="main-content" role="main" class="main-content">
       <div class="sheet">
-      <div class="title">
-        <div class="title-icon"></div>
-        <div class="title-buttons">
-          <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
-          <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
-          <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
-        </div>
-        <h1>Your subject planner</h1>
-      </div>
-
-      <div id="container">
-        <div class="main-grid">
-          <div class="subject-card core clickable" data-subject="BIT121">
-            <span class="subject-code">BIT121</span>
-            <span class="subject-note subject-title">Network Communication Concepts</span>
-            <span class="prerequsites-note">&nbsp;</span>
+        <div class="title">
+          <div class="title-icon"></div>
+          <div class="title-buttons">
+            <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
+            <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
+            <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
           </div>
-          <div class="subject-card network clickable" data-subject="BIT213">
-            <span class="subject-code">BIT213</span>
-            <span class="subject-note subject-title">Network and Cyber Security Essentials</span>
-            <span class="prerequsites-note">Co-requisite: BIT121</span>
-          </div>
-          <div class="subject-card network clickable" data-subject="BIT233">
-            <span class="subject-code">BIT233</span>
-            <span class="subject-note subject-title">Network Design</span>
-            <span class="prerequsites-note">Prerequisite: BIT121</span>
-          </div>
-          <div class="subject-card network clickable" data-subject="BIT353">
-            <span class="subject-code">BIT353</span>
-            <span class="subject-note subject-title">Network Architecture and Protocols</span>
-            <span class="prerequsites-note">Prerequisite: BIT233</span>
-          </div>
-          <div class="subject-card info-card">
-            <div class="hover-zone"></div>
-            <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
-              <ul>
-                <li>14 Core subjects</li>
-                <li>6 major subjects</li>
-                <li>4 Elective subjects.</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="subject-card core clickable" data-subject="BIT106">
-            <span class="subject-code">BIT106</span>
-            <span class="subject-note subject-title">Foundations of Software, Hardware and Cloud Computing</span>
-            <span class="prerequsites-note">&nbsp;</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT108">
-            <span class="subject-code">BIT108</span>
-            <span class="subject-note subject-title">Foundations of Business</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card network clickable" data-subject="BIT244">
-            <span class="subject-code">BIT244</span>
-            <span class="subject-note subject-title">IT and Business Crime</span>
-            <span class="prerequsites-note">Prerequisite: BIT106</span>
-          </div>
-          <div class="subject-card network clickable" data-subject="BIT362">
-            <span class="subject-code">BIT362</span>
-            <span class="subject-note subject-title">Digital Forensics</span>
-            <span class="prerequsites-note">Prerequisite: BIT213</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT314">
-            <span class="subject-code">BIT314</span>
-            <span class="subject-note subject-title">Cybersecurity Management and Governance</span>
-            <span class="prerequsites-note">Prerequisite: BIT241</span>
-          </div>
-
-          <div class="subject-card core clickable" data-subject="BIT112">
-            <span class="subject-code">BIT112</span>
-            <span class="subject-note subject-title">Mathematics for Information Technology</span>
-            <span class="prerequsites-note">&nbsp;</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT231">
-            <span class="subject-code">BIT231</span>
-            <span class="subject-note subject-title">Database Systems</span>
-            <span class="prerequsites-note">Prerequisite: BIT111</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT241">
-            <span class="subject-code">BIT241</span>
-            <span class="subject-note subject-title">Professional IT Practice and Ethics</span>
-            <span class="prerequsites-note">Prerequisite: BIT121, BIT106</span>
-          </div>
-          <div class="subject-card network clickable" data-subject="BIT313">
-            <span class="subject-code">BIT313</span>
-            <span class="subject-note subject-title">Cyber Vulnerability and Hardening</span>
-            <span class="prerequsites-note">Prerequisite: BIT213</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT352">
-            <span class="subject-code">BIT352</span>
-            <span class="subject-note subject-title">System Implementation and Service Management</span>
-            <span class="prerequsites-note">Prerequisite: BIT242</span>
-          </div>
-
-          <div class="subject-card core clickable" data-subject="BIT111">
-            <span class="subject-code">BIT111</span>
-            <span class="subject-note subject-title">Programming Concepts</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT230">
-            <span class="subject-code">BIT230</span>
-            <span class="subject-note subject-title">System Analysis and Design</span>
-            <span class="prerequsites-note">Prerequisites: BIT106, BIT111</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT242">
-            <span class="subject-code">BIT242</span>
-            <span class="subject-note subject-title">IT Project Management</span>
-            <span class="prerequsites-note">Prerequisite: BIT230</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT371">
-            <span class="subject-code">BIT371</span>
-            <span class="subject-note subject-title">Capstone Experience 1</span>
-            <span class="prerequsites-note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
-          </div>
-          <div class="subject-card core clickable" data-subject="BIT372">
-            <span class="subject-code">BIT372</span>
-            <span class="subject-note subject-title">Capstone Experience 2</span>
-            <span class="prerequsites-note">Prerequisite: BIT371</span>
-          </div>
-
-          <div class="subject-card core clickable" data-subject="BIT105">
-            <span class="subject-code">BIT105</span>
-            <span class="subject-note subject-title">Business Enquiry &amp; Communication</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE1">
-            <span class="subject-code">Elective 1</span>
-            <span class="subject-note subject-title">Choose from electives below</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE2">
-            <span class="subject-code">Elective 2</span>
-            <span class="subject-note subject-title">Choose from electives below</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE3">
-            <span class="subject-code">Elective 3</span>
-            <span class="subject-note subject-title">Choose from electives below</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
-          <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE4">
-            <span class="subject-code">Elective 4</span>
-            <span class="subject-note subject-title">Choose from electives below</span>
-            <span class="prerequsites-note">&nbsp;</span>
-          </div>
+          <h1>Your subject planner</h1>
         </div>
 
-        <div class="electives-label" id="electives-label"><span class="inline-electives-heading">Available Electives.</span> Complete any 4:</div>
-        <div class="electives-grid">
-          <div class="subject-card dual-split elective-stream clickable" data-slot="r1c1" data-subject="BIT245">
-            <span class="subject-code">BIT245</span>
-            <span class="subject-note subject-title">Web Development</span>
-            <span class="prerequsites-note">Prerequisites: BIT111</span>
-          </div>
-          <div class="subject-card elective-spacer placeholder-card" data-slot="r1c2"></div>
-          <div class="subject-card elective-spacer placeholder-card" data-slot="r1c3"></div>
-          <div class="subject-card elective-spacer placeholder-card" data-slot="r1c4"></div>
-          <div class="subject-card elective-spacer placeholder-card" data-slot="r1c5"></div>
+        <div id="container">
+          <div class="main-grid">
+            <div class="subject-card core clickable" data-subject="BIT121">
+              <span class="subject-code">BIT121</span>
+              <span class="subject-note subject-title">Network Communication Concepts</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT213">
+              <span class="subject-code">BIT213</span>
+              <span class="subject-note subject-title">Network and Cyber Security Essentials</span>
+              <span class="prerequsites-note">Co-requisite: BIT121</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT233">
+              <span class="subject-code">BIT233</span>
+              <span class="subject-note subject-title">Network Design</span>
+              <span class="prerequsites-note">Prerequisite: BIT121</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT353">
+              <span class="subject-code">BIT353</span>
+              <span class="subject-note subject-title">Network Architecture and Protocols</span>
+              <span class="prerequsites-note">Prerequisite: BIT233</span>
+            </div>
+            <div class="subject-card info-card">
+              <div class="hover-zone"></div>
+              <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
+                <ul>
+                  <li>14 Core subjects</li>
+                  <li>6 major subjects</li>
+                  <li>4 Elective subjects.</li>
+                </ul>
+              </div>
+            </div>
 
-          <div class="subject-card ba elective-stream clickable" data-slot="r2c1" data-subject="BIT236">
-            <span class="subject-code">BIT236</span>
-            <span class="subject-note subject-title">Enterprise Resources</span>
-            <span class="prerequsites-note">Prerequisite: BIT106, BIT231</span>
-          </div>
-          <div class="subject-card ba elective-stream clickable" data-slot="r2c2" data-subject="BIT355">
-            <span class="subject-code">BIT355</span>
-            <span class="subject-note subject-title">Business Intelligence</span>
-            <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card ba elective-stream clickable" data-slot="r2c3" data-subject="BIT356">
-            <span class="subject-code">BIT356</span>
-            <span class="subject-note subject-title">Knowledge Management Systems</span>
-            <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card ba elective-stream clickable" data-slot="r2c4" data-subject="BIT357">
-            <span class="subject-code">BIT357</span>
-            <span class="subject-note subject-title">Business Analysis</span>
-            <span class="prerequsites-note">Prerequisite: BIT230</span>
-          </div>
-          <div class="subject-card ba elective-stream clickable" data-slot="r2c5" data-subject="BIT363">
-            <span class="subject-code">BIT363</span>
-            <span class="subject-note subject-title">E-Business Systems</span>
-            <span class="prerequsites-note">Prerequisites: BIT230, BIT245</span>
+            <div class="subject-card core clickable" data-subject="BIT106">
+              <span class="subject-code">BIT106</span>
+              <span class="subject-note subject-title">Foundations of Software, Hardware and Cloud Computing</span>
+              <span class="prerequsites-note">&nbsp;</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT108">
+              <span class="subject-code">BIT108</span>
+              <span class="subject-note subject-title">Foundations of Business</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT244">
+              <span class="subject-code">BIT244</span>
+              <span class="subject-note subject-title">IT and Business Crime</span>
+              <span class="prerequsites-note">Prerequisite: BIT106</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT362">
+              <span class="subject-code">BIT362</span>
+              <span class="subject-note subject-title">Digital Forensics</span>
+              <span class="prerequsites-note">Prerequisite: BIT213</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT314">
+              <span class="subject-code">BIT314</span>
+              <span class="subject-note subject-title">Cybersecurity Management and Governance</span>
+              <span class="prerequsites-note">Prerequisite: BIT241</span>
+            </div>
+
+            <div class="subject-card core clickable" data-subject="BIT112">
+              <span class="subject-code">BIT112</span>
+              <span class="subject-note subject-title">Mathematics for Information Technology</span>
+              <span class="prerequsites-note">&nbsp;</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT231">
+              <span class="subject-code">BIT231</span>
+              <span class="subject-note subject-title">Database Systems</span>
+              <span class="prerequsites-note">Prerequisite: BIT111</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT241">
+              <span class="subject-code">BIT241</span>
+              <span class="subject-note subject-title">Professional IT Practice and Ethics</span>
+              <span class="prerequsites-note">Prerequisite: BIT121, BIT106</span>
+            </div>
+            <div class="subject-card network clickable" data-subject="BIT313">
+              <span class="subject-code">BIT313</span>
+              <span class="subject-note subject-title">Cyber Vulnerability and Hardening</span>
+              <span class="prerequsites-note">Prerequisite: BIT213</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT352">
+              <span class="subject-code">BIT352</span>
+              <span class="subject-note subject-title">System Implementation and Service Management</span>
+              <span class="prerequsites-note">Prerequisite: BIT242</span>
+            </div>
+
+            <div class="subject-card core clickable" data-subject="BIT111">
+              <span class="subject-code">BIT111</span>
+              <span class="subject-note subject-title">Programming Concepts</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT230">
+              <span class="subject-code">BIT230</span>
+              <span class="subject-note subject-title">System Analysis and Design</span>
+              <span class="prerequsites-note">Prerequisites: BIT106, BIT111</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT242">
+              <span class="subject-code">BIT242</span>
+              <span class="subject-note subject-title">IT Project Management</span>
+              <span class="prerequsites-note">Prerequisite: BIT230</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT371">
+              <span class="subject-code">BIT371</span>
+              <span class="subject-note subject-title">Capstone Experience 1</span>
+              <span class="prerequsites-note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
+            </div>
+            <div class="subject-card core clickable" data-subject="BIT372">
+              <span class="subject-code">BIT372</span>
+              <span class="subject-note subject-title">Capstone Experience 2</span>
+              <span class="prerequsites-note">Prerequisite: BIT371</span>
+            </div>
+
+            <div class="subject-card core clickable" data-subject="BIT105">
+              <span class="subject-code">BIT105</span>
+              <span class="subject-note subject-title">Business Enquiry &amp; Communication</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE1">
+              <span class="subject-code">Elective 1</span>
+              <span class="subject-note subject-title">Choose from electives below</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE2">
+              <span class="subject-code">Elective 2</span>
+              <span class="subject-note subject-title">Choose from electives below</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE3">
+              <span class="subject-code">Elective 3</span>
+              <span class="subject-note subject-title">Choose from electives below</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE4">
+              <span class="subject-code">Elective 4</span>
+              <span class="subject-note subject-title">Choose from electives below</span>
+              <span class="prerequsites-note">&nbsp;</span>
+            </div>
           </div>
 
-          <div class="subject-card software elective-stream clickable" data-slot="r3c1" data-subject="BIT235">
-            <span class="subject-code">BIT235</span>
-            <span class="subject-note subject-title">Object Oriented Programming</span>
-            <span class="prerequsites-note">Prerequisites: BIT245</span>
+          <div class="electives-label" id="electives-label"><span class="inline-electives-heading">Available
+              Electives.</span> Complete any 4:</div>
+          <div class="electives-grid">
+            <div class="subject-card dual-split elective-stream clickable" data-slot="r1c1" data-subject="BIT245">
+              <span class="subject-code">BIT245</span>
+              <span class="subject-note subject-title">Web Development</span>
+              <span class="prerequsites-note">Prerequisites: BIT111</span>
+            </div>
+            <div class="subject-card elective-spacer placeholder-card" data-slot="r1c2"></div>
+            <div class="subject-card elective-spacer placeholder-card" data-slot="r1c3"></div>
+            <div class="subject-card elective-spacer placeholder-card" data-slot="r1c4"></div>
+            <div class="subject-card elective-spacer placeholder-card" data-slot="r1c5"></div>
+
+            <div class="subject-card ba elective-stream clickable" data-slot="r2c1" data-subject="BIT236">
+              <span class="subject-code">BIT236</span>
+              <span class="subject-note subject-title">Enterprise Resources</span>
+              <span class="prerequsites-note">Prerequisite: BIT106, BIT231</span>
+            </div>
+            <div class="subject-card ba elective-stream clickable" data-slot="r2c2" data-subject="BIT355">
+              <span class="subject-code">BIT355</span>
+              <span class="subject-note subject-title">Business Intelligence</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card ba elective-stream clickable" data-slot="r2c3" data-subject="BIT356">
+              <span class="subject-code">BIT356</span>
+              <span class="subject-note subject-title">Knowledge Management Systems</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT236</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card ba elective-stream clickable" data-slot="r2c4" data-subject="BIT357">
+              <span class="subject-code">BIT357</span>
+              <span class="subject-note subject-title">Business Analysis</span>
+              <span class="prerequsites-note">Prerequisite: BIT230</span>
+            </div>
+            <div class="subject-card ba elective-stream clickable" data-slot="r2c5" data-subject="BIT363">
+              <span class="subject-code">BIT363</span>
+              <span class="subject-note subject-title">E-Business Systems</span>
+              <span class="prerequsites-note">Prerequisites: BIT230, BIT245</span>
+            </div>
+
+            <div class="subject-card software elective-stream clickable" data-slot="r3c1" data-subject="BIT235">
+              <span class="subject-code">BIT235</span>
+              <span class="subject-note subject-title">Object Oriented Programming</span>
+              <span class="prerequsites-note">Prerequisites: BIT245</span>
+            </div>
+            <div class="subject-card software elective-stream clickable" data-slot="r3c2" data-subject="BIT246">
+              <span class="subject-code">BIT246</span>
+              <span class="subject-note subject-title">Object Oriented RAD</span>
+              <span class="prerequsites-note">Prerequisites: BIT235</span>
+            </div>
+            <div class="subject-card software elective-stream clickable" data-slot="r3c3" data-subject="BIT358">
+              <span class="subject-code">BIT358</span>
+              <span class="subject-note subject-title">Advanced Databases</span>
+              <span class="prerequsites-note">Prerequisites: BIT231</span>
+              <div class="sas"></div>
+            </div>
+            <div class="subject-card software elective-stream clickable" data-slot="r3c4" data-subject="BIT364">
+              <span class="subject-code">BIT364</span>
+              <span class="subject-note subject-title">Non-Relational Database Management</span>
+              <span class="prerequsites-note">Prerequisites: BIT231</span>
+            </div>
+            <div class="subject-card software elective-stream clickable" data-slot="r3c5" data-subject="BIT351">
+              <span class="subject-code">BIT351</span>
+              <span class="subject-note subject-title">Mobile Application Development</span>
+              <span class="prerequsites-note">Prerequisites: BIT231, BIT235</span>
+            </div>
           </div>
-          <div class="subject-card software elective-stream clickable" data-slot="r3c2" data-subject="BIT246">
-            <span class="subject-code">BIT246</span>
-            <span class="subject-note subject-title">Object Oriented RAD</span>
-            <span class="prerequsites-note">Prerequisites: BIT235</span>
-          </div>
-          <div class="subject-card software elective-stream clickable" data-slot="r3c3" data-subject="BIT358">
-            <span class="subject-code">BIT358</span>
-            <span class="subject-note subject-title">Advanced Databases</span>
-            <span class="prerequsites-note">Prerequisites: BIT231</span>
-            <div class="sas"></div>
-          </div>
-          <div class="subject-card software elective-stream clickable" data-slot="r3c4" data-subject="BIT364">
-            <span class="subject-code">BIT364</span>
-            <span class="subject-note subject-title">Non-Relational Database Management</span>
-            <span class="prerequsites-note">Prerequisites: BIT231</span>
-          </div>
-          <div class="subject-card software elective-stream clickable" data-slot="r3c5" data-subject="BIT351">
-            <span class="subject-code">BIT351</span>
-            <span class="subject-note subject-title">Mobile Application Development</span>
-            <span class="prerequsites-note">Prerequisites: BIT231, BIT235</span>
+
+          <div class="key">
+            <div><strong>Key</strong></div>
+            <div class="key-row">
+              <div class="key-item">
+                <div class="swatch core"></div>
+                A core subject
+              </div>
+              <div class="key-item">
+                <div class="swatch network"></div>
+                A Network Security stream subject
+              </div>
+              <div class="key-item">
+                <div class="swatch software"></div>
+                A Software Development stream subject
+              </div>
+              <div class="key-item">
+                <div class="swatch ba"></div>
+                A Business Analytics stream subject
+              </div>
+              <div class="key-item">
+                <div class="swatch dual"></div>
+                BIT245 belongs to both Business Analytics &amp; Software Development.
+              </div>
+            </div>
+            <div class="footnote">
+              <div class="sas-inline"></div>
+              SAS enabled subjects. Complete any 4 to obtain the SAS Academic Specialisation in IT Analytics.
+              Or you can complete BIT106, BIT231, BIT112 and BIT358 to obtain the SAS Academic Specialisation in
+              Software Development Analytics.
+            </div>
           </div>
         </div>
-
-        <div class="key">
-          <div><strong>Key</strong></div>
-          <div class="key-row">
-            <div class="key-item">
-              <div class="swatch core"></div>
-              A core subject
-            </div>
-            <div class="key-item">
-              <div class="swatch network"></div>
-              A Network Security stream subject
-            </div>
-            <div class="key-item">
-              <div class="swatch software"></div>
-              A Software Development stream subject
-            </div>
-            <div class="key-item">
-              <div class="swatch ba"></div>
-              A Business Analytics stream subject
-            </div>
-            <div class="key-item">
-              <div class="swatch dual"></div>
-              BIT245 belongs to both Business Analytics &amp; Software Development.
-            </div>
-          </div>
-          <div class="footnote">
-            <div class="sas-inline"></div>
-            SAS enabled subjects. Complete any 4 to obtain the SAS Academic Specialisation in IT Analytics.
-            Or you can complete BIT106, BIT231, BIT112 and BIT358 to obtain the SAS Academic Specialisation in
-            Software Development Analytics.
-          </div>
-        </div>
-      </div>
       </div>
     </main>
   </div>
@@ -441,8 +441,8 @@ Created: December 30, 2025
           </label>
         </div>
         <div class="toggle-row load-extra-row">
-          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-international" value="international"
-              checked> International</label>
+          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-international"
+              value="international" checked> International</label>
           <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-domestic"
               value="domestic"> Domestic</label>
         </div>

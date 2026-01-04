@@ -294,8 +294,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getMajorCounts = () => {
-    const completedMajorCount = subjects.filter((cell) => cell.classList.contains('completed') && isMajorCellForRequirement(cell)).length;
-    const plannedMajorCount = subjects.filter((cell) => cell.classList.contains('toggled') && isMajorCellForRequirement(cell)).length;
+    const major = getCurrentMajor();
+    const isMajorCode = (code) => {
+      const meta = subjectMeta[code] || {};
+      const classes = meta.classes || [];
+      const hasMajorTag =
+        classes.includes('network') || classes.includes('ba') || classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
+      if (!hasMajorTag) return false;
+      if (major === 'undecided') return true;
+      if (major === 'network') return classes.includes('network') || classes.includes('dual') || classes.includes('dual-split');
+      if (major === 'ba') return classes.includes('ba') || classes.includes('dual') || classes.includes('dual-split');
+      if (major === 'sd') return classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
+      return false;
+    };
+    let completedMajorCount = 0;
+    let plannedMajorCount = 0;
+    subjectState.forEach((st, code) => {
+      if (!isMajorCode(code)) return;
+      if (st?.completed) completedMajorCount += 1;
+      if (st?.toggled) plannedMajorCount += 1;
+    });
     return { completedMajorCount, plannedMajorCount };
   };
   const captureSubjectMeta = () => {
@@ -617,6 +635,71 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   // Tracks USE assignment per placeholder slot (ELECTIVE1..4) by index
   let electivePlaceholderState = ['', '', '', ''];
+  // Tracks BIT assignment per placeholder slot (ELECTIVE1..4) by index
+  let electiveBitState = ['', '', '', ''];
+  // Tracks toggled/completed state keyed by subject code
+  const subjectState = new Map();
+
+  const setSubjectStateFromCell = (cell) => {
+    const id = cell?.dataset.subject;
+    if (!id || isPlaceholder(cell)) return;
+    subjectState.set(id, {
+      completed: cell.classList.contains('completed'),
+      toggled: cell.classList.contains('toggled'),
+    });
+  };
+
+  const syncSubjectStateFromDOM = () => {
+    subjects.forEach((cell) => setSubjectStateFromCell(cell));
+  };
+
+  const applySubjectStateToCells = () => {
+    subjects.forEach((cell) => {
+      const id = cell.dataset.subject;
+      if (!id || isPlaceholder(cell)) return;
+      const st = subjectState.get(id);
+      cell.classList.remove('completed', 'toggled');
+      cell.setAttribute('aria-pressed', 'false');
+      if (st?.completed) {
+        cell.classList.add('completed');
+        cell.setAttribute('aria-pressed', 'true');
+      }
+      if (st?.toggled) {
+        cell.classList.add('toggled');
+        cell.setAttribute('aria-pressed', 'true');
+      }
+    });
+  };
+
+  const getElectiveSlotCodes = (majorKey) => {
+    const layout = computeElectiveList(majorKey);
+    const slots = electivesGridCells
+      .map((cell) => cell.dataset.slot || '')
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    return slots.map((slot) => layout[slot] || '');
+  };
+
+  const syncBitStateFromGrid = () => {
+    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    electiveBitState = electiveBitState.map((_, idx) => {
+      const code = slotCodes[idx];
+      if (!code) return '';
+      const st = subjectState.get(code);
+      return st?.completed || st?.toggled ? code : '';
+    });
+  };
+
+  const normalizeUseCodes = () => {
+    const filledSlots = electivePlaceholderState
+      .map((code, idx) => ({ code, idx }))
+      .filter(({ code }) => !!code)
+      .map(({ idx }) => idx);
+    filledSlots.forEach((slotIdx, useIdx) => {
+      const nextCode = electiveCodeOrder[useIdx] || electiveCodeOrder[electiveCodeOrder.length - 1];
+      electivePlaceholderState[slotIdx] = nextCode;
+    });
+  };
 
   const compactElectivePlaceholdersFrom = (startIdx = 0) => {
     const remainingCount = electivePlaceholderState.filter((code, idx) => idx !== startIdx && !!code).length;
@@ -628,11 +711,51 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getNextAvailableUseSlotIndex = () => {
     const placeholders = getElectivePlaceholders();
-    return placeholders.findIndex((cell, idx) => {
+    return placeholders.findIndex((_, idx) => {
       const hasUse = !!electivePlaceholderState[idx];
-      const hasAnyCompleted = cell.classList.contains('completed');
-      return !hasUse && !hasAnyCompleted;
+      const hasBit = !!electiveBitState[idx];
+      return !hasUse && !hasBit;
     });
+  };
+
+  const updateBitStateAfterToggle = (cell) => {
+    const id = cell?.dataset.subject;
+    if (!id || !id.startsWith('BIT')) return;
+    if (isPlaceholder(cell)) return;
+    if (!cell.closest('.electives-grid')) return;
+    const st = subjectState.get(id);
+    const active = st?.toggled || st?.completed;
+    const existingIdx = electiveBitState.findIndex((code) => code === id);
+    if (active) {
+      if (existingIdx >= 0) {
+        electiveBitState[existingIdx] = id;
+        return;
+      }
+      const idx = electiveBitState.findIndex((code, i) => !code && !electivePlaceholderState[i]);
+      if (idx >= 0) electiveBitState[idx] = id;
+    } else if (existingIdx >= 0) {
+      electiveBitState[existingIdx] = '';
+    }
+  };
+
+  const fillFirstFreeSlotFromOverflow = () => {
+    const freeIdx = electiveBitState.findIndex((code, idx) => !code && !electivePlaceholderState[idx]);
+    if (freeIdx < 0) return false;
+    const overflowBits = electivesGridCells
+      .filter((c) => {
+        const id = c.dataset.subject;
+        return (
+          id &&
+          id.startsWith('BIT') &&
+          (c.classList.contains('toggled') || c.classList.contains('completed')) &&
+          !isPlaceholder(c) &&
+          !electiveBitState.includes(id)
+        );
+      })
+      .map((c) => c.dataset.subject);
+    if (!overflowBits.length) return false;
+    electiveBitState[freeIdx] = overflowBits[0];
+    return true;
   };
 
   const updatePlaceholderDisplayForMode = () => {
@@ -743,27 +866,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // updates them with persist === true.
     const stableEntries = !persist && normalized.length < electiveAssignments.length ? electiveAssignments : normalized;
     const placeholders = getElectivePlaceholders();
-    // Build a fresh view of assignments based on current state (USE slots + toggled/completed BIT electives).
-    const displayEntries = (() => {
-      const entries = [];
-      electivePlaceholderState.forEach((code) => {
-        if (!code) return;
-        entries.push(`${code} ${useDisplayNames[code] || 'Unspecified Elective'}`);
-      });
-      const electiveSubjects = subjects.filter((cell) => {
-        const id = cell.dataset.subject;
-        const inElectivesGrid = cell.closest('.electives-grid');
-        const isElectiveSubject = id && id.startsWith('BIT') && !!inElectivesGrid && !isPlaceholder(cell);
-        return isElectiveSubject && (cell.classList.contains('toggled') || cell.classList.contains('completed'));
-      });
-      electiveSubjects.forEach((cell) => {
-        const id = cell.dataset.subject;
-        const name = getSubjectName(id);
-        entries.push(`${id} ${name}`);
-      });
-      return entries;
-    })();
-    // Note: Do not pad from stableEntries for display; rely on live state above to avoid misalignment.
+    normalizeUseCodes();
+    // Build visual entries per placeholder: BIT in its slot if present; otherwise the USE assigned to that slot; otherwise empty.
+    const displayEntries = placeholders.map((_, idx) => {
+      const bitCode = electiveBitState[idx];
+      if (bitCode) {
+        const name = getSubjectName(bitCode);
+        return `${bitCode} ${name}`;
+      }
+      const useCode = electivePlaceholderState[idx] || '';
+      return useCode ? `${useCode} ${useDisplayNames[useCode] || 'Unspecified Elective'}` : '';
+    });
     if (persist) electiveAssignments = [...normalized];
     placeholders.forEach((cell, idx) => {
       const titleEl = cell.querySelector('.subject-note');
@@ -812,33 +925,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const buildElectiveAssignments = () => {
     const entries = [];
-    const placeholders = getElectivePlaceholders();
-    placeholders.forEach((cell, idx) => {
-      const code = electivePlaceholderState[idx];
+    electivePlaceholderState.forEach((code) => {
       if (code) entries.push(`${code} Unspecified Elective`);
     });
-    const electiveSubjects = subjects.filter((cell) => {
-      const id = cell.dataset.subject;
-      const inElectivesGrid = cell.closest('.electives-grid');
-      const isElectiveSubject = id && id.startsWith('BIT') && !!inElectivesGrid && !isPlaceholder(cell);
-      return isElectiveSubject && (cell.classList.contains('toggled') || cell.classList.contains('completed'));
-    });
-    electiveSubjects.forEach((cell) => {
-      const id = cell.dataset.subject;
-      const name = getSubjectName(id);
-      const label = `${id} - ${name}`;
-      entries.push(label);
-      // Mirror the specified elective name into the placeholder title/note for clarity
-      const slot = cell.dataset.slot;
-      if (slot) {
-        const placeholderCell = document.querySelector(`.electives-grid [data-slot="${slot}"]`);
-        if (placeholderCell) {
-          const titleEl = placeholderCell.querySelector('.subject-note');
-          const noteEl = placeholderCell.querySelector('.prerequsites-note');
-          if (titleEl) titleEl.textContent = `Elective ${slot.slice(-1)}`;
-          if (noteEl) noteEl.textContent = `${id} ${name}`;
-        }
-      }
+    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    slotCodes.forEach((code) => {
+      if (!code) return;
+      const st = subjectState.get(code);
+      if (!(st?.completed || st?.toggled)) return;
+      const name = getSubjectName(code);
+      entries.push(`${code} - ${name}`);
     });
     return entries;
   };
@@ -872,7 +968,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const canSelectPlanned = () => {
-    const plannedCount = subjects.filter((cell) => cell.classList.contains('toggled') && !isPlaceholder(cell)).length;
+    const plannedCount = Array.from(subjectState.values()).filter((st) => st?.toggled).length;
     const completedCount = getCompletedCount();
     const totalSubjects = getTotalSubjectsCount();
     const remaining = totalSubjects - completedCount;
@@ -883,16 +979,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const recomputeAvailability = (usePlanned = true) => {
+    // Ensure DOM reflects subjectState for non-placeholder cells
+    subjects.forEach((cell) => {
+      const id = cell.dataset.subject;
+      if (!id || isPlaceholder(cell)) return;
+      const st = subjectState.get(id);
+      cell.classList.toggle('completed', !!st?.completed);
+      cell.classList.toggle('toggled', !!st?.toggled);
+      cell.setAttribute('aria-pressed', st?.completed || st?.toggled ? 'true' : 'false');
+    });
     const completed = new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('completed'))
-        .map((cell) => cell.dataset.subject)
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
     );
-    const completedCount = Array.from(completed).length;
+    const completedCount = completed.size;
     const selectedSubjects = new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
-        .map((cell) => cell.dataset.subject)
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
     );
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
@@ -905,6 +1010,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
       if (!id) return;
+      const st = subjectState.get(id);
       cell.classList.remove('satisfied');
       cell.classList.remove('can-select-now');
       cell.classList.remove('locked');
@@ -966,7 +1072,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         noteEl.classList.toggle('reqs-met', hasReqText && noteMet);
       }
 
-      if (cell.classList.contains('toggled') || cell.classList.contains('completed')) {
+      if (st?.toggled || st?.completed) {
         cell.classList.remove('locked');
         cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
         return;
@@ -1002,7 +1108,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isElectiveSubject = id && id.startsWith('BIT') && !isPlaceholder(cell) && !!inElectivesGrid;
       if (!isElectiveSubject) return false;
       const prereqs = prerequisites[id] || [];
-      return prereqs.every((code) => completed.has(code)) && !cell.classList.contains('toggled');
+      const st = subjectState.get(id);
+      return prereqs.every((code) => completed.has(code)) && !st?.toggled;
     });
 
     const sortedPlaceholders = electivePlaceholders.sort((a, b) => {
@@ -1021,10 +1128,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const resetAvailabilityVisuals = () => recomputeAvailability(false);
-  const getPlannedCount = () =>
-    subjects.filter((cell) => cell.classList.contains('toggled') && !isPlaceholder(cell)).length;
-  const getCompletedCount = () =>
-    subjects.filter((cell) => cell.dataset.subject && cell.classList.contains('completed') && !isPlaceholder(cell)).length;
+  const getPlannedCount = () => Array.from(subjectState.values()).filter((st) => st?.toggled).length;
+  const getCompletedCount = () => Array.from(subjectState.values()).filter((st) => st?.completed).length;
   const getTotalSubjectsCount = () => programRequirements.total;
   const getRemainingSubjectsCount = () => {
     const total = getTotalSubjectsCount();
@@ -1095,12 +1200,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateResetState = () => {
     if (!clearButton) return;
-    const selectedCount = subjects.filter(
-      (cell) => cell.classList.contains('toggled') && !isPlaceholder(cell)
-    ).length;
-    const hasAny = subjects.some(
-      (cell) => cell.classList.contains('toggled') || cell.classList.contains('completed')
-    );
+    const selectedCount = Array.from(subjectState.values()).filter((st) => st?.toggled).length;
+    const hasAnyState = Array.from(subjectState.values()).some((st) => st?.toggled || st?.completed);
+    const hasAnyUse = electivePlaceholderState.some(Boolean);
+    const hasAnyBit = electiveBitState.some(Boolean);
+    const hasAny = hasAnyState || hasAnyUse || hasAnyBit;
     clearButton.disabled = !hasAny;
     clearButton.classList.toggle('disabled', !hasAny);
     clearButton.style.display = hasAny ? '' : 'none';
@@ -1160,7 +1264,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCompletedModeUI = () => {
     if (!completedModeButton) return;
-    completedModeButton.textContent = completedMode ? 'Finish entering your passes and credits' : 'By clicking';
+    completedModeButton.textContent = completedMode ? 'Exit this history mode (start selecting subjects)' : 'By clicking';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     document.body.classList.toggle('completed-mode', completedMode);
@@ -1406,8 +1510,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
       if (!id) return;
-      // Skip elective placeholder cells and cells in electives grid - they manage their own state
-      if (isPlaceholder(cell) || cell.closest('.electives-grid')) return;
+      // Skip elective placeholder cells; electives grid cells can be restored
+      if (isPlaceholder(cell)) return;
       const st = state[id];
       cell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now', 'locked', 'coreq-selectable', 'chain-delay', 'final-sem-pill', 'next-sem-warning');
       clearNotThisSemUI(cell);
@@ -1549,6 +1653,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const applyMajorConfig = (majorVal) => {
     captureSubjectMeta();
+    syncSubjectStateFromDOM();
     const majorKey = majorVal === 'ba' ? 'ba' : majorVal === 'sd' ? 'sd' : 'ns';
     const config = majorConfig[majorKey];
     const prevMajorKey = currentMajorKey;
@@ -1567,6 +1672,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       renderSubjectInCell(cell, code, config.typeClass);
     });
     // reset electives before reassigning
+    electiveBitState = ['', '', '', ''];
     electivesGridCells.forEach((cell) => {
       clearNotThisSemUI(cell);
       cell.dataset.subject = '';
@@ -1600,11 +1706,65 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
       attachTooltip(cell);
     });
-    applyStateByCode(state);
+    applySubjectStateToCells();
+    // Clear BIT slots that no longer exist in the new electives grid
+    const validElectiveIds = new Set(
+      electivesGridCells.map((c) => c.dataset.subject).filter((id) => id && id.startsWith('BIT'))
+    );
+    electiveBitState = electiveBitState.map((code) => (validElectiveIds.has(code) ? code : ''));
+    syncBitStateFromGrid();
+    // Ensure grid cells match the current elective list; clear any stray content in unused slots
+    electivesGridCells.forEach((cell) => {
+      const slot = cell.dataset.slot;
+      const expectedCode = electiveList[slot];
+      if (!expectedCode) {
+        cell.dataset.subject = '';
+        cell.querySelectorAll('.subject-code, .subject-note, .prerequsites-note, .course, .note').forEach((n) => n.remove());
+        cell.className = 'subject-card elective-spacer placeholder-card empty';
+        attachTooltip(cell);
+        return;
+      }
+      if (cell.dataset.subject !== expectedCode) {
+        renderSubjectInCell(cell, expectedCode, null);
+        applyElectiveStyling(cell, expectedCode, majorKey);
+        if (notRunningIds.has(expectedCode)) ensureNotThisSemUI(cell);
+        attachTooltip(cell);
+      }
+    });
+    // Reapply subjectState toggles/completions to electives grid cells for current layout
+    const sortedElectives = [...electivesGridCells].sort((a, b) => (a.dataset.slot || '').localeCompare(b.dataset.slot || ''));
+    sortedElectives.forEach((cell) => {
+      const code = cell.dataset.subject;
+      if (!code) return;
+      const st = subjectState.get(code);
+      cell.classList.remove('completed', 'toggled');
+      cell.setAttribute('aria-pressed', 'false');
+      if (st?.completed) {
+        cell.classList.add('completed');
+        cell.setAttribute('aria-pressed', 'true');
+      }
+      if (st?.toggled) {
+        cell.classList.add('toggled');
+        cell.setAttribute('aria-pressed', 'true');
+      }
+    });
+    // Rebuild BIT slot state from subjectState and current layout (first four active electives in slot order)
+    const slotCodes = getElectiveSlotCodes(majorKey);
+    const activeBitCodes = slotCodes.filter((code) => {
+      if (!code) return false;
+      const st = subjectState.get(code);
+      return st?.completed || st?.toggled;
+    });
+    electiveBitState = ['', '', '', ''];
+    activeBitCodes.slice(0, 4).forEach((code, idx) => {
+      electiveBitState[idx] = code;
+    });
+    syncBitStateFromGrid();
     conditionalRecompute({ force: true, usePlanned: true });
     updateSelectedList();
     setElectiveCredits(buildElectiveAssignments(), true);
     updateElectiveWarning();
+    updateResetState();
   };
 
   const populateLoadSelect = (options = [], desired = 4) => {
@@ -1844,13 +2004,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       if (clearButton.disabled) return;
+      // Reset in-memory state first so all downstream UI refreshes read from the new truth.
+      electivePlaceholderState = ['', '', '', ''];
+      electiveBitState = ['', '', '', ''];
+      subjectState.clear();
+      subjects.forEach((cell) => {
+        const code = cell.dataset.subject;
+        if (!code || isPlaceholder(cell)) return;
+        subjectState.set(code, { completed: false, toggled: false });
+      });
+
+      // Then wipe DOM classes and reapply from empty state.
       clearPlanned();
       clearCompleted();
+      applySubjectStateToCells();
+      setElectiveCredits([], true);
+
       setLivePrereqEnabled(true);
       conditionalRecompute({ force: true, usePlanned: false });
       updateResetState();
-      electivePlaceholderState = ['', '', '', ''];
-      setElectiveCredits([], true);
       updateElectiveWarning();
       updateSelectedList();
     });
@@ -1923,25 +2095,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const placeholders = placeholder ? getElectivePlaceholders() : [];
     const placeholderIdx = placeholder ? placeholders.indexOf(cell) : -1;
     if (placeholder && placeholderIdx >= 0) {
-      const slot = cell.dataset.slot;
-      if (slot) {
-        const subjCell = document.querySelector(`.electives-grid [data-slot=\"${slot}\"]`);
-        const subjId = subjCell?.dataset.subject || '';
-        const isBitElective =
-          subjId.startsWith('BIT') && (subjCell.classList.contains('toggled') || subjCell.classList.contains('completed'));
-        if (isBitElective) {
+      const bitCode = electiveBitState[placeholderIdx];
+      if (bitCode) {
+        const subjCell = electivesGridCells.find(
+          (c) =>
+            c.dataset.subject === bitCode &&
+            (c.classList.contains('toggled') || c.classList.contains('completed')) &&
+            !isPlaceholder(c)
+        );
+        if (subjCell) {
           subjCell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now');
           subjCell.setAttribute('aria-pressed', 'false');
-          cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
-          cell.setAttribute('aria-pressed', 'false');
-          electivePlaceholderState[placeholderIdx] = '';
-          setElectiveCredits(buildElectiveAssignments(), true);
-          updateElectiveWarning();
-          updateSelectedList();
-          conditionalRecompute({ force: true, usePlanned: false });
-          updateResetState();
-          return;
         }
+        electiveBitState[placeholderIdx] = '';
+        cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
+        cell.setAttribute('aria-pressed', 'false');
+        fillFirstFreeSlotFromOverflow();
+        setElectiveCredits(buildElectiveAssignments(), true);
+        updateElectiveWarning();
+        updateSelectedList();
+        conditionalRecompute({ force: true, usePlanned: false });
+        updateResetState();
+        return;
       }
     }
     if (completedMode) {
@@ -1954,9 +2129,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (currentCode) {
             // Toggle off always allowed; then compact leftwards
             electivePlaceholderState[idx] = '';
-            compactElectivePlaceholdersFrom(idx);
             cell.classList.remove('completed', 'filled-elective', 'use-credit');
             cell.setAttribute('aria-pressed', 'false');
+            fillFirstFreeSlotFromOverflow();
           } else {
             // Only allow turning on the first empty placeholder
             const firstEmptyIdx = getNextAvailableUseSlotIndex();
@@ -1969,6 +2144,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               cell.setAttribute('aria-pressed', 'false');
             }
           }
+          setSubjectStateFromCell(cell);
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
           updateSelectedList();
@@ -1994,12 +2170,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           // In planning mode, only allow clearing an existing USE; no turning on
           if (currentCode) {
             electivePlaceholderState[idx] = '';
-            compactElectivePlaceholdersFrom(idx);
             cell.classList.remove('completed', 'filled-elective', 'use-credit');
             cell.setAttribute('aria-pressed', 'false');
+            fillFirstFreeSlotFromOverflow();
           } else {
             return;
           }
+          setSubjectStateFromCell(cell);
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
           updateSelectedList();
@@ -2057,6 +2234,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!active) {
         cell.classList.remove('hide-tooltip');
       }
+    }
+    setSubjectStateFromCell(cell);
+    // Sync BIT slot state after any toggle on elective grid cells
+    if (!placeholder && id.startsWith('BIT') && cell.closest('.electives-grid')) {
+      updateBitStateAfterToggle(cell);
     }
     // Save elective visual state before recompute
     saveElectiveVisuals();
@@ -2721,16 +2903,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         li.className = 'available-item';
         li.setAttribute('role', 'listitem');
         li.classList.toggle('chosen', item.isChosen);
-        const slotLabel =
-          item.slot === 'Morning' ? 'morning' : item.slot === 'Afternoon' ? 'afternoon' : (item.slot || 'N/A').toLowerCase();
-        li.innerHTML = `<span class="avail-code">${item.id}</span><span class="avail-slot">${item.dayShort || 'N/A'} ${slotLabel}</span>`;
-        li.dataset.subject = item.id;
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
-        const activate = () => {
-          const cell = subjects.find((c) => c.dataset.subject === item.id);
-          if (cell) cell.click();
-        };
+    const slotLabel =
+      item.slot === 'Morning' ? 'morning' : item.slot === 'Afternoon' ? 'afternoon' : (item.slot || 'N/A').toLowerCase();
+    li.innerHTML = `<span class="avail-code">${item.id}</span><span class="avail-slot">${item.dayShort || 'N/A'} ${slotLabel}</span>`;
+    li.dataset.subject = item.id;
+    li.tabIndex = 0;
+    li.setAttribute('role', 'button');
+    const activate = () => {
+      const cell = subjects.find((c) => c.dataset.subject === item.id);
+      if (cell) cell.click();
+    };
         li.addEventListener('click', activate);
         li.addEventListener('keydown', (ev) => {
           if (ev.key === 'Enter' || ev.key === ' ') {
@@ -2997,13 +3179,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   if (majorToggle && majorDropdown) {
     majorToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       console.log('Major dropdown clicked, current classes:', majorDropdown.classList);
       const isOpen = majorDropdown.classList.toggle('open');
       console.log('After toggle, isOpen:', isOpen, 'classes:', majorDropdown.classList);
       majorToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
     majorOptions.forEach((opt) => {
-      opt.addEventListener('click', () => {
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const val = opt.dataset.value;
         majorDropdown.dataset.value = val;
         majorOptions.forEach((o) => o.classList.remove('selected'));
@@ -3011,7 +3196,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (majorLabel) majorLabel.textContent = opt.textContent;
         updateMajor();
         closeMajorDropdown();
-      });
+      };
+      opt.addEventListener('pointerdown', handler);
+      opt.addEventListener('click', handler);
     });
     document.addEventListener('click', (e) => {
       if (!majorDropdown.contains(e.target)) closeMajorDropdown();
@@ -3083,5 +3270,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
   });
+  // Initial sync of state from DOM and reset button state
+  syncSubjectStateFromDOM();
+  updateResetState();
   updateVaryLoadLabel();
 })();

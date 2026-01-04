@@ -407,11 +407,11 @@ textarea,
   padding-left: 0;
   margin: 6px 0 11px;
   padding: 5px 5px 8px 5px;
-  color: #f5f5f5;
+  color: #111111;
   line-height: 1.4;
   border: rgba(202, 202, 202, .5) 1px solid;
   border-radius: 4px;
-  background: #0b0b0b;
+  background: white;
 }
 
 #selected-list li {
@@ -447,20 +447,20 @@ textarea,
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  font-size: 0.8rem;
-  color: #f5f5f5;
+  color: #000000;
   cursor: pointer;
   padding: 4px 6px;
+  border: 1px solid #b1aeae;
 }
 
 .available-list .avail-code {
-  color: #fff;
+  color: #161616;
   min-width: 64px;
   font-weight: 700;
 }
 
 .available-list .avail-slot {
-  color: #fff;
+  color: #000000;
 }
 
 .available-list .available-item.chosen {
@@ -962,28 +962,6 @@ input:checked+.slider:before {
   max-height: var(--card-max-height);
 }
 
-.info-card {
-  cursor: default;
-  box-shadow: none;
-  background: linear-gradient(
-    to bottom,
-    #eaeaea 0%,
-    #eaeaea var(--card-band-height),
-    #f6f6f6 var(--card-band-height),
-    #f6f6f6 100%
-  );
-  border: 1px dashed #9b9898;
-  padding-top: 8px;
-}
-.info-card ul, .info-card li {
-  margin: 0;
-  padding-left: 1.2em;
-}
-.info-card:hover {
-  transform: none;
-  box-shadow: var(--card-shadow);
-}
-
 .subject-card.core {
   background: linear-gradient(
     to bottom,
@@ -1265,7 +1243,46 @@ input:checked+.slider:before {
   font-size: 1.2em;
   font-weight: 700;
 }
+.info-card {
+  cursor: default;
+  box-shadow: none;
+  background: linear-gradient(to bottom,
+      #eaeaea 0%,
+      #eaeaea var(--card-band-height),
+      #f6f6f6 var(--card-band-height),
+      #f6f6f6 100%);
+  border: 1px dashed #9b9898;
+  line-height: 1.3em;
+}
 
+.info-card ul,
+.info-card li {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.info-card:hover {
+  transform: none;
+  box-shadow: var(--card-shadow);
+}
+
+.info-card ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.info-card ul li {
+  position: relative;
+  padding-left: 1.2em;
+  /* controls text indent from your bullet */
+}
+
+.info-card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+}
 .stream-label {
   font-weight: 700;
 }
@@ -1546,7 +1563,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border: 1px solid #6d6d6d8f;
   border-top: none;
   border-radius: 0 0 4px 4px;
-  width:8em;
+  width:8.5em;
 }
 
 .not-this-sem .subject-note {
@@ -2197,13 +2214,14 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 #toggle-completed-mode.completed-mode-wide {
-  width: 100%;
-  margin: 0;
-  align-self: stretch;
-  position: relative;
+  width: 14em;
+  position: absolute;
+  display:block;
+  margin-top:.1em;
+  margin-left:2em;
   z-index: 2;
+  padding:2px 4px;
 }
-
 .load-row {
   justify-content: space-between;
   align-items: center;
