@@ -10,6 +10,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const subjects = Array.from(
     document.querySelectorAll('.main-grid [data-subject], .electives-grid [data-subject]')
   ).filter((cell) => cell.dataset.subject);
+  const electivePlaceholderOrder = ['ELECTIVE1', 'ELECTIVE2', 'ELECTIVE3', 'ELECTIVE4'];
+  const electivePlaceholderCells = electivePlaceholderOrder
+    .map((code) => subjects.find((cell) => cell.dataset.subject === code))
+    .filter(Boolean);
 
   const prerequisites = {
     BIT105: [],
@@ -49,6 +53,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let currentMajorKey = 'ns';
+  let currentMajorValue = 'undecided';
   const majorConfig = {
     ns: {
       codes: ['BIT213', 'BIT233', 'BIT353', 'BIT313', 'BIT244', 'BIT362'],
@@ -175,7 +180,43 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
   let hoverTooltipTimer = null;
-  const subjectMeta = {};
+  const subjectMeta = {
+    BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
+    BIT106: { name: 'Foundations of Software, Hardware and Cloud Computing', note: '', classes: ['core', 'sas'] },
+    BIT108: { name: 'Foundations of Business', note: '', classes: ['core'] },
+    BIT111: { name: 'Programming Concepts', note: '', classes: ['core'] },
+    BIT112: { name: 'Mathematics for Information Technology', note: '', classes: ['core', 'sas'] },
+    BIT121: { name: 'Network Communication Concepts', note: '', classes: ['core'] },
+    BIT213: { name: 'Network and Cyber Security Essentials', note: 'Co-requisite: BIT121', classes: ['network'] },
+    BIT230: { name: 'System Analysis and Design', note: 'Prerequisites: BIT106, BIT111', classes: ['core'] },
+    BIT231: { name: 'Database Systems', note: 'Prerequisite: BIT111', classes: ['core', 'sas'] },
+    BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
+    BIT235: { name: 'Object Oriented Programming', note: 'Prerequisites: BIT245', classes: ['software'] },
+    BIT236: { name: 'Enterprise Resources', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
+    BIT241: { name: 'Professional IT Practice and Ethics', note: 'Prerequisite: BIT121, BIT106', classes: ['core'] },
+    BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
+    BIT244: { name: 'IT and Business Crime', note: 'Prerequisite: BIT106', classes: ['network'] },
+    BIT245: { name: 'Web Development', note: 'Prerequisites: BIT111', classes: ['dual-split'] },
+    BIT246: { name: 'Object Oriented RAD', note: 'Prerequisites: BIT235', classes: ['software'] },
+    BIT313: { name: 'Cyber Vulnerability and Hardening', note: 'Prerequisite: BIT213', classes: ['network'] },
+    BIT314: { name: 'Cybersecurity Management and Governance', note: 'Prerequisite: BIT241', classes: ['core'] },
+    BIT351: { name: 'Mobile Application Development', note: 'Prerequisites: BIT231, BIT235', classes: ['software'] },
+    BIT352: { name: 'System Implementation and Service Management', note: 'Prerequisite: BIT242', classes: ['core'] },
+    BIT353: { name: 'Network Architecture and Protocols', note: 'Prerequisite: BIT233', classes: ['network'] },
+    BIT355: { name: 'Business Intelligence', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
+    BIT356: { name: 'Knowledge Management Systems', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
+    BIT357: { name: 'Business Analysis', note: 'Prerequisite: BIT230', classes: ['ba'] },
+    BIT358: { name: 'Advanced Databases', note: 'Prerequisites: BIT231', classes: ['software', 'sas'] },
+    BIT362: { name: 'Digital Forensics', note: 'Prerequisite: BIT213', classes: ['network'] },
+    BIT363: { name: 'E-Business Systems', note: 'Prerequisites: BIT230, BIT245', classes: ['ba'] },
+    BIT364: { name: 'Non-Relational Database Management', note: 'Prerequisites: BIT231', classes: ['software'] },
+    BIT371: {
+      name: 'Capstone Experience 1',
+      note: 'Prerequisites: BIT242 & 5 major subjects (2 can be concurrent)',
+      classes: ['core'],
+    },
+    BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
+  };
   const baseTypeClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective', 'dual-split', 'dual'];
   const sidebarTooltip = document.createElement('div');
   sidebarTooltip.className = 'hover-tooltip';
@@ -277,19 +318,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const isPlaceholder = (cell) => cell.dataset.subject && cell.dataset.subject.startsWith('ELECTIVE');
 
-  const getCurrentMajor = () => majorDropdown?.dataset.value || 'undecided';
+  const getCurrentMajor = () => currentMajorValue || 'undecided';
   const isMajorCellForRequirement = (cell) => {
     if (!cell || !cell.dataset.subject) return false;
     if (isPlaceholder(cell)) return false;
-    const cls = cell.classList;
+    const classes = subjectMeta[cell.dataset.subject]?.classes || [];
     const isMajorTagged =
-      cls.contains('network') || cls.contains('ba') || cls.contains('software') || cls.contains('dual') || cls.contains('dual-split');
+      classes.includes('network') ||
+      classes.includes('ba') ||
+      classes.includes('software') ||
+      classes.includes('dual') ||
+      classes.includes('dual-split');
     if (!isMajorTagged) return false;
     const major = getCurrentMajor();
     if (major === 'undecided') return true; // count any tagged major when undecided
-    if (major === 'network') return cls.contains('network');
-    if (major === 'ba') return cls.contains('ba') || cls.contains('dual') || cls.contains('dual-split');
-    if (major === 'sd') return cls.contains('software') || cls.contains('dual') || cls.contains('dual-split');
+    if (major === 'network') return classes.includes('network');
+    if (major === 'ba') return classes.includes('ba') || classes.includes('dual') || classes.includes('dual-split');
+    if (major === 'sd') return classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
     return isMajorTagged;
   };
 
@@ -316,20 +361,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     return { completedMajorCount, plannedMajorCount };
   };
-  const captureSubjectMeta = () => {
-    subjects.forEach((cell) => {
-      const id = cell.dataset.subject;
-      if (!id) return;
-      if (subjectMeta[id]) return;
-      const name =
-        cell.querySelector('.subject-title')?.textContent?.trim() ||
-        cell.querySelector('.subject-note')?.textContent?.trim() ||
-        id;
-      const note = cell.querySelector('.prerequsites-note')?.textContent || '';
-      const classes = Array.from(cell.classList).filter((c) => baseTypeClasses.includes(c));
-      subjectMeta[id] = { name, note, classes };
-    });
-  };
+  const captureSubjectMeta = () => {};
 
   const computeSemesterDistance = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
     if (memo.has(id)) return memo.get(id);
@@ -489,8 +521,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return path;
       };
       const addPrereqChain = (id) => {
-        const cell = subjects.find((c) => c.dataset.subject === id);
-        if (cell && !cell.classList.contains('completed')) chainSet.add(id);
+        const st = subjectState.get(id);
+        if (!st?.completed) chainSet.add(id);
         const pres = prerequisites[id] || [];
         if (!pres.length) return;
         let best = -Infinity;
@@ -640,17 +672,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   // Tracks toggled/completed state keyed by subject code
   const subjectState = new Map();
 
-  const setSubjectStateFromCell = (cell) => {
-    const id = cell?.dataset.subject;
-    if (!id || isPlaceholder(cell)) return;
-    subjectState.set(id, {
-      completed: cell.classList.contains('completed'),
-      toggled: cell.classList.contains('toggled'),
+  const initSubjectStateFromData = () => {
+    subjectState.clear();
+    Object.keys(subjectMeta).forEach((code) => {
+      subjectState.set(code, { completed: false, toggled: false });
     });
-  };
-
-  const syncSubjectStateFromDOM = () => {
-    subjects.forEach((cell) => setSubjectStateFromCell(cell));
   };
 
   const applySubjectStateToCells = () => {
@@ -682,12 +708,43 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const syncBitStateFromGrid = () => {
     const slotCodes = getElectiveSlotCodes(currentMajorKey);
-    electiveBitState = electiveBitState.map((_, idx) => {
-      const code = slotCodes[idx];
-      if (!code) return '';
+    const active = [];
+    slotCodes.forEach((code) => {
+      if (!code) return;
       const st = subjectState.get(code);
-      return st?.completed || st?.toggled ? code : '';
+      if (st?.completed || st?.toggled) active.push(code);
     });
+    const nextState = ['', '', '', ''];
+    let activeIdx = 0;
+    for (let i = 0; i < nextState.length; i += 1) {
+      if (electivePlaceholderState[i]) continue;
+      if (activeIdx >= active.length) break;
+      nextState[i] = active[activeIdx];
+      activeIdx += 1;
+    }
+    electiveBitState = nextState;
+  };
+
+  // Ensure electiveBitState mirrors the current subjectState for the active major layout
+  const rebuildElectiveBitStateFromState = () => {
+    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    const active = [];
+    slotCodes.forEach((code) => {
+      if (!code) return;
+      const st = subjectState.get(code);
+      if (st?.completed || st?.toggled) active.push(code);
+    });
+    // Only track the first four electives in slot order, skipping slots already holding a USE
+    const nextState = ['', '', '', ''];
+    let activeIdx = 0;
+    for (let i = 0; i < nextState.length; i += 1) {
+      if (electivePlaceholderState[i]) continue;
+      while (activeIdx < active.length && electivePlaceholderState[i]) activeIdx += 1;
+      if (activeIdx >= active.length) break;
+      nextState[i] = active[activeIdx];
+      activeIdx += 1;
+    }
+    electiveBitState = nextState;
   };
 
   const normalizeUseCodes = () => {
@@ -722,7 +779,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const id = cell?.dataset.subject;
     if (!id || !id.startsWith('BIT')) return;
     if (isPlaceholder(cell)) return;
-    if (!cell.closest('.electives-grid')) return;
+    if (!cell.dataset.slot) return;
     const st = subjectState.get(id);
     const active = st?.toggled || st?.completed;
     const existingIdx = electiveBitState.findIndex((code) => code === id);
@@ -741,18 +798,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const fillFirstFreeSlotFromOverflow = () => {
     const freeIdx = electiveBitState.findIndex((code, idx) => !code && !electivePlaceholderState[idx]);
     if (freeIdx < 0) return false;
-    const overflowBits = electivesGridCells
-      .filter((c) => {
-        const id = c.dataset.subject;
-        return (
-          id &&
-          id.startsWith('BIT') &&
-          (c.classList.contains('toggled') || c.classList.contains('completed')) &&
-          !isPlaceholder(c) &&
-          !electiveBitState.includes(id)
-        );
-      })
-      .map((c) => c.dataset.subject);
+    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    const overflowBits = slotCodes.filter((code) => {
+      if (!code || electiveBitState.includes(code)) return false;
+      const st = subjectState.get(code);
+      return st?.completed || st?.toggled;
+    });
     if (!overflowBits.length) return false;
     electiveBitState[freeIdx] = overflowBits[0];
     return true;
@@ -766,8 +817,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (titleEl && !cell.dataset.originalTitle) cell.dataset.originalTitle = titleEl.textContent || '';
       if (noteEl && !cell.dataset.originalNote) cell.dataset.originalNote = noteEl.textContent || '';
       const hasUse = !!electivePlaceholderState[idx];
-      const isCompleted = cell.classList.contains('completed');
-      const isEmpty = !hasUse && !isCompleted;
+      const hasBit = !!electiveBitState[idx];
+      const isCompleted = hasUse || hasBit;
+      const isEmpty = !hasUse && !hasBit;
       cell.classList.remove('hide-tooltip');
       if (completedMode && isEmpty) {
         if (titleEl) titleEl.textContent = 'Click to set as a USE (Unspecified Elective)';
@@ -780,13 +832,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     placeholders.forEach((cell) => attachTooltip(cell));
   };
 
-  const getElectivePlaceholders = () =>
-    subjects
-      .filter((cell) => cell.dataset.subject && isPlaceholder(cell))
-      .sort((a, b) => {
-        const num = (cell) => parseInt(cell.dataset.subject.replace('ELECTIVE', ''), 10) || 0;
-        return num(a) - num(b);
-      });
+  const getElectivePlaceholders = () => electivePlaceholderCells;
 
   const formatDate = (d) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -807,13 +853,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getSubjectName = (code) => {
     const data = timetable[code];
     if (data && data.name) return data.name;
-    const cell = subjects.find((c) => c.dataset.subject === code);
-    let name = cell?.querySelector('.subject-note')?.textContent?.trim();
-    if (name && name.toUpperCase().startsWith(code.toUpperCase())) {
-      // remove leading code and dash if present
-      name = name.replace(new RegExp(`^\\s*${code}\\s*[-–—]?\\s*`, 'i'), '');
-    }
-    return name || code;
+    const metaName = subjectMeta[code]?.name;
+    return metaName || code;
   };
 
   let electiveAssignments = [];
@@ -821,42 +862,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   // Track elective visual state independently from DOM
   const electiveSelectionState = new Map();
 
-  const saveElectiveVisuals = () => {
-    electiveSelectionState.clear();
-    // Save state for ALL elective grid cells, not just placeholders
-    electivesGridCells.forEach((cell) => {
-      const slot = cell.dataset.slot;
-      if (slot) {
-        electiveSelectionState.set(slot, {
-          completed: cell.classList.contains('completed'),
-          toggled: cell.classList.contains('toggled'),
-          satisfied: cell.classList.contains('satisfied'),
-          locked: cell.classList.contains('locked'),
-        });
-      }
-    });
-  };
-
-  const restoreElectiveVisuals = () => {
-    // Restore state for ALL elective grid cells
-    electivesGridCells.forEach((cell) => {
-      const slot = cell.dataset.slot;
-      if (!slot) return;
-      const state = electiveSelectionState.get(slot);
-      if (state?.completed) {
-        cell.classList.add('completed');
-      }
-      if (state?.toggled) {
-        cell.classList.add('toggled');
-      }
-      if (state?.satisfied) {
-        cell.classList.add('satisfied');
-      }
-      if (state?.locked) {
-        cell.classList.add('locked');
-      }
-    });
-  };
+  // Visual state for electives now derives from subjectState + slot layout; helpers kept no-op for compatibility
+  const saveElectiveVisuals = () => {};
+  const restoreElectiveVisuals = () => {};
 
   const setElectiveCredits = (entries = [], persist = true) => {
     const normalized = (entries || []).filter((text) => (text ?? '').toString().trim().length > 0);
@@ -906,8 +914,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           noteEl.textContent = '';
         }
         cell.classList.add('completed');
+        cell.classList.add('toggled');
         cell.classList.add('filled-elective');
-        if (useCode) {
+        cell.classList.remove('empty');
+        if (useCode && !bitCode) {
           cell.classList.add('use-credit');
         } else {
           cell.classList.remove('use-credit');
@@ -928,8 +938,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     electivePlaceholderState.forEach((code) => {
       if (code) entries.push(`${code} Unspecified Elective`);
     });
-    const slotCodes = getElectiveSlotCodes(currentMajorKey);
-    slotCodes.forEach((code) => {
+    // Use the current BIT elective state (already filtered to four by slot order)
+    electiveBitState.forEach((code) => {
       if (!code) return;
       const st = subjectState.get(code);
       if (!(st?.completed || st?.toggled)) return;
@@ -953,8 +963,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const warnings = [];
     Object.entries(corequisites).forEach(([course, coList]) => {
       coList.forEach((co) => {
-        const courseSelected = subjects.some((cell) => cell.dataset.subject === course && cell.classList.contains('toggled'));
-        const coSelected = subjects.some((cell) => cell.dataset.subject === co && cell.classList.contains('toggled'));
+        const courseSelected = subjectState.get(course)?.toggled;
+        const coSelected = subjectState.get(co)?.toggled;
         if (courseSelected && coSelected) {
           warnings.push({
             title: `Concurrent ${course} and ${co}`,
@@ -1011,10 +1021,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const id = cell.dataset.subject;
       if (!id) return;
       const st = subjectState.get(id);
+      // Leave elective placeholder cards untouched; their visuals are driven elsewhere.
+      if (isPlaceholder(cell)) return;
       cell.classList.remove('satisfied');
       cell.classList.remove('can-select-now');
       cell.classList.remove('locked');
       cell.classList.remove('coreq-selectable');
+
+      // In completed (credit) mode, electives should stay clickable regardless of unmet prereqs.
+      const inElectivesGrid = !!cell.dataset.slot;
+      if (!st?.toggled && !st?.completed && completedMode && inElectivesGrid) {
+        cell.classList.add('satisfied');
+        cell.classList.add('can-select-now');
+        cell.classList.remove('locked');
+        return;
+      }
 
       const { prereqMetNow, prereqMetPlanned, coreqMetNow, coreqMetPlanned } = getRequisiteStatus({
         id,
@@ -1052,8 +1073,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const noteEl = cell.querySelector('.prerequsites-note');
       if (noteEl) {
-        const txt = (noteEl.textContent || '').toLowerCase();
-        const hasReqText = txt.includes('prerequisite') || txt.includes('co-requisite');
+        const hasReqText = (prerequisites[id] || []).length > 0 || (corequisites[id] || []).length > 0;
         let noteMet = hasCoreq
           ? evalPlanned
             ? prereqMetPlanned && coreqMetPlanned
@@ -1077,13 +1097,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
         return;
       }
-      const isNotThisSem = cell.classList.contains('not-this-sem');
+      const isNotThisSem = notRunningIds.has(id);
+      // For elective stream cards, keep them selectable even if prereqs are unmet (planning mode)
+      if (inElectivesGrid && !st?.toggled && !st?.completed) {
+        cell.classList.add('satisfied', 'can-select-now');
+        cell.classList.remove('locked');
+        cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
+        return;
+      }
       cell.classList.toggle('satisfied', met);
       const canSelectNow = id === 'BIT371' ? met && !isNotThisSem : metNow && !isNotThisSem;
       cell.classList.toggle('can-select-now', canSelectNow);
       cell.classList.toggle('locked', !met);
       cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
-      if (coreqMetPlanned && !cell.classList.contains('completed')) {
+      if (coreqMetPlanned && !st?.completed) {
         cell.classList.remove('locked');
         cell.classList.add('coreq-selectable');
         // Only dim when relying on concurrent coreqs; keep bright if prereqs met from prior completion
@@ -1104,12 +1131,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const availableElectiveSubjects = subjects.filter((cell) => {
       const id = cell.dataset.subject;
-      const inElectivesGrid = cell.closest('.electives-grid');
-      const isElectiveSubject = id && id.startsWith('BIT') && !isPlaceholder(cell) && !!inElectivesGrid;
+      const inElectivesGrid = !!cell.dataset.slot;
+      const isElectiveSubject = id && id.startsWith('BIT') && !isPlaceholder(cell) && inElectivesGrid;
       if (!isElectiveSubject) return false;
-      const prereqs = prerequisites[id] || [];
       const st = subjectState.get(id);
-      return prereqs.every((code) => completed.has(code)) && !st?.toggled;
+      if (st?.toggled) return false;
+      const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
+        id,
+        completedSet: completed,
+        plannedSet: planned,
+        usePlanned: usePlanned,
+      });
+      const hasCoreq = (corequisites[id] || []).length > 0;
+      const met = usePlanned ? (hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned) : prereqMetNow;
+      return met;
     });
 
     const sortedPlaceholders = electivePlaceholders.sort((a, b) => {
@@ -1118,7 +1153,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
 
     sortedPlaceholders.forEach((cell, idx) => {
-      const shouldShow = idx < availableElectiveSubjects.length && !cell.classList.contains('toggled');
+      const isFilled = !!electivePlaceholderState[idx] || !!electiveBitState[idx];
+      const shouldShow = idx < availableElectiveSubjects.length && !isFilled;
       cell.classList.toggle('satisfied', shouldShow);
       cell.classList.toggle('can-select-now', false);
       cell.classList.toggle('locked', !shouldShow);
@@ -1175,13 +1211,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const remaining = getRemainingSubjectsCount();
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
-    const satisfiedCells = subjects.filter(
-      (cell) =>
-        cell.classList.contains('satisfied') &&
-        !cell.classList.contains('toggled') &&
-        !cell.classList.contains('completed') &&
-        !isPlaceholder(cell)
+
+    const completedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
     );
+    const plannedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+
+    const satisfiedCells = subjects.filter((cell) => {
+      const id = cell.dataset.subject || '';
+      if (!id || isPlaceholder(cell)) return false;
+      if (completedSet.has(id) || plannedSet.has(id)) return false;
+      const { prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
+        id,
+        completedSet,
+        plannedSet,
+        usePlanned: true,
+      });
+      const hasCoreq = (corequisites[id] || []).length > 0;
+      return hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+    });
     const satisfiedCount = satisfiedCells.length;
 
     if (remaining > 4 && satisfiedCount < 4 && plannedCount >= loadThreshold) {
@@ -1227,7 +1281,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       clearButton.style.display = '';
     }
     if (availableHeading) {
-      availableHeading.style.display = selectedCount >= threshold ? 'none' : '';
+      availableHeading.style.display = '';
     }
     if (nextSemList) {
       const rows = getNextSemRows();
@@ -1325,10 +1379,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
       if (!id) return;
+      const st = subjectState.get(id);
       state[id] = {
-        completed: cell.classList.contains('completed'),
-        toggled: cell.classList.contains('toggled'),
-        notThisSem: cell.classList.contains('not-this-sem'),
+        completed: !!st?.completed,
+        toggled: !!st?.toggled,
+        notThisSem: notRunningIds.has(id),
       };
     });
     return state;
@@ -1388,7 +1443,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const titleBlock = document.createElement('div');
       titleBlock.innerHTML = `<div class="subject-code">${id}</div><div class="tooltip-name">${name}</div>`;
       tooltip.appendChild(titleBlock);
-      const isNotThisSem = cell.classList.contains('not-this-sem');
+      const isNotThisSem = notRunningIds.has(id);
       if (isNotThisSem) {
         const nextSemHeading = document.createElement('div');
         nextSemHeading.className = 'next-sem-heading';
@@ -1413,22 +1468,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         slot || day
           ? `<div class="tooltip-day"><strong class="tooltip-day-text">${day || 'N/A'} ${slot || ''}</strong></div>`
           : '';
-      const streamLabel = cell.classList.contains('network')
-        ? 'Network Security'
-        : cell.classList.contains('ba')
-          ? 'Business Analytics'
-          : cell.classList.contains('software')
-            ? 'Software Development'
-            : 'Elective';
-      const majorCoreText = cell.classList.contains('core')
-        ? 'Core'
-        : cell.classList.contains('network')
-          ? 'Network Security'
-          : cell.classList.contains('ba')
-            ? 'Business Analytics'
-            : cell.classList.contains('software')
-              ? 'Software Development'
-              : 'Elective';
+      const streamLabel = buildStreamLabel(id);
+      const categoryInfo = describeSubjectCategory(id);
+      const majorCoreText = categoryInfo.category === 'Core' ? 'Core' : categoryInfo.stream || 'Elective';
       const roomHtml = data.room ? `<div><span class="inline-strong">Room:</span> ${data.room}</div>` : '';
       const lecturerHtml = data.teacher ? `<div><span class="inline-strong">Lecturer:</span> ${data.teacher}</div>` : '';
       const depsList =
@@ -1521,7 +1563,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.add('toggled');
         cell.setAttribute('aria-pressed', 'true');
       }
-      if (st?.notThisSem) ensureNotThisSemUI(cell);
+      if (notRunningIds.has(id)) ensureNotThisSemUI(cell);
     });
   };
 
@@ -1530,21 +1572,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!meta) return;
     clearNotThisSemUI(cell);
     cell.dataset.subject = code;
-    const retained = Array.from(cell.classList).filter((cls) =>
-      ['completed', 'toggled', 'satisfied', 'can-select-now', 'locked', 'not-this-sem'].includes(cls)
-    );
-    cell.className = '';
-    retained.forEach((cls) => cell.classList.add(cls));
-    cell.classList.add('subject-card');
+    cell.className = 'subject-card';
     cell.classList.add('clickable');
     const base = typeClass || meta.classes.find((c) => baseTypeClasses.includes(c)) || '';
     cell.classList.add(base || 'elective');
-    const inElectivesGrid = cell.closest('.electives-grid');
+    const inElectivesGrid = !!cell.dataset.slot;
     const isPlaceholderCode = code.startsWith('ELECTIVE');
     if (isPlaceholderCode) cell.classList.add('placeholder-card');
     else if (inElectivesGrid) cell.classList.add('elective-stream');
     const hasSas = meta.classes.includes('sas');
     if (hasSas) cell.classList.add('sas');
+
+    const st = subjectState.get(code);
+    cell.classList.toggle('completed', !!st?.completed);
+    cell.classList.toggle('toggled', !!st?.toggled);
+    cell.setAttribute('aria-pressed', st?.completed || st?.toggled ? 'true' : 'false');
+    if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
 
     // Remove existing text nodes and rebuild display
     cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note').forEach((n) => n.remove());
@@ -1653,7 +1696,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const applyMajorConfig = (majorVal) => {
     captureSubjectMeta();
-    syncSubjectStateFromDOM();
+    currentMajorValue = majorVal || 'undecided';
     const majorKey = majorVal === 'ba' ? 'ba' : majorVal === 'sd' ? 'sd' : 'ns';
     const config = majorConfig[majorKey];
     const prevMajorKey = currentMajorKey;
@@ -1689,7 +1732,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       clearNotThisSemUI(cell);
       const slot = cell.dataset.slot;
       const code = electiveList[slot];
-      const isSpacer = cell.classList.contains('elective-spacer');
+      const isSpacer = !cell.dataset.subject;
       if (!code) {
         cell.dataset.subject = '';
         const courseEl = cell.querySelector('.subject-note');
@@ -1759,6 +1802,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     activeBitCodes.slice(0, 4).forEach((code, idx) => {
       electiveBitState[idx] = code;
     });
+    // Rebuild BIT placeholder state from subjectState (not the old DOM)
+    rebuildElectiveBitStateFromState();
     syncBitStateFromGrid();
     conditionalRecompute({ force: true, usePlanned: true });
     updateSelectedList();
@@ -1820,39 +1865,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updatePrereqErrors = () => {
     const completedSet = new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('completed') && !isPlaceholder(cell))
-        .map((cell) => cell.dataset.subject)
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
     );
     const plannedSet = new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
-        .map((cell) => cell.dataset.subject)
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
     );
     const issues = [];
-    subjects
-      .filter((cell) => cell.classList.contains('toggled') && !isPlaceholder(cell))
-      .forEach((cell) => {
-        const id = cell.dataset.subject || '';
-        const prereqsList = prerequisites[id] || [];
-        const missing = prereqsList.filter((code) => !completedSet.has(code));
-        if (id === 'BIT371') {
-          const { completedMajorCount, plannedMajorCount } = getMajorCounts();
-          const bitReqPlanned = getBit371Requirement({
-            completedSet,
-            plannedSet: new Set(),
-            usePlanned: true,
-            completedMajorCount,
-            plannedMajorCount,
-          });
-          if (!bitReqPlanned.majorConcurrentOk) {
-            missing.push('5 major subjects (at least 3 completed; remaining concurrent)');
-          }
+    plannedSet.forEach((id) => {
+      const prereqsList = prerequisites[id] || [];
+      const missing = prereqsList.filter((code) => !completedSet.has(code));
+      if (id === 'BIT371') {
+        const { completedMajorCount, plannedMajorCount } = getMajorCounts();
+        const bitReqPlanned = getBit371Requirement({
+          completedSet,
+          plannedSet: new Set(),
+          usePlanned: true,
+          completedMajorCount,
+          plannedMajorCount,
+        });
+        if (!bitReqPlanned.majorConcurrentOk) {
+          missing.push('5 major subjects (at least 3 completed; remaining concurrent)');
         }
-        if (missing.length) {
-          issues.push({ id, name: getSubjectName(id), missing });
-        }
-      });
+      }
+      if (missing.length) {
+        issues.push({ id, name: getSubjectName(id), missing });
+      }
+    });
 
     if (issues.length) {
       const detailList = issues
@@ -2058,24 +2100,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (code.startsWith('USE')) {
         if (electiveIndex < electivePlaceholders.length) {
           electivePlaceholderState[electiveIndex] = code;
-          const cell = electivePlaceholders[electiveIndex];
-          cell.classList.add('completed');
-          cell.classList.remove('toggled');
-          cell.setAttribute('aria-pressed', 'false');
           electiveIndex += 1;
         }
         return;
       }
       const cell = subjects.find((c) => c.dataset.subject === code);
       if (!cell) return;
-      cell.classList.add('completed');
-      cell.classList.remove('toggled');
-      cell.setAttribute('aria-pressed', 'false');
+      subjectState.set(code, { completed: true, toggled: false });
     });
 
     codeInput.value = '';
     hideCodeModal();
     electivePlaceholderState = electivePlaceholderState.map((val, idx) => useCodes[idx] || '');
+    applySubjectStateToCells();
+    rebuildElectiveBitStateFromState();
     conditionalRecompute({ force: true, usePlanned: false });
     updateResetState();
     // Important: Always call setElectiveCredits AFTER storing electivePlaceholderState, and before other updates
@@ -2090,27 +2128,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const id = cell.dataset.subject;
     if (!id) return;
     const placeholder = isPlaceholder(cell);
-    const notThisSem = cell.classList.contains('not-this-sem');
+    const notThisSem = notRunningIds.has(id);
     if (!completedMode && notThisSem) return;
     const placeholders = placeholder ? getElectivePlaceholders() : [];
     const placeholderIdx = placeholder ? placeholders.indexOf(cell) : -1;
     if (placeholder && placeholderIdx >= 0) {
       const bitCode = electiveBitState[placeholderIdx];
       if (bitCode) {
-        const subjCell = electivesGridCells.find(
-          (c) =>
-            c.dataset.subject === bitCode &&
-            (c.classList.contains('toggled') || c.classList.contains('completed')) &&
-            !isPlaceholder(c)
-        );
-        if (subjCell) {
-          subjCell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now');
-          subjCell.setAttribute('aria-pressed', 'false');
-        }
+        subjectState.set(bitCode, { completed: false, toggled: false });
+        const subjCell = electivesGridCells.find((c) => c.dataset.subject === bitCode && !isPlaceholder(c));
         electiveBitState[placeholderIdx] = '';
         cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
         cell.setAttribute('aria-pressed', 'false');
         fillFirstFreeSlotFromOverflow();
+        applySubjectStateToCells();
         setElectiveCredits(buildElectiveAssignments(), true);
         updateElectiveWarning();
         updateSelectedList();
@@ -2144,7 +2175,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               cell.setAttribute('aria-pressed', 'false');
             }
           }
-          setSubjectStateFromCell(cell);
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
           updateSelectedList();
@@ -2154,9 +2184,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
       }
 
-      const nowCompleted = cell.classList.toggle('completed');
+      const st = subjectState.get(id) || { completed: false, toggled: false };
+      const nowCompleted = !st.completed;
+      subjectState.set(id, { completed: nowCompleted, toggled: false });
+      cell.classList.toggle('completed', nowCompleted);
+      cell.classList.toggle('toggled', false);
       if (nowCompleted) {
-        cell.classList.remove('toggled');
         cell.classList.remove('satisfied');
         cell.classList.remove('can-select-now');
         cell.setAttribute('aria-pressed', 'false');
@@ -2176,7 +2209,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           } else {
             return;
           }
-          setSubjectStateFromCell(cell);
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
           updateSelectedList();
@@ -2185,21 +2217,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           return;
         }
       }
-      if (cell.classList.contains('completed')) return;
+      const st = subjectState.get(id) || { completed: false, toggled: false };
+      if (st.completed) return;
       if (!overrideMode) {
         const completed = new Set(
-          subjects.filter((c) => c.dataset.subject && c.classList.contains('completed')).map((c) => c.dataset.subject)
+          Array.from(subjectState.entries())
+            .filter(([, s]) => s?.completed)
+            .map(([code]) => code)
         );
         const plannedSet = new Set(
-          subjects
-            .filter(
-              (c) =>
-                c.dataset.subject &&
-                c.classList.contains('toggled') &&
-                !isPlaceholder(c) &&
-                c.dataset.subject !== id
-            )
-            .map((c) => c.dataset.subject)
+          Array.from(subjectState.entries())
+            .filter(([code, s]) => s?.toggled && code !== id)
+            .map(([code]) => code)
         );
         const { prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
           id,
@@ -2222,22 +2251,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (!bitReq.majorConcurrentOk) return;
         }
       }
-      const already = cell.classList.contains('toggled');
+      const already = !!st.toggled;
       if (!already && !canSelectPlanned()) return;
-      const active = cell.classList.toggle('toggled');
+      const active = !already;
+      subjectState.set(id, { completed: st.completed, toggled: active });
+      cell.classList.toggle('toggled', active);
       cell.setAttribute('aria-pressed', active ? 'true' : 'false');
       cell.classList.toggle('hide-tooltip', active);
       if (active) {
         cell.classList.remove('satisfied');
         cell.classList.remove('can-select-now');
-      }
-      if (!active) {
+      } else {
         cell.classList.remove('hide-tooltip');
       }
     }
-    setSubjectStateFromCell(cell);
     // Sync BIT slot state after any toggle on elective grid cells
-    if (!placeholder && id.startsWith('BIT') && cell.closest('.electives-grid')) {
+    if (!placeholder && id.startsWith('BIT') && cell.dataset.slot) {
       updateBitStateAfterToggle(cell);
     }
     // Save elective visual state before recompute
@@ -2341,24 +2370,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     attachTooltip(cell);
   });
 
-  const buildStreamLabel = (cell) => {
-    const cls = cell?.classList || { contains: () => false };
-    if (cls.contains('core')) return 'Core';
-    if (cls.contains('network')) return 'Network Security';
-    if (cls.contains('software')) return 'Software Development';
-    if (cls.contains('ba')) return 'Business Analytics';
-    if (cls.contains('dual') || cls.contains('dual-split'))
-      return 'Business Analytics & Software Development';
-    if (cls.contains('elective')) return 'Elective';
+  const buildStreamLabel = (cellOrId) => {
+    const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
+    const metaClasses = id ? subjectMeta[id]?.classes || [] : [];
+    const has = (cls) =>
+      metaClasses.includes(cls) || (cellOrId?.classList && cellOrId.classList.contains(cls));
+    if (has('core')) return 'Core';
+    if (has('network')) return 'Network Security';
+    if (has('software')) return 'Software Development';
+    if (has('ba')) return 'Business Analytics';
+    if (has('dual') || has('dual-split')) return 'Business Analytics & Software Development';
+    if (id && (id.startsWith('ELECTIVE') || id.startsWith('USE'))) return 'Elective';
+    if (has('elective')) return 'Elective';
     return 'Other';
   };
 
-  const describeSubjectCategory = (cell) => {
-    if (!cell) return { category: 'Subject', stream: '' };
-    const cls = cell.classList;
-    const isCore = cls.contains('core');
-    const isElective = cls.contains('elective') || isPlaceholder(cell);
-    const stream = buildStreamLabel(cell);
+  const describeSubjectCategory = (cellOrId) => {
+    const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
+    if (!id) return { category: 'Subject', stream: '' };
+    const metaClasses = subjectMeta[id]?.classes || [];
+    const isCore = metaClasses.includes('core');
+    const isElective = metaClasses.includes('elective') || id.startsWith('ELECTIVE') || id.startsWith('USE');
+    const stream = buildStreamLabel(cellOrId || id);
     if (isCore) return { category: 'Core', stream: '' };
     if (isElective) return { category: 'Elective', stream };
     return { category: 'Major', stream };
@@ -2382,12 +2415,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         td.colSpan = 7;
         row.appendChild(td);
       } else {
-        const name = data.name || cell?.querySelector('.subject-note')?.textContent?.trim() || 'N/A';
+        const name = data.name || getSubjectName(id) || 'N/A';
         const day = dayShort || 'N/A';
         const time = data.slot ? (timeSlots[data.slot] || data.slot) : 'N/A';
         const room = data.room || 'N/A';
         const teacher = data.teacher || 'N/A';
-        const stream = buildStreamLabel(cell || {});
+        const stream = buildStreamLabel(id);
         row.dataset.subject = id;
         row.style.cursor = 'pointer';
         if (highlightSelection && isChosen) {
@@ -2395,7 +2428,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
 
         const updateTooltip = (e, showNow = false) => {
-          const willRemove = cell?.classList.contains('toggled');
+          const willRemove = !!subjectState.get(id)?.toggled;
           hoverTooltip.innerHTML = willRemove
             ? 'Click to <span class="remove">remove</span> this subject from the timetable'
             : 'Click to <span class="add">add</span> this subject to the timetable';
@@ -2553,7 +2586,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selectedCount = getSelectedRows().length;
     const threshold = getLoadThreshold();
     if (availableHeading) {
-      availableHeading.style.display = selectedCount >= threshold ? 'none' : '';
+      availableHeading.style.display = '';
     }
     currentTableMode = selectedCount >= threshold ? 'selected' : 'available';
     if (timetableTitleEl) {
@@ -2581,7 +2614,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (mode === 'selected' && selectedCount < threshold) mode = 'available';
     currentTableMode = mode;
     if (availableHeading) {
-      availableHeading.style.display = selectedCount >= threshold ? 'none' : '';
+      availableHeading.style.display = '';
     }
     if (timetableTitleEl) {
       if (mode === 'available') {
@@ -2831,50 +2864,93 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
-  const getAvailableRows = () =>
-    subjects
-      .filter((cell) => {
-        const id = cell.dataset.subject || '';
-        if (!id || isPlaceholder(cell)) return false;
-        if (cell.classList.contains('completed')) return false;
-        if (cell.classList.contains('not-this-sem')) return false;
-        const isChosen = cell.classList.contains('toggled');
-        const canSelectNow = cell.classList.contains('can-select-now');
-        return (isChosen || canSelectNow) && !cell.classList.contains('locked');
-      })
-      .map((cell) => {
-        const id = cell.dataset.subject || '';
-        const data = timetable[id] || {};
-        const dayFull = data.day || '';
-        const dayShort = dayFull.slice(0, 3);
-        const slot = data.slot || '';
-        const isChosen = cell.classList.contains('toggled');
-        return { id, dayFull, dayShort, slot, isChosen, cell, data };
-      })
-      .sort(compareByDaySlotThenCode);
+  const getCellByCode = (code) => subjects.find((c) => c.dataset.subject === code);
 
-  const getSelectedRows = () =>
-    subjects
-      .filter((cell) => cell.classList.contains('toggled'))
-      .map((cell) => {
-        const id = cell.dataset.subject || 'N/A';
+  const getSelectedRows = () => {
+    const selectedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code);
+    return selectedCodes
+      .map((id) => {
         const data = timetable[id] || {};
         const dayFull = data.day || '';
         const dayShort = dayFull.slice(0, 3);
         const slot = data.slot || '';
+        const cell = getCellByCode(id);
         return { cell, id, data, dayFull, dayShort, slot, isChosen: true };
       })
       .sort(compareByDaySlotThenCode);
+  };
 
-  const getNextSemRows = () =>
-    subjects
+  const getAvailableRows = () => {
+    const completedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
+    );
+    const plannedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+    return subjects
       .filter((cell) => {
         const id = cell.dataset.subject || '';
         if (!id || isPlaceholder(cell)) return false;
-        // Include any satisfied subject that isn't already chosen/completed
-        if (!cell.classList.contains('satisfied')) return false;
-        if (cell.classList.contains('toggled') || cell.classList.contains('completed')) return false;
-        return true;
+        if (completedSet.has(id)) return false;
+        if (notRunningIds.has(id)) return false;
+        const st = subjectState.get(id);
+        const isChosen = !!st?.toggled;
+        if (isChosen) return true;
+        const { prereqMetNow, prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
+          id,
+          completedSet,
+          plannedSet,
+          usePlanned: true,
+        });
+        const hasCoreq = (corequisites[id] || []).length > 0;
+        const canSelectNow = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+        return canSelectNow;
+      })
+      .map((cell) => {
+        const id = cell.dataset.subject || '';
+        const data = timetable[id] || {};
+        const dayFull = data.day || '';
+        const dayShort = dayFull.slice(0, 3);
+        const slot = data.slot || '';
+        const st = subjectState.get(id);
+        const isChosen = !!st?.toggled;
+        return { id, dayFull, dayShort, slot, isChosen, cell, data };
+      })
+      .sort(compareByDaySlotThenCode);
+  };
+
+  const getNextSemRows = () => {
+    const completedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
+    );
+    const plannedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+    return subjects
+      .filter((cell) => {
+        const id = cell.dataset.subject || '';
+        if (!id || isPlaceholder(cell)) return false;
+        if (completedSet.has(id) || plannedSet.has(id)) return false;
+        // Use requisite check to decide availability for next sem
+        const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
+          id,
+          completedSet,
+          plannedSet: plannedSet,
+          usePlanned: true,
+        });
+        const hasCoreq = (corequisites[id] || []).length > 0;
+        const meets = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+        return meets;
       })
       .map((cell) => {
         const id = cell.dataset.subject || '';
@@ -2885,6 +2961,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return { id, dayShort, slot, cell };
       })
       .sort((a, b) => a.id.localeCompare(b.id));
+  };
 
   const updateSelectedList = () => {
     if (!selectedListSection || !selectedListEl) return;
@@ -3098,6 +3175,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     refreshErrorAlerts();
   };
 
+  initSubjectStateFromData();
+  applySubjectStateToCells();
   recomputeAvailability();
   updateCompletedModeUI();
   updateOverrideUI();
@@ -3147,18 +3226,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   updatePrereqErrors();
   updateWarnings();
-  updateSemesterCounts(
-    new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('completed'))
-        .map((cell) => cell.dataset.subject)
-    ),
-    new Set(
-      subjects
-        .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
-        .map((cell) => cell.dataset.subject)
-    )
-  );
+    const completedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
+    );
+    const plannedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+    updateSemesterCounts(completedSet, plannedSet);
   // Ensure header alert buttons stay hidden until messages are provided
   refreshErrorAlerts();
   setAlertMessages('info', []);
@@ -3241,18 +3319,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     toggleSemCountsBtn.addEventListener('click', () => {
       showSemCounts = !showSemCounts;
       toggleSemCountsBtn.textContent = showSemCounts ? 'Hide semesters remaining' : 'Show semesters remaining';
-      updateSemesterCounts(
-        new Set(
-          subjects
-            .filter((cell) => cell.dataset.subject && cell.classList.contains('completed'))
-            .map((cell) => cell.dataset.subject)
-        ),
-        new Set(
-          subjects
-            .filter((cell) => cell.dataset.subject && cell.classList.contains('toggled') && !isPlaceholder(cell))
-            .map((cell) => cell.dataset.subject)
-        )
+      const completedSet = new Set(
+        Array.from(subjectState.entries())
+          .filter(([, st]) => st?.completed)
+          .map(([code]) => code)
       );
+      const plannedSet = new Set(
+        Array.from(subjectState.entries())
+          .filter(([, st]) => st?.toggled)
+          .map(([code]) => code)
+      );
+      updateSemesterCounts(completedSet, plannedSet);
     });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -3270,8 +3347,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
   });
-  // Initial sync of state from DOM and reset button state
-  syncSubjectStateFromDOM();
+  // Initial sync of reset button state
   updateResetState();
   updateVaryLoadLabel();
 })();
