@@ -8,8 +8,43 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 */
 (() => {
   const subjects = Array.from(
-    document.querySelectorAll('.main-grid [data-subject], .electives-grid [data-subject]')
-  ).filter((cell) => cell.dataset.subject);
+    document.querySelectorAll('.main-grid .subject-card, .electives-grid .subject-card')
+  ).filter((cell) => !cell.classList.contains('info-card'));
+  const parseSlot = (slot = '') => {
+    const match = /^r(\d+)c(\d+)$/i.exec(slot.trim());
+    if (!match) return null;
+    return { row: Number(match[1]), col: Number(match[2]) };
+  };
+  const compareSlotCells = (a, b) => {
+    const aSlot = parseSlot(a?.dataset?.slot || '');
+    const bSlot = parseSlot(b?.dataset?.slot || '');
+    if (!aSlot && !bSlot) return 0;
+    if (!aSlot) return 1;
+    if (!bSlot) return -1;
+    if (aSlot.row !== bSlot.row) return aSlot.row - bSlot.row;
+    return aSlot.col - bSlot.col;
+  };
+  const applySlotPosition = (cell) => {
+    const slot = parseSlot(cell?.dataset?.slot || '');
+    if (!slot || !cell) return;
+    cell.style.gridRow = `${slot.row}`;
+    cell.style.gridColumn = `${slot.col}`;
+  };
+  const normalizeSlotCells = (container) => {
+    if (!container) return [];
+    const cells = Array.from(container.querySelectorAll('[data-slot]'));
+    cells.sort(compareSlotCells);
+    cells.forEach((cell) => {
+      applySlotPosition(cell);
+      container.appendChild(cell);
+    });
+    return cells;
+  };
+  const mainGrid = document.querySelector('.main-grid');
+  const electivesGrid = document.querySelector('.electives-grid');
+  const isElectivesGridCell = (cell) => !!(cell && electivesGrid && electivesGrid.contains(cell));
+  const mainGridCells = normalizeSlotCells(mainGrid);
+  const mainGridSlots = new Map(mainGridCells.map((cell) => [cell.dataset.slot, cell]));
   const electivePlaceholderOrder = ['ELECTIVE1', 'ELECTIVE2', 'ELECTIVE3', 'ELECTIVE4'];
   const electivePlaceholderCells = electivePlaceholderOrder
     .map((code) => subjects.find((cell) => cell.dataset.subject === code))
@@ -56,17 +91,46 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let currentMajorValue = 'undecided';
   const majorConfig = {
     ns: {
-      codes: ['BIT213', 'BIT233', 'BIT353', 'BIT313', 'BIT244', 'BIT362'],
+      codes: ['BIT213', 'BIT233', 'BIT353', 'BIT244', 'BIT362', 'BIT313'],
       typeClass: 'network',
     },
     ba: {
-      codes: ['BIT245', 'BIT236', 'BIT355', 'BIT357', 'BIT356', 'BIT363'],
+      codes: ['BIT245', 'BIT236', 'BIT357', 'BIT356', 'BIT363', 'BIT355'],
       typeClass: 'ba',
     },
     sd: {
-      codes: ['BIT245', 'BIT235', 'BIT358', 'BIT246', 'BIT351', 'BIT364'],
+      codes: ['BIT245', 'BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
       typeClass: 'software',
     },
+  };
+  const mainGridLayout = [
+    ['BIT121', 'MAJOR', 'MAJOR', 'MAJOR', 'INFO'],
+    ['BIT106', 'BIT108', 'MAJOR', 'MAJOR', 'BIT314'],
+    ['BIT112', 'BIT231', 'BIT241', 'MAJOR', 'BIT352'],
+    ['BIT111', 'BIT230', 'BIT242', 'BIT371', 'BIT372'],
+    ['BIT105', 'ELECTIVE1', 'ELECTIVE2', 'ELECTIVE3', 'ELECTIVE4'],
+  ];
+  const majorLayouts = {
+    ns: ['BIT213', 'BIT233', 'BIT353', 'BIT244', 'BIT362', 'BIT313'],
+    ba: ['BIT245', 'BIT236', 'BIT357', 'BIT356', 'BIT363', 'BIT355'],
+    sd: ['BIT245', 'BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
+  };
+  const electiveGridLayouts = {
+    ns: [
+      ['BIT245', null, null, null, null],
+      ['BIT236', 'BIT355', 'BIT356', 'BIT357', 'BIT363'],
+      ['BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
+    ],
+    ba: [
+      ['BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
+      [null, 'BIT213', 'BIT233', 'BIT353', null],
+      [null, 'BIT244', 'BIT313', 'BIT362', null],
+    ],
+    sd: [
+      ['BIT236', 'BIT355', 'BIT356', 'BIT357', 'BIT363'],
+      [null, 'BIT213', 'BIT233', 'BIT353', null],
+      [null, 'BIT244', 'BIT313', 'BIT362', null],
+    ],
   };
 
   const timeSlots = {
@@ -75,42 +139,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const timetable = {
-    BIT105: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson', name: 'Business Enquiry and Communication' },
-    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Tony (Xiaodong) Wang, Sitalakshmi Venkatraman, Antony Di Serio', name: 'Capstone Experience 2' },
-    BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE301', teacher: 'Dominic Mammone', name: 'Network Communication Concepts' },
-    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE110 / PE302', teacher: 'Tony (Xiaodong) Wang, Sitalakshmi Venkatraman, Antony Di Serio', name: 'Capstone Experience 1' },
-    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PE302', teacher: 'TBA', name: 'Mobile Application Development' },
-    BIT111: { day: 'Tuesday', slot: 'Morning', room: 'PE301', teacher: 'Antony Di Serio', name: 'Programming Concepts' },
-    BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE227', teacher: 'Tony (Xiaodong) Wang', name: 'Cyber Vulnerability and Hardening' },
-    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars', name: 'Network Architecture and Protocols' },
-    BIT358: { day: 'Tuesday', slot: 'Afternoon', room: 'PE302', teacher: 'TBA', name: 'Advanced Databases' },
-    BIT112: { day: 'Tuesday', slot: 'Afternoon', room: 'PE301', teacher: 'Dominic Mammone', name: 'Mathematics for Information Technology' },
-    BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PE305', teacher: 'Antony Di Serio', name: 'Web Development' },
-    BIT108: { day: 'Wednesday', slot: 'Morning', room: 'PE301', teacher: 'David Robinson', name: 'Foundations of Information Technology' },
+    BIT106: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'Sarang Hashemi', name: 'Foundations of Software, Hardware and Cloud Computing' },
+    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA', name: 'Capstone Experience 2' },
+    BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE226', teacher: 'Russul Al-Anni', name: 'Network Communication Concepts' },
+    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA', name: 'Capstone Experience 1' },
+    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi', name: 'Business Enquiry and Communication' },
+    BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Dr Anthony Overmars', name: 'Cyber Vulnerability and Hardening' },
+    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye', name: 'Mobile Application Development' },
+    BIT111: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Uchenna Enwereonye', name: 'Programming Concepts' },
+    BIT230: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi', name: 'Systems Analysis' },
+    BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Antony Di Serio', name: 'Web Development' },
+    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PF340', teacher: 'Dr Anthony Overmars', name: 'Network Architecture and Protocols' },
+    BIT112: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Dominic Mammone', name: 'Mathematics for Information Technology' },
     BIT244: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni', name: 'IT and Business Crime' },
-    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PE228', teacher: 'Dominic Mammone', name: 'Professional IT Practice and Ethics' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE227', teacher: 'Antony Di Serio', name: 'Object Oriented Programming' },
-    BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PE302', teacher: 'Russul Al-Anni', name: 'Network Design' },
-    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE301', teacher: 'Nidha Qazi', name: 'Database Systems' },
-    BIT355: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Silva (Ye) Wei', name: 'Business Intelligence' },
-    BIT230: { day: 'Thursday', slot: 'Afternoon', room: 'PE301', teacher: 'Nidha Qazi', name: 'Systems Analysis' },
-    BIT357: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Silva (Ye) Wei', name: 'Business Analysis' },
-    BIT242: { day: 'Friday', slot: 'Morning', room: 'PE302', teacher: 'Silva (Ye) Wei', name: 'IT Project Management' },
+    BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PA114', teacher: 'Yaona Zhao', name: 'Network Design' },
+    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio', name: 'Object Oriented Programming' },
+    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone', name: 'Professional IT Practice and Ethics' },
+    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Nikki Wan', name: 'Digital Forensics' },
+    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Shzaa Niazi', name: 'Foundations of Information Technology' },
+    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Nidha Qazi', name: 'Database Systems' },
+    BIT357: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Ye Wei (Silva)', name: 'Business Analysis' },
+    BIT213: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Dr Xiaodong Wang (Tony)', name: 'Network and Cyber Security Essentials' },
+    BIT358: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Nidha Qazi', name: 'Advanced Databases' },
+    BIT355: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'TBA', name: 'Business Intelligence' },
+    BIT242: { day: 'Friday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)', name: 'IT Project Management' },
     BIT352: { day: 'Friday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson', name: 'Systems Implementation and Service Management' },
-    BIT362: { day: 'Friday', slot: 'Morning', room: 'PE301', teacher: 'Nikki Wan', name: 'Digital Forensics' },
-    BIT314: { day: 'Friday', slot: 'Afternoon', room: 'PE301', teacher: 'David Robinson', name: 'Cybersecurity Management and Governance' },
-    BIT213: { day: 'Friday', slot: 'Afternoon', room: 'PE302', teacher: 'Nikki Wan', name: 'Network and Cyber Security Essentials' },
-    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PE227', teacher: 'Silva (Ye) Wei', name: 'Enterprise Resources' },
+    BIT314: { day: 'Friday', slot: 'Afternoon', room: 'PA113', teacher: 'David Robinson', name: 'Cybersecurity Management and Governance' },
+    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'Ye Wei (Silva)', name: 'Enterprise Resources' },
   };
 
-  const notRunningIds = new Set(['BIT106', 'BIT246', 'BIT363', 'BIT356', 'BIT364']);
-  // Track alternate-semester subjects for future use (planning/completion timelines)
-  const alternateSemesters = {
-    BIT356: { runsThisSemester: !notRunningIds.has('BIT356') },
-    BIT363: { runsThisSemester: !notRunningIds.has('BIT363') },
-    BIT364: { runsThisSemester: !notRunningIds.has('BIT364') },
-    BIT246: { runsThisSemester: !notRunningIds.has('BIT246') },
-  };
+  const notRunningIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
 
   const dependents = {};
   Object.keys(prerequisites).forEach((id) => { dependents[id] = []; });
@@ -123,12 +181,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const clearButton = document.getElementById('clear-selections');
   const completedModeButton = document.getElementById('toggle-completed-mode');
+  const openInstructionsModal = document.getElementById('open-instructions-modal');
   const openCodeModal = document.getElementById('open-code-modal');
   const overrideToggle = document.getElementById('override-toggle');
   const overrideLabel = document.querySelector('.switch-label');
   const livePrereqToggle = document.getElementById('live-prereq-toggle');
   const livePrereqRow = document.getElementById('live-prereq-row');
   const showTimetableButton = document.getElementById('show-timetable');
+  const showCourseTimetableButton = document.getElementById('show-course-timetable');
   const varyLoadButton = document.getElementById('vary-load');
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
@@ -146,6 +206,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyTimetable = document.getElementById('copy-timetable');
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
+  const courseTimetableModal = document.getElementById('course-timetable-modal');
+  const closeCourseTimetable = document.getElementById('close-course-timetable');
+  const closeCourseTimetableCta = document.getElementById('close-course-timetable-cta');
+  const courseTimetableContent = document.getElementById('course-timetable-content');
+  const courseTimetableNotRunningList = document.getElementById('course-timetable-not-running-list');
+  const courseTimetableListButton = document.getElementById('course-timetable-list');
+  const courseTimetableGridButton = document.getElementById('course-timetable-grid');
+  const copyCourseTimetableButton = document.getElementById('copy-course-timetable');
+  const instructionsModal = document.getElementById('instructions-modal');
+  const closeInstructionsModal = document.getElementById('close-instructions-modal');
+  const closeInstructionsCta = document.getElementById('close-instructions-cta');
   const codeModal = document.getElementById('code-modal');
   const closeCodeModal = document.getElementById('close-code-modal');
   const cancelCodeModal = document.getElementById('cancel-code-modal');
@@ -176,6 +247,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const electivesLabel = document.getElementById('electives-label');
   let modalLocked = false;
   let modalPrevStyle = null;
+  let courseTimetableView = 'grid';
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
@@ -287,7 +359,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorLabel = document.getElementById('major-current-label');
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
-  console.log('majorDropdown:', majorDropdown, 'majorToggle:', majorToggle, 'majorOptions length:', majorOptions.length);
   const creditWarningIds = new Set([
     'BIT313','BIT314','BIT351','BIT352','BIT353','BIT355','BIT356','BIT357','BIT358','BIT362','BIT363','BIT364','BIT371','BIT372','BIT241'
   ]);
@@ -313,30 +384,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   semTooltip.className = 'sem-tooltip';
   document.body.appendChild(semTooltip);
   let semTooltipTimer = null;
-  const majorSlots = [];
-  const electivesGridCells = Array.from(document.querySelectorAll('.electives-grid [data-slot]'));
+  const electivesGridCells = normalizeSlotCells(electivesGrid);
 
   const isPlaceholder = (cell) => cell.dataset.subject && cell.dataset.subject.startsWith('ELECTIVE');
 
   const getCurrentMajor = () => currentMajorValue || 'undecided';
-  const isMajorCellForRequirement = (cell) => {
-    if (!cell || !cell.dataset.subject) return false;
-    if (isPlaceholder(cell)) return false;
-    const classes = subjectMeta[cell.dataset.subject]?.classes || [];
-    const isMajorTagged =
-      classes.includes('network') ||
-      classes.includes('ba') ||
-      classes.includes('software') ||
-      classes.includes('dual') ||
-      classes.includes('dual-split');
-    if (!isMajorTagged) return false;
-    const major = getCurrentMajor();
-    if (major === 'undecided') return true; // count any tagged major when undecided
-    if (major === 'network') return classes.includes('network');
-    if (major === 'ba') return classes.includes('ba') || classes.includes('dual') || classes.includes('dual-split');
-    if (major === 'sd') return classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
-    return isMajorTagged;
-  };
 
   const getMajorCounts = () => {
     const major = getCurrentMajor();
@@ -361,7 +413,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     return { completedMajorCount, plannedMajorCount };
   };
-  const captureSubjectMeta = () => {};
 
   const computeSemesterDistance = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
     if (memo.has(id)) return memo.get(id);
@@ -460,7 +511,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       if (!existing) {
         const attachEvents = () => {
-          let moveHandler = null;
           el.addEventListener('mouseenter', (e) => {
             if (semTooltipTimer) clearTimeout(semTooltipTimer);
             semTooltipTimer = setTimeout(() => {
@@ -588,7 +638,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               ? `<p>Longest chain: <strong>${pathStrings[0]}</strong></p>`
               : ''
             : `<p>Longest chain:<br><strong>${pathStrings.join('<br>')}</strong></p>`;
-        const introColor = chainOverrunsPlan ? ALERT_COLORS.error : ALERT_COLORS.warning;
         const chainTitle = chainOverrunsPlan
           ? 'Prerequisite chain exceeds optimal timeline'
           : 'Prerequisite chain at optimal limit';
@@ -697,7 +746,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  const getElectiveSlotCodes = (majorKey) => {
+  const resolveMajorKey = (majorVal) => (majorVal === 'ba' ? 'ba' : majorVal === 'sd' ? 'sd' : 'ns');
+  const getMajorKeyFromUi = () =>
+    resolveMajorKey(majorDropdown?.dataset?.value || currentMajorValue || 'undecided');
+  const getElectiveSlotCodes = (majorKey = getMajorKeyFromUi()) => {
     const layout = computeElectiveList(majorKey);
     const slots = electivesGridCells
       .map((cell) => cell.dataset.slot || '')
@@ -706,31 +758,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return slots.map((slot) => layout[slot] || '');
   };
 
-  const syncBitStateFromGrid = () => {
-    const slotCodes = getElectiveSlotCodes(currentMajorKey);
-    const active = [];
-    slotCodes.forEach((code) => {
-      if (!code) return;
-      const st = subjectState.get(code);
-      if (st?.completed || st?.toggled) active.push(code);
-    });
-    const nextState = ['', '', '', ''];
-    let activeIdx = 0;
-    for (let i = 0; i < nextState.length; i += 1) {
-      if (electivePlaceholderState[i]) continue;
-      if (activeIdx >= active.length) break;
-      nextState[i] = active[activeIdx];
-      activeIdx += 1;
-    }
-    electiveBitState = nextState;
-  };
-
   // Ensure electiveBitState mirrors the current subjectState for the active major layout
   const rebuildElectiveBitStateFromState = () => {
-    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    const majorKey = getMajorKeyFromUi();
+    const majorSet = new Set(majorLayouts[majorKey] || []);
+    const slotCodes = getElectiveSlotCodes(majorKey);
     const active = [];
     slotCodes.forEach((code) => {
-      if (!code) return;
+      if (!code || majorSet.has(code)) return;
       const st = subjectState.get(code);
       if (st?.completed || st?.toggled) active.push(code);
     });
@@ -758,14 +793,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  const compactElectivePlaceholdersFrom = (startIdx = 0) => {
-    const remainingCount = electivePlaceholderState.filter((code, idx) => idx !== startIdx && !!code).length;
-    electivePlaceholderState = electivePlaceholderState.map((_, idx) => {
-      if (idx <= remainingCount - 1) return electiveCodeOrder[idx] || '';
-      return '';
-    });
-  };
-
   const getNextAvailableUseSlotIndex = () => {
     const placeholders = getElectivePlaceholders();
     return placeholders.findIndex((_, idx) => {
@@ -779,7 +806,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const id = cell?.dataset.subject;
     if (!id || !id.startsWith('BIT')) return;
     if (isPlaceholder(cell)) return;
-    if (!cell.dataset.slot) return;
+    if (!isElectivesGridCell(cell)) return;
     const st = subjectState.get(id);
     const active = st?.toggled || st?.completed;
     const existingIdx = electiveBitState.findIndex((code) => code === id);
@@ -798,7 +825,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const fillFirstFreeSlotFromOverflow = () => {
     const freeIdx = electiveBitState.findIndex((code, idx) => !code && !electivePlaceholderState[idx]);
     if (freeIdx < 0) return false;
-    const slotCodes = getElectiveSlotCodes(currentMajorKey);
+    const slotCodes = getElectiveSlotCodes();
     const overflowBits = slotCodes.filter((code) => {
       if (!code || electiveBitState.includes(code)) return false;
       const st = subjectState.get(code);
@@ -818,7 +845,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (noteEl && !cell.dataset.originalNote) cell.dataset.originalNote = noteEl.textContent || '';
       const hasUse = !!electivePlaceholderState[idx];
       const hasBit = !!electiveBitState[idx];
-      const isCompleted = hasUse || hasBit;
       const isEmpty = !hasUse && !hasBit;
       cell.classList.remove('hide-tooltip');
       if (completedMode && isEmpty) {
@@ -859,20 +885,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   let electiveAssignments = [];
 
-  // Track elective visual state independently from DOM
-  const electiveSelectionState = new Map();
-
-  // Visual state for electives now derives from subjectState + slot layout; helpers kept no-op for compatibility
-  const saveElectiveVisuals = () => {};
-  const restoreElectiveVisuals = () => {};
-
   const setElectiveCredits = (entries = [], persist = true) => {
     const normalized = (entries || []).filter((text) => (text ?? '').toString().trim().length > 0);
-    // When we refresh visuals only (persist === false), avoid shrinking the visible electives list
-    // if a recompute temporarily drops items (e.g., because prereq chains get recalculated).
-    // The persisted electiveAssignments remain the source of truth until an explicit user action
-    // updates them with persist === true.
-    const stableEntries = !persist && normalized.length < electiveAssignments.length ? electiveAssignments : normalized;
     const placeholders = getElectivePlaceholders();
     normalizeUseCodes();
     // Build visual entries per placeholder: BIT in its slot if present; otherwise the USE assigned to that slot; otherwise empty.
@@ -895,10 +909,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       // Always clear previously injected elective-credit elements before rendering fresh content
       cell.querySelectorAll('.elective-credit').forEach((n) => n.remove());
 
+      const bitCode = electiveBitState[idx];
+      const bitState = bitCode ? subjectState.get(bitCode) : null;
       const useCode = electivePlaceholderState[idx] || '';
       const useText = useCode ? `${useCode} ${useDisplayNames[useCode] || 'Unspecified Elective'}` : '';
       const text = displayEntries[idx] || useText || '';
       const useMatch = text ? text.match(/^(USE\d{3})/i) : null;
+      const isUseCredit = !!useCode && !bitCode;
+      const isBitPlanned = !!(bitCode && bitState?.toggled);
+      const isBitCompleted = !!(bitCode && bitState?.completed);
 
       // Only reach here if we have new text content
       if (text) {
@@ -913,15 +932,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           titleEl.textContent = text;
           noteEl.textContent = '';
         }
-        cell.classList.add('completed');
-        cell.classList.add('toggled');
         cell.classList.add('filled-elective');
         cell.classList.remove('empty');
-        if (useCode && !bitCode) {
-          cell.classList.add('use-credit');
-        } else {
-          cell.classList.remove('use-credit');
-        }
+        cell.classList.toggle('use-credit', isUseCredit);
+        cell.classList.toggle('completed', isUseCredit || isBitCompleted);
+        cell.classList.toggle('toggled', isBitPlanned);
+        cell.setAttribute('aria-pressed', isUseCredit || isBitCompleted || isBitPlanned ? 'true' : 'false');
       } else {
         // Only restore original label if clearing (no persisted state)
         if (titleEl && cell.dataset.originalTitle) titleEl.textContent = cell.dataset.originalTitle;
@@ -947,11 +963,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       entries.push(`${code} - ${name}`);
     });
     return entries;
-  };
-
-  const refreshElectiveCreditsFromState = () => {
-    setElectiveCredits(buildElectiveAssignments());
-    updateElectiveWarning();
   };
 
   const updateWarnings = () => {
@@ -1028,15 +1039,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cell.classList.remove('locked');
       cell.classList.remove('coreq-selectable');
 
-      // In completed (credit) mode, electives should stay clickable regardless of unmet prereqs.
-      const inElectivesGrid = !!cell.dataset.slot;
-      if (!st?.toggled && !st?.completed && completedMode && inElectivesGrid) {
-        cell.classList.add('satisfied');
-        cell.classList.add('can-select-now');
-        cell.classList.remove('locked');
-        return;
-      }
-
       const { prereqMetNow, prereqMetPlanned, coreqMetNow, coreqMetPlanned } = getRequisiteStatus({
         id,
         completedSet: completed,
@@ -1098,13 +1100,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
       const isNotThisSem = notRunningIds.has(id);
-      // For elective stream cards, keep them selectable even if prereqs are unmet (planning mode)
-      if (inElectivesGrid && !st?.toggled && !st?.completed) {
-        cell.classList.add('satisfied', 'can-select-now');
-        cell.classList.remove('locked');
-        cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
-        return;
-      }
       cell.classList.toggle('satisfied', met);
       const canSelectNow = id === 'BIT371' ? met && !isNotThisSem : metNow && !isNotThisSem;
       cell.classList.toggle('can-select-now', canSelectNow);
@@ -1131,7 +1126,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const availableElectiveSubjects = subjects.filter((cell) => {
       const id = cell.dataset.subject;
-      const inElectivesGrid = !!cell.dataset.slot;
+      const inElectivesGrid = isElectivesGridCell(cell);
       const isElectiveSubject = id && id.startsWith('BIT') && !isPlaceholder(cell) && inElectivesGrid;
       if (!isElectiveSubject) return false;
       const st = subjectState.get(id);
@@ -1374,21 +1369,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return opts;
   };
 
-  const recordStateByCode = () => {
-    const state = {};
-    subjects.forEach((cell) => {
-      const id = cell.dataset.subject;
-      if (!id) return;
-      const st = subjectState.get(id);
-      state[id] = {
-        completed: !!st?.completed,
-        toggled: !!st?.toggled,
-        notThisSem: notRunningIds.has(id),
-      };
-    });
-    return state;
-  };
-
   const ensureNotThisSemUI = (cell) => {
     if (!cell) return;
     cell.classList.add('not-this-sem');
@@ -1419,13 +1399,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hoverZone = document.createElement('div');
     hoverZone.className = 'hover-zone';
 
-    if (!id || isPlaceholder(cell)) {
+    const isPlaceholderCell = () => {
+      const currentId = cell.dataset.subject || '';
+      return !currentId || isPlaceholder(cell);
+    };
+    const setPlaceholderTooltip = () => {
       const msg = completedMode
         ? '<div class="inline-electives-heading">Electives</div><br>You have <b>2 options</b> for marking these 4 Elective boxes as complete:<br><br><b>1.</b>&nbsp; Click on the subjects in the streams below to have them appear in these 4 Elective boxes.<br><b>2.</b>&nbsp; If you click on these 4 boxes when they are empty, they will be marked as completed as "Unspecified Electives (USE)"'
         : '<div class="inline-electives-heading">Electives</div><br>Fill these Elective boxes with the subjects from the below Electives section (or with any subject that you have completed at diploma level or higher.").';
-      const p = document.createElement('div');
-      p.innerHTML = msg;
-      tooltip.appendChild(p);
+      tooltip.innerHTML = msg;
+    };
+
+    if (isPlaceholderCell()) {
+      setPlaceholderTooltip();
     } else {
       const data = timetable[id] || {};
       if (creditWarningIds.has(id)) {
@@ -1517,6 +1503,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!cell.classList.contains('hide-tooltip')) {
         cell.classList.add('show-tooltip');
       }
+      if (isPlaceholderCell()) setPlaceholderTooltip();
       const creditOnly = tooltip.querySelectorAll('[data-credit-only="true"]');
       creditOnly.forEach((el) => {
         el.style.display = completedMode ? 'block' : 'none';
@@ -1548,25 +1535,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (tip) tip.remove();
   };
 
-  const applyStateByCode = (state = {}) => {
-    subjects.forEach((cell) => {
-      const id = cell.dataset.subject;
-      if (!id) return;
-      // Skip elective placeholder cells; electives grid cells can be restored
-      if (isPlaceholder(cell)) return;
-      const st = state[id];
-      cell.classList.remove('completed', 'toggled', 'satisfied', 'can-select-now', 'locked', 'coreq-selectable', 'chain-delay', 'final-sem-pill', 'next-sem-warning');
-      clearNotThisSemUI(cell);
-      cell.setAttribute('aria-pressed', 'false');
-      if (st?.completed) cell.classList.add('completed');
-      if (st?.toggled) {
-        cell.classList.add('toggled');
-        cell.setAttribute('aria-pressed', 'true');
-      }
-      if (notRunningIds.has(id)) ensureNotThisSemUI(cell);
-    });
-  };
-
   const renderSubjectInCell = (cell, code, typeClass) => {
     const meta = subjectMeta[code];
     if (!meta) return;
@@ -1574,14 +1542,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.dataset.subject = code;
     cell.className = 'subject-card';
     cell.classList.add('clickable');
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
     const base = typeClass || meta.classes.find((c) => baseTypeClasses.includes(c)) || '';
     cell.classList.add(base || 'elective');
-    const inElectivesGrid = !!cell.dataset.slot;
+    const inElectivesGrid = isElectivesGridCell(cell);
     const isPlaceholderCode = code.startsWith('ELECTIVE');
     if (isPlaceholderCode) cell.classList.add('placeholder-card');
     else if (inElectivesGrid) cell.classList.add('elective-stream');
     const hasSas = meta.classes.includes('sas');
-    if (hasSas) cell.classList.add('sas');
 
     const st = subjectState.get(code);
     cell.classList.toggle('completed', !!st?.completed);
@@ -1590,7 +1559,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
 
     // Remove existing text nodes and rebuild display
-    cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note').forEach((n) => n.remove());
+    cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note, .sas').forEach((n) => n.remove());
 
     const codeEl = document.createElement('span');
     codeEl.className = 'subject-code';
@@ -1609,61 +1578,82 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.appendChild(codeEl);
     cell.appendChild(titleEl);
     cell.appendChild(noteEl);
+    if (hasSas) {
+      const sasEl = document.createElement('div');
+      sasEl.className = 'sas';
+      cell.appendChild(sasEl);
+    }
   };
 
+  function renderElectivePlaceholder(cell, code) {
+    if (!cell) return;
+    cell.dataset.subject = code;
+    cell.className = 'subject-card elective placeholder-card clickable';
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.classList.remove('filled-elective', 'use-credit', 'toggled', 'completed', 'locked');
+    cell.setAttribute('aria-pressed', 'false');
+    cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note, .sas').forEach((n) => n.remove());
+
+    const labelIdx = Number(code.replace('ELECTIVE', '')) || '';
+    const codeEl = document.createElement('span');
+    codeEl.className = 'subject-code';
+    codeEl.textContent = labelIdx ? `Elective ${labelIdx}` : 'Elective';
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'subject-note subject-title';
+    titleEl.textContent = 'Choose from electives below';
+
+    const noteEl = document.createElement('span');
+    noteEl.className = 'prerequsites-note';
+    noteEl.textContent = '\u00a0';
+
+    cell.appendChild(codeEl);
+    cell.appendChild(titleEl);
+    cell.appendChild(noteEl);
+  }
+
+  function applyMainGridLayout(majorKey) {
+    const resolvedMajor = majorKey === 'ba' ? 'ba' : majorKey === 'sd' ? 'sd' : 'ns';
+    const majorCodes = majorLayouts[resolvedMajor] || majorLayouts.ns;
+    let majorIdx = 0;
+
+    mainGridLayout.forEach((row, rowIdx) => {
+      row.forEach((entry, colIdx) => {
+        const slot = `r${rowIdx + 1}c${colIdx + 1}`;
+        const cell = mainGridSlots.get(slot);
+        if (!cell) return;
+        if (entry === 'INFO') return;
+        if (entry === 'MAJOR') {
+          const code = majorCodes[majorIdx];
+          majorIdx += 1;
+          if (!code) return;
+          renderSubjectInCell(cell, code, majorConfig[resolvedMajor]?.typeClass);
+          attachTooltip(cell);
+          return;
+        }
+        if (typeof entry === 'string' && entry.startsWith('ELECTIVE')) {
+          renderElectivePlaceholder(cell, entry);
+          cell.classList.add('elective-placeholder');
+          cell.classList.remove('clickable');
+          attachTooltip(cell);
+          return;
+        }
+        renderSubjectInCell(cell, entry, 'core');
+        attachTooltip(cell);
+      });
+    });
+  }
+
   const computeElectiveList = (major) => {
-    const allSlots = electivesGridCells.map((cell) => cell.dataset.slot || '');
-    const result = Object.fromEntries(allSlots.map((slot) => [slot, null]));
-
-    const setSlot = (slot, code) => {
-      if (slot && Object.prototype.hasOwnProperty.call(result, slot)) {
-        result[slot] = code;
-      }
-    };
-
-    const placeNetworkRows = () => {
-      setSlot('r2c2', 'BIT213');
-      setSlot('r2c3', 'BIT233');
-      setSlot('r2c4', 'BIT353');
-      setSlot('r3c2', 'BIT244');
-      setSlot('r3c3', 'BIT313');
-      setSlot('r3c4', 'BIT362');
-    };
-
-    if (major === 'sd') {
-      // Software Development major: show BA electives + Network Security row
-      setSlot('r1c1', 'BIT236');
-      setSlot('r1c2', 'BIT355');
-      setSlot('r1c3', 'BIT356');
-      setSlot('r1c4', 'BIT357');
-      setSlot('r1c5', 'BIT363');
-      placeNetworkRows();
-      return result;
-    }
-
-    if (major === 'ba') {
-      // Business Analytics major: show SD electives + Network Security row
-      setSlot('r1c1', 'BIT235');
-      setSlot('r1c2', 'BIT246');
-      setSlot('r1c3', 'BIT358');
-      setSlot('r1c4', 'BIT364');
-      setSlot('r1c5', 'BIT351');
-      placeNetworkRows();
-      return result;
-    }
-
-    // Network/undecided: show BA row, SD row, and keep BIT245 dual subject
-    setSlot('r1c1', 'BIT245');
-    setSlot('r2c1', 'BIT236');
-    setSlot('r2c2', 'BIT355');
-    setSlot('r2c3', 'BIT356');
-    setSlot('r2c4', 'BIT357');
-    setSlot('r2c5', 'BIT363');
-    setSlot('r3c1', 'BIT235');
-    setSlot('r3c2', 'BIT246');
-    setSlot('r3c3', 'BIT358');
-    setSlot('r3c4', 'BIT364');
-    setSlot('r3c5', 'BIT351');
+    const resolvedMajor = major === 'ba' ? 'ba' : major === 'sd' ? 'sd' : 'ns';
+    const layout = electiveGridLayouts[resolvedMajor] || electiveGridLayouts.ns;
+    const result = {};
+    layout.forEach((row, rowIdx) => {
+      row.forEach((code, colIdx) => {
+        result[`r${rowIdx + 1}c${colIdx + 1}`] = code || null;
+      });
+    });
     return result;
   };
 
@@ -1695,116 +1685,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const applyMajorConfig = (majorVal) => {
-    captureSubjectMeta();
     currentMajorValue = majorVal || 'undecided';
     const majorKey = majorVal === 'ba' ? 'ba' : majorVal === 'sd' ? 'sd' : 'ns';
-    const config = majorConfig[majorKey];
-    const prevMajorKey = currentMajorKey;
+    const activeElectiveCells = normalizeSlotCells(electivesGrid);
     currentMajorKey = majorKey;
-    const state = recordStateByCode();
-    const carryover =
-      prevMajorKey && prevMajorKey !== majorKey
-        ? majorConfig[prevMajorKey].codes.filter(
-          (code) => !config.codes.includes(code) && (state[code]?.toggled || state[code]?.completed)
-        )
-        : [];
-    // map slots to new subjects
-    config.codes.forEach((code, idx) => {
-      const cell = majorSlots[idx];
-      if (!cell) return;
-      renderSubjectInCell(cell, code, config.typeClass);
-    });
-    // reset electives before reassigning
-    electiveBitState = ['', '', '', ''];
-    electivesGridCells.forEach((cell) => {
-      clearNotThisSemUI(cell);
-      cell.dataset.subject = '';
-      const courseEl = cell.querySelector('.subject-note') || cell.querySelector('.course');
-      const noteEl = cell.querySelector('.prerequsites-note') || cell.querySelector('.note');
-      if (courseEl) courseEl.textContent = '';
-      if (noteEl) noteEl.textContent = '';
-      cell.className = 'subject-card elective-spacer placeholder-card';
-      attachTooltip(cell);
-    });
+    // map slots to new subjects in the main grid
+    applyMainGridLayout(majorKey);
     // electives
     const electiveList = computeElectiveList(majorKey);
-    electivesGridCells.forEach((cell) => {
+    activeElectiveCells.forEach((cell) => {
       clearNotThisSemUI(cell);
       const slot = cell.dataset.slot;
       const code = electiveList[slot];
-      const isSpacer = !cell.dataset.subject;
       if (!code) {
         cell.dataset.subject = '';
-        const courseEl = cell.querySelector('.subject-note');
-        const noteEl = cell.querySelector('.prerequsites-note');
-        if (courseEl) courseEl.textContent = '';
-        if (noteEl) noteEl.textContent = '';
+        cell.querySelectorAll('.subject-code, .subject-note, .prerequsites-note, .course, .note, .sas').forEach((n) => n.remove());
         cell.className = 'subject-card elective-spacer placeholder-card empty';
+        cell.removeAttribute('role');
+        cell.removeAttribute('tabindex');
+        cell.removeAttribute('aria-pressed');
         attachTooltip(cell);
         return;
       }
-      if (isSpacer) cell.classList.remove('elective-spacer');
       renderSubjectInCell(cell, code, null);
       applyElectiveStyling(cell, code, majorKey);
       if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
       attachTooltip(cell);
     });
-    applySubjectStateToCells();
-    // Clear BIT slots that no longer exist in the new electives grid
-    const validElectiveIds = new Set(
-      electivesGridCells.map((c) => c.dataset.subject).filter((id) => id && id.startsWith('BIT'))
-    );
-    electiveBitState = electiveBitState.map((code) => (validElectiveIds.has(code) ? code : ''));
-    syncBitStateFromGrid();
-    // Ensure grid cells match the current elective list; clear any stray content in unused slots
-    electivesGridCells.forEach((cell) => {
-      const slot = cell.dataset.slot;
-      const expectedCode = electiveList[slot];
-      if (!expectedCode) {
-        cell.dataset.subject = '';
-        cell.querySelectorAll('.subject-code, .subject-note, .prerequsites-note, .course, .note').forEach((n) => n.remove());
-        cell.className = 'subject-card elective-spacer placeholder-card empty';
-        attachTooltip(cell);
-        return;
-      }
-      if (cell.dataset.subject !== expectedCode) {
-        renderSubjectInCell(cell, expectedCode, null);
-        applyElectiveStyling(cell, expectedCode, majorKey);
-        if (notRunningIds.has(expectedCode)) ensureNotThisSemUI(cell);
-        attachTooltip(cell);
-      }
-    });
-    // Reapply subjectState toggles/completions to electives grid cells for current layout
-    const sortedElectives = [...electivesGridCells].sort((a, b) => (a.dataset.slot || '').localeCompare(b.dataset.slot || ''));
-    sortedElectives.forEach((cell) => {
-      const code = cell.dataset.subject;
-      if (!code) return;
-      const st = subjectState.get(code);
-      cell.classList.remove('completed', 'toggled');
-      cell.setAttribute('aria-pressed', 'false');
-      if (st?.completed) {
-        cell.classList.add('completed');
-        cell.setAttribute('aria-pressed', 'true');
-      }
-      if (st?.toggled) {
-        cell.classList.add('toggled');
-        cell.setAttribute('aria-pressed', 'true');
-      }
-    });
-    // Rebuild BIT slot state from subjectState and current layout (first four active electives in slot order)
-    const slotCodes = getElectiveSlotCodes(majorKey);
-    const activeBitCodes = slotCodes.filter((code) => {
-      if (!code) return false;
-      const st = subjectState.get(code);
-      return st?.completed || st?.toggled;
-    });
-    electiveBitState = ['', '', '', ''];
-    activeBitCodes.slice(0, 4).forEach((code, idx) => {
-      electiveBitState[idx] = code;
-    });
-    // Rebuild BIT placeholder state from subjectState (not the old DOM)
     rebuildElectiveBitStateFromState();
-    syncBitStateFromGrid();
     conditionalRecompute({ force: true, usePlanned: true });
     updateSelectedList();
     setElectiveCredits(buildElectiveAssignments(), true);
@@ -2013,13 +1921,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
     dropZone.addEventListener('drop', (e) => {
       // Placeholder for future file handling
-      console.log('Dropped files', e.dataTransfer?.files);
     });
   };
 
   initDropZone();
 
   subjects.forEach((cell) => {
+    const id = cell.dataset.subject;
+    if (!id) return;
     cell.classList.add('clickable');
     cell.classList.add('locked');
     cell.tabIndex = 0;
@@ -2070,6 +1979,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   }
 
+  const showInstructionsModal = () => {
+    if (!instructionsModal) return;
+    instructionsModal.classList.add('show');
+    instructionsModal.setAttribute('aria-hidden', 'false');
+    if (openInstructionsModal) openInstructionsModal.setAttribute('aria-expanded', 'true');
+    if (closeInstructionsModal) closeInstructionsModal.focus();
+  };
+
+  const hideInstructionsModal = () => {
+    if (!instructionsModal) return;
+    instructionsModal.classList.remove('show');
+    instructionsModal.setAttribute('aria-hidden', 'true');
+    if (openInstructionsModal) openInstructionsModal.setAttribute('aria-expanded', 'false');
+    if (openInstructionsModal) openInstructionsModal.focus();
+  };
+
   const showCodeModal = () => {
     if (!codeModal) return;
     codeModal.classList.add('show');
@@ -2083,6 +2008,155 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     codeModal.classList.remove('show');
     codeModal.setAttribute('aria-hidden', 'true');
     if (openCodeModal) openCodeModal.setAttribute('aria-expanded', 'false');
+  };
+
+  const getSlotAbbreviation = (slot = '') => {
+    const normalized = slot.trim().toLowerCase();
+    if (normalized === 'morning') return 'AM';
+    if (normalized === 'afternoon') return 'PM';
+    return slot;
+  };
+
+  const buildCourseTimetableTooltip = (id) => {
+    const { category, stream } = describeSubjectCategory(id);
+    const streamLabel = stream || buildStreamLabel(id);
+    const streamText = streamLabel === 'Core' ? 'All streams' : streamLabel;
+    const prereqList = prerequisites[id] || [];
+    const coreqList = corequisites[id] || [];
+    const depsList =
+      dependents[id] && dependents[id].length
+        ? dependents[id].filter((code) => !String(code).toUpperCase().startsWith('ELECTIVE'))
+        : [];
+    return [
+      `Category: ${category}`,
+      `Stream: ${streamText}`,
+      `Prerequisites: ${prereqList.length ? prereqList.join(', ') : 'None'}`,
+      `Corequisites: ${coreqList.length ? coreqList.join(', ') : 'None'}`,
+      `Needed for: ${depsList.length ? depsList.join(', ') : 'None'}`,
+    ].join('\n');
+  };
+
+  const setCourseTimetableView = (view) => {
+    courseTimetableView = view;
+    const isList = view === 'list';
+    if (courseTimetableContent) {
+      courseTimetableContent.classList.toggle('course-timetable-list-mode', isList);
+    }
+    if (courseTimetableGridButton) {
+      courseTimetableGridButton.classList.toggle('is-inactive', !isList);
+      courseTimetableGridButton.disabled = !isList;
+      courseTimetableGridButton.setAttribute('aria-pressed', (!isList).toString());
+    }
+    if (courseTimetableListButton) {
+      courseTimetableListButton.classList.toggle('is-inactive', isList);
+      courseTimetableListButton.disabled = isList;
+      courseTimetableListButton.setAttribute('aria-pressed', isList.toString());
+    }
+  };
+
+  const renderCourseTimetableModal = () => {
+    if (!courseTimetableContent) return;
+    courseTimetableContent.innerHTML = '';
+    const groups = new Map();
+    Object.entries(timetable).forEach(([id, data]) => {
+      if (notRunningIds.has(id)) return;
+      const day = data.day || '';
+      const slot = data.slot || '';
+      if (!day || !slot) return;
+      const key = `${day}|${slot}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ id, data });
+    });
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const slotNames = ['Morning', 'Afternoon'];
+    dayNames.forEach((day) => {
+      slotNames.forEach((slot) => {
+        const key = `${day}|${slot}`;
+        const entries = (groups.get(key) || []).sort((a, b) => a.id.localeCompare(b.id));
+        const section = document.createElement('section');
+        section.className = 'course-timetable-section';
+        const heading = document.createElement('div');
+        heading.className = 'course-timetable-heading';
+        heading.textContent = `${day} ${getSlotAbbreviation(slot)}`;
+        section.appendChild(heading);
+        if (!entries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'course-timetable-empty';
+          empty.textContent = 'No subjects running.';
+          section.appendChild(empty);
+        } else {
+          const list = document.createElement('ul');
+          list.className = 'course-timetable-list';
+          entries.forEach(({ id, data }) => {
+            const item = document.createElement('li');
+            item.className = 'course-timetable-item';
+            item.title = buildCourseTimetableTooltip(id);
+            const row = document.createElement('div');
+            row.className = 'course-timetable-item-row';
+            const code = document.createElement('span');
+            code.className = 'course-timetable-code';
+            code.textContent = id;
+            const name = document.createElement('span');
+            name.className = 'course-timetable-name';
+            name.textContent = data.name || getSubjectName(id) || id;
+            row.appendChild(code);
+            row.appendChild(name);
+            item.appendChild(row);
+            const meta = document.createElement('div');
+            meta.className = 'course-timetable-meta';
+            const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+            const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+            meta.textContent = `${room} \u00b7 ${teacher}`;
+            item.appendChild(meta);
+            list.appendChild(item);
+          });
+          section.appendChild(list);
+        }
+        courseTimetableContent.appendChild(section);
+      });
+    });
+    if (courseTimetableNotRunningList) {
+      courseTimetableNotRunningList.innerHTML = '';
+      const ids = Array.from(notRunningIds).sort();
+      if (!ids.length) {
+        const item = document.createElement('li');
+        item.textContent = 'None';
+        courseTimetableNotRunningList.appendChild(item);
+      } else {
+        ids.forEach((id) => {
+          const item = document.createElement('li');
+          const name = getSubjectName(id);
+          item.textContent = name ? `${id} ${name}` : id;
+          item.title = buildCourseTimetableTooltip(id);
+          courseTimetableNotRunningList.appendChild(item);
+        });
+      }
+    }
+  };
+
+  const copyCourseTimetableToClipboard = () => {
+    if (!courseTimetableContent || !navigator.clipboard) return;
+    const text = (courseTimetableContent.innerText || '').trim();
+    if (!text) return;
+    navigator.clipboard.writeText(text).catch(() => {});
+  };
+
+  const showCourseTimetableModal = () => {
+    if (!courseTimetableModal) return;
+    renderCourseTimetableModal();
+    setCourseTimetableView(courseTimetableView);
+    courseTimetableModal.classList.add('show');
+    courseTimetableModal.setAttribute('aria-hidden', 'false');
+    if (showCourseTimetableButton) showCourseTimetableButton.setAttribute('aria-expanded', 'true');
+    if (closeCourseTimetableCta) closeCourseTimetableCta.focus();
+  };
+
+  const hideCourseTimetableModal = () => {
+    if (!courseTimetableModal) return;
+    courseTimetableModal.classList.remove('show');
+    courseTimetableModal.setAttribute('aria-hidden', 'true');
+    if (showCourseTimetableButton) showCourseTimetableButton.setAttribute('aria-expanded', 'false');
+    if (showCourseTimetableButton) showCourseTimetableButton.focus();
   };
 
   const applyCodes = () => {
@@ -2136,7 +2210,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const bitCode = electiveBitState[placeholderIdx];
       if (bitCode) {
         subjectState.set(bitCode, { completed: false, toggled: false });
-        const subjCell = electivesGridCells.find((c) => c.dataset.subject === bitCode && !isPlaceholder(c));
         electiveBitState[placeholderIdx] = '';
         cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
         cell.setAttribute('aria-pressed', 'false');
@@ -2164,16 +2237,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             cell.setAttribute('aria-pressed', 'false');
             fillFirstFreeSlotFromOverflow();
           } else {
-            // Only allow turning on the first empty placeholder
-            const firstEmptyIdx = getNextAvailableUseSlotIndex();
-            if (firstEmptyIdx !== idx) return;
             const nextUse = electiveCodeOrder.find((code) => !electivePlaceholderState.includes(code));
-            if (nextUse) {
-              electivePlaceholderState[idx] = nextUse;
-              cell.classList.add('completed');
-              cell.classList.remove('toggled');
-              cell.setAttribute('aria-pressed', 'false');
-            }
+            if (!nextUse) return;
+            electivePlaceholderState[idx] = nextUse;
+            cell.classList.add('completed');
+            cell.classList.remove('toggled');
+            cell.setAttribute('aria-pressed', 'false');
           }
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
@@ -2200,14 +2269,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const idx = placeholders.indexOf(cell);
         if (idx >= 0) {
           const currentCode = electivePlaceholderState[idx];
-          // In planning mode, only allow clearing an existing USE; no turning on
           if (currentCode) {
             electivePlaceholderState[idx] = '';
             cell.classList.remove('completed', 'filled-elective', 'use-credit');
             cell.setAttribute('aria-pressed', 'false');
             fillFirstFreeSlotFromOverflow();
           } else {
-            return;
+            const nextUse = electiveCodeOrder.find((code) => !electivePlaceholderState.includes(code));
+            if (!nextUse) return;
+            electivePlaceholderState[idx] = nextUse;
+            cell.classList.add('completed');
+            cell.classList.remove('toggled');
+            cell.setAttribute('aria-pressed', 'false');
           }
           setElectiveCredits(buildElectiveAssignments(), true);
           updateElectiveWarning();
@@ -2219,40 +2292,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const st = subjectState.get(id) || { completed: false, toggled: false };
       if (st.completed) return;
-      if (!overrideMode) {
-        const completed = new Set(
-          Array.from(subjectState.entries())
-            .filter(([, s]) => s?.completed)
-            .map(([code]) => code)
-        );
-        const plannedSet = new Set(
-          Array.from(subjectState.entries())
-            .filter(([code, s]) => s?.toggled && code !== id)
-            .map(([code]) => code)
-        );
-        const { prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
-          id,
-          completedSet: completed,
-          plannedSet,
-          usePlanned: true,
-        });
-        const hasCoreq = (corequisites[id] || []).length > 0;
-        if (hasCoreq && !coreqMetPlanned) return;
-        if (!prereqMetPlanned && !coreqMetPlanned) return;
-        if (id === 'BIT371') {
-          const { completedMajorCount, plannedMajorCount } = getMajorCounts();
-          const bitReq = getBit371Requirement({
+      const already = !!st.toggled;
+      if (!already) {
+        if (!overrideMode) {
+          const completed = new Set(
+            Array.from(subjectState.entries())
+              .filter(([, s]) => s?.completed)
+              .map(([code]) => code)
+          );
+          const plannedSet = new Set(
+            Array.from(subjectState.entries())
+              .filter(([code, s]) => s?.toggled && code !== id)
+              .map(([code]) => code)
+          );
+          const { prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
+            id,
             completedSet: completed,
             plannedSet,
             usePlanned: true,
-            completedMajorCount,
-            plannedMajorCount,
           });
-          if (!bitReq.majorConcurrentOk) return;
+          const hasCoreq = (corequisites[id] || []).length > 0;
+          if (hasCoreq && !coreqMetPlanned) return;
+          if (!prereqMetPlanned && !coreqMetPlanned) return;
+          if (id === 'BIT371') {
+            const { completedMajorCount, plannedMajorCount } = getMajorCounts();
+            const bitReq = getBit371Requirement({
+              completedSet: completed,
+              plannedSet,
+              usePlanned: true,
+              completedMajorCount,
+              plannedMajorCount,
+            });
+            if (!bitReq.majorConcurrentOk) return;
+          }
         }
+        if (!canSelectPlanned()) return;
       }
-      const already = !!st.toggled;
-      if (!already && !canSelectPlanned()) return;
       const active = !already;
       subjectState.set(id, { completed: st.completed, toggled: active });
       cell.classList.toggle('toggled', active);
@@ -2266,14 +2341,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     // Sync BIT slot state after any toggle on elective grid cells
-    if (!placeholder && id.startsWith('BIT') && cell.dataset.slot) {
+    if (!placeholder && id.startsWith('BIT') && isElectivesGridCell(cell)) {
       updateBitStateAfterToggle(cell);
     }
-    // Save elective visual state before recompute
-    saveElectiveVisuals();
     conditionalRecompute({ force: completedMode, usePlanned: completedMode ? false : null });
-    // Restore elective visual state after recompute
-    restoreElectiveVisuals();
     updateResetState();
     updateElectiveWarning();
     updateSelectedList();
@@ -2289,12 +2360,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         handleToggle(cell);
       }
     });
-  });
-  captureSubjectMeta();
-  majorSlots.length = 0;
-  majorConfig.ns.codes.forEach((code) => {
-    const slotCell = subjects.find((c) => c.dataset.subject === code);
-    if (slotCell) majorSlots.push(slotCell);
   });
 
   if (completedModeButton) {
@@ -2328,6 +2393,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   }
 
+  if (openInstructionsModal) openInstructionsModal.addEventListener('click', showInstructionsModal);
+  if (closeInstructionsModal) closeInstructionsModal.addEventListener('click', hideInstructionsModal);
+  if (closeInstructionsCta) closeInstructionsCta.addEventListener('click', hideInstructionsModal);
   if (openCodeModal) openCodeModal.addEventListener('click', () => {
     if (openCodeModal.disabled) return;
     showCodeModal();
@@ -2335,6 +2403,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeCodeModal) closeCodeModal.addEventListener('click', hideCodeModal);
   if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
   if (applyCodeModal) applyCodeModal.addEventListener('click', applyCodes);
+  if (showCourseTimetableButton) showCourseTimetableButton.addEventListener('click', showCourseTimetableModal);
+  if (closeCourseTimetable) closeCourseTimetable.addEventListener('click', hideCourseTimetableModal);
+  if (closeCourseTimetableCta) closeCourseTimetableCta.addEventListener('click', hideCourseTimetableModal);
+  if (courseTimetableListButton) {
+    courseTimetableListButton.addEventListener('click', () => setCourseTimetableView('list'));
+  }
+  if (courseTimetableGridButton) {
+    courseTimetableGridButton.addEventListener('click', () => setCourseTimetableView('grid'));
+  }
+  if (copyCourseTimetableButton) {
+    copyCourseTimetableButton.addEventListener('click', copyCourseTimetableToClipboard);
+  }
   if (codeInput) {
     codeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -2352,10 +2432,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cell.classList.add('elective-placeholder');
       cell.classList.remove('clickable');
       cell.tabIndex = 0;
-      const tip = document.createElement('div');
-      tip.className = 'not-running-tooltip';
-      tip.textContent = 'Fill these Elective boxes with subjects from below.';
-      cell.appendChild(tip);
+      cell.querySelectorAll('.not-running-tooltip').forEach((tip) => tip.remove());
       attachTooltip(cell);
       return;
     }
@@ -2370,7 +2447,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     attachTooltip(cell);
   });
 
-  const buildStreamLabel = (cellOrId) => {
+  function buildStreamLabel(cellOrId) {
     const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
     const metaClasses = id ? subjectMeta[id]?.classes || [] : [];
     const has = (cls) =>
@@ -2383,9 +2460,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (id && (id.startsWith('ELECTIVE') || id.startsWith('USE'))) return 'Elective';
     if (has('elective')) return 'Elective';
     return 'Other';
-  };
+  }
 
-  const describeSubjectCategory = (cellOrId) => {
+  function describeSubjectCategory(cellOrId) {
     const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
     if (!id) return { category: 'Subject', stream: '' };
     const metaClasses = subjectMeta[id]?.classes || [];
@@ -2395,7 +2472,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (isCore) return { category: 'Core', stream: '' };
     if (isElective) return { category: 'Elective', stream };
     return { category: 'Major', stream };
-  };
+  }
 
   let currentTableMode = 'selected';
 
@@ -2802,7 +2879,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
-  const setAlertMessages = (type, messages = []) => {
+  function setAlertMessages(type, messages = []) {
     const state = alertState[type];
     if (!state) return;
     const incomingIds = new Set();
@@ -2821,7 +2898,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     rebuildAlertContent(type);
     renderAlertButton(type);
-  };
+  }
 
   const copyTimetableToClipboard = () => {
     if (!timetableTable || !navigator.clipboard) return;
@@ -2888,11 +2965,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.completed)
         .map(([code]) => code)
     );
-    const plannedSet = new Set(
-      Array.from(subjectState.entries())
-        .filter(([, st]) => st?.toggled)
-        .map(([code]) => code)
-    );
+    const emptyPlannedSet = new Set();
     return subjects
       .filter((cell) => {
         const id = cell.dataset.subject || '';
@@ -2902,14 +2975,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const st = subjectState.get(id);
         const isChosen = !!st?.toggled;
         if (isChosen) return true;
-        const { prereqMetNow, prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
+        const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
           id,
           completedSet,
-          plannedSet,
-          usePlanned: true,
+          plannedSet: emptyPlannedSet,
+          usePlanned: false,
         });
         const hasCoreq = (corequisites[id] || []).length > 0;
-        const canSelectNow = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+        const canSelectNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
         return canSelectNow;
       })
       .map((cell) => {
@@ -3119,21 +3192,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return electiveWarningEl;
   };
 
+  const getActiveElectiveCodes = () => {
+    const useCodes = electivePlaceholderState.filter(Boolean);
+    const majorKey = getMajorKeyFromUi();
+    const majorSet = new Set(majorLayouts[majorKey] || []);
+    const slotCodes = getElectiveSlotCodes(majorKey);
+    const activeBits = slotCodes.filter((code) => {
+      if (!code || majorSet.has(code)) return false;
+      const st = subjectState.get(code);
+      return st?.completed || st?.toggled;
+    });
+    return [...useCodes, ...activeBits];
+  };
+
   const updateElectiveWarning = () => {
     const placeholders = getElectivePlaceholders();
     // Always rebuild from current state so the count/message matches what is actually selected/completed
     electiveAssignments = buildElectiveAssignments();
 
-    const uniqueCodes = Array.from(
-      new Set(
-        electiveAssignments
-          .map((text) => {
-            const match = text.match(/^((?:BIT|USE)\d{3})/i);
-            return match ? match[1].toUpperCase() : '';
-          })
-          .filter(Boolean)
-      )
-    );
+    const uniqueCodes = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase())));
     const over = uniqueCodes.length > 4;
     placeholders.forEach((cell) => cell.classList.toggle('elective-overlimit', over));
     const el = ensureElectiveWarning();
@@ -3151,13 +3228,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       el.style.width = `${width}px`;
       el.style.maxWidth = `${width}px`;
       requestAnimationFrame(() => {
-        const h = el.offsetHeight;
         const top = firstRect.top - sheetRect.top + 6;
         el.style.top = `${top}px`;
       });
       const details = uniqueCodes.map((code) => {
-        const name = getSubjectName(code);
-        return { code, name, isUse: code.startsWith('USE') };
+        const isUse = code.startsWith('USE');
+        const name = isUse ? useDisplayNames[code] || 'Unspecified Elective' : getSubjectName(code);
+        return { code, name, isUse };
       });
       const useNote = details.some((d) => d.isUse)
         ? '<p><strong>What is a USE?</strong> USE101/102/201/301 are Unspecified Elective credits that fill an elective slot when no specific subject code applies.</p>'
@@ -3258,9 +3335,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (majorToggle && majorDropdown) {
     majorToggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      console.log('Major dropdown clicked, current classes:', majorDropdown.classList);
       const isOpen = majorDropdown.classList.toggle('open');
-      console.log('After toggle, isOpen:', isOpen, 'classes:', majorDropdown.classList);
       majorToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
     majorOptions.forEach((opt) => {
@@ -3275,7 +3350,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateMajor();
         closeMajorDropdown();
       };
-      opt.addEventListener('pointerdown', handler);
       opt.addEventListener('click', handler);
     });
     document.addEventListener('click', (e) => {
@@ -3335,8 +3409,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (e.key === 'Escape') {
       hideAlertModal();
       hideCodeModal();
+      hideCourseTimetableModal();
       hideTimetableModal();
       hideLoadModal();
+      hideInstructionsModal();
     } else if (e.key === 'Enter') {
       if (loadModal && loadModal.classList.contains('show')) {
         e.preventDefault();

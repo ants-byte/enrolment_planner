@@ -34,9 +34,16 @@ Created: December 30, 2025
       <div class="drop-zone-text">Drop students workbook here</div>
     </div>
     <aside class="sidebar">
+      <div class="sidebar-section instructions-section">
+        <button id="open-instructions-modal" class="clear-button" type="button" aria-haspopup="dialog"
+          aria-controls="instructions-modal" aria-expanded="false">Instructions</button>
+      </div>
+      <div class="sidebar-section reset-section" id="reset-section">
+        <button id="clear-selections" class="clear-button">Reset</button>
+      </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
-            id="sidebar-section-descriptor">Choose your (likely) major</span></div>
+            id="sidebar-section-descriptor"><b>Major.</b> Select what's likely.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
             <span id="major-current-label">Undecided. Network Security used</span>
@@ -53,30 +60,28 @@ Created: December 30, 2025
       <div class="sidebar-section ">
         <div class="sidebar-heading-with-text dim-when-complete">
           <span class="sidebar-heading">2.</span>
-          <span class="sidebar-section-descriptor">Enter your pass and credit <b>history</b></span>
+          <span class="sidebar-section-descriptor"><b>History.</b> Enter your passes and credits </span>
         </div>
         <div class="buttons">
           <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Manually</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">By typing</button>
         </div>
       </div>
 
-      <div class="sidebar-section reset-section" id="reset-section">
-        <button id="clear-selections" class="clear-button">Reset</button>
-      </div>
-
-
       <div class="sidebar-section timetable-panel dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span><span
-            class="sidebar-section-descriptor">Select your timetable by clicking on subjects.</span></div>
+            class="sidebar-section-descriptor"><b>Choose your subjects.</b> Select your subject by clicking below here
+            or in
+            grid to right.</span></div>
         <div id="selected-list-section">
           <button class="available-heading" id="available-heading" type="button"
             aria-label="Show available subjects">Available now</button>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
+          <button id="show-course-timetable" class="clear-button secondary" type="button">Show course timetable</button>
           <div class="toggle-row load-row">
             <span id="load-label">Your load = 4 subjects</span>
-            <button id="vary-load" class="clear-button secondary load-button" type="button">Vary</button>
+            <button id="vary-load" class="clear-button secondary load-button" type="button">Change</button>
           </div>
           <div class="toggle-row">
             <label class="switch">
@@ -124,27 +129,27 @@ Created: December 30, 2025
 
         <div id="container">
           <div class="main-grid">
-            <div class="subject-card core clickable" data-subject="BIT121">
+            <div class="subject-card core clickable" data-subject="BIT121" data-slot="r1c1">
               <span class="subject-code">BIT121</span>
               <span class="subject-note subject-title">Network Communication Concepts</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT213">
+            <div class="subject-card network clickable" data-subject="BIT213" data-slot="r1c2">
               <span class="subject-code">BIT213</span>
               <span class="subject-note subject-title">Network and Cyber Security Essentials</span>
               <span class="prerequsites-note">Co-requisite: BIT121</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT233">
+            <div class="subject-card network clickable" data-subject="BIT233" data-slot="r1c3">
               <span class="subject-code">BIT233</span>
               <span class="subject-note subject-title">Network Design</span>
               <span class="prerequsites-note">Prerequisite: BIT121</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT353">
+            <div class="subject-card network clickable" data-subject="BIT353" data-slot="r1c4">
               <span class="subject-code">BIT353</span>
               <span class="subject-note subject-title">Network Architecture and Protocols</span>
               <span class="prerequsites-note">Prerequisite: BIT233</span>
             </div>
-            <div class="subject-card info-card">
+            <div class="subject-card info-card" data-slot="r1c5">
               <div class="hover-zone"></div>
               <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
                 <ul>
@@ -155,108 +160,108 @@ Created: December 30, 2025
               </div>
             </div>
 
-            <div class="subject-card core clickable" data-subject="BIT106">
+            <div class="subject-card core clickable" data-subject="BIT106" data-slot="r2c1">
               <span class="subject-code">BIT106</span>
               <span class="subject-note subject-title">Foundations of Software, Hardware and Cloud Computing</span>
               <span class="prerequsites-note">&nbsp;</span>
               <div class="sas"></div>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT108">
+            <div class="subject-card core clickable" data-subject="BIT108" data-slot="r2c2">
               <span class="subject-code">BIT108</span>
               <span class="subject-note subject-title">Foundations of Business</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT244">
+            <div class="subject-card network clickable" data-subject="BIT244" data-slot="r2c3">
               <span class="subject-code">BIT244</span>
               <span class="subject-note subject-title">IT and Business Crime</span>
               <span class="prerequsites-note">Prerequisite: BIT106</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT362">
+            <div class="subject-card network clickable" data-subject="BIT362" data-slot="r2c4">
               <span class="subject-code">BIT362</span>
               <span class="subject-note subject-title">Digital Forensics</span>
               <span class="prerequsites-note">Prerequisite: BIT213</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT314">
+            <div class="subject-card core clickable" data-subject="BIT314" data-slot="r2c5">
               <span class="subject-code">BIT314</span>
               <span class="subject-note subject-title">Cybersecurity Management and Governance</span>
               <span class="prerequsites-note">Prerequisite: BIT241</span>
             </div>
 
-            <div class="subject-card core clickable" data-subject="BIT112">
+            <div class="subject-card core clickable" data-subject="BIT112" data-slot="r3c1">
               <span class="subject-code">BIT112</span>
               <span class="subject-note subject-title">Mathematics for Information Technology</span>
               <span class="prerequsites-note">&nbsp;</span>
               <div class="sas"></div>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT231">
+            <div class="subject-card core clickable" data-subject="BIT231" data-slot="r3c2">
               <span class="subject-code">BIT231</span>
               <span class="subject-note subject-title">Database Systems</span>
               <span class="prerequsites-note">Prerequisite: BIT111</span>
               <div class="sas"></div>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT241">
+            <div class="subject-card core clickable" data-subject="BIT241" data-slot="r3c3">
               <span class="subject-code">BIT241</span>
               <span class="subject-note subject-title">Professional IT Practice and Ethics</span>
               <span class="prerequsites-note">Prerequisite: BIT121, BIT106</span>
             </div>
-            <div class="subject-card network clickable" data-subject="BIT313">
+            <div class="subject-card network clickable" data-subject="BIT313" data-slot="r3c4">
               <span class="subject-code">BIT313</span>
               <span class="subject-note subject-title">Cyber Vulnerability and Hardening</span>
               <span class="prerequsites-note">Prerequisite: BIT213</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT352">
+            <div class="subject-card core clickable" data-subject="BIT352" data-slot="r3c5">
               <span class="subject-code">BIT352</span>
               <span class="subject-note subject-title">System Implementation and Service Management</span>
               <span class="prerequsites-note">Prerequisite: BIT242</span>
             </div>
 
-            <div class="subject-card core clickable" data-subject="BIT111">
+            <div class="subject-card core clickable" data-subject="BIT111" data-slot="r4c1">
               <span class="subject-code">BIT111</span>
               <span class="subject-note subject-title">Programming Concepts</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT230">
+            <div class="subject-card core clickable" data-subject="BIT230" data-slot="r4c2">
               <span class="subject-code">BIT230</span>
               <span class="subject-note subject-title">System Analysis and Design</span>
               <span class="prerequsites-note">Prerequisites: BIT106, BIT111</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT242">
+            <div class="subject-card core clickable" data-subject="BIT242" data-slot="r4c3">
               <span class="subject-code">BIT242</span>
               <span class="subject-note subject-title">IT Project Management</span>
               <span class="prerequsites-note">Prerequisite: BIT230</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT371">
+            <div class="subject-card core clickable" data-subject="BIT371" data-slot="r4c4">
               <span class="subject-code">BIT371</span>
               <span class="subject-note subject-title">Capstone Experience 1</span>
               <span class="prerequsites-note">Prerequisites: BIT242 &amp; 5 major subjects (2 can be concurrent)</span>
             </div>
-            <div class="subject-card core clickable" data-subject="BIT372">
+            <div class="subject-card core clickable" data-subject="BIT372" data-slot="r4c5">
               <span class="subject-code">BIT372</span>
               <span class="subject-note subject-title">Capstone Experience 2</span>
               <span class="prerequsites-note">Prerequisite: BIT371</span>
             </div>
 
-            <div class="subject-card core clickable" data-subject="BIT105">
+            <div class="subject-card core clickable" data-subject="BIT105" data-slot="r5c1">
               <span class="subject-code">BIT105</span>
               <span class="subject-note subject-title">Business Enquiry &amp; Communication</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE1">
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE1" data-slot="r5c2">
               <span class="subject-code">Elective 1</span>
               <span class="subject-note subject-title">Choose from electives below</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE2">
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE2" data-slot="r5c3">
               <span class="subject-code">Elective 2</span>
               <span class="subject-note subject-title">Choose from electives below</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE3">
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE3" data-slot="r5c4">
               <span class="subject-code">Elective 3</span>
               <span class="subject-note subject-title">Choose from electives below</span>
               <span class="prerequsites-note">&nbsp;</span>
             </div>
-            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE4">
+            <div class="subject-card elective placeholder-card clickable" data-subject="ELECTIVE4" data-slot="r5c5">
               <span class="subject-code">Elective 4</span>
               <span class="subject-note subject-title">Choose from electives below</span>
               <span class="prerequsites-note">&nbsp;</span>
@@ -367,6 +372,89 @@ Created: December 30, 2025
       </div>
     </main>
   </div>
+  <div id="instructions-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal instructions-modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+      <div class="modal-header">
+        <div class="modal-title" id="instructions-title">Instructions</div>
+        <button class="modal-close" id="close-instructions-modal" aria-label="Close instructions">X</button>
+      </div>
+      <div class="modal-body">
+        <p>Use this planner to record your completed subjects (passes and credits), see which subjects you can choose from for the coming semester,
+          and develop your own timetable.</p>
+        <ol class="instructions-list">
+          <li>
+            <p><strong>Step 1:</strong> Choose your major from the dropdown at the top of the sidebar.</p>
+            <p>By your 2nd semester you should decide which of the Network Security,
+              Business Analysis, and Software Development streams will be your major.  
+              If you make a switch beyond then, your graduation might be delayed.</p>
+              <p>If you are in your first semester, you can leave it as 
+                &quot;Undecided&quot;. It will show Network Security as the major and you can make a different decision next semester.</p>
+          </li>
+          <li>
+            <p><strong>Step 2:</strong> Enter your pass and credit history.</p>
+            <p>When you do, they will be marked darker in the grid, and the subjects available to you now (because of
+              satisfied prerequisites) will change.</p>
+            <p>Two buttons are available for this:</p>
+            <ul class="instructions-sublist">
+              <li><strong>By clicking</strong> to mark completed subjects by clicking in the grid.</li>
+              <li><strong>By typing</strong> to type or paste subject codes (e.g. BIT111 or USE101). Spaces, commas,
+                subject names, and extra text do not matter; the subject codes will be pulled out.</li>
+            </ul>
+          </li>
+          <li>
+            <p><strong>Step 3:</strong> Select your timetable by clicking subjects. Three ways to do this:</p>
+            <ol class="instructions-sublist">
+              <li>Clicking in the main grid.</li><li>Clicking on a subject in the sidebar below "Available now".</li>
+              <li>Clicking on the "Available Now" button in the sidebar.</li>
+            </ol>
+            <p>You are expected to choose 4 subjects, which is a "full load". You can vary your load by pressing the <em>Change</em> button.</p>
+
+      </div>
+      <div class="modal-actions">
+        <button id="close-instructions-cta" class="clear-button" type="button">Got it</button>
+      </div>
+    </div>
+  </div>
+  <div id="course-timetable-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal course-timetable-modal" role="dialog" aria-modal="true"
+      aria-labelledby="course-timetable-title">
+      <div class="modal-header">
+        <div class="modal-title" id="course-timetable-title">Course timetable</div>
+      </div>
+      <div class="modal-body">
+        <div id="course-timetable-content" class="course-timetable-content"></div>
+        <div id="course-timetable-not-running" class="course-timetable-not-running">
+          <div class="course-timetable-subtitle">Not running this semester</div>
+          <p>These subjects will run next semester.</p>
+          <ul id="course-timetable-not-running-list" class="course-timetable-not-running-list"></ul>
+        </div>
+        <div class="course-timetable-key">
+          <div class="course-timetable-subtitle">Time key</div>
+          <ul class="course-timetable-key-list">
+            <li><strong>AM</strong> = 8:30am - 12:30pm</li>
+            <li><strong>PM</strong> = 1:00pm - 5:00pm</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-actions course-timetable-actions">
+        <button id="course-timetable-list" class="clear-button secondary course-timetable-toggle" type="button"
+          aria-pressed="false">List</button>
+        <button id="course-timetable-grid" class="clear-button secondary course-timetable-toggle is-inactive"
+          type="button" aria-pressed="true" disabled>Grid</button>
+        <button id="copy-course-timetable" class="clear-button secondary course-timetable-copy" type="button">
+          <span class="clipboard-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                fill="currentColor" />
+            </svg>
+          </span>
+          Copy to clipboard
+        </button>
+        <button id="close-course-timetable-cta" class="clear-button" type="button">Close</button>
+      </div>
+    </div>
+  </div>
   <div id="code-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
       <div class="modal-header">
@@ -466,7 +554,7 @@ Created: December 30, 2025
   <script src="script.js"></script>
   <footer class="site-footer">
     <div>Web master: Antony Di Serio for Melbourne Polytechnic</div>
-    <div>Last Modified: Jan 20, 2026</div>
+    <div>Last Modified: Jan 8, 2026</div>
   </footer>
 </body>
 

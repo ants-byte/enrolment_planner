@@ -27,12 +27,12 @@ Created: December 30, 2025
   --alert-caution: #c25a00;
   --alert-info: #0b7fab;
   --core: #f5f0c6;
-  --network: #d2e4d3;
+  --network: rgb(220, 240, 225);
   --network-text: #0d7a3d;
   --network-outline: var(--network-text);
-  --software: #f3e5f5;
+  --software: rgb(235, 220, 245);
   --sd-text: #6507da;
-  --ba: #e0f7fa;
+  --ba: rgb(215, 235, 250);
   --ba-text: #0539c9;
   --dual: #7fe3f2;
   --text: #222;
@@ -43,11 +43,11 @@ Created: December 30, 2025
       color-mix(in srgb, var(--ba) 80%, rgb(255, 255, 255) 20%));
   --core-band: #ffb240;
   --core-body: var(--core);
-  --network-band: rgb(2, 182, 2);
+  --network-band: rgb(0, 160, 95);
   --network-body: color-mix(in srgb, var(--network) 55%, #fff 45%);
-  --software-band: #a030b4;
+  --software-band: rgb(190, 40, 165);
   --software-body: color-mix(in srgb, var(--software) 55%, #fff 45%);
-  --ba-band: #0fc0d7;
+  --ba-band: rgb(0, 120, 210);
   --ba-body: color-mix(in srgb, var(--ba) 55%, #fff 45%);
   --dual-band: color-mix(in srgb, var(--dual) 80%, #000 20%);
   --dual-body: color-mix(in srgb, var(--dual) 55%, #fff 45%);
@@ -483,6 +483,9 @@ td,
   cursor: pointer;
   padding: 4px 6px;
   background-color: white;
+  border: 0.5px solid #d3d3d3;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
 
@@ -501,7 +504,7 @@ td,
   font-weight: 700;
   border-radius: 4px;
   font-size: 1em;
-  border: .5px solid grey;
+  border: 0.5px solid #d3d3d3;
 }
 
 .available-item:hover  {
@@ -510,17 +513,17 @@ td,
       #feffff 0%,#f5f5f5 44%,rgb(221, 220, 220) 90%,
       #ffffff 100%);
       box-sizing: border-box;
-      border: 2px solid var(--btn-primary-hover-end) !important;
+      border-color: var(--btn-primary-hover-end) !important;
 }
 .available-list .available-item.chosen:hover{
   background: #565657;
   box-sizing: border-box;
-  border: 2px solid var(--btn-primary-hover-end) !important;
+  border-color: var(--btn-primary-hover-end) !important;
     background: linear-gradient(to bottom,
       #565657 0%,#474747 44%,#313131 90%,
       #565657 100%);
       box-sizing: border-box;
-      border: 2px solid var(--btn-primary-hover-end) !important;
+      border-color: var(--btn-primary-hover-end) !important;
       padding:2px;
 }
 .timetable-table-wrapper .chosen-row {
@@ -955,7 +958,8 @@ input:checked+.slider:before {
   background: #fff;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
   border: 1px solid var(--sidebar-border);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .main-grid {
@@ -1074,13 +1078,17 @@ input:checked+.slider:before {
 
 .subject-card.dual-split.elective-stream[data-subject="BIT245"] {
   background:
-    linear-gradient(to bottom, #555 0%, #555 var(--card-band-height), transparent var(--card-band-height), transparent 100%),
+    linear-gradient(165deg,
+      var(--ba-band) 0%,
+      var(--ba-band) 50%,
+      var(--software-band) 50%,
+      var(--software-band) 100%) 0 0 / 100% var(--card-band-height) no-repeat,
     linear-gradient(165deg,
       var(--ba-body) 0%,
       var(--ba-body) calc(50% - 10px),
       var(--software-body) calc(50% + 10px),
       var(--software-body) 100%);
-  border-color: #555;
+  border-color: color-mix(in srgb, var(--ba-band) 50%, var(--software-band) 50%);
 }
 
 .subject-card.elective,
@@ -1168,6 +1176,14 @@ input:checked+.slider:before {
 .elective.software:not(.subject-card),
 .elective-stream.software:not(.subject-card) {
   background: var(--software) !important;
+}
+
+.elective-stream.network.subject-card {
+  background: linear-gradient(to bottom,
+      color-mix(in srgb, var(--network-band) 85%, #000 15%) 0%,
+      color-mix(in srgb, var(--network-band) 85%, #000 15%) var(--card-band-height),
+      var(--network-body) var(--card-band-height),
+      var(--network-body) 100%);
 }
 
 .elective-stream.ba.subject-card {
@@ -1298,7 +1314,9 @@ input:checked+.slider:before {
   border: 1px dashed #9b9898;
   line-height: 1.3em;
 }
-
+.info-card{
+  padding:2px;
+}
 .info-card ul,
 .info-card li {
   margin: 0;
@@ -1402,13 +1420,17 @@ input:checked+.slider:before {
 
 .swatch.dual {
   background:
-    linear-gradient(to bottom, #555 0%, #555 18%, transparent 18%, transparent 100%),
+    linear-gradient(135deg,
+      var(--ba-band) 0%,
+      var(--ba-band) 50%,
+      var(--software-band) 50%,
+      var(--software-band) 100%) 0 0 / 100% 18% no-repeat,
     linear-gradient(135deg,
       var(--ba-body) 0%,
-      var(--ba-body) calc(50% - 3px),
-      var(--software-body) calc(50% + 3px),
+      var(--ba-body) 50%,
+      var(--software-body) 50%,
       var(--software-body) 100%);
-  border-color: #555;
+  border-color: color-mix(in srgb, var(--ba-band) 50%, var(--software-band) 50%);
 }
 
 /* Stack timetable button over the Available now button in the sidebar */
@@ -1428,6 +1450,10 @@ input:checked+.slider:before {
   z-index: 2;
   border:thin white solid;
   border-radius:8px;
+}
+
+#show-course-timetable {
+  margin-top: 6px;
 }
 
 .footnote {
@@ -1460,7 +1486,22 @@ input:checked+.slider:before {
 }
 
 .toggled::before {
-  content: none;
+  content: "Chosen for this semester";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 2px;
+  background: rgba(29, 110, 209, 0.9);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(255, 255, 255, 0.53);
+  box-shadow: 0px -1px 6px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .elective-placeholder.toggled::after {
@@ -1834,22 +1875,23 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .timetable-table-wrapper {
   max-height: none;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
 #timetable-modal .modal {
   display: inline-block;
-  width: auto;
-  max-width: 90vw;
+  width: min(1200px, 96vw);
+  max-width: 96vw;
   min-width: 360px;
   overflow: visible;
 }
 
 #timetable-table {
   width: max-content;
-  max-width: 90vw;
+  max-width: none;
   border-collapse: collapse;
   font-size: 13px;
   table-layout: auto;
@@ -2119,6 +2161,203 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border: 2px solid #222;
 }
 
+#instructions-modal {
+  align-items: flex-start;
+}
+
+#instructions-modal .modal {
+  margin-top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+#course-timetable-modal .course-timetable-modal {
+  width: min(1200px, 96vw);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 14.4px;
+}
+
+#course-timetable-modal .modal-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+#course-timetable-modal .modal-header {
+  margin-bottom: 5.4px;
+}
+
+#course-timetable-modal .modal-body p {
+  margin-bottom: 7.2px;
+}
+
+.course-timetable-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(420px, 1fr));
+  gap: 10.8px;
+  margin-top: 5.4px;
+  min-width: 860px;
+}
+
+.course-timetable-content.course-timetable-list-mode {
+  display: block;
+  min-width: 0;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-section {
+  margin-bottom: 10.8px;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7.2px;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-item-row {
+  display: inline-flex;
+  gap: 5.4px;
+  align-items: baseline;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-meta {
+  display: inline-flex;
+  gap: 5.4px;
+  margin-top: 0;
+}
+
+.course-timetable-toggle.is-inactive {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.course-timetable-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.course-timetable-actions {
+  justify-content: center;
+  gap: 7.2px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+
+.course-timetable-actions .clear-button {
+  width: auto;
+  padding: 7.2px 10px;
+  font-size: 0.85rem;
+}
+
+.clipboard-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+}
+
+.clipboard-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.course-timetable-section {
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
+  padding: 7.2px;
+  background: #f8f8f8;
+}
+
+.course-timetable-heading {
+  font-weight: 700;
+  margin-bottom: 5.4px;
+}
+
+.course-timetable-empty {
+  color: #666;
+  font-style: italic;
+}
+
+.course-timetable-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5.4px;
+}
+
+.course-timetable-item {
+  border: 1px solid #d4d4d4;
+  border-radius: 4px;
+  padding: 5.4px;
+  background: #fff;
+  cursor: help;
+}
+
+.course-timetable-item-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.course-timetable-code {
+  font-weight: 700;
+  min-width: 60px;
+}
+
+.course-timetable-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+}
+
+.course-timetable-meta {
+  font-size: 0.85rem;
+  color: #444;
+  margin-top: 1.8px;
+}
+
+.course-timetable-subtitle {
+  font-weight: 700;
+  margin-bottom: 3.6px;
+}
+
+.course-timetable-not-running {
+  margin-top: 10.8px;
+  padding-top: 9px;
+  border-top: 1px solid #d7d7d7;
+}
+
+.course-timetable-not-running-list {
+  list-style: none;
+  padding: 0;
+  margin: 5.4px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 5.4px;
+}
+
+.course-timetable-not-running-list li {
+  background: #f5f5f5;
+  border: 1px solid #cfcfcf;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.course-timetable-key {
+  margin-top: 10.8px;
+}
+
+.course-timetable-key-list {
+  list-style: none;
+  padding: 0;
+  margin: 5.4px 0 0;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -2181,6 +2420,38 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   gap: 8px;
   margin-top: 10px;
 }
+
+.instructions-list {
+  margin: 10px 0 0 18px;
+  padding: 0;
+  line-height: 1.45;
+}
+
+.instructions-list > li {
+  margin-bottom: 12px;
+}
+
+.instructions-list > li:last-child {
+  margin-bottom: 0;
+}
+
+.instructions-list p {
+  margin: 0 0 8px;
+}
+
+.instructions-list p:last-child {
+  margin-bottom: 0;
+}
+
+.instructions-sublist {
+  margin: 4px 0 10px 18px;
+  padding: 0;
+}
+
+.instructions-sublist li {
+  margin: 4px 0;
+}
+
 
 .mobile-notice {
   position: fixed;
