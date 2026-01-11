@@ -139,33 +139,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const timetable = {
-    BIT106: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'Sarang Hashemi', name: 'Foundations of Software, Hardware and Cloud Computing' },
-    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA', name: 'Capstone Experience 2' },
-    BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE226', teacher: 'Russul Al-Anni', name: 'Network Communication Concepts' },
-    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA', name: 'Capstone Experience 1' },
-    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi', name: 'Business Enquiry and Communication' },
-    BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Dr Anthony Overmars', name: 'Cyber Vulnerability and Hardening' },
-    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye', name: 'Mobile Application Development' },
-    BIT111: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Uchenna Enwereonye', name: 'Programming Concepts' },
-    BIT230: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi', name: 'Systems Analysis' },
-    BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Antony Di Serio', name: 'Web Development' },
-    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PF340', teacher: 'Dr Anthony Overmars', name: 'Network Architecture and Protocols' },
-    BIT112: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Dominic Mammone', name: 'Mathematics for Information Technology' },
-    BIT244: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni', name: 'IT and Business Crime' },
-    BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PA114', teacher: 'Yaona Zhao', name: 'Network Design' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio', name: 'Object Oriented Programming' },
-    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone', name: 'Professional IT Practice and Ethics' },
-    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Nikki Wan', name: 'Digital Forensics' },
-    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Shzaa Niazi', name: 'Foundations of Information Technology' },
-    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Nidha Qazi', name: 'Database Systems' },
-    BIT357: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Ye Wei (Silva)', name: 'Business Analysis' },
-    BIT213: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Dr Xiaodong Wang (Tony)', name: 'Network and Cyber Security Essentials' },
-    BIT358: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Nidha Qazi', name: 'Advanced Databases' },
-    BIT355: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'TBA', name: 'Business Intelligence' },
-    BIT242: { day: 'Friday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)', name: 'IT Project Management' },
-    BIT352: { day: 'Friday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson', name: 'Systems Implementation and Service Management' },
-    BIT314: { day: 'Friday', slot: 'Afternoon', room: 'PA113', teacher: 'David Robinson', name: 'Cybersecurity Management and Governance' },
-    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'Ye Wei (Silva)', name: 'Enterprise Resources' },
+    BIT106: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'Sarang Hashemi' },
+    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
+    BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE226', teacher: 'Russul Al-Anni' },
+    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
+    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
+    BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Anthony Overmars' },
+    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye' },
+    BIT111: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Uchenna Enwereonye' },
+    BIT230: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi' },
+    BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Antony Di Serio' },
+    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PF340', teacher: 'Anthony Overmars' },
+    BIT112: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Dominic Mammone' },
+    BIT244: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
+    BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PA114', teacher: 'Yaona Zhao' },
+    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio' },
+    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone' },
+    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'BIT362', teacher: 'Nikki Wan' },
+    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Shzaa Niazi' },
+    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Nidha Qazi' },
+    BIT357: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Ye Wei (Silva)' },
+    BIT213: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Xiaodong Wang (Tony)' },
+    BIT358: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Nidha Qazi' },
+    BIT355: { day: 'Thursday', slot: 'Afternoon', room: 'PE303', teacher: 'Ye Wei (Silva)' },
+    BIT242: { day: 'Friday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)' },
+    BIT352: { day: 'Friday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson' },
+    BIT314: { day: 'Friday', slot: 'Afternoon', room: 'PA113', teacher: 'David Robinson' },
+    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'Ye Wei (Silva)' },
   };
 
   const notRunningIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
@@ -214,6 +214,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseTimetableListButton = document.getElementById('course-timetable-list');
   const courseTimetableGridButton = document.getElementById('course-timetable-grid');
   const copyCourseTimetableButton = document.getElementById('copy-course-timetable');
+  const courseTimetableTeacherCopyButton = document.getElementById('course-timetable-teacher-copy');
   const instructionsModal = document.getElementById('instructions-modal');
   const closeInstructionsModal = document.getElementById('close-instructions-modal');
   const closeInstructionsCta = document.getElementById('close-instructions-cta');
@@ -242,6 +243,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const availableHeading = document.getElementById('available-heading');
   const resetSection = document.getElementById('reset-section');
   const nextSemList = document.getElementById('next-sem-list');
+  const historyButton = document.getElementById('open-history');
+  const nextSemesterButton = document.getElementById('open-next-semester');
+  const historyModal = document.getElementById('history-modal');
+  const historyTitleEl = document.getElementById('history-title');
+  const historyTable = document.getElementById('history-table');
+  const historySortButtons = Array.from(document.querySelectorAll('#history-table .subject-table-sort-button'));
+  const closeHistory = document.getElementById('close-history');
+  const closeHistoryCta = document.getElementById('close-history-cta');
+  const copyHistory = document.getElementById('copy-history');
+  const nextSemesterModal = document.getElementById('next-semester-modal');
+  const nextSemesterTitleEl = document.getElementById('next-semester-title');
+  const nextSemesterTable = document.getElementById('next-semester-table');
+  const closeNextSemester = document.getElementById('close-next-semester');
+  const closeNextSemesterCta = document.getElementById('close-next-semester-cta');
+  const copyNextSemester = document.getElementById('copy-next-semester');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
   if (toggleSemCountsBtn) toggleSemCountsBtn.textContent = 'Show semesters remaining';
   const electivesLabel = document.getElementById('electives-label');
@@ -254,27 +270,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let hoverTooltipTimer = null;
   const subjectMeta = {
     BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
-    BIT106: { name: 'Foundations of Software, Hardware and Cloud Computing', note: '', classes: ['core', 'sas'] },
+    BIT106: { name: 'Foundations of Software, Hardware & Cloud Computing', note: '', classes: ['core', 'sas'] },
     BIT108: { name: 'Foundations of Business', note: '', classes: ['core'] },
     BIT111: { name: 'Programming Concepts', note: '', classes: ['core'] },
     BIT112: { name: 'Mathematics for Information Technology', note: '', classes: ['core', 'sas'] },
     BIT121: { name: 'Network Communication Concepts', note: '', classes: ['core'] },
-    BIT213: { name: 'Network and Cyber Security Essentials', note: 'Co-requisite: BIT121', classes: ['network'] },
-    BIT230: { name: 'System Analysis and Design', note: 'Prerequisites: BIT106, BIT111', classes: ['core'] },
+    BIT213: { name: 'Network & Cyber Security Essentials', note: 'Co-requisite: BIT121', classes: ['network'] },
+    BIT230: { name: 'System Analysis & Design', note: 'Prerequisites: BIT106, BIT111', classes: ['core'] },
     BIT231: { name: 'Database Systems', note: 'Prerequisite: BIT111', classes: ['core', 'sas'] },
     BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
     BIT235: { name: 'Object Oriented Programming', note: 'Prerequisites: BIT245', classes: ['software'] },
-    BIT236: { name: 'Enterprise Resources', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
-    BIT241: { name: 'Professional IT Practice and Ethics', note: 'Prerequisite: BIT121, BIT106', classes: ['core'] },
+    BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
+    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisite: BIT121, BIT106', classes: ['core'] },
     BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
-    BIT244: { name: 'IT and Business Crime', note: 'Prerequisite: BIT106', classes: ['network'] },
+    BIT244: { name: 'IT & Business Crime', note: 'Prerequisite: BIT106', classes: ['network'] },
     BIT245: { name: 'Web Development', note: 'Prerequisites: BIT111', classes: ['dual-split'] },
     BIT246: { name: 'Object Oriented RAD', note: 'Prerequisites: BIT235', classes: ['software'] },
-    BIT313: { name: 'Cyber Vulnerability and Hardening', note: 'Prerequisite: BIT213', classes: ['network'] },
-    BIT314: { name: 'Cybersecurity Management and Governance', note: 'Prerequisite: BIT241', classes: ['core'] },
+    BIT313: { name: 'Cyber Vulnerability & Hardening', note: 'Prerequisite: BIT213', classes: ['network'] },
+    BIT314: { name: 'Cybersecurity Management & Governance', note: 'Prerequisite: BIT241', classes: ['core'] },
     BIT351: { name: 'Mobile Application Development', note: 'Prerequisites: BIT231, BIT235', classes: ['software'] },
-    BIT352: { name: 'System Implementation and Service Management', note: 'Prerequisite: BIT242', classes: ['core'] },
-    BIT353: { name: 'Network Architecture and Protocols', note: 'Prerequisite: BIT233', classes: ['network'] },
+    BIT352: { name: 'System Implementation & Service Management', note: 'Prerequisite: BIT242', classes: ['core'] },
+    BIT353: { name: 'Network Architecture & Protocols', note: 'Prerequisite: BIT233', classes: ['network'] },
     BIT355: { name: 'Business Intelligence', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
     BIT356: { name: 'Knowledge Management Systems', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
     BIT357: { name: 'Business Analysis', note: 'Prerequisite: BIT230', classes: ['ba'] },
@@ -290,6 +306,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
   };
   const baseTypeClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective', 'dual-split', 'dual'];
+  const displayTypeClasses = ['core', 'network', 'ba', 'software', 'dual', 'dual-split', 'elective'];
+  const placeholderStyleClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective-stream'];
+  const getDisplayTypeClass = (cellOrId) => {
+    const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
+    const metaClasses = id ? subjectMeta[id]?.classes || [] : [];
+    const fromCell = cellOrId?.classList
+      ? displayTypeClasses.find((cls) => cellOrId.classList.contains(cls))
+      : '';
+    return fromCell || metaClasses.find((cls) => displayTypeClasses.includes(cls)) || '';
+  };
+  const applyDisplayTypeClass = (el, cellOrId) => {
+    const typeClass = getDisplayTypeClass(cellOrId);
+    if (typeClass) el.classList.add(typeClass);
+  };
   const sidebarTooltip = document.createElement('div');
   sidebarTooltip.className = 'hover-tooltip';
   document.body.appendChild(sidebarTooltip);
@@ -297,6 +327,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const isFileProtocol = location.protocol === 'file:';
   const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const isLocalEnv = isFileProtocol || isLocalHost;
+  const isSharePointHost = /sharepoint/i.test(location.hostname);
 
   const lockModalPosition = () => {
     if (modalLocked || !timetableModal) return;
@@ -360,7 +391,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
   const creditWarningIds = new Set([
-    'BIT313','BIT314','BIT351','BIT352','BIT353','BIT355','BIT356','BIT357','BIT358','BIT362','BIT363','BIT364','BIT371','BIT372','BIT241'
+    'BIT313', 'BIT314', 'BIT351', 'BIT352', 'BIT353', 'BIT355', 'BIT356', 'BIT357', 'BIT358', 'BIT362', 'BIT363', 'BIT364', 'BIT371', 'BIT372', 'BIT241'
   ]);
 
   let completedMode = false;
@@ -414,6 +445,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return { completedMajorCount, plannedMajorCount };
   };
 
+  const getMajorRequirementDistance = ({
+    completedSet,
+    plannedSet,
+    treatPlannedComplete,
+    useDelay = false,
+  }) => {
+    const majorKey = getMajorKeyFromUi();
+    const majorCodes = majorConfig[majorKey]?.codes || [];
+    if (!majorCodes.length) return 0;
+    const completedMajorSet = new Set(
+      majorCodes.filter((code) => completedSet.has(code))
+    );
+    if (treatPlannedComplete) {
+      majorCodes.forEach((code) => {
+        if (plannedSet.has(code)) completedMajorSet.add(code);
+      });
+    }
+    const remainingNeeded = Math.max(0, 3 - completedMajorSet.size);
+    if (!remainingNeeded) return 0;
+    const memo = new Map();
+    const compute = useDelay ? computeSemesterDistance : computeSemesterDistanceNoDelay;
+    const distances = majorCodes
+      .filter((code) => !completedMajorSet.has(code))
+      .map((code) => compute(code, completedSet, plannedSet, treatPlannedComplete, memo))
+      .filter((dist) => Number.isFinite(dist) && dist > 0)
+      .sort((a, b) => a - b);
+    if (distances.length < remainingNeeded) return Infinity;
+    return distances[remainingNeeded - 1];
+  };
+
   const computeSemesterDistance = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
     if (memo.has(id)) return memo.get(id);
     if (stack.has(id)) return Infinity;
@@ -439,6 +500,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return Infinity;
       }
       maxDepth = Math.max(maxDepth, dist);
+    }
+    if (id === 'BIT371') {
+      const majorDistance = getMajorRequirementDistance({
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        useDelay: true,
+      });
+      if (!Number.isFinite(majorDistance)) {
+        memo.set(id, Infinity);
+        stack.delete(id);
+        return Infinity;
+      }
+      maxDepth = Math.max(maxDepth, majorDistance);
     }
     const result = maxDepth + 1 + semDelay;
     memo.set(id, result);
@@ -470,6 +545,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, dist);
     }
+    if (id === 'BIT371') {
+      const majorDistance = getMajorRequirementDistance({
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        useDelay: false,
+      });
+      if (!Number.isFinite(majorDistance)) {
+        memo.set(id, Infinity);
+        stack.delete(id);
+        return Infinity;
+      }
+      maxDepth = Math.max(maxDepth, majorDistance);
+    }
     const result = maxDepth + 1;
     memo.set(id, result);
     stack.delete(id);
@@ -488,6 +577,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
     const treatPlannedComplete = plannedCount >= loadThreshold;
+    const plannedSetActual = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
       if (!id) return;
@@ -541,97 +635,196 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     finalSemWarning = null;
     const remaining = getRemainingSubjectsCount();
-    const applyDelayHighlight = plannedCount === 0 || plannedCount >= loadThreshold;
+    const applyDelayHighlight = !completedMode;
     const optimalSemesters = Math.max(1, Math.ceil(remaining / Math.max(1, loadThreshold)));
     chainDelayError = null;
-    if (applyDelayHighlight && !completedMode && !initialLoad) {
+    if (applyDelayHighlight && !initialLoad) {
       const chainSet = new Set();
-      const distMap = new Map(distanceData.map((d) => [d.id, d.distNoDelay]));
-      const buildChainPath = (startId) => {
-        const path = [startId];
-        let current = startId;
-        const seen = new Set([current]);
-        while (true) {
-          const pres = prerequisites[current] || [];
-          if (!pres.length) break;
-          let next = null;
-          let bestDist = -1;
-          pres.forEach((p) => {
-            const d = distMap.get(p) ?? 0;
-            if (d > bestDist) {
-              bestDist = d;
-              next = p;
-            }
-          });
-          if (!next || seen.has(next)) break;
-          path.push(next);
-          seen.add(next);
-          current = next;
+      const distNoDelayMap = new Map();
+      const chainMemoNoDelay = new Map();
+      const plannedSetForChain = plannedSetActual;
+      const chainRemaining = getRemainingSubjectsCount();
+      const chainOptimalSemesters = Math.max(1, Math.ceil(chainRemaining / Math.max(1, loadThreshold)));
+      const chainTreatPlannedComplete = plannedSetActual.size > 0;
+      subjects.forEach((cell) => {
+        const id = cell.dataset.subject;
+        if (!id) return;
+        const distNoDelay = computeSemesterDistanceNoDelay(
+          id,
+          completedSet,
+          plannedSetForChain,
+          chainTreatPlannedComplete,
+          chainMemoNoDelay
+        );
+        distNoDelayMap.set(id, distNoDelay);
+      });
+      const getDistNoDelay = (code) => distNoDelayMap.get(code) ?? 0;
+      const chainDistanceMap = new Map();
+      const getChainDistance = (code) => {
+        if (chainDistanceMap.has(code)) return chainDistanceMap.get(code);
+        const base = getDistNoDelay(code);
+        if (!Number.isFinite(base) || base <= 0) {
+          chainDistanceMap.set(code, base);
+          return base;
         }
-        return path;
+        chainDistanceMap.set(code, base);
+        return base;
       };
-      const addPrereqChain = (id) => {
-        const st = subjectState.get(id);
-        if (!st?.completed) chainSet.add(id);
-        const pres = prerequisites[id] || [];
-        if (!pres.length) return;
-        let best = -Infinity;
-        pres.forEach((p) => {
-          const d = distMap.get(p) ?? 0;
-          if (d > best) best = d;
+      const majorKeyForChain = getMajorKeyFromUi();
+        const electiveSlotCodes = getElectiveSlotCodes(majorKeyForChain).filter(Boolean);
+        const electiveSlotSet = new Set(electiveSlotCodes);
+        const activeElectiveCount = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase()))).length;
+        const electiveSlotsRemaining = Math.max(0, programRequirements.elective - activeElectiveCount);
+        let electivesConstrain = false;
+      if (electiveSlotsRemaining > 0) {
+        const chainMemoWithDelay = new Map();
+        const getElectiveDistance = (code) =>
+          computeSemesterDistance(code, completedSet, plannedSetForChain, chainTreatPlannedComplete, chainMemoWithDelay);
+        const remainingElectiveCodes = electiveSlotCodes.filter((code) => {
+          const st = subjectState.get(code);
+          return !(st?.completed || st?.toggled);
         });
-        pres
-          .filter((p) => (distMap.get(p) ?? 0) === best)
-          .forEach((pre) => {
-            if (!chainSet.has(pre)) addPrereqChain(pre);
+        const electiveDistances = remainingElectiveCodes
+          .map((code) => getElectiveDistance(code))
+          .filter((dist) => Number.isFinite(dist) && dist > 0)
+          .sort((a, b) => a - b);
+        if (electiveDistances.length < electiveSlotsRemaining) {
+          electivesConstrain = true;
+        } else {
+          const bottleneck = electiveDistances[electiveSlotsRemaining - 1];
+          electivesConstrain = bottleneck > chainOptimalSemesters;
+        }
+      }
+        const chainCandidates = [];
+        let electiveChainOverrun = false;
+        const planCandidateIds = mainGridCells
+          .map((cell) => cell.dataset.subject)
+          .filter((id) => id && subjectState.has(id));
+      const electiveCandidateIds = electivesConstrain ? electiveSlotCodes : [];
+      [...new Set([...planCandidateIds, ...electiveCandidateIds])].forEach((id) => {
+        const st = subjectState.get(id);
+        if (!st || st.completed) return;
+        const distNoDelay = getDistNoDelay(id);
+        if (!Number.isFinite(distNoDelay) || distNoDelay <= 0) return;
+        chainCandidates.push(id);
+      });
+      const shouldHighlightChain = (code) => {
+        const st = subjectState.get(code);
+        if (!st || st.completed) return false;
+        if (plannedSetForChain.has(code)) return false;
+        return true;
+      };
+      const buildChainPaths = (startId) => {
+        const paths = [];
+        const walk = (current, path, seen) => {
+          const pres = prerequisites[current] || [];
+          if (!pres.length) {
+            paths.push(path);
+            return;
+          }
+          let best = -Infinity;
+          pres.forEach((p) => {
+            const d = getChainDistance(p);
+            if (d > best) best = d;
           });
+          const nextPres = pres.filter((p) => getChainDistance(p) === best);
+          if (!nextPres.length) {
+            paths.push(path);
+            return;
+          }
+          nextPres.forEach((pre) => {
+            if (seen.has(pre)) return;
+            const nextSeen = new Set(seen);
+            nextSeen.add(pre);
+            walk(pre, [...path, pre], nextSeen);
+          });
+        };
+        walk(startId, [startId], new Set([startId]));
+        return paths;
+      };
+      const addChainPaths = (paths) => {
+        paths.forEach((path) => {
+          path.forEach((code) => {
+            if (shouldHighlightChain(code)) chainSet.add(code);
+          });
+        });
+      };
+      const trimPathForDisplay = (path) => {
+        const displayPath = [...path].reverse();
+        while (displayPath.length > 1) {
+          const code = displayPath[0];
+          if (completedSet.has(code) || (chainTreatPlannedComplete && plannedSetForChain.has(code))) {
+            displayPath.shift();
+            continue;
+          }
+          break;
+        }
+        return displayPath;
       };
       const overrunPaths = [];
       const equalPaths = [];
       let longestChainDist = 0;
-      const distNoDelayMap = new Map();
       const canTakeIfRunningNow = (code) =>
         !completedSet.has(code) &&
         notRunningIds.has(code) &&
         (prerequisites[code] || []).every(
           (pre) => completedSet.has(pre) || (treatPlannedComplete && plannedSet.has(pre))
         );
-      distanceData.forEach(({ id, distNoDelay }) => {
-        longestChainDist = Math.max(longestChainDist, distNoDelay);
-        distNoDelayMap.set(id, distNoDelay);
-        if (distNoDelay > optimalSemesters) {
-          addPrereqChain(id);
-          const path = buildChainPath(id);
-          overrunPaths.push(path);
-        } else if (distNoDelay === optimalSemesters) {
-          const path = buildChainPath(id);
-          equalPaths.push(path);
+        chainCandidates.forEach((id) => {
+          const chainDist = getChainDistance(id);
+          longestChainDist = Math.max(longestChainDist, chainDist);
+          if (chainDist > chainOptimalSemesters) {
+            const paths = buildChainPaths(id);
+            overrunPaths.push(...paths);
+            if (electiveSlotSet.has(id)) electiveChainOverrun = true;
+          } else if (chainDist === chainOptimalSemesters) {
+            const paths = buildChainPaths(id);
+            equalPaths.push(...paths);
+          }
+        });
+        if (overrunPaths.length) {
+          addChainPaths(overrunPaths);
         }
-      });
-      subjects.forEach((cell) => {
-        if (chainSet.has(cell.dataset.subject)) {
-          cell.classList.add('chain-delay');
+        const highlightElectivePlaceholders = electivesConstrain && electiveChainOverrun;
+        if (highlightElectivePlaceholders) {
+          electiveSlotCodes.forEach((code) => chainSet.delete(code));
         }
-      });
+        mainGridCells.forEach((cell) => {
+          if (chainSet.has(cell.dataset.subject)) cell.classList.add('chain-delay');
+        });
+        if (highlightElectivePlaceholders) {
+          const placeholders = getElectivePlaceholders();
+          placeholders.forEach((cell, idx) => {
+            const isFilled = !!electivePlaceholderState[idx] || !!electiveBitState[idx];
+            if (!isFilled) cell.classList.add('chain-delay');
+          });
+        }
       const filteredOverrun = overrunPaths.filter((path) => {
         const head = path[0];
-        return (distNoDelayMap.get(head) ?? 0) > optimalSemesters;
+        return getChainDistance(head) > chainOptimalSemesters;
       });
       const filteredEqual = equalPaths.filter((path) => {
         const head = path[0];
-        return (distNoDelayMap.get(head) ?? 0) === optimalSemesters;
+        return getChainDistance(head) === chainOptimalSemesters;
       });
-      const hasOverrun = filteredOverrun.length > 0;
-      const hasEqual = filteredEqual.length > 0;
-      const chainOverrunsPlan = hasOverrun;
-      const severity = hasOverrun ? 'error' : hasEqual ? 'warning' : null;
+        const hasOverrun = filteredOverrun.length > 0;
+        const hasEqual = filteredEqual.length > 0;
+        const allowChainWarning = chainRemaining > 8;
+        const chainOverrunsPlan = hasOverrun;
+        const severity = hasOverrun ? 'error' : hasEqual && allowChainWarning ? 'warning' : null;
       if (severity) {
         const formatChainSubject = (code) =>
           canTakeIfRunningNow(code) ? `${code} (not running this semester)` : code;
         const relevantPaths = hasOverrun ? filteredOverrun : filteredEqual;
         const pathStrings = relevantPaths
-          .map((path) => [...path].reverse().map(formatChainSubject).join(' \u2192 '))
+          .map((path) => trimPathForDisplay(path).map(formatChainSubject).join(' \u2192 '))
           .filter((s, idx, arr) => s && arr.indexOf(s) === idx);
+        const chainLengths = relevantPaths
+          .map((path) => getChainDistance(path[0]))
+          .filter((val) => Number.isFinite(val) && val > 0);
+        const longestChainSemesters = chainLengths.length
+          ? Math.max(...chainLengths)
+          : chainOptimalSemesters;
         const body =
           pathStrings.length <= 1
             ? pathStrings.length
@@ -641,19 +834,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const chainTitle = chainOverrunsPlan
           ? 'Prerequisite chain exceeds optimal timeline'
           : 'Prerequisite chain at optimal limit';
+        const remainingLabel = chainRemaining === 1 ? 'subject' : 'subjects';
+        const optimalLabel = chainOptimalSemesters === 1 ? 'semester' : 'semesters';
+        const chainLabel = longestChainSemesters === 1 ? 'semester' : 'semesters';
         const chainIntro = chainOverrunsPlan
-          ? `Some subjects extend completion beyond the optimal <strong>${optimalSemesters}</strong> semester plan.`
-          : `Your longest prerequisite chain matches the optimal <strong>${optimalSemesters}</strong> semester plan.`;
+          ? `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. However there is a chain of subjects with prerequisites that runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so putting at risk your optimal graduation date:`
+          : `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. Your longest prerequisite chain also runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so it is right at the limit for your optimal graduation date:`;
         chainDelayError = {
           title: chainTitle,
           severity,
-          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-warning'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro} You have <strong>${remaining}</strong> subject${remaining === 1 ? '' : 's'} remaining, which would normally take about <strong>${optimalSemesters}</strong> semester${optimalSemesters === 1 ? '' : 's'} to complete at your current load.</span></p>${body}`,
+          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-warning'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro}</span></p>${body}`,
         };
       }
     } else {
       chainDelayError = null;
     }
-    if (remaining >= 8 && distanceData.length) {
+      if (remaining > 8 && distanceData.length) {
       const maxDist = distanceData.reduce((max, d) => Math.max(max, d.dist), 0);
       if (maxDist > 0 && Number.isFinite(maxDist)) {
         const targets = distanceData.filter((d) => d.dist === maxDist);
@@ -690,11 +886,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getBit371Requirement = ({ completedSet, plannedSet, usePlanned, completedMajorCount, plannedMajorCount }) => {
     const baseMetNow = completedSet.has('BIT242');
     const baseMetPlanned = baseMetNow || (usePlanned && plannedSet.has('BIT242'));
-    const majorConcurrentOk = completedMajorCount >= 5 || (completedMajorCount >= 3 && completedMajorCount + plannedMajorCount >= 5);
+    const majorCompletedEnough = completedMajorCount >= 3;
+    const majorConcurrentOk =
+      completedMajorCount >= 5 ||
+      (majorCompletedEnough && completedMajorCount + plannedMajorCount >= 5);
     const majorMetNow = completedMajorCount >= 5;
-    const metNow = baseMetNow && majorMetNow;
-    const metPlanned = (usePlanned ? baseMetPlanned : baseMetNow) && (usePlanned ? majorConcurrentOk : majorMetNow);
-    return { metNow, metPlanned, majorConcurrentOk, majorMetNow };
+    const metNow = baseMetNow && majorCompletedEnough;
+    const metPlanned = baseMetNow && majorCompletedEnough;
+    return {
+      metNow,
+      metPlanned,
+      majorConcurrentOk,
+      majorMetNow,
+      majorCompletedEnough,
+      baseMetPlanned,
+    };
   };
 
   const updateVaryLoadLabel = () => {
@@ -846,6 +1052,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const hasUse = !!electivePlaceholderState[idx];
       const hasBit = !!electiveBitState[idx];
       const isEmpty = !hasUse && !hasBit;
+      cell.classList.toggle('selecting-empty', !completedMode && isEmpty);
       cell.classList.remove('hide-tooltip');
       if (completedMode && isEmpty) {
         if (titleEl) titleEl.textContent = 'Click to set as a USE (Unspecified Elective)';
@@ -877,8 +1084,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getSubjectName = (code) => {
-    const data = timetable[code];
-    if (data && data.name) return data.name;
     const metaName = subjectMeta[code]?.name;
     return metaName || code;
   };
@@ -918,6 +1123,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isUseCredit = !!useCode && !bitCode;
       const isBitPlanned = !!(bitCode && bitState?.toggled);
       const isBitCompleted = !!(bitCode && bitState?.completed);
+      const isEmpty = !bitCode && !useCode;
+      cell.classList.remove(...placeholderStyleClasses);
+      if (bitCode) {
+        applyDisplayTypeClass(cell, bitCode);
+        cell.classList.add('elective-stream');
+      }
+      cell.classList.toggle('selecting-empty', !completedMode && isEmpty);
 
       // Only reach here if we have new text content
       if (text) {
@@ -1075,6 +1287,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const noteEl = cell.querySelector('.prerequsites-note');
       if (noteEl) {
+        if (!noteEl.dataset.originalText) {
+          noteEl.dataset.originalText = noteEl.textContent || '';
+        }
         const hasReqText = (prerequisites[id] || []).length > 0 || (corequisites[id] || []).length > 0;
         let noteMet = hasCoreq
           ? evalPlanned
@@ -1092,6 +1307,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           noteMet = noteMet && bitReq.majorConcurrentOk;
         }
         noteEl.classList.toggle('reqs-met', hasReqText && noteMet);
+        if (hasReqText && noteMet) {
+          noteEl.textContent = 'Prerequisites satisfied';
+        } else {
+          noteEl.textContent = noteEl.dataset.originalText || '';
+        }
       }
 
       if (st?.toggled || st?.completed) {
@@ -1161,12 +1381,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const resetAvailabilityVisuals = () => recomputeAvailability(false);
   const getPlannedCount = () => Array.from(subjectState.values()).filter((st) => st?.toggled).length;
   const getCompletedCount = () => Array.from(subjectState.values()).filter((st) => st?.completed).length;
+  const getUseCreditsCount = () => electivePlaceholderState.filter(Boolean).length;
   const getTotalSubjectsCount = () => programRequirements.total;
   const getRemainingSubjectsCount = () => {
     const total = getTotalSubjectsCount();
     const completed = getCompletedCount();
     const planned = getPlannedCount();
-    return Math.max(0, total - completed - planned);
+    const useCredits = getUseCreditsCount();
+    return Math.max(0, total - completed - planned - useCredits);
   };
   const getLoadThreshold = () => Math.max(1, fullLoadCap || 4);
 
@@ -1264,7 +1486,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       showTimetableButton.style.display = hasSelected ? 'block' : 'none';
       showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
       if (livePrereqRow) {
-        livePrereqRow.style.display = hasSelected ? 'block' : 'none';
+        livePrereqRow.style.display = hasSelected ? 'flex' : 'none';
         livePrereqRow.classList.toggle('hidden-initial', !hasSelected);
       }
     }
@@ -1277,6 +1499,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (availableHeading) {
       availableHeading.style.display = '';
+    }
+    if (historyButton) {
+      const hasHistory = getHistoryRows().length > 0;
+      historyButton.style.display = hasHistory ? '' : 'none';
     }
     if (nextSemList) {
       const rows = getNextSemRows();
@@ -1476,12 +1702,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             : `<div class="pre-block">${streamLabel}</div>`;
       tooltip.insertAdjacentHTML(
         'beforeend',
-        `${timeHtml}${roomHtml}${lecturerHtml}<div class="tooltip-gap"></div>${
-          id === 'BIT245'
-            ? `${streamHtml}`
-            : `<div class="pre-block"><span class="inline-strong">Major/Core:</span> ${majorCoreText}</div>`
-        }<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}${
-          id === 'BIT245' ? '' : streamHtml
+        `${timeHtml}${roomHtml}${lecturerHtml}<div class="tooltip-gap"></div>${id === 'BIT245'
+          ? `${streamHtml}`
+          : `<div class="pre-block"><span class="inline-strong">Major/Core:</span> ${majorCoreText}</div>`
+        }<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}${id === 'BIT245' ? '' : streamHtml
         }`
       );
     }
@@ -1495,7 +1719,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const minX = allowOverflow ? -tooltipWidth * 0.35 : 0;
       const maxX = allowOverflow ? rect.width - tooltipWidth * 0.65 : rect.width - tooltipWidth;
       const clampedX = Math.max(minX, Math.min(offsetX, maxX));
-      const offsetY = event.clientY - rect.top + 27;
+      let offsetY = event.clientY - rect.top + 27;
+      const tooltipHeight = tooltip.offsetHeight || 0;
+      const viewportPadding = 8;
+      if (tooltipHeight) {
+        const tooltipBottom = rect.top + offsetY + tooltipHeight;
+        if (tooltipBottom > window.innerHeight - viewportPadding) {
+          offsetY = event.clientY - rect.top - tooltipHeight - 12;
+          const minY = viewportPadding - rect.top;
+          offsetY = Math.max(minY, offsetY);
+        }
+      }
       tooltip.style.left = `${clampedX}px`;
       tooltip.style.top = `${offsetY}px`;
     };
@@ -1782,6 +2016,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.toggled)
         .map(([code]) => code)
     );
+    const plannedCount = getPlannedCount();
+    const loadThreshold = getLoadThreshold();
     const issues = [];
     plannedSet.forEach((id) => {
       const prereqsList = prerequisites[id] || [];
@@ -1795,7 +2031,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           completedMajorCount,
           plannedMajorCount,
         });
-        if (!bitReqPlanned.majorConcurrentOk) {
+        const fullLoadSelected = plannedCount >= loadThreshold;
+        if (!bitReqPlanned.majorCompletedEnough || (fullLoadSelected && !bitReqPlanned.majorConcurrentOk)) {
           missing.push('5 major subjects (at least 3 completed; remaining concurrent)');
         }
       }
@@ -2017,31 +2254,143 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return slot;
   };
 
+  const getSlotHeading = (slot = '') => {
+    const normalized = slot.trim().toLowerCase();
+    if (normalized === 'morning') return `Morning.  ${timeSlots.Morning}`;
+    if (normalized === 'afternoon') return `Afternoon.  ${timeSlots.Afternoon}`;
+    return slot;
+  };
+
+  const formatTimeValue = (value = '') =>
+    value.replace(/(\d)(am|pm)/gi, '$1 $2').replace(/am|pm/gi, (match) => match.toUpperCase());
+
+  const formatTimeRange = (range = '') => {
+    if (!range) return '';
+    return range
+      .split('-')
+      .map((part) => formatTimeValue(part.trim()))
+      .join(' - ');
+  };
+
+  const getSemesterNote = (date = new Date()) => {
+    const month = date.getMonth();
+    if (month === 0 || month >= 10) return 'S1';
+    if (month >= 1 && month < 6) return 'S2';
+    if (month >= 6 && month < 10) return 'SS';
+    return 'S1';
+  };
+
+  const getSlotHeadingWithTime = (slot = '') => {
+    const abbrev = getSlotAbbreviation(slot);
+    const range = formatTimeRange(timeSlots[slot] || '');
+    if (!range) return abbrev;
+    return `${abbrev}. ${range}`;
+  };
+
+  const getSlotStartEnd = (slot = '') => {
+    const range = timeSlots[slot] || '';
+    if (!range) return { start: 'TBA', end: 'TBA' };
+    const [startRaw, endRaw] = range.split('-');
+    return {
+      start: startRaw ? formatTimeValue(startRaw.trim()) : 'TBA',
+      end: endRaw ? formatTimeValue(endRaw.trim()) : 'TBA',
+    };
+  };
+
+  const buildCourseTimetableGridData = () => {
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const slotNames = ['Morning', 'Afternoon'];
+    const grid = new Map();
+    dayNames.forEach((day) => {
+      const slotMap = new Map();
+      slotNames.forEach((slot) => slotMap.set(slot, []));
+      grid.set(day, slotMap);
+    });
+    Object.entries(timetable).forEach(([id, data]) => {
+      if (notRunningIds.has(id)) return;
+      const day = data.day || '';
+      const slot = data.slot || '';
+      const dayMap = grid.get(day);
+      if (!dayMap || !dayMap.has(slot)) return;
+      dayMap.get(slot).push({ id, data });
+    });
+    grid.forEach((slotMap) => {
+      slotMap.forEach((entries, slot) => {
+        entries.sort((a, b) => a.id.localeCompare(b.id));
+      });
+    });
+    return { dayNames, slotNames, grid };
+  };
+
   const buildCourseTimetableTooltip = (id) => {
-    const { category, stream } = describeSubjectCategory(id);
-    const streamLabel = stream || buildStreamLabel(id);
-    const streamText = streamLabel === 'Core' ? 'All streams' : streamLabel;
+    const categoryInfo = describeSubjectCategory(id);
+    const isCore = categoryInfo.category === 'Core';
+    const categoryLabel = isCore ? 'Core subject' : 'Major/Elective subject';
+    const streamLabel = !isCore ? (categoryInfo.stream || buildStreamLabel(id)) : '';
     const prereqList = prerequisites[id] || [];
     const coreqList = corequisites[id] || [];
     const depsList =
       dependents[id] && dependents[id].length
         ? dependents[id].filter((code) => !String(code).toUpperCase().startsWith('ELECTIVE'))
         : [];
-    return [
-      `Category: ${category}`,
-      `Stream: ${streamText}`,
-      `Prerequisites: ${prereqList.length ? prereqList.join(', ') : 'None'}`,
-      `Corequisites: ${coreqList.length ? coreqList.join(', ') : 'None'}`,
-      `Needed for: ${depsList.length ? depsList.join(', ') : 'None'}`,
-    ].join('\n');
+    const lines = [
+      { label: 'Category', value: categoryLabel },
+      !isCore ? { label: 'Stream', value: streamLabel } : null,
+      { label: 'Prerequisites', value: prereqList.length ? prereqList.join(', ') : 'None' },
+      coreqList.length ? { label: 'Co-requisites', value: coreqList.join(', ') } : null,
+      { label: 'Needed for', value: depsList.length ? depsList.join(', ') : 'None' },
+    ].filter(Boolean);
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'course-tooltip';
+    lines.forEach(({ label, value }) => {
+      const line = document.createElement('div');
+      line.className = 'course-tooltip-line';
+      const labelEl = document.createElement('span');
+      labelEl.className = 'course-tooltip-label';
+      labelEl.textContent = `${label}:`;
+      const valueEl = document.createElement('span');
+      valueEl.className = 'course-tooltip-value';
+      valueEl.textContent = ` ${value}`;
+      line.appendChild(labelEl);
+      line.appendChild(valueEl);
+      tooltip.appendChild(line);
+    });
+    return tooltip;
   };
 
-  const setCourseTimetableView = (view) => {
-    courseTimetableView = view;
-    const isList = view === 'list';
-    if (courseTimetableContent) {
-      courseTimetableContent.classList.toggle('course-timetable-list-mode', isList);
-    }
+  const buildCourseTimetableItemList = (entries) => {
+    if (!entries.length) return null;
+    const list = document.createElement('ul');
+    list.className = 'course-timetable-list';
+    entries.forEach(({ id, data }) => {
+      const item = document.createElement('li');
+      item.className = 'course-timetable-item';
+      item.appendChild(buildCourseTimetableTooltip(id));
+      const row = document.createElement('div');
+      row.className = 'course-timetable-item-row';
+      const code = document.createElement('span');
+      code.className = 'course-timetable-code';
+      code.textContent = id;
+      const name = document.createElement('span');
+      name.className = 'course-timetable-name';
+      name.textContent = getSubjectName(id);
+      row.appendChild(code);
+      row.appendChild(name);
+      item.appendChild(row);
+      const meta = document.createElement('div');
+      meta.className = 'course-timetable-meta';
+      const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+      const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+      meta.textContent = `${room} \u00b7 ${teacher}`;
+      item.appendChild(meta);
+      list.appendChild(item);
+    });
+    return list;
+  };
+
+  const updateCourseTimetableButtons = () => {
+    const isList = courseTimetableView === 'list';
     if (courseTimetableGridButton) {
       courseTimetableGridButton.classList.toggle('is-inactive', !isList);
       courseTimetableGridButton.disabled = !isList;
@@ -2054,67 +2403,101 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const setCourseTimetableView = (view) => {
+    courseTimetableView = view;
+    updateCourseTimetableButtons();
+    if (courseTimetableModal && courseTimetableModal.classList.contains('show')) {
+      renderCourseTimetableModal();
+    }
+  };
+
   const renderCourseTimetableModal = () => {
     if (!courseTimetableContent) return;
     courseTimetableContent.innerHTML = '';
-    const groups = new Map();
-    Object.entries(timetable).forEach(([id, data]) => {
-      if (notRunningIds.has(id)) return;
-      const day = data.day || '';
-      const slot = data.slot || '';
-      if (!day || !slot) return;
-      const key = `${day}|${slot}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push({ id, data });
-    });
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    const slotNames = ['Morning', 'Afternoon'];
-    dayNames.forEach((day) => {
-      slotNames.forEach((slot) => {
-        const key = `${day}|${slot}`;
-        const entries = (groups.get(key) || []).sort((a, b) => a.id.localeCompare(b.id));
-        const section = document.createElement('section');
-        section.className = 'course-timetable-section';
-        const heading = document.createElement('div');
-        heading.className = 'course-timetable-heading';
-        heading.textContent = `${day} ${getSlotAbbreviation(slot)}`;
-        section.appendChild(heading);
-        if (!entries.length) {
-          const empty = document.createElement('div');
-          empty.className = 'course-timetable-empty';
-          empty.textContent = 'No subjects running.';
-          section.appendChild(empty);
-        } else {
-          const list = document.createElement('ul');
-          list.className = 'course-timetable-list';
-          entries.forEach(({ id, data }) => {
-            const item = document.createElement('li');
-            item.className = 'course-timetable-item';
-            item.title = buildCourseTimetableTooltip(id);
-            const row = document.createElement('div');
-            row.className = 'course-timetable-item-row';
-            const code = document.createElement('span');
-            code.className = 'course-timetable-code';
-            code.textContent = id;
-            const name = document.createElement('span');
-            name.className = 'course-timetable-name';
-            name.textContent = data.name || getSubjectName(id) || id;
-            row.appendChild(code);
-            row.appendChild(name);
-            item.appendChild(row);
-            const meta = document.createElement('div');
-            meta.className = 'course-timetable-meta';
-            const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
-            const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
-            meta.textContent = `${room} \u00b7 ${teacher}`;
-            item.appendChild(meta);
-            list.appendChild(item);
-          });
-          section.appendChild(list);
-        }
-        courseTimetableContent.appendChild(section);
+    const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
+    const isList = courseTimetableView === 'list';
+    courseTimetableContent.classList.toggle('course-timetable-list-mode', isList);
+    if (isList) {
+      dayNames.forEach((day) => {
+        slotNames.forEach((slot) => {
+          const entries = grid.get(day)?.get(slot) || [];
+          const section = document.createElement('section');
+          section.className = 'course-timetable-section';
+          const heading = document.createElement('div');
+          heading.className = 'course-timetable-heading';
+          const dayLabel = document.createElement('span');
+          dayLabel.className = 'course-timetable-day-label';
+          dayLabel.textContent = day;
+          const slotLabel = document.createElement('span');
+          slotLabel.className = 'course-timetable-slot-label';
+          slotLabel.textContent = getSlotAbbreviation(slot);
+          heading.appendChild(dayLabel);
+          heading.appendChild(document.createTextNode(' '));
+          heading.appendChild(slotLabel);
+          const timeRange = formatTimeRange(timeSlots[slot] || '');
+          if (timeRange) {
+            const timeLabel = document.createElement('span');
+            timeLabel.className = 'course-timetable-time-range';
+            timeLabel.textContent = `. ${timeRange}`;
+            heading.appendChild(timeLabel);
+          }
+          section.appendChild(heading);
+          const list = buildCourseTimetableItemList(entries);
+          if (!list) {
+            const empty = document.createElement('div');
+            empty.className = 'course-timetable-empty';
+            empty.textContent = 'No subjects running.';
+            section.appendChild(empty);
+          } else {
+            section.appendChild(list);
+          }
+          courseTimetableContent.appendChild(section);
+        });
       });
-    });
+    } else {
+      const table = document.createElement('table');
+      table.className = 'course-timetable-table';
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      const corner = document.createElement('th');
+      corner.className = 'course-timetable-corner';
+      corner.textContent = 'Day';
+      headRow.appendChild(corner);
+      slotNames.forEach((slot) => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = getSlotHeading(slot);
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      dayNames.forEach((day) => {
+        const row = document.createElement('tr');
+        const dayCell = document.createElement('th');
+        dayCell.scope = 'row';
+        dayCell.className = 'course-timetable-day';
+        dayCell.textContent = day;
+        row.appendChild(dayCell);
+        slotNames.forEach((slot) => {
+          const td = document.createElement('td');
+          const entries = grid.get(day)?.get(slot) || [];
+          const list = buildCourseTimetableItemList(entries);
+          if (!list) {
+            const empty = document.createElement('div');
+            empty.className = 'course-timetable-empty';
+            empty.textContent = 'No subjects running.';
+            td.appendChild(empty);
+          } else {
+            td.appendChild(list);
+          }
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      courseTimetableContent.appendChild(table);
+    }
     if (courseTimetableNotRunningList) {
       courseTimetableNotRunningList.innerHTML = '';
       const ids = Array.from(notRunningIds).sort();
@@ -2127,28 +2510,219 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const item = document.createElement('li');
           const name = getSubjectName(id);
           item.textContent = name ? `${id} ${name}` : id;
-          item.title = buildCourseTimetableTooltip(id);
+          item.appendChild(buildCourseTimetableTooltip(id));
           courseTimetableNotRunningList.appendChild(item);
         });
       }
     }
   };
 
+  const copyCourseTimetableForWord = () => {
+    if (!navigator.clipboard) return;
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const slotOrder = { Morning: 0, Afternoon: 1 };
+    const noteValue = getSemesterNote();
+    const rows = Object.entries(timetable)
+      .filter(([id]) => !notRunningIds.has(id))
+      .map(([id, data]) => {
+        const { start, end } = getSlotStartEnd(data.slot || '');
+        return {
+          code: id,
+          name: getSubjectName(id),
+          room: data.room || 'TBA',
+          day: data.day || 'TBA',
+          start,
+          end,
+          staff: data.teacher || 'TBA',
+          note: noteValue,
+          slot: data.slot || '',
+        };
+      })
+      .sort((a, b) => {
+        const dayA = dayOrder.indexOf(a.day);
+        const dayB = dayOrder.indexOf(b.day);
+        const dayIndexA = dayA === -1 ? 99 : dayA;
+        const dayIndexB = dayB === -1 ? 99 : dayB;
+        if (dayIndexA !== dayIndexB) return dayIndexA - dayIndexB;
+        const slotIndexA = slotOrder[a.slot] ?? 99;
+        const slotIndexB = slotOrder[b.slot] ?? 99;
+        if (slotIndexA !== slotIndexB) return slotIndexA - slotIndexB;
+        return a.code.localeCompare(b.code);
+      });
+
+    const header = ['Subject Code', 'Day', 'Rooms', 'Start', 'End', 'Staff', 'Note', 'Subject Name'];
+    const textRows = [header];
+    rows.forEach((row) => {
+      textRows.push([row.code, row.day, row.room, row.start, row.end, row.staff, row.note, row.name]);
+    });
+    const text = textRows.map((row) => row.join('\t')).join('\n');
+
+    const table = document.createElement('table');
+    table.style.borderCollapse = 'collapse';
+    table.style.border = '1px solid #ccc';
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    header.forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      th.style.border = '1px solid #ccc';
+      th.style.padding = '4px 6px';
+      th.style.background = '#efefef';
+      th.style.textAlign = 'left';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      [row.code, row.day, row.room, row.start, row.end, row.staff, row.note, row.name].forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        td.style.border = '1px solid #ccc';
+        td.style.padding = '4px 6px';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    const html = table.outerHTML;
+
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
   const copyCourseTimetableToClipboard = () => {
-    if (!courseTimetableContent || !navigator.clipboard) return;
-    const text = (courseTimetableContent.innerText || '').trim();
-    if (!text) return;
-    navigator.clipboard.writeText(text).catch(() => {});
+    if (!navigator.clipboard) return;
+    const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
+    const textRows = [];
+    textRows.push(['Day', ...slotNames.map(getSlotHeading)].join('\t'));
+    dayNames.forEach((day) => {
+      const rowCells = [day];
+      slotNames.forEach((slot) => {
+        const entries = grid.get(day)?.get(slot) || [];
+        const cellText = entries.length
+          ? entries
+            .map(({ id, data }) => {
+              const name = getSubjectName(id);
+              const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+              const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+              return `${id} ${name} (${room}; ${teacher})`;
+            })
+            .join('; ')
+          : 'No subjects running.';
+        rowCells.push(cellText);
+      });
+      textRows.push(rowCells.join('\t'));
+    });
+    const text = textRows.join('\n');
+
+    const table = document.createElement('table');
+    table.style.borderCollapse = 'collapse';
+    table.style.border = '1px solid #ccc';
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '12px';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const corner = document.createElement('th');
+    corner.textContent = 'Day';
+    corner.style.border = '1px solid #ccc';
+    corner.style.padding = '6px 8px';
+    corner.style.textAlign = 'center';
+    corner.style.background = '#f2f2f2';
+    headRow.appendChild(corner);
+    slotNames.forEach((slot) => {
+      const th = document.createElement('th');
+      th.textContent = getSlotHeading(slot);
+      th.style.border = '1px solid #ccc';
+      th.style.padding = '6px 8px';
+      th.style.textAlign = 'left';
+      th.style.background = '#f2f2f2';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    dayNames.forEach((day) => {
+      const row = document.createElement('tr');
+      const dayCell = document.createElement('th');
+      dayCell.textContent = day;
+      dayCell.style.border = '1px solid #ccc';
+      dayCell.style.padding = '6px 8px';
+      dayCell.style.textAlign = 'left';
+      dayCell.style.background = '#f9f9f9';
+      row.appendChild(dayCell);
+      slotNames.forEach((slot) => {
+        const td = document.createElement('td');
+        td.style.border = '1px solid #ccc';
+        td.style.padding = '6px 8px';
+        td.style.verticalAlign = 'top';
+        const entries = grid.get(day)?.get(slot) || [];
+        if (!entries.length) {
+          td.textContent = 'No subjects running.';
+        } else {
+          entries.forEach(({ id, data }) => {
+            const line = document.createElement('div');
+            const code = document.createElement('strong');
+            code.textContent = `${id} `;
+            const name = document.createElement('span');
+            name.textContent = getSubjectName(id);
+            const meta = document.createElement('div');
+            meta.style.fontSize = '11px';
+            meta.style.color = '#444';
+            const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+            const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+            meta.textContent = `${room} \u00b7 ${teacher}`;
+            line.appendChild(code);
+            line.appendChild(name);
+            td.appendChild(line);
+            td.appendChild(meta);
+          });
+        }
+        row.appendChild(td);
+      });
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    const html = table.outerHTML;
+
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const updateCourseTimetableTeacherCopyButton = () => {
+    if (!courseTimetableTeacherCopyButton) return;
+    courseTimetableTeacherCopyButton.hidden = !isSharePointHost;
   };
 
   const showCourseTimetableModal = () => {
     if (!courseTimetableModal) return;
     renderCourseTimetableModal();
-    setCourseTimetableView(courseTimetableView);
+    updateCourseTimetableTeacherCopyButton();
     courseTimetableModal.classList.add('show');
     courseTimetableModal.setAttribute('aria-hidden', 'false');
     if (showCourseTimetableButton) showCourseTimetableButton.setAttribute('aria-expanded', 'true');
     if (closeCourseTimetableCta) closeCourseTimetableCta.focus();
+    updateCourseTimetableButtons();
   };
 
   const hideCourseTimetableModal = () => {
@@ -2305,15 +2879,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               .filter(([code, s]) => s?.toggled && code !== id)
               .map(([code]) => code)
           );
-          const { prereqMetPlanned, coreqMetPlanned } = getRequisiteStatus({
+          const { prereqMetNow, coreqMetPlanned } = getRequisiteStatus({
             id,
             completedSet: completed,
             plannedSet,
             usePlanned: true,
           });
           const hasCoreq = (corequisites[id] || []).length > 0;
+          if (!prereqMetNow) return;
           if (hasCoreq && !coreqMetPlanned) return;
-          if (!prereqMetPlanned && !coreqMetPlanned) return;
           if (id === 'BIT371') {
             const { completedMajorCount, plannedMajorCount } = getMajorCounts();
             const bitReq = getBit371Requirement({
@@ -2323,7 +2897,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               completedMajorCount,
               plannedMajorCount,
             });
-            if (!bitReq.majorConcurrentOk) return;
+            if (!bitReq.metPlanned) return;
           }
         }
         if (!canSelectPlanned()) return;
@@ -2415,6 +2989,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (copyCourseTimetableButton) {
     copyCourseTimetableButton.addEventListener('click', copyCourseTimetableToClipboard);
   }
+  if (courseTimetableTeacherCopyButton) {
+    courseTimetableTeacherCopyButton.addEventListener('click', copyCourseTimetableForWord);
+    courseTimetableTeacherCopyButton.hidden = !isSharePointHost;
+  }
   if (codeInput) {
     codeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -2475,6 +3053,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
 
   let currentTableMode = 'selected';
+  const historySortState = { key: 'code', direction: 'asc' };
 
   const renderTimetableTable = (rowsOverride = null, highlightSelection = false) => {
     if (!timetableTable) return;
@@ -2492,7 +3071,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         td.colSpan = 7;
         row.appendChild(td);
       } else {
-        const name = data.name || getSubjectName(id) || 'N/A';
+        const name = getSubjectName(id);
         const day = dayShort || 'N/A';
         const time = data.slot ? (timeSlots[data.slot] || data.slot) : 'N/A';
         const room = data.room || 'N/A';
@@ -2500,6 +3079,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const stream = buildStreamLabel(id);
         row.dataset.subject = id;
         row.style.cursor = 'pointer';
+        applyDisplayTypeClass(row, cell || id);
         if (highlightSelection && isChosen) {
           row.classList.add('chosen-row');
         }
@@ -2542,6 +3122,85 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       tbody.appendChild(row);
     });
+  };
+
+  const renderSubjectTable = (tableEl, rows, emptyMessage = 'No subjects to show.') => {
+    if (!tableEl) return;
+    const tbody = tableEl.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const items = rows || [];
+    const columns =
+      tableEl.id === 'history-table'
+        ? ['code', 'name', 'result', 'date', 'stream']
+        : ['code', 'name', 'stream'];
+    if (!items.length) {
+      const row = document.createElement('tr');
+      const td = document.createElement('td');
+      td.textContent = emptyMessage;
+      td.colSpan = columns.length;
+      row.appendChild(td);
+      tbody.appendChild(row);
+      return;
+    }
+    items.forEach(({ cell, id, result = '', date = '' }) => {
+      const row = document.createElement('tr');
+      row.dataset.subject = id;
+      applyDisplayTypeClass(row, cell || id);
+      const name = getSubjectName(id);
+      const stream = buildStreamLabel(id);
+      const valueMap = {
+        code: id,
+        name,
+        result,
+        date,
+        stream,
+      };
+      columns.forEach((col) => {
+        const td = document.createElement('td');
+        td.textContent = valueMap[col] ?? '';
+        row.appendChild(td);
+      });
+      tbody.appendChild(row);
+    });
+  };
+
+  const getHistorySortValue = (row, key) => {
+    const id = row?.id || '';
+    if (key === 'code') return id;
+    if (key === 'result') return row?.result || '';
+    if (key === 'date') return row?.date || '';
+    if (key === 'stream') return buildStreamLabel(id);
+    return '';
+  };
+
+  const sortHistoryRows = (rows) => {
+    const { key, direction } = historySortState;
+    const dir = direction === 'desc' ? -1 : 1;
+    return [...rows].sort((a, b) => {
+      const aVal = getHistorySortValue(a, key);
+      const bVal = getHistorySortValue(b, key);
+      const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true, sensitivity: 'base' });
+      if (cmp !== 0) return cmp * dir;
+      return String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+    });
+  };
+
+  const updateHistorySortButtons = () => {
+    historySortButtons.forEach((btn) => {
+      const key = btn.dataset.sort;
+      const isActive = key === historySortState.key;
+      const direction = historySortState.direction;
+      btn.textContent = isActive && direction === 'desc' ? 'Z...A' : 'A...Z';
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      btn.classList.toggle('is-active', isActive);
+    });
+  };
+
+  const renderHistoryModal = () => {
+    const rows = sortHistoryRows(getHistoryRows());
+    renderSubjectTable(historyTable, rows, 'No completed subjects to show.');
+    updateHistorySortButtons();
   };
 
   const adjustTableColumnWidths = () => {
@@ -2643,9 +3302,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     requestAnimationFrame(adjustTableColumnWidths);
   };
 
+  const setTimetableModalMode = (mode) => {
+    if (!timetableModal) return;
+    timetableModal.dataset.mode = mode;
+    timetableModal.classList.toggle('mode-available', mode === 'available');
+    timetableModal.classList.toggle('mode-selected', mode === 'selected');
+  };
+
   const showTimetableModal = () => {
     if (!timetableModal) return;
     currentTableMode = 'selected';
+    setTimetableModalMode(currentTableMode);
     if (timetableTitleEl) {
       const now = new Date();
       const label = getTimetableLabel(now);
@@ -2666,6 +3333,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       availableHeading.style.display = '';
     }
     currentTableMode = selectedCount >= threshold ? 'selected' : 'available';
+    setTimetableModalMode(currentTableMode);
     if (timetableTitleEl) {
       if (currentTableMode === 'available') {
         timetableTitleEl.textContent = 'Available subjects (click to add)';
@@ -2682,6 +3350,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     scheduleAdjustTimetable();
   };
 
+  const showHistoryModal = () => {
+    if (!historyModal) return;
+    renderHistoryModal();
+    historyModal.classList.add('show');
+    historyModal.setAttribute('aria-hidden', 'false');
+  };
+
+  const hideHistoryModal = () => {
+    if (!historyModal) return;
+    historyModal.classList.remove('show');
+    historyModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showNextSemesterModal = () => {
+    if (!nextSemesterModal) return;
+    const rows = getNextSemTableRows();
+    renderSubjectTable(nextSemesterTable, rows, 'No subjects available next semester.');
+    nextSemesterModal.classList.add('show');
+    nextSemesterModal.setAttribute('aria-hidden', 'false');
+  };
+
+  const hideNextSemesterModal = () => {
+    if (!nextSemesterModal) return;
+    nextSemesterModal.classList.remove('show');
+    nextSemesterModal.setAttribute('aria-hidden', 'true');
+  };
+
   const refreshTimetableModalState = () => {
     if (!timetableModal || !timetableModal.classList.contains('show')) return;
     const selectedCount = getSelectedRows().length;
@@ -2690,6 +3385,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (mode === 'available' && selectedCount >= threshold) mode = 'selected';
     if (mode === 'selected' && selectedCount < threshold) mode = 'available';
     currentTableMode = mode;
+    setTimetableModalMode(currentTableMode);
     if (availableHeading) {
       availableHeading.style.display = '';
     }
@@ -2907,6 +3603,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const heading = timetableTitleEl
       ? timetableTitleEl.textContent
       : `Timetable for ${getTimetableLabel(now)}. Prepared ${formatDate(now)}`;
+    const includeHeading = heading && !heading.toLowerCase().startsWith('available subjects');
 
     const textBody = rows
       .map((row) =>
@@ -2915,18 +3612,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           .join('\t')
       )
       .join('\n');
-    const text = `${heading}\n${textBody}`;
+    const text = includeHeading ? `${heading}\n${textBody}` : textBody;
 
     const htmlRows = rows
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          return `<${tag} style="border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:12px;font-family:Calibri, Arial, sans-serif;">${c.textContent.trim()}</${tag}>`;
+          const baseStyle = 'border:1px solid #ccc;text-align:left;font-size:12px;font-family:Calibri, Arial, sans-serif;line-height:1;';
+          const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
+          const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
+          const style = tag === 'th' ? headStyle : bodyStyle;
+          return `<${tag} style="${style}">${c.textContent.trim()}</${tag}>`;
         });
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const html = `<div style="font-family:Calibri, Arial, sans-serif;font-size:13px;margin-bottom:6px;">${heading}</div><table style="border-collapse:collapse;border:1px solid #ccc;font-family:Calibri, Arial, sans-serif;">${htmlRows}</table>`;
+    const headingHtml = includeHeading
+      ? `<div style="font-family:Calibri, Arial, sans-serif;font-size:13px;margin-bottom:6px;">${heading}</div>`
+      : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;font-family:Calibri, Arial, sans-serif;border-spacing:0;">${htmlRows}</table>`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -2934,10 +3638,55 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'text/plain': new Blob([text], { type: 'text/plain' }),
       };
       navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
-        navigator.clipboard.writeText(text).catch(() => {});
+        navigator.clipboard.writeText(text).catch(() => { });
       });
     } else {
-      navigator.clipboard.writeText(text).catch(() => {});
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const copySimpleTableToClipboard = (tableEl, headingText = '') => {
+    if (!tableEl || !navigator.clipboard) return;
+    const rows = Array.from(tableEl.querySelectorAll('tr')).filter((row) => !row.dataset.skipCopy);
+    const textBody = rows
+      .map((row) =>
+        Array.from(row.querySelectorAll('th,td'))
+          .map((c) => c.textContent.trim())
+          .join('\t')
+      )
+      .join('\n');
+    const heading = headingText ? headingText.trim() : '';
+    const text = heading ? `${heading}\n${textBody}` : textBody;
+
+    const htmlRows = rows
+      .map((row) => {
+        const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
+          const tag = c.tagName.toLowerCase();
+          const baseStyle =
+            'border:1px solid #ccc;text-align:left;font-size:12px;font-family:Calibri, Arial, sans-serif;line-height:1;';
+          const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
+          const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
+          const style = tag === 'th' ? headStyle : bodyStyle;
+          return `<${tag} style="${style}">${c.textContent.trim()}</${tag}>`;
+        });
+        return `<tr>${cells.join('')}</tr>`;
+      })
+      .join('');
+    const headingHtml = heading
+      ? `<div style="font-family:Calibri, Arial, sans-serif;font-size:13px;margin-bottom:6px;">${heading}</div>`
+      : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;font-family:Calibri, Arial, sans-serif;border-spacing:0;">${htmlRows}</table>`;
+
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
     }
   };
 
@@ -2954,7 +3703,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const dayShort = dayFull.slice(0, 3);
         const slot = data.slot || '';
         const cell = getCellByCode(id);
-        return { cell, id, data, dayFull, dayShort, slot, isChosen: true };
+      return { cell, id, data, dayFull, dayShort, slot, isChosen: true };
+    })
+    .sort(compareByDaySlotThenCode);
+  };
+
+  const getHistoryRows = () => {
+    const completedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.completed)
+      .map(([code]) => code);
+    return completedCodes
+      .map((id) => {
+        const data = timetable[id] || {};
+        const dayFull = data.day || '';
+        const dayShort = dayFull.slice(0, 3);
+        const slot = data.slot || '';
+        const cell = getCellByCode(id);
+        return { cell, id, data, dayFull, dayShort, slot };
       })
       .sort(compareByDaySlotThenCode);
   };
@@ -2966,6 +3731,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .map(([code]) => code)
     );
     const emptyPlannedSet = new Set();
+    const { completedMajorCount, plannedMajorCount } = getMajorCounts();
     return subjects
       .filter((cell) => {
         const id = cell.dataset.subject || '';
@@ -2982,7 +3748,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           usePlanned: false,
         });
         const hasCoreq = (corequisites[id] || []).length > 0;
-        const canSelectNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+        let canSelectNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+        if (id === 'BIT371') {
+          const bitReq = getBit371Requirement({
+            completedSet,
+            plannedSet: emptyPlannedSet,
+            usePlanned: false,
+            completedMajorCount,
+            plannedMajorCount,
+          });
+          canSelectNow = bitReq.metNow;
+        }
         return canSelectNow;
       })
       .map((cell) => {
@@ -3009,6 +3785,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.toggled)
         .map(([code]) => code)
     );
+    const { completedMajorCount, plannedMajorCount } = getMajorCounts();
     return subjects
       .filter((cell) => {
         const id = cell.dataset.subject || '';
@@ -3022,7 +3799,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           usePlanned: true,
         });
         const hasCoreq = (corequisites[id] || []).length > 0;
-        const meets = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+        let meets = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
+        if (id === 'BIT371') {
+          const baseMetNext = completedSet.has('BIT242') || plannedSet.has('BIT242');
+          const majorCompletedNext = completedMajorCount + plannedMajorCount >= 3;
+          meets = baseMetNext && majorCompletedNext;
+        }
         return meets;
       })
       .map((cell) => {
@@ -3033,8 +3815,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const slot = data.slot || '';
         return { id, dayShort, slot, cell };
       })
-      .sort((a, b) => a.id.localeCompare(b.id));
+        .sort((a, b) => a.id.localeCompare(b.id));
   };
+
+  const getNextSemTableRows = () =>
+    getNextSemRows()
+      .map((row) => {
+        const data = timetable[row.id] || {};
+        const dayFull = data.day || '';
+        const dayShort = row.dayShort || dayFull.slice(0, 3);
+        const slot = row.slot || data.slot || '';
+        return { ...row, data, dayFull, dayShort, slot };
+      })
+      .sort(compareByDaySlotThenCode);
 
   const updateSelectedList = () => {
     if (!selectedListSection || !selectedListEl) return;
@@ -3053,16 +3846,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         li.className = 'available-item';
         li.setAttribute('role', 'listitem');
         li.classList.toggle('chosen', item.isChosen);
-    const slotLabel =
-      item.slot === 'Morning' ? 'morning' : item.slot === 'Afternoon' ? 'afternoon' : (item.slot || 'N/A').toLowerCase();
-    li.innerHTML = `<span class="avail-code">${item.id}</span><span class="avail-slot">${item.dayShort || 'N/A'} ${slotLabel}</span>`;
-    li.dataset.subject = item.id;
-    li.tabIndex = 0;
-    li.setAttribute('role', 'button');
-    const activate = () => {
-      const cell = subjects.find((c) => c.dataset.subject === item.id);
-      if (cell) cell.click();
-    };
+        applyDisplayTypeClass(li, item.cell || item.id);
+        const slotLabel =
+          item.slot === 'Morning' ? 'morning' : item.slot === 'Afternoon' ? 'afternoon' : (item.slot || 'N/A').toLowerCase();
+        li.innerHTML = `<span class="avail-code">${item.id}</span><span class="avail-slot">${item.dayShort || 'N/A'} ${slotLabel}</span>`;
+        li.dataset.subject = item.id;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        const activate = () => {
+          const cell = subjects.find((c) => c.dataset.subject === item.id);
+          if (cell) cell.click();
+        };
         li.addEventListener('click', activate);
         li.addEventListener('keydown', (ev) => {
           if (ev.key === 'Enter' || ev.key === ' ') {
@@ -3097,20 +3891,57 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   if (showTimetableButton) showTimetableButton.addEventListener('click', showTimetableModal);
-  if (availableHeading) {
-    const activateAvailable = () => showAvailableModal();
-    availableHeading.addEventListener('click', activateAvailable);
-    availableHeading.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        activateAvailable();
-      }
-    });
-  }
-  if (closeTimetable) closeTimetable.addEventListener('click', hideTimetableModal);
-  if (hideTimetable) hideTimetable.addEventListener('click', hideTimetableModal);
-  if (copyTimetable) copyTimetable.addEventListener('click', copyTimetableToClipboard);
-  if (varyLoadButton) varyLoadButton.addEventListener('click', showLoadModal);
+    if (availableHeading) {
+      const activateAvailable = () => showAvailableModal();
+      availableHeading.addEventListener('click', activateAvailable);
+      availableHeading.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activateAvailable();
+        }
+      });
+    }
+    if (closeTimetable) closeTimetable.addEventListener('click', hideTimetableModal);
+    if (hideTimetable) hideTimetable.addEventListener('click', hideTimetableModal);
+    if (copyTimetable) copyTimetable.addEventListener('click', copyTimetableToClipboard);
+    if (historyButton) historyButton.addEventListener('click', showHistoryModal);
+    if (nextSemesterButton) nextSemesterButton.addEventListener('click', showNextSemesterModal);
+    if (historySortButtons.length) {
+      historySortButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const key = button.dataset.sort;
+          if (!key) return;
+          if (historySortState.key === key) {
+            historySortState.direction = historySortState.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            historySortState.key = key;
+            historySortState.direction = 'asc';
+          }
+          renderHistoryModal();
+        });
+      });
+    }
+    if (closeHistory) closeHistory.addEventListener('click', hideHistoryModal);
+    if (closeHistoryCta) closeHistoryCta.addEventListener('click', hideHistoryModal);
+    if (copyHistory) copyHistory.addEventListener('click', () => copySimpleTableToClipboard(historyTable, historyTitleEl?.textContent || 'History'));
+    if (historyModal) {
+      historyModal.addEventListener('click', (e) => {
+        if (e.target === historyModal) hideHistoryModal();
+      });
+    }
+    if (closeNextSemester) closeNextSemester.addEventListener('click', hideNextSemesterModal);
+    if (closeNextSemesterCta) closeNextSemesterCta.addEventListener('click', hideNextSemesterModal);
+    if (copyNextSemester) {
+      copyNextSemester.addEventListener('click', () =>
+        copySimpleTableToClipboard(nextSemesterTable, nextSemesterTitleEl?.textContent || 'Available next semester')
+      );
+    }
+    if (nextSemesterModal) {
+      nextSemesterModal.addEventListener('click', (e) => {
+        if (e.target === nextSemesterModal) hideNextSemesterModal();
+      });
+    }
+    if (varyLoadButton) varyLoadButton.addEventListener('click', showLoadModal);
   if (errorButton) errorButton.addEventListener('click', () => showAlertModal('error'));
   if (warningButton) warningButton.addEventListener('click', () => showAlertModal('warning'));
   if (infoButton) infoButton.addEventListener('click', () => showAlertModal('info'));
@@ -3303,17 +4134,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   updatePrereqErrors();
   updateWarnings();
-    const completedSet = new Set(
-      Array.from(subjectState.entries())
-        .filter(([, st]) => st?.completed)
-        .map(([code]) => code)
-    );
-    const plannedSet = new Set(
-      Array.from(subjectState.entries())
-        .filter(([, st]) => st?.toggled)
-        .map(([code]) => code)
-    );
-    updateSemesterCounts(completedSet, plannedSet);
+  const completedSet = new Set(
+    Array.from(subjectState.entries())
+      .filter(([, st]) => st?.completed)
+      .map(([code]) => code)
+  );
+  const plannedSet = new Set(
+    Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code)
+  );
+  updateSemesterCounts(completedSet, plannedSet);
   // Ensure header alert buttons stay hidden until messages are provided
   refreshErrorAlerts();
   setAlertMessages('info', []);
@@ -3406,13 +4237,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateSemesterCounts(completedSet, plannedSet);
     });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      hideAlertModal();
-      hideCodeModal();
-      hideCourseTimetableModal();
-      hideTimetableModal();
-      hideLoadModal();
-      hideInstructionsModal();
+      if (e.key === 'Escape') {
+        hideAlertModal();
+        hideCodeModal();
+        hideCourseTimetableModal();
+        hideTimetableModal();
+        hideHistoryModal();
+        hideNextSemesterModal();
+        hideLoadModal();
+        hideInstructionsModal();
     } else if (e.key === 'Enter') {
       if (loadModal && loadModal.classList.contains('show')) {
         e.preventDefault();

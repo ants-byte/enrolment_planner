@@ -16,6 +16,8 @@ Created: December 30, 2025
   --btn-primary-start: #1d6fd1;
   --btn-primary-end: #1459a8;
   --btn-primary-border: #0f4c94;
+  --chosen-blue: rgba(29, 110, 209, 0.9);
+  --chosen-blue-soft: rgba(29, 110, 209, 0.25);
   --btn-primary-hover-start: #2a82ed;
   --btn-primary-hover-end: #1f69c4;
   --btn-secondary-start: #2378df;
@@ -229,6 +231,24 @@ td,
   background: transparent;
   width: min(1100px, 96vw);
   position: relative;
+  --elective-swish-a: var(--ba-body);
+  --elective-swish-b: var(--software-body);
+  --elective-band-a: var(--ba-band);
+  --elective-band-b: var(--software-band);
+}
+
+.sheet.major-ba {
+  --elective-swish-a: var(--network-body);
+  --elective-swish-b: var(--software-body);
+  --elective-band-a: var(--network-band);
+  --elective-band-b: var(--software-band);
+}
+
+.sheet.major-sd {
+  --elective-swish-a: var(--network-body);
+  --elective-swish-b: var(--ba-body);
+  --elective-band-a: var(--network-band);
+  --elective-band-b: var(--ba-band);
 }
 
 .sidebar {
@@ -237,7 +257,7 @@ td,
   color: var(--sidebar-text);
   border: 2px solid var(--sidebar-border);
   box-shadow: 0 0 0 6px #000;
-  padding: 14px 16px;
+  padding: 8px 8px;
   position: sticky;
   top: 12px;
   z-index: 100;
@@ -251,9 +271,7 @@ td,
 .sidebar-heading {
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 0;
-  margin-right: 6px;
-  letter-spacing: 0.2px;
+  margin-bottom: 2px;
   color: var(--sidebar-heading-color);
   display: inline-block;
   line-height: 1.1;
@@ -273,29 +291,32 @@ td,
 
 .buttons {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: nowrap;
 }
 
 .buttons .clear-button {
   flex: 1 1 0;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 5px 10px;
 }
 
 .sidebar-section {
-  margin-bottom: 10px;
-  padding: 6px 12px;
+  margin-bottom: 6px;
+  padding: 4px 4px;
   border: 1px solid var(--sidebar-border);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
   overflow: visible;
 }
 
+.next-sem-section .clear-button + .clear-button {
+  margin-top: 3px;
+}
+
 .major-picker {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   overflow: visible;
 }
 
@@ -306,7 +327,7 @@ td,
 
 .major-toggle {
   width: 100%;
-  padding: 8px 10px;
+  padding: 5px 10px;
   border-radius: 4px;
   border: 1px solid #444;
   background: #1c1c1c;
@@ -455,11 +476,11 @@ td,
   font-size: .9rem;
   font-weight: 700;
   color: #f5f5f5;
-  margin: 6px 0 2px;
+  margin: 0px 2px;
   cursor: pointer;
   background: linear-gradient(to bottom, #2a82ed, #1f69c4);
   border: 1px solid #0f4c94;
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: 4px;
   text-align: left;
   width: 100%;
@@ -481,18 +502,52 @@ td,
   gap: 6px;
   color: #000000;
   cursor: pointer;
-  padding: 4px 6px;
-  background-color: white;
+  padding: 5px 8px;
+  position: relative;
+  background: var(--available-item-bg, #ffffff);
   border: 0.5px solid #d3d3d3;
   border-radius: 4px;
   box-sizing: border-box;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+}
+
+.available-list .available-item.core {
+  --available-item-bg: var(--core-body);
+}
+
+.available-list .available-item.network {
+  --available-item-bg: var(--network-body);
+}
+
+.available-list .available-item.software {
+  --available-item-bg: var(--software-body);
+}
+
+.available-list .available-item.ba {
+  --available-item-bg: var(--ba-body);
+}
+
+.available-list .available-item.dual {
+  --available-item-bg: var(--dual-body);
+}
+
+.available-list .available-item.elective {
+  --available-item-bg: var(--elective-body);
+}
+
+.available-list .available-item.dual-split {
+  background: linear-gradient(165deg,
+      var(--ba-body) 0,
+      var(--ba-body) calc(50% - 6px),
+      var(--software-body) calc(50% + 6px),
+      var(--software-body) 100%);
 }
 
 
 .available-list .avail-code {
   color: #161616;
   min-width: 64px;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .available-list .avail-slot {
@@ -500,42 +555,32 @@ td,
 }
 
 .available-list .available-item.chosen {
-  background: #454546;
-  font-weight: 700;
-  border-radius: 4px;
-  font-size: 1em;
-  border: 0.5px solid #d3d3d3;
+  border-left: 6px solid var(--chosen-blue);
+  border-right: 3px solid var(--chosen-blue-soft);
+  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.12);
+  font-weight: 400;
 }
 
 .available-item:hover  {
-
-  background: linear-gradient(to bottom,
-      #feffff 0%,#f5f5f5 44%,rgb(221, 220, 220) 90%,
-      #ffffff 100%);
-      box-sizing: border-box;
-      border-color: var(--btn-primary-hover-end) !important;
+  filter: brightness(0.98);
+  border-color: var(--btn-primary-hover-end) !important;
 }
 .available-list .available-item.chosen:hover{
-  background: #565657;
-  box-sizing: border-box;
+  filter: brightness(0.96);
   border-color: var(--btn-primary-hover-end) !important;
-    background: linear-gradient(to bottom,
-      #565657 0%,#474747 44%,#313131 90%,
-      #565657 100%);
-      box-sizing: border-box;
-      border-color: var(--btn-primary-hover-end) !important;
-      padding:2px;
 }
 .timetable-table-wrapper .chosen-row {
-  background: #454546;
   font-weight: 400;
-  color: white;
 }
 
-.available-list .available-item.chosen .avail-code,
-.available-list .available-item.chosen .avail-slot {
-  color: white;
+#timetable-modal.mode-available #timetable-table tbody tr.chosen-row td {
+  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.12);
 }
+
+.available-list .available-item.chosen .avail-code {
+  font-weight: 700;
+}
+
 
 #next-sem-list {
   list-style: none;
@@ -583,7 +628,7 @@ td,
 .sidebar-section.buttons {
   border: 1px solid #2f2f2f;
   background: rgba(255, 255, 255, 0.06);
-  padding: 12px 12px 10px;
+  padding: 6px 6px 5px;
 }
 
 .inline-heading {
@@ -608,12 +653,11 @@ td,
 
 .clear-button {
   width: 100%;
-  padding: 8px 12px;
+  padding: 4px 12px;
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #f7f9ff;
   border: 1px solid var(--btn-primary-border);
   font-weight: 700;
-  letter-spacing: 0.3px;
   cursor: pointer;
   border-radius: 4px;
   transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
@@ -634,6 +678,7 @@ td,
   background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
   color: #f7f9ff;
   border-color: var(--btn-primary-border);
+  margin-top:3px;
 }
 
 .clear-button.secondary:hover {
@@ -1154,6 +1199,33 @@ input:checked+.slider:before {
       #f4f4f4 100%);
 }
 
+.elective-placeholder.selecting-empty {
+  background:
+    linear-gradient(90deg,
+      var(--elective-band-a) 0%,
+      var(--elective-band-a) 50%,
+      var(--elective-band-b) 50%,
+      var(--elective-band-b) 100%) 0 0 / 100% var(--card-band-height) no-repeat,
+    radial-gradient(circle at 18% 18%,
+      color-mix(in srgb, var(--elective-swish-a) 70%, #fff 30%) 0%,
+      transparent 62%),
+    radial-gradient(circle at 82% 70%,
+      color-mix(in srgb, var(--elective-swish-b) 70%, #fff 30%) 0%,
+      transparent 62%),
+    linear-gradient(0deg,
+      color-mix(in srgb, var(--elective-swish-a) 55%, #fff 45%) 0%,
+      color-mix(in srgb, var(--elective-swish-b) 55%, #fff 45%) 100%);
+  border-color: color-mix(in srgb, var(--elective-band-a) 50%, var(--elective-band-b) 50%);
+}
+
+.elective-placeholder.use-credit {
+  background: linear-gradient(to bottom,
+      color-mix(in srgb, #555 80%, #fff 20%) 0%,
+      color-mix(in srgb, #555 80%, #fff 20%) var(--card-band-height),
+      color-mix(in srgb, #f4f4f4 80%, #fff 20%) var(--card-band-height),
+      color-mix(in srgb, #f4f4f4 80%, #fff 20%) 100%);
+}
+
 .subject-card.elective-spacer,
 .placeholder-card.elective-spacer,
 .subject-card.empty {
@@ -1200,6 +1272,21 @@ input:checked+.slider:before {
       color-mix(in srgb, var(--software-band) 85%, #000 15%) var(--card-band-height),
       var(--software-body) var(--card-band-height),
       var(--software-body) 100%);
+}
+
+.elective-stream.dual-split.subject-card {
+  background:
+    linear-gradient(165deg,
+      var(--ba-band) 0%,
+      var(--ba-band) 50%,
+      var(--software-band) 50%,
+      var(--software-band) 100%) 0 0 / 100% var(--card-band-height) no-repeat,
+    linear-gradient(165deg,
+      var(--ba-body) 0%,
+      var(--ba-body) calc(50% - 10px),
+      var(--software-body) calc(50% + 10px),
+      var(--software-body) 100%);
+  border-color: color-mix(in srgb, var(--ba-band) 50%, var(--software-band) 50%);
 }
 
 .ba:not(.subject-card),
@@ -1252,9 +1339,7 @@ input:checked+.slider:before {
 }
 
 .prerequsites-note.reqs-met {
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  text-decoration-color: rgba(2, 27, 59, 0.53);
+  text-decoration: none;
 }
 
 .sas {
@@ -1453,7 +1538,7 @@ input:checked+.slider:before {
 }
 
 #show-course-timetable {
-  margin-top: 6px;
+  margin-top: 3px;
 }
 
 .footnote {
@@ -1474,7 +1559,7 @@ input:checked+.slider:before {
 }
 
 .toggled {
-  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.15);
   border: 1px solid #2f2f2f !important;
   cursor: pointer;
   position: relative;
@@ -1668,6 +1753,10 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   .subject-tooltip {
     max-width: 360px;
     width: 95%;
+  }
+
+  .main-content {
+    overflow: visible;
   }
 }
 
@@ -1889,7 +1978,8 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   overflow: visible;
 }
 
-#timetable-table {
+#timetable-table,
+.subject-table {
   width: max-content;
   max-width: none;
   border-collapse: collapse;
@@ -1924,18 +2014,117 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 #timetable-table th,
-#timetable-table td {
+#timetable-table td,
+.subject-table th,
+.subject-table td {
   border: 1px solid #ccc;
   padding: 6px 8px;
   text-align: left;
 }
 
-#timetable-table th {
+#timetable-table th,
+.subject-table th {
   background: #7ea8e8;
   color: #0a1d3d;
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+.subject-table th {
+  position: static;
+  top: auto;
+}
+
+.subject-table .subject-table-sort-row th,
+.subject-table .subject-table-sort-spacer {
+  background: #d7e3f6;
+  text-align: center;
+  padding: 4px 6px;
+}
+
+.subject-table-sort-button {
+  border: 1px solid #4d6ea8;
+  background: #f5f8ff;
+  color: #0a1d3d;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.subject-table-sort-button:hover {
+  filter: brightness(1.05);
+}
+
+.subject-table-sort-button.is-active {
+  background: #1d6fd1;
+  color: #fff;
+  border-color: #0f4c94;
+  box-shadow: 0 0 0 2px rgba(29, 110, 209, 0.25);
+}
+
+.subject-table {
+  width: auto;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.subject-table th,
+.subject-table td {
+  white-space: normal;
+}
+
+.subject-list-modal .subject-table tbody tr.dual-split td {
+  background: linear-gradient(90deg,
+      var(--ba-body) 0,
+      var(--ba-body) calc(50% - 2.5px),
+      var(--software-body) calc(50% + 2.5px),
+      var(--software-body) 100%);
+}
+
+#timetable-table tbody tr.core td,
+.subject-table tbody tr.core td {
+  background: var(--core-body);
+}
+
+#timetable-table tbody tr.network td,
+.subject-table tbody tr.network td {
+  background: var(--network-body);
+}
+
+#timetable-table tbody tr.software td,
+.subject-table tbody tr.software td {
+  background: var(--software-body);
+}
+
+#timetable-table tbody tr.ba td,
+.subject-table tbody tr.ba td {
+  background: var(--ba-body);
+}
+
+#timetable-table tbody tr.dual td,
+.subject-table tbody tr.dual td {
+  background: var(--dual-body);
+}
+
+#timetable-table tbody tr.elective td,
+.subject-table tbody tr.elective td {
+  background: var(--elective-body);
+}
+
+#timetable-table tbody tr.dual-split td,
+.subject-table tbody tr.dual-split td {
+  background: linear-gradient(165deg,
+      var(--ba-body) 0,
+      var(--ba-body) calc(50% - 6px),
+      var(--software-body) calc(50% + 6px),
+      var(--software-body) 100%);
+}
+
+#timetable-table tbody tr.chosen-row td:first-child {
+  border-left: 6px solid var(--chosen-blue);
+  font-weight: 700;
 }
 
 .timetable-actions {
@@ -1971,9 +2160,20 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   opacity: 0.92;
 }
 
-.chain-delay {
-  box-shadow: 0 1px 3px 2px red !important;
+.subject-card.chain-delay {
+  box-shadow:
+    0 0 0 3px rgba(255, 0, 0, 0.85),
+    0 3px 10px rgba(255, 0, 0, 0.45),
+    var(--card-shadow) !important;
+  outline: none;
+}
 
+.subject-card.toggled.chain-delay {
+  box-shadow:
+    inset 0 2px 200px rgba(0, 0, 0, 0.15),
+    0 0 0 3px rgba(255, 0, 0, 0.85),
+    0 3px 10px rgba(255, 0, 0, 0.45),
+    var(--card-shadow) !important;
 }
 
 .alert-headline {
@@ -2098,7 +2298,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   position: relative;
   cursor: default;
   filter: saturate(1.05);
-  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 200px rgba(0, 0, 0, 0.15);
   border: 1px solid #2f2f2f !important;
 }
 
@@ -2108,7 +2308,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .completed::after {
-  content: "Complete. Pass or credit";
+  content: "Complete";
   position: absolute;
   left: 50%;
   bottom: 4px;
@@ -2161,6 +2361,26 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border: 2px solid #222;
 }
 
+.subject-list-modal {
+  width: max-content;
+  max-width: 96vw;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.subject-list-modal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.subject-list-modal .timetable-table-wrapper {
+  overflow-x: hidden;
+  width: max-content;
+  max-width: 100%;
+}
+
 #instructions-modal {
   align-items: flex-start;
 }
@@ -2196,7 +2416,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 .course-timetable-content {
   display: grid;
   grid-template-columns: repeat(2, minmax(420px, 1fr));
-  gap: 10.8px;
+  gap: 5.4px;
   margin-top: 5.4px;
   min-width: 860px;
 }
@@ -2206,26 +2426,67 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   min-width: 0;
 }
 
+.course-timetable-content .course-timetable-table {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.course-timetable-content .course-timetable-table th,
+.course-timetable-content .course-timetable-table td {
+  border: 1px solid #cfcfcf;
+  padding: 3.5px;
+  vertical-align: top;
+}
+
+.course-timetable-content .course-timetable-table thead th {
+  background: #ececec;
+  font-weight: 700;
+  text-align: left;
+}
+
+.course-timetable-content .course-timetable-table .course-timetable-day,
+.course-timetable-content .course-timetable-table .course-timetable-corner {
+  background: #f0f0f0;
+  font-weight: 700;
+  width: 100px;
+}
+
+.course-timetable-content .course-timetable-table .course-timetable-corner {
+  text-align: center;
+}
+
 .course-timetable-content.course-timetable-list-mode .course-timetable-section {
-  margin-bottom: 10.8px;
+  margin-bottom: 5.4px;
 }
 
 .course-timetable-content.course-timetable-list-mode .course-timetable-item {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 7.2px;
+  gap: 3.6px;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-item + .course-timetable-item {
+  border-top: 0;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-code,
+.course-timetable-content.course-timetable-list-mode .course-timetable-name {
+  font-weight: 400;
 }
 
 .course-timetable-content.course-timetable-list-mode .course-timetable-item-row {
   display: inline-flex;
-  gap: 5.4px;
+  gap: 2.7px;
   align-items: baseline;
 }
 
 .course-timetable-content.course-timetable-list-mode .course-timetable-meta {
   display: inline-flex;
-  gap: 5.4px;
+  gap: 2.7px;
   margin-top: 0;
 }
 
@@ -2241,10 +2502,17 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .course-timetable-actions {
+  display: flex;
   justify-content: center;
-  gap: 7.2px;
-  margin-top: 9px;
+  align-items: center;
+  gap: 3.6px;
+  margin-top: 4.5px;
   flex-wrap: wrap;
+}
+
+.course-timetable-teacher-copy {
+  padding: 7.2px;
+  min-width: 34px;
 }
 
 .course-timetable-actions .clear-button {
@@ -2268,13 +2536,17 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 .course-timetable-section {
   border: 1px solid #cfcfcf;
   border-radius: 6px;
-  padding: 7.2px;
+  padding: 3.6px;
   background: #f8f8f8;
 }
 
 .course-timetable-heading {
   font-weight: 700;
-  margin-bottom: 5.4px;
+  margin-bottom: 2.7px;
+}
+
+.course-timetable-time-range {
+  font-weight: 400;
 }
 
 .course-timetable-empty {
@@ -2288,37 +2560,95 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 5.4px;
+  gap: 2.7px;
+}
+
+.course-timetable-content.course-timetable-list-mode .course-timetable-list {
+  gap: 0;
+}
+
+.course-timetable-table .course-timetable-list {
+  gap: 0;
+}
+
+.course-timetable-table .course-timetable-item + .course-timetable-item {
+  border-top: 0;
 }
 
 .course-timetable-item {
   border: 1px solid #d4d4d4;
   border-radius: 4px;
-  padding: 5.4px;
+  padding: 2.7px;
   background: #fff;
-  cursor: help;
+  cursor: default;
+  position: relative;
 }
 
 .course-timetable-item-row {
   display: flex;
-  gap: 6px;
+  gap: 3px;
   align-items: baseline;
 }
 
 .course-timetable-code {
   font-weight: 700;
-  min-width: 60px;
+  min-width: 48px;
 }
 
 .course-timetable-name {
   flex: 1 1 auto;
   font-weight: 700;
+  min-width: 0;
 }
 
 .course-timetable-meta {
   font-size: 0.85rem;
   color: #444;
-  margin-top: 1.8px;
+  margin-top: 0.9px;
+}
+
+.course-tooltip {
+  position: absolute;
+  left: 6px;
+  top: 100%;
+  transform: translateY(4px);
+  background: #2f2f2f;
+  color: #f5f5f5;
+  padding: 8px 10px;
+  border-radius: 7px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  min-width: 220px;
+  max-width: 320px;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 12;
+  transition: opacity 0.08s ease, transform 0.08s ease;
+}
+
+.course-tooltip-line {
+  margin-bottom: 4px;
+}
+
+.course-tooltip-line:last-child {
+  margin-bottom: 0;
+}
+
+.course-tooltip-label {
+  font-weight: 700;
+}
+
+.course-timetable-item:hover .course-tooltip,
+.course-timetable-not-running-list li:hover .course-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.course-timetable-not-running-list li {
+  position: relative;
+  cursor: default;
 }
 
 .course-timetable-subtitle {
@@ -2326,37 +2656,44 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   margin-bottom: 3.6px;
 }
 
+.course-timetable-subtitle-note {
+  font-weight: 400;
+}
+
 .course-timetable-not-running {
-  margin-top: 10.8px;
-  padding-top: 9px;
-  border-top: 1px solid #d7d7d7;
+  margin-top: 9px;
+  padding: 4.5px;
+  border: 0.5px solid rgba(120, 120, 120, 0.5);
+  border-radius: 6px;
 }
 
 .course-timetable-not-running-list {
   list-style: none;
   padding: 0;
-  margin: 5.4px 0 0;
+  margin: 1.8px 0 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 5.4px;
+  gap: 1.8px;
 }
 
 .course-timetable-not-running-list li {
-  background: #f5f5f5;
+  background: #fff;
   border: 1px solid #cfcfcf;
   border-radius: 4px;
-  padding: 4px 6px;
+  padding: 3px 5px;
 }
 
-.course-timetable-key {
-  margin-top: 10.8px;
+.course-timetable-not-running-list li .course-tooltip {
+  top: auto;
+  bottom: 100%;
+  transform: translateY(-4px);
+  z-index: 20;
 }
 
-.course-timetable-key-list {
-  list-style: none;
-  padding: 0;
-  margin: 5.4px 0 0;
+.course-timetable-not-running-list li:hover .course-tooltip {
+  transform: translateY(-2px);
 }
+
 
 .modal-header {
   display: flex;
@@ -2560,7 +2897,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 
 .reset-section {
-  padding: 0px 12px !important;
+  padding: 0px 6px !important;
 }
 
 .reset-section .clear-button,
@@ -2595,7 +2932,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .load-row .load-button {
-  padding: 4px 10px;
+  padding: 5px 10px;
   width: 80px;
 }
 
