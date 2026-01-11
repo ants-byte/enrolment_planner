@@ -250,6 +250,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const historyModal = document.getElementById('history-modal');
   const historyTitleEl = document.getElementById('history-title');
   const historyTable = document.getElementById('history-table');
+  const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
+  const currentEnrolmentsList = document.getElementById('current-enrolments-list');
   const historySortButtons = Array.from(document.querySelectorAll('#history-table .subject-table-sort-button'));
   const closeHistory = document.getElementById('close-history');
   const closeHistoryCta = document.getElementById('close-history-cta');
@@ -307,6 +309,77 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     },
     BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
   };
+  const passGrades = new Set(['CRT', 'PA', 'CR', 'D', 'HD', 'RPL', 'PS', 'SP', 'UP']);
+  const failGrades = new Set(['W', 'WNA', 'N', 'WE', 'H', 'SC', 'SAH', 'CNI', 'WN']);
+  const legacySubjectPairs = [
+    ['BIT102', 'BIT121'],
+    ['BIT103', 'BIT108'],
+    ['BIT104', 'BIT111'],
+    ['BIT123', 'USE201'],
+    ['BIT201', 'BIT231'],
+    ['BIT202', 'USE201'],
+    ['BIT203', 'BIT241'],
+    ['BIT204', 'BIT236'],
+    ['BIT205', 'BIT245'],
+    ['BIT206', 'BIT233'],
+    ['BIT207', 'BIT213'],
+    ['BIT208', 'BIT244'],
+    ['BIT209', 'BIT235'],
+    ['BIT210', 'BIT246'],
+    ['BIT211', 'BIT231'],
+    ['BIT212', 'BIT247'],
+    ['BIT232', 'BIT230'],
+    ['BIT211', 'BIT231'],
+    ['BIT210', 'BIT246'],
+    ['BIT201', 'BIT231'],
+    ['BIT301', 'BIT230'],
+    ['BIT302', 'BIT242'],
+    ['BIT303', 'USE301'],
+    ['BIT304', 'BIT355'],
+    ['BIT305', 'BIT356'],
+    ['BIT307', 'BIT353'],
+    ['BIT308', 'BIT362'],
+    ['BIT309', 'BIT314'],
+    ['BIT310', 'BIT358'],
+    ['BIT311', 'BIT245'],
+    ['BIT312', 'BIT352'],
+    ['BIT311', 'BIT245'],
+    ['BIT310', 'BIT358'],
+    ['BIT301', 'BIT230'],
+    ['BIT111', 'BIT111'],
+    ['BIT110', 'BIT112'],
+    ['BIT102', 'BIT121'],
+    ['BIT101', 'BIT106'],
+    ['BIT100', 'BIT105'],
+    ['BIT100', 'BIT105'],
+    ['BIT234', 'BIT236'],
+    ['BIT306', 'BIT363'],
+    ['BIT247', 'BIT357'],
+    ['BIT101', 'BIT106'],
+    ['BIT207', 'BIT313'],
+    ['BIT209', 'BIT235'],
+    ['BIT210', 'BIT246'],
+    ['BIT2I0', 'BIT246'],
+    ['BIT305', 'BIT356'],
+    ['BIT307', 'BIT313'],
+    ['BIT308', 'BIT213'],
+    ['BIT312', 'BIT352'],
+    ['BITIOO', 'BIT100'],
+    ['BIT361', 'BIT314'],
+    ['BIT354', 'BIT313'],
+    ['BIT243', 'BIT213'],
+  ];
+  const legacySubjectMap = new Map(legacySubjectPairs);
+  const validUseCodes = new Set(['USE101', 'USE102', 'USE201', 'USE202', 'USE301']);
+  const manualEntryAliases = new Map();
+  const manualEntryMeta = new Map();
+  const manualEntryCurrent = new Map();
+  const manualEntryUnknown = [];
+  const validSubjectCodes = new Set(Object.keys(subjectMeta));
+  const manualCodeRegex = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/;
+  const manualCodeRegexGlobal = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/g;
+  const gradeHeadingRegex = /\b(grade|credit|score|outcome|result)\b/i;
+  const dateHeadingRegex = /\b(year|date|session|semester|term)\b/i;
   const baseTypeClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective', 'dual-split', 'dual'];
   const displayTypeClasses = ['core', 'network', 'ba', 'software', 'dual', 'dual-split', 'elective'];
   const placeholderStyleClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective-stream'];
@@ -321,6 +394,219 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const applyDisplayTypeClass = (el, cellOrId) => {
     const typeClass = getDisplayTypeClass(cellOrId);
     if (typeClass) el.classList.add(typeClass);
+  };
+  const normalizeManualCode = (code) => (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const resolveLegacyCode = (rawCode) => {
+    let current = normalizeManualCode(rawCode);
+    const original = current;
+    const seen = new Set();
+    while (legacySubjectMap.has(current) && !seen.has(current)) {
+      seen.add(current);
+      current = legacySubjectMap.get(current);
+      current = normalizeManualCode(current);
+    }
+    return { mapped: current, original };
+  };
+  const recordManualAlias = (mapped, original) => {
+    if (!mapped || !original || mapped === original) return;
+    const set = manualEntryAliases.get(mapped) || new Set();
+    set.add(original);
+    manualEntryAliases.set(mapped, set);
+  };
+  const recordCurrentEnrollment = (mapped, date = '') => {
+    if (!mapped) return;
+    manualEntryCurrent.set(mapped, { date: date || '' });
+  };
+  const addUnknownEntry = ({ result = '', date = '' } = {}) => {
+    const formatted = formatHistoryResult(result);
+    manualEntryUnknown.push({
+      id: `??-${manualEntryUnknown.length + 1}`,
+      displayCode: '??',
+      displayName: '',
+      displayStream: '',
+      result: formatted,
+      date: date || '',
+      isFail: isFailGradeToken(formatted),
+      dayFull: '',
+      dayShort: '',
+      slot: '',
+      data: {},
+      cell: null,
+    });
+  };
+  const formatHistoryCode = (id) => {
+    const aliases = manualEntryAliases.get(id);
+    if (!aliases || aliases.size === 0) return id;
+    const aliasList = Array.from(aliases).sort();
+    return `${id} (${aliasList.join(', ')})`;
+  };
+  const getGradeStatus = (line) => {
+    const tokens = (line || '').toUpperCase().match(/[A-Z0-9/]+/g) || [];
+    let hasPass = false;
+    let hasFail = false;
+    tokens.forEach((token) => {
+      const cleaned = token.replace(/[^A-Z0-9/]/g, '');
+      if (!cleaned) return;
+      if (passGrades.has(cleaned)) {
+        hasPass = true;
+      } else if (failGrades.has(cleaned) || cleaned.startsWith('WN/')) {
+        hasFail = true;
+      }
+    });
+    if (hasPass) return 'pass';
+    if (hasFail) return 'fail';
+    return '';
+  };
+  const extractGradeToken = (value) => {
+    const tokens = (value || '').toUpperCase().match(/[A-Z0-9/]+/g) || [];
+    for (const token of tokens) {
+      if (passGrades.has(token) || failGrades.has(token) || token.startsWith('WN/')) {
+        return token;
+      }
+    }
+    return '';
+  };
+  const normalizeGradeToken = (value) => {
+    const raw = (value || '').trim().toUpperCase();
+    if (!raw) return '';
+    const token = extractGradeToken(raw);
+    if (token) return token.replace(/^X/, '');
+    return raw.replace(/^X/, '');
+  };
+  const isFailGradeToken = (value) => {
+    const token = normalizeGradeToken(value);
+    return !!token && (failGrades.has(token) || token.startsWith('WN/'));
+  };
+  const formatHistoryResult = (value) => {
+    const token = normalizeGradeToken(value);
+    if (!token) return '';
+    return isFailGradeToken(token) ? `x${token}` : token;
+  };
+  const formatSemesterLabel = (year, month, day) => {
+    if (!year || !month) return '';
+    const safeDay = Number.isFinite(day) ? day : 15;
+    let label = 'Sem 2';
+    if (month >= 2 && month <= 5) {
+      label = 'SS';
+    } else if (month >= 6 && month <= 10) {
+      label = 'Sem 1';
+    } else {
+      label = 'Sem 2';
+    }
+    return `${year} ${label}`;
+  };
+  const extractDateToken = (value) => {
+    const text = (value || '').trim();
+    if (!text) return '';
+    const upper = text.toUpperCase();
+    const yearMatch = upper.match(/\b(19|20)\d{2}\b/);
+    const semLabelMatch = upper.match(/\bSEM\s*([12])\b/);
+    if (yearMatch && semLabelMatch) {
+      return `${yearMatch[0]} Sem ${semLabelMatch[1]}`;
+    }
+    const semTokenMatch = upper.match(/\bS[12]\b|\bSS\b/);
+    if (yearMatch && semTokenMatch) {
+      const token = semTokenMatch[0];
+      if (token === 'SS') return `${yearMatch[0]} SS`;
+      return `${yearMatch[0]} Sem ${token.slice(1)}`;
+    }
+    const dateMatch = upper.match(/\b(19|20)\d{2}[/-]\d{1,2}(?:[/-]\d{1,2})?\b/);
+    if (dateMatch) {
+      const parts = dateMatch[0].split(/[/-]/).map((part) => parseInt(part, 10));
+      const [year, month, day] = parts;
+      return formatSemesterLabel(year, month, day);
+    }
+    if (yearMatch) return yearMatch[0];
+    if (semTokenMatch) return semTokenMatch[0];
+    return '';
+  };
+  const splitManualColumns = (line) => {
+    if (!line) return [''];
+    if (line.includes('\t')) return line.split(/\t+/).map((cell) => cell.trim());
+    if (/\s{2,}/.test(line)) return line.split(/\s{2,}/).map((cell) => cell.trim());
+    return [line.trim()];
+  };
+  const findGradeColumnFromHeader = (lines) => {
+    for (let i = 0; i < lines.length; i += 1) {
+      const columns = splitManualColumns(lines[i]);
+      const idx = columns.findIndex((cell) => gradeHeadingRegex.test(cell));
+      if (idx !== -1) return { index: idx, startRow: i + 1 };
+    }
+    return { index: -1, startRow: 0 };
+  };
+  const findDateColumnFromHeader = (lines) => {
+    for (let i = 0; i < lines.length; i += 1) {
+      const columns = splitManualColumns(lines[i]);
+      const idx = columns.findIndex((cell) => dateHeadingRegex.test(cell));
+      if (idx !== -1) return { index: idx, startRow: i + 1 };
+    }
+    return { index: -1, startRow: 0 };
+  };
+  const detectGradeColumnByPattern = (rows) => {
+    let maxCols = 0;
+    rows.forEach((row) => {
+      if (row.columns.length > maxCols) maxCols = row.columns.length;
+    });
+    let bestIndex = -1;
+    let bestRatio = 0;
+    let bestCount = 0;
+    for (let i = 0; i < maxCols; i += 1) {
+      let gradeCount = 0;
+      let totalCount = 0;
+      let codeCount = 0;
+      rows.forEach((row) => {
+        const cell = row.columns[i] || '';
+        if (!cell) return;
+        totalCount += 1;
+        const upper = cell.toUpperCase();
+        if (manualCodeRegex.test(upper)) codeCount += 1;
+        if (getGradeStatus(cell)) gradeCount += 1;
+      });
+      if (totalCount < 2 || gradeCount < 2) continue;
+      const ratio = gradeCount / totalCount;
+      const codeRatio = codeCount / totalCount;
+      if (ratio >= 0.6 && codeRatio < 0.4) {
+        if (ratio > bestRatio || (ratio === bestRatio && gradeCount > bestCount)) {
+          bestIndex = i;
+          bestRatio = ratio;
+          bestCount = gradeCount;
+        }
+      }
+    }
+    return bestIndex;
+  };
+  const detectDateColumnByPattern = (rows) => {
+    let maxCols = 0;
+    rows.forEach((row) => {
+      if (row.columns.length > maxCols) maxCols = row.columns.length;
+    });
+    let bestIndex = -1;
+    let bestRatio = 0;
+    let bestCount = 0;
+    for (let i = 0; i < maxCols; i += 1) {
+      let dateCount = 0;
+      let totalCount = 0;
+      let codeCount = 0;
+      rows.forEach((row) => {
+        const cell = row.columns[i] || '';
+        if (!cell) return;
+        totalCount += 1;
+        const upper = cell.toUpperCase();
+        if (manualCodeRegex.test(upper)) codeCount += 1;
+        if (extractDateToken(cell)) dateCount += 1;
+      });
+      if (totalCount < 2 || dateCount < 2) continue;
+      const ratio = dateCount / totalCount;
+      const codeRatio = codeCount / totalCount;
+      if (ratio >= 0.6 && codeRatio < 0.4) {
+        if (ratio > bestRatio || (ratio === bestRatio && dateCount > bestCount)) {
+          bestIndex = i;
+          bestRatio = ratio;
+          bestCount = dateCount;
+        }
+      }
+    }
+    return bestIndex;
   };
   const sidebarTooltip = document.createElement('div');
   sidebarTooltip.className = 'hover-tooltip';
@@ -1507,7 +1793,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       availableHeading.style.display = '';
     }
     if (historyButton) {
-      const hasHistory = getHistoryRows().length > 0;
+      const hasHistory = getHistoryRows().length > 0 || manualEntryCurrent.size > 0 || manualEntryUnknown.length > 0;
       historyButton.style.display = hasHistory ? '' : 'none';
     }
     if (nextSemList) {
@@ -1545,7 +1831,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCompletedModeUI = () => {
     if (!completedModeButton) return;
-    completedModeButton.textContent = completedMode ? 'Exit this history mode (start selecting subjects)' : 'By clicking';
+    completedModeButton.textContent = completedMode ? 'Exit this history mode (start selecting subjects)' : 'Clicking mode';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     document.body.classList.toggle('completed-mode', completedMode);
@@ -2218,6 +2504,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       // Reset in-memory state first so all downstream UI refreshes read from the new truth.
       electivePlaceholderState = ['', '', '', ''];
       electiveBitState = ['', '', '', ''];
+      manualEntryAliases.clear();
+      manualEntryMeta.clear();
+      manualEntryCurrent.clear();
+      manualEntryUnknown.length = 0;
       subjectState.clear();
       subjects.forEach((cell) => {
         const code = cell.dataset.subject;
@@ -2769,22 +3059,135 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const applyCodes = () => {
     if (!codeInput) return;
     const raw = codeInput.value || '';
-    const matches = raw.toUpperCase().match(/(BIT\d{3}|USE101|USE102|USE201|USE202|USE301)/g) || [];
-    const uniqueCodes = Array.from(new Set(matches));
+    manualEntryCurrent.clear();
+    manualEntryUnknown.length = 0;
+    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    let extractedEntries = [];
+    let useTranscriptParsing = false;
+    let canIdentifyCurrent = false;
 
-    const electivePlaceholders = getElectivePlaceholders();
+    if (lines.length > 1) {
+      const gradeHeader = findGradeColumnFromHeader(lines);
+      const dateHeader = findDateColumnFromHeader(lines);
+      let gradeColIndex = gradeHeader.index;
+      let dateColIndex = dateHeader.index;
+      let dataLines = lines;
 
-    const useCodes = uniqueCodes.filter((code) => code.startsWith('USE'));
-    let electiveIndex = 0;
+      if (gradeColIndex !== -1 || dateColIndex !== -1) {
+        const startRow = Math.max(gradeHeader.startRow, dateHeader.startRow);
+        dataLines = lines.slice(startRow);
+      }
 
-    uniqueCodes.forEach((code) => {
-      if (code.startsWith('USE')) {
-        if (electiveIndex < electivePlaceholders.length) {
-          electivePlaceholderState[electiveIndex] = code;
-          electiveIndex += 1;
+      const rowData = dataLines
+        .map((line) => {
+          const upper = line.toUpperCase();
+          if (!manualCodeRegex.test(upper)) return null;
+          return { line, columns: splitManualColumns(line) };
+        })
+        .filter(Boolean);
+
+      if (rowData.length >= 2) {
+        if (gradeColIndex === -1) gradeColIndex = detectGradeColumnByPattern(rowData);
+        if (dateColIndex === -1) dateColIndex = detectDateColumnByPattern(rowData);
+      }
+
+      useTranscriptParsing = gradeColIndex !== -1;
+
+      if (useTranscriptParsing) {
+        const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
+        const hasDates =
+          dateColIndex !== -1 && rowData.some(({ columns }) => extractDateToken(columns[dateColIndex] || ''));
+        canIdentifyCurrent = hasResults && hasDates;
+        extractedEntries = rowData
+          .map(({ line, columns }) => {
+            const upper = line.toUpperCase();
+            const match = upper.match(manualCodeRegex);
+            if (!match) return null;
+            const gradeCell = columns[gradeColIndex] || '';
+            const status = getGradeStatus(gradeCell);
+            const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
+            const dateToken = extractDateToken(dateCell);
+            if (!status) {
+              if (canIdentifyCurrent && dateToken) {
+                return { rawCode: match[0], grade: '', date: dateToken, status: 'current' };
+              }
+              return null;
+            }
+            return {
+              rawCode: match[0],
+              grade: extractGradeToken(gradeCell),
+              date: dateToken,
+              status,
+            };
+          })
+          .filter(Boolean);
+      }
+    }
+
+    if (!useTranscriptParsing) {
+      extractedEntries = (raw.toUpperCase().match(manualCodeRegexGlobal) || []).map((code) => ({
+        rawCode: code,
+        grade: '',
+        date: '',
+        status: 'pass',
+      }));
+    }
+
+    const resolvedSubjectCodes = [];
+    const resolvedUseCodes = [];
+    const seenSubjects = new Set();
+    const seenUses = new Set();
+
+    extractedEntries.forEach(({ rawCode, grade, date, status }) => {
+      const { mapped, original } = resolveLegacyCode(rawCode);
+      if (!mapped) return;
+      const normalizedGrade = normalizeGradeToken(grade);
+      if (status !== 'current' && normalizedGrade && !validUseCodes.has(mapped) && !validSubjectCodes.has(mapped)) {
+        addUnknownEntry({ result: normalizedGrade, date });
+        return;
+      }
+      if (status === 'current') {
+        if (validSubjectCodes.has(mapped) && canIdentifyCurrent) {
+          recordManualAlias(mapped, original);
+          recordCurrentEnrollment(mapped, date);
         }
         return;
       }
+      if (validUseCodes.has(mapped)) {
+        if (!seenUses.has(mapped)) {
+          resolvedUseCodes.push(mapped);
+          seenUses.add(mapped);
+        }
+        return;
+      }
+      if (!validSubjectCodes.has(mapped)) return;
+      if (!seenSubjects.has(mapped)) {
+        if ((status || 'pass') === 'pass') {
+          resolvedSubjectCodes.push(mapped);
+          seenSubjects.add(mapped);
+        }
+      }
+      recordManualAlias(mapped, original);
+      if (normalizedGrade || date) {
+        const existing = manualEntryMeta.get(mapped) || {};
+        manualEntryMeta.set(mapped, {
+          result: normalizedGrade || existing.result || '',
+          date: date || existing.date || '',
+        });
+      }
+    });
+
+    const electivePlaceholders = getElectivePlaceholders();
+    let electiveIndex = 0;
+
+    resolvedUseCodes.forEach((code) => {
+      if (electiveIndex < electivePlaceholders.length) {
+        electivePlaceholderState[electiveIndex] = code;
+        electiveIndex += 1;
+      }
+    });
+
+    resolvedSubjectCodes.forEach((code) => {
       const cell = subjects.find((c) => c.dataset.subject === code);
       if (!cell) return;
       subjectState.set(code, { completed: true, toggled: false });
@@ -2792,7 +3195,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     codeInput.value = '';
     hideCodeModal();
-    electivePlaceholderState = electivePlaceholderState.map((val, idx) => useCodes[idx] || '');
+    electivePlaceholderState = electivePlaceholderState.map((val, idx) => resolvedUseCodes[idx] || '');
     applySubjectStateToCells();
     rebuildElectiveBitStateFromState();
     conditionalRecompute({ force: true, usePlanned: false });
@@ -2817,6 +3220,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const bitCode = electiveBitState[placeholderIdx];
       if (bitCode) {
         subjectState.set(bitCode, { completed: false, toggled: false });
+        manualEntryMeta.delete(bitCode);
+        manualEntryAliases.delete(bitCode);
         electiveBitState[placeholderIdx] = '';
         cell.classList.remove('completed', 'filled-elective', 'use-credit', 'toggled');
         cell.setAttribute('aria-pressed', 'false');
@@ -2865,6 +3270,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       subjectState.set(id, { completed: nowCompleted, toggled: false });
       cell.classList.toggle('completed', nowCompleted);
       cell.classList.toggle('toggled', false);
+      if (!nowCompleted) {
+        manualEntryMeta.delete(id);
+        manualEntryAliases.delete(id);
+      }
       if (nowCompleted) {
         cell.classList.remove('satisfied');
         cell.classList.remove('can-select-now');
@@ -3164,10 +3573,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!tbody) return;
     tbody.innerHTML = '';
     const items = rows || [];
-    const columns =
-      tableEl.id === 'history-table'
-        ? ['code', 'name', 'result', 'date', 'stream']
-        : ['code', 'name', 'stream'];
+    const isHistoryTable = tableEl.id === 'history-table';
+    const columns = isHistoryTable ? ['code', 'name', 'result', 'date', 'stream'] : ['code', 'name', 'stream'];
     if (!items.length) {
       const row = document.createElement('tr');
       const td = document.createElement('td');
@@ -3177,14 +3584,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tbody.appendChild(row);
       return;
     }
-    items.forEach(({ cell, id, result = '', date = '' }) => {
+    items.forEach(({ cell, id, result = '', date = '', isFail = false, displayCode, displayName, displayStream }) => {
       const row = document.createElement('tr');
       row.dataset.subject = id;
       applyDisplayTypeClass(row, cell || id);
-      const name = getSubjectName(id);
-      const stream = buildStreamLabel(id);
+      if (isHistoryTable && (isFail || isFailGradeToken(result))) {
+        row.classList.add('history-fail');
+      }
+      const name = displayName ?? getSubjectName(id);
+      const stream = displayStream ?? buildStreamLabel(id);
+      const resolvedCode = isHistoryTable ? (displayCode || formatHistoryCode(id)) : id;
       const valueMap = {
-        code: id,
+        code: resolvedCode,
         name,
         result,
         date,
@@ -3201,10 +3612,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getHistorySortValue = (row, key) => {
     const id = row?.id || '';
-    if (key === 'code') return id;
+    if (key === 'code') return row?.sortCode || row?.displayCode || id;
     if (key === 'result') return row?.result || '';
     if (key === 'date') return row?.date || '';
-    if (key === 'stream') return buildStreamLabel(id);
+    if (key === 'stream') return row?.displayStream || buildStreamLabel(id);
     return '';
   };
 
@@ -3234,6 +3645,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const renderHistoryModal = () => {
     const rows = sortHistoryRows(getHistoryRows());
     renderSubjectTable(historyTable, rows, 'No completed subjects to show.');
+    renderCurrentEnrolments();
     updateHistorySortButtons();
   };
 
@@ -3743,19 +4155,52 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getHistoryRows = () => {
-    const completedCodes = Array.from(subjectState.entries())
-      .filter(([, st]) => st?.completed)
-      .map(([code]) => code);
-    return completedCodes
+    const completedCodes = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
+    );
+    const allCodes = new Set([...completedCodes, ...manualEntryMeta.keys()]);
+    const historyRows = Array.from(allCodes)
+      .filter((id) => validSubjectCodes.has(id))
       .map((id) => {
         const data = timetable[id] || {};
         const dayFull = data.day || '';
         const dayShort = dayFull.slice(0, 3);
         const slot = data.slot || '';
         const cell = getCellByCode(id);
-        return { cell, id, data, dayFull, dayShort, slot };
+        const meta = manualEntryMeta.get(id) || {};
+        const result = formatHistoryResult(meta.result || '');
+        const isFail = isFailGradeToken(result);
+        return { cell, id, data, dayFull, dayShort, slot, result, date: meta.date || '', isFail };
       })
       .sort(compareByDaySlotThenCode);
+    const unknownRows = manualEntryUnknown.map((entry) => ({
+      ...entry,
+      sortCode: entry.displayCode || '??',
+    }));
+    return [...historyRows, ...unknownRows].sort(compareByDaySlotThenCode);
+  };
+
+  const renderCurrentEnrolments = () => {
+    if (!currentEnrolmentsSection || !currentEnrolmentsList) return;
+    currentEnrolmentsList.innerHTML = '';
+    const rows = Array.from(manualEntryCurrent.entries())
+      .filter(([id]) => validSubjectCodes.has(id) && !subjectState.get(id)?.completed)
+      .map(([id, meta]) => ({ id, date: meta?.date || '' }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (!rows.length) {
+      currentEnrolmentsSection.hidden = true;
+      return;
+    }
+    rows.forEach(({ id }) => {
+      const li = document.createElement('li');
+      const name = getSubjectName(id);
+      const codeLabel = formatHistoryCode(id);
+      li.textContent = `${codeLabel} - ${name}`;
+      currentEnrolmentsList.appendChild(li);
+    });
+    currentEnrolmentsSection.hidden = false;
   };
 
   const getAvailableRows = () => {

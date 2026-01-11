@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Timetable icon">
+  <rect x="4" y="6" width="56" height="54" rx="10" fill="#1d6fd1"/>
+  <rect x="4" y="6" width="56" height="12" rx="10" fill="#0f4c94"/>
+  <circle cx="18" cy="12" r="2.5" fill="#e6f0ff"/>
+  <circle cx="32" cy="12" r="2.5" fill="#e6f0ff"/>
+  <circle cx="46" cy="12" r="2.5" fill="#e6f0ff"/>
+  <rect x="12" y="24" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="27" y="24" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="42" y="24" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="12" y="34" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="27" y="34" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="42" y="34" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="12" y="44" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="27" y="44" width="10" height="8" rx="2" fill="#ffffff"/>
+  <rect x="42" y="44" width="10" height="8" rx="2" fill="#ffffff"/>
+</svg>

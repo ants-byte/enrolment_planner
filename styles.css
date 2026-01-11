@@ -182,6 +182,7 @@ td,
   justify-content: center;
   gap: 12px;
   align-items: flex-start;
+  overflow: visible;
 }
 
 .main-content {
@@ -189,11 +190,12 @@ td,
   min-width: 0;
   max-width: 1150px;
   background: var(--sidebar-bg);
-  padding: 12px;
+  padding: 6px 12px;
   border-radius: 8px;
   display: flex;
   justify-content: center;
-  border: 1px solid var(--sidebar-border);
+  border: 1px solid rgb(108, 107, 107);
+  overflow: visible;
 }
 
 .hidden-initial {
@@ -258,16 +260,17 @@ td,
   border: 2px solid var(--sidebar-border);
   box-shadow: 0 0 0 6px #000;
   padding: 8px 8px;
-  position: sticky;
-  top: 12px;
-  z-index: 100;
+  position: static;
+  top: auto;
+  z-index: auto;
   overflow: visible;
+  border-radius: 8px;
 }
 
 .drop-sidebar {
-  position: sticky;
-  top: 12px;
-  z-index: 100;
+  position: static;
+  top: auto;
+  z-index: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -328,7 +331,7 @@ td,
 .buttons .clear-button {
   flex: 1 1 0;
   min-width: 0;
-  padding: 5px 10px;
+  padding: 7px 10px;
 }
 
 .sidebar-section {
@@ -349,6 +352,13 @@ td,
   flex-direction: column;
   gap: 4px;
   margin-top: 6px;
+}
+
+.course-timetable-section {
+  border: none;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
 .major-picker {
@@ -517,7 +527,7 @@ td,
   cursor: pointer;
   background: linear-gradient(to bottom, #2a82ed, #1f69c4);
   border: 1px solid #0f4c94;
-  padding: 5px 12px;
+  padding: 7px 12px;
   border-radius: 4px;
   text-align: left;
   width: 100%;
@@ -690,7 +700,7 @@ td,
 
 .clear-button {
   width: 100%;
-  padding: 4px 12px;
+  padding: 6px 12px;
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #f7f9ff;
   border: 1px solid var(--btn-primary-border);
@@ -1079,10 +1089,8 @@ input:checked+.slider:before {
   box-sizing: border-box;
   border-radius: 12px !important;
   background: #fff;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-  border: 1px solid var(--sidebar-border);
-  overflow-x: hidden;
-  overflow-y: visible;
+  border: 1px solid white;
+
 }
 
 .main-grid {
@@ -1196,7 +1204,6 @@ input:checked+.slider:before {
       var(--ba-body) calc(50% - 10px),
       var(--software-body) calc(50% + 10px),
       var(--software-body) 100%);
-  border: 1px solid #444;
 }
 
 .subject-card.dual-split.elective-stream[data-subject="BIT245"] {
@@ -1211,7 +1218,6 @@ input:checked+.slider:before {
       var(--ba-body) calc(50% - 10px),
       var(--software-body) calc(50% + 10px),
       var(--software-body) 100%);
-  border: none;
 }
 
 .subject-card.elective,
@@ -1607,16 +1613,22 @@ input:checked+.slider:before {
 
 #show-timetable {
   position: absolute;
-  top: 0;
+  top: -1px;
   left: 0;
   width: 100%;
   z-index: 2;
-  border:thin white solid;
-  border-radius:8px;
+  border: 2px solid #fff;
+  border-radius: 8px;
 }
 
 #show-course-timetable {
   margin-top: 0;
+  outline: none;
+}
+
+#show-course-timetable:focus,
+#show-course-timetable:focus-visible {
+  outline: none;
 }
 
 .footnote {
@@ -1678,10 +1690,11 @@ input:checked+.slider:before {
 }
 
 .satisfied.can-select-now {
-  box-shadow: 0px -1px 8px rgba(0, 0, 0, 0.603) !important;
+  box-shadow: 0px -1px 8px rgba(0, 0, 0, 0.803) !important;
   cursor: pointer;
   box-shadow: none;
   position: relative;
+  border:.5px grey solid
 }
 
 .satisfied:not(.can-select-now) {
@@ -2121,6 +2134,33 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   text-align: left;
 }
 
+.subject-table tr.history-fail td {
+  color: #333;
+  font-style: italic;
+}
+
+.current-enrolments {
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
+  background: #f8f8f8;
+}
+
+.current-enrolments-title {
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.current-enrolments-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.current-enrolments-list li {
+  margin: 2px 0;
+}
+
 #timetable-table th,
 .subject-table th {
   background: #7ea8e8;
@@ -2226,6 +2266,10 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   font-weight: 700;
 }
 
+#timetable-modal.mode-selected #timetable-table tbody tr.chosen-row td:first-child {
+  border-left: none;
+}
+
 .timetable-actions {
   display: flex;
   gap: 8px;
@@ -2236,7 +2280,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 .timetable-actions .clear-button {
   width: auto;
   min-width: 160px;
-  padding: 2px 12px;
+  padding: 4px 12px;
 }
 
 .alert-item {
@@ -2610,13 +2654,13 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .course-timetable-teacher-copy {
-  padding: 7.2px;
+  padding: 9.2px;
   min-width: 34px;
 }
 
 .course-timetable-actions .clear-button {
   width: auto;
-  padding: 7.2px 10px;
+  padding: 9.2px 10px;
   font-size: 0.85rem;
 }
 
@@ -2633,10 +2677,9 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .course-timetable-section {
-  border: 1px solid #cfcfcf;
+  border: .5px solid rgb(68, 68, 68);
   border-radius: 6px;
   padding: 3.6px;
-  background: #f8f8f8;
 }
 
 .course-timetable-heading {
@@ -3017,7 +3060,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   margin-top: .1em;
   margin-left: 2em;
   z-index: 2;
-  padding: 2px 4px;
+  padding: 4px 4px;
 }
 
 .load-row {
@@ -3035,7 +3078,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 }
 
 .load-row .load-button {
-  padding: 5px 10px;
+  padding: 7px 10px;
   width: 80px;
 }
 
@@ -3123,12 +3166,6 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
     gap: 10px;
   }
 
-  .main-content,
-  #container,
-  .sheet {
-    max-height: none;
-    overflow: visible;
-  }
 
   .sheet {
     width: min(960px, 94vw);

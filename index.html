@@ -12,8 +12,9 @@ Created: December 30, 2025
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bachelor of Business with Network Security major</title>
+  <title>Subject Planner. Bachelor of IT</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
 </head>
 
@@ -65,8 +66,8 @@ Created: December 30, 2025
           <span class="sidebar-section-descriptor"><b>History.</b> Enter your passes & credits</span>
         </div>
         <div class="buttons">
-          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">By typing</button>
+          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking mode</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Typing mode</button>
         </div>
       </div>
 
@@ -411,7 +412,7 @@ Created: December 30, 2025
             <ol class="instructions-sublist">
               <li>Clicking in the main grid.</li>
               <li>Clicking on a subject in the sidebar below "Available now".</li>
-              <li>Clicking on the "Available Now" button in the sidebar.</li>
+              <li>Open the panel via the "Available Now" button and click subjects there.</li>
             </ol>
             <p>You are expected to choose 4 subjects, which is a "full load". You can vary your load by pressing the
               <em>Change</em> button.</p>
@@ -529,6 +530,10 @@ Created: December 30, 2025
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+        <div id="current-enrolments-section" class="current-enrolments" hidden>
+          <p class="current-enrolments-title">Current enrolments? These won't be inserted into the grid.</p>
+          <ul id="current-enrolments-list" class="current-enrolments-list"></ul>
         </div>
         <div class="timetable-actions">
           <button id="copy-history" class="clear-button secondary" type="button">
