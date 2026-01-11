@@ -189,6 +189,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const livePrereqRow = document.getElementById('live-prereq-row');
   const showTimetableButton = document.getElementById('show-timetable');
   const showCourseTimetableButton = document.getElementById('show-course-timetable');
+  const courseTimetableIconButton = document.getElementById('open-course-timetable-icon');
   const varyLoadButton = document.getElementById('vary-load');
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
@@ -200,6 +201,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   hideAllAlertButtons();
   const dropZone = document.getElementById('drop-zone');
+  const dropSidebar = document.getElementById('drop-sidebar');
   const timetableModal = document.getElementById('timetable-modal');
   const closeTimetable = document.getElementById('close-timetable');
   const hideTimetable = document.getElementById('hide-timetable');
@@ -259,7 +261,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeNextSemesterCta = document.getElementById('close-next-semester-cta');
   const copyNextSemester = document.getElementById('copy-next-semester');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
-  if (toggleSemCountsBtn) toggleSemCountsBtn.textContent = 'Show semesters remaining';
+  const semCountsLabel = toggleSemCountsBtn?.closest('.toggle-row')?.querySelector('.switch-label');
   const electivesLabel = document.getElementById('electives-label');
   let modalLocked = false;
   let modalPrevStyle = null;
@@ -1480,8 +1482,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     clearButton.classList.toggle('disabled', !hasAny);
     clearButton.style.display = hasAny ? '' : 'none';
     const threshold = getLoadThreshold();
+    const hasSelected = selectedCount >= threshold && threshold > 0;
     if (showTimetableButton) {
-      const hasSelected = selectedCount >= threshold && threshold > 0;
       // Ensure inline display overrides the hidden-initial class when we have selections.
       showTimetableButton.style.display = hasSelected ? 'block' : 'none';
       showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
@@ -1489,6 +1491,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         livePrereqRow.style.display = hasSelected ? 'flex' : 'none';
         livePrereqRow.classList.toggle('hidden-initial', !hasSelected);
       }
+    }
+    if (nextSemesterButton) {
+      nextSemesterButton.style.display = hasSelected ? '' : 'none';
+      nextSemesterButton.classList.toggle('hidden-initial', !hasSelected);
     }
     if (varyLoadButton) {
       varyLoadButton.style.display = '';
@@ -1574,6 +1580,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       label.textContent = livePrereqUpdates ? 'Live prerequisite updates (active)' : 'Live prerequisite updates';
       label.classList.toggle('active', livePrereqUpdates);
       label.classList.toggle('disabled', !livePrereqEnabled);
+    }
+  };
+
+  const updateSemCountUI = () => {
+    if (!toggleSemCountsBtn) return;
+    toggleSemCountsBtn.checked = showSemCounts;
+    toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
+    if (semCountsLabel) {
+      semCountsLabel.textContent = showSemCounts
+        ? 'Show semesters remaining (active)'
+        : 'Show semesters remaining';
+      semCountsLabel.classList.toggle('active', showSemCounts);
     }
   };
 
@@ -2138,6 +2156,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const initDropZone = () => {
     if (!dropZone) return;
+    if (dropSidebar) {
+      dropSidebar.style.display = isLocalEnv ? 'flex' : 'none';
+      dropSidebar.classList.remove('is-active');
+    }
     dropZone.style.display = isLocalEnv ? 'flex' : 'none';
     if (!isLocalEnv) return;
     const add = () => dropZone.classList.add('drag-over');
@@ -2158,6 +2180,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
     dropZone.addEventListener('drop', (e) => {
       // Placeholder for future file handling
+      if (dropSidebar) dropSidebar.classList.add('is-active');
     });
   };
 
@@ -2508,8 +2531,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         ids.forEach((id) => {
           const item = document.createElement('li');
+          item.className = 'course-timetable-not-running-item';
           const name = getSubjectName(id);
-          item.textContent = name ? `${id} ${name}` : id;
+          const code = document.createElement('span');
+          code.className = 'course-timetable-code';
+          code.textContent = id;
+          item.appendChild(code);
+          if (name) {
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'course-timetable-name';
+            nameSpan.textContent = name;
+            item.appendChild(nameSpan);
+          }
           item.appendChild(buildCourseTimetableTooltip(id));
           courseTimetableNotRunningList.appendChild(item);
         });
@@ -2978,6 +3011,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
   if (applyCodeModal) applyCodeModal.addEventListener('click', applyCodes);
   if (showCourseTimetableButton) showCourseTimetableButton.addEventListener('click', showCourseTimetableModal);
+  if (courseTimetableIconButton) courseTimetableIconButton.addEventListener('click', showCourseTimetableModal);
   if (closeCourseTimetable) closeCourseTimetable.addEventListener('click', hideCourseTimetableModal);
   if (closeCourseTimetableCta) closeCourseTimetableCta.addEventListener('click', hideCourseTimetableModal);
   if (courseTimetableListButton) {
@@ -4003,7 +4037,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       sheet.classList.add('major-sd');
       if (dualRow) dualRow.style.display = 'none';
     } else {
-      majorLabel.textContent = 'Undecided. Network Security used';
+      majorLabel.textContent = 'Unsure (using Network Security)';
       majorDropdown.classList.add('major-undecided');
       if (dualRow) dualRow.style.display = '';
     }
@@ -4089,6 +4123,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   updateCompletedModeUI();
   updateOverrideUI();
   updateLiveUI();
+  updateSemCountUI();
   updateResetState();
   setLivePrereqEnabled(true);
   const MOBILE_NOTICE_KEY = 'mobile-notice-shown';
@@ -4221,9 +4256,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     });
   if (toggleSemCountsBtn)
-    toggleSemCountsBtn.addEventListener('click', () => {
-      showSemCounts = !showSemCounts;
-      toggleSemCountsBtn.textContent = showSemCounts ? 'Hide semesters remaining' : 'Show semesters remaining';
+    toggleSemCountsBtn.addEventListener('change', () => {
+      showSemCounts = toggleSemCountsBtn.checked;
+      updateSemCountUI();
       const completedSet = new Set(
         Array.from(subjectState.entries())
           .filter(([, st]) => st?.completed)

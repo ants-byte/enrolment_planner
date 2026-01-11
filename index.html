@@ -30,9 +30,11 @@ Created: December 30, 2025
   </div>
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="page">
-    <div id="drop-zone" class="drop-zone" aria-hidden="true">
-      <div class="drop-zone-text">Drop students workbook here</div>
-    </div>
+    <aside id="drop-sidebar" class="drop-sidebar" aria-label="Student workbook drop zone">
+      <div id="drop-zone" class="drop-zone" aria-hidden="true">
+        <div class="drop-zone-text">Drop students workbook here</div>
+      </div>
+    </aside>
     <aside class="sidebar">
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
@@ -46,7 +48,7 @@ Created: December 30, 2025
             id="sidebar-section-descriptor"><b>Major.</b> Select what's likely.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
-            <span id="major-current-label">Undecided. Network Security used</span>
+            <span id="major-current-label">Unsure (using Network Security)</span>
             <span class="major-caret">▾</span>
           </button>
           <ul class="major-options" role="listbox">
@@ -95,33 +97,37 @@ Created: December 30, 2025
             </label>
             <span class="switch-label">Live prerequisite updates</span>
           </div>
+          <div class="toggle-row">
+            <label class="switch">
+              <input type="checkbox" id="toggle-sem-counts" aria-label="Show semesters remaining">
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label">Show semesters remaining</span>
+          </div>
+          <div class="next-sem-actions">
+            <button id="open-history" class="clear-button secondary" type="button">Your history</button>
+            <button id="open-next-semester" class="clear-button secondary" type="button">Your next semester</button>
+          </div>
         </div>
 
       </div>
-
-      <div class="sidebar-section next-sem-section dim-when-complete">
-        <button id="open-history" class="clear-button secondary" type="button">YourHistory</button>
-        <button id="open-next-semester" class="clear-button secondary" type="button">Your next semester</button>
+      <div class="sidebar-section course-timetable-section dim-when-complete">
         <button id="show-course-timetable" class="clear-button secondary" type="button">Full course timetable</button>
-      </div>
-      <div class="sidebar-section">
-        <label class="switch">
-          <input type="checkbox" id="toggle-sem-counts" aria-label="Show semesters remaining">
-          <span class="slider"></span>
-        </label>
-        <span class="switch-label">Show semesters remaining</span>
       </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
       <div class="sheet">
         <div class="title">
-          <div class="title-icon"></div>
           <div class="title-buttons">
             <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
             <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
             <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
           </div>
-          <h1>Your subject planner</h1>
+          <div class="title-text">
+            <button id="open-course-timetable-icon" class="title-icon" type="button"
+              aria-label="Show full Bachelor of IT timetable" data-tooltip="Show full Bachelor of IT timetable"></button>
+            <h1>Your subject planner</h1>
+          </div>
         </div>
 
         <div id="container">

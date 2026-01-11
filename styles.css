@@ -264,6 +264,36 @@ td,
   overflow: visible;
 }
 
+.drop-sidebar {
+  position: sticky;
+  top: 12px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.drop-sidebar.is-active {
+  width: 300px;
+  padding: 8px 8px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  border: 2px solid var(--sidebar-border);
+  box-shadow: 0 0 0 6px #000;
+  align-items: stretch;
+}
+
+.drop-sidebar.is-active .drop-zone {
+  width: 100%;
+  min-height: 120px;
+}
+
 :root {
   --sidebar-heading-color: #a8fffb;
 }
@@ -312,6 +342,13 @@ td,
 
 .next-sem-section .clear-button + .clear-button {
   margin-top: 3px;
+}
+
+.next-sem-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
 }
 
 .major-picker {
@@ -833,21 +870,62 @@ input:checked+.slider:before {
 }
 
 #main-content h1 {
-  flex: 1 1 auto;
   display: block;
-  text-align: center;
+  text-align: left;
   min-width: 0;
   font-size: 28px;
   margin: 0;
-  padding: 6px 0 10px;
+  padding: 0;
   background: transparent;
 }
 
+.title-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .title-icon {
-  width: 46px;
+  width: 40px;
   aspect-ratio: 1 / 1;
   background: center / contain no-repeat url("images/timetable.png");
-  margin-right: 10px;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  background-color: transparent;
+}
+
+.title-icon[data-tooltip] {
+  position: relative;
+}
+
+.title-icon[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translate(-50%, -2px);
+  background: rgba(17, 17, 17, 0.92);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.05s ease, transform 0.05s ease;
+  z-index: 30;
+}
+
+.title-icon[data-tooltip]:hover::after,
+.title-icon[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .title-btn {
@@ -1133,7 +1211,7 @@ input:checked+.slider:before {
       var(--ba-body) calc(50% - 10px),
       var(--software-body) calc(50% + 10px),
       var(--software-body) 100%);
-  border-color: color-mix(in srgb, var(--ba-band) 50%, var(--software-band) 50%);
+  border: none;
 }
 
 .subject-card.elective,
@@ -1160,12 +1238,12 @@ input:checked+.slider:before {
 }
 
 .subject-card.can-select-now {
-  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.12), var(--card-shadow);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.32), var(--card-shadow);
 }
 
 .subject-card.can-select-now:hover {
   transform: translateY(-8px);
-  box-shadow: var(--card-hover-shadow);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.22), var(--card-hover-shadow);
 }
 
 .subject-card .sas {
@@ -1201,7 +1279,7 @@ input:checked+.slider:before {
 
 .elective-placeholder.selecting-empty {
   background:
-    linear-gradient(90deg,
+    linear-gradient(165deg,
       var(--elective-band-a) 0%,
       var(--elective-band-a) 50%,
       var(--elective-band-b) 50%,
@@ -1538,7 +1616,7 @@ input:checked+.slider:before {
 }
 
 #show-course-timetable {
-  margin-top: 3px;
+  margin-top: 0;
 }
 
 .footnote {
@@ -1861,18 +1939,19 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   left: 4px;
   bottom: 4px;
   color: #000;
-  padding: 0 2px;
+  padding: 1px 4px;
   font-size: 0.9em;
   line-height: 1;
   z-index: 6;
   pointer-events: none;
-  border: 1px solid transparent;
-  border-radius: 3px;
+  border: 1px solid rgba(200, 200, 200, 0.8);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.8);
   display: none;
 }
 
 .sem-count.hovered {
-  border-color: #555;
+  border-color: rgba(120, 120, 120, 0.8);
   background: rgba(255, 255, 255, 0.8);
   pointer-events: auto;
 }
@@ -1972,13 +2051,33 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 #timetable-modal .modal {
   display: inline-block;
-  width: min(1200px, 96vw);
+  width: fit-content;
   max-width: 96vw;
   min-width: 360px;
   overflow: visible;
 }
 
-#timetable-table,
+#timetable-modal .timetable-table-wrapper {
+  width: max-content;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#timetable-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: auto;
+  white-space: normal;
+}
+
+#timetable-table th,
+#timetable-table td {
+  white-space: normal;
+  word-break: break-word;
+}
+
 .subject-table {
   width: max-content;
   max-width: none;
@@ -2681,6 +2780,10 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border: 1px solid #cfcfcf;
   border-radius: 4px;
   padding: 3px 5px;
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  flex-wrap: wrap;
 }
 
 .course-timetable-not-running-list li .course-tooltip {
@@ -2922,7 +3025,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   align-items: center;
   gap: 0px;
   border: 1px solid #2f2f2f;
-  padding: 6px 2px 6px 4px;
+  padding: 0px 6px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
 }
@@ -3018,6 +3121,13 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   .page {
     padding: 12px;
     gap: 10px;
+  }
+
+  .main-content,
+  #container,
+  .sheet {
+    max-height: none;
+    overflow: visible;
   }
 
   .sheet {
