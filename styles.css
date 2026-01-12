@@ -2445,6 +2445,38 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border: 1px solid #2f2f2f !important;
 }
 
+.subject-card.electives-full {
+  background: #efefef;
+}
+
+.subject-card.electives-full .subject-code,
+.subject-card.electives-full .subject-note,
+.subject-card.electives-full .prerequsites-note {
+  color: #333;
+  font-style: italic;
+}
+
+.electives-full-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translate(-50%, -150%);
+  width: 82%;
+  background: #6b6b6b;
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 2px 2px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  border: 0.5px solid rgba(255, 255, 255, 0.75);
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 5;
+}
+
 .completed .subject-note {
   font-weight: 500;
   text-decoration: none;

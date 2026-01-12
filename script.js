@@ -1,4 +1,4 @@
-/*
+﻿/*
 
 Author: Antony Di Serio
 Created: December 30, 2025
@@ -168,7 +168,41 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'Ye Wei (Silva)' },
   };
 
-  const notRunningIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
+  const semester1OnlyIds = new Set(['BIT351', 'BIT358', 'BIT357', 'BIT355']);
+  const semester2OnlyIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
+  const currentSemesterKey = 'S1';
+  const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
+  const getSemesterKeyForOffset = (offset) =>
+    offset % 2 === 0 ? currentSemesterKey : getOppositeSemester(currentSemesterKey);
+  const getSemesterAvailability = (id) => {
+    if (semester1OnlyIds.has(id)) return 'S1';
+    if (semester2OnlyIds.has(id)) return 'S2';
+    return 'Any';
+  };
+  const isSemesterRestricted = (id) => getSemesterAvailability(id) !== 'Any';
+  const isRunningThisSemester = (id) => {
+    const availability = getSemesterAvailability(id);
+    return availability === 'Any' || availability === currentSemesterKey;
+  };
+  const isRunningNextSemester = (id) => {
+    const availability = getSemesterAvailability(id);
+    if (availability === 'Any') return true;
+    return availability === getOppositeSemester(currentSemesterKey);
+  };
+  const getNotRunningIds = () =>
+    new Set(
+      [...semester1OnlyIds, ...semester2OnlyIds].filter((id) => !isRunningThisSemester(id))
+    );
+  const getSemesterLabel = (semesterKey) => (semesterKey === 'S1' ? 'Semester 1' : 'Semester 2');
+  const alignDistanceToAvailability = (id, distance) => {
+    if (!Number.isFinite(distance) || distance <= 0) return distance;
+    const availability = getSemesterAvailability(id);
+    if (availability === 'Any') return distance;
+    const offset = Math.max(0, distance - 1);
+    const semesterAtOffset = getSemesterKeyForOffset(offset);
+    if (semesterAtOffset === availability) return distance;
+    return distance + 1;
+  };
 
   const dependents = {};
   Object.keys(prerequisites).forEach((id) => { dependents[id] = []; });
@@ -265,6 +299,39 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
   const semCountsLabel = toggleSemCountsBtn?.closest('.toggle-row')?.querySelector('.switch-label');
   const electivesLabel = document.getElementById('electives-label');
+  const clipboardBlockedTitle = 'Copy to clipboard requires HTTPS (or localhost).';
+  const clipboardAvailable = window.isSecureContext && !!navigator.clipboard;
+  const setClipboardButtonState = (button, enabled) => {
+    if (!button) return;
+    button.disabled = !enabled;
+    button.classList.toggle('disabled', !enabled);
+    button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    if (!enabled) {
+      if (!button.dataset.prevTitle) {
+        button.dataset.prevTitle = button.getAttribute('title') || '';
+      }
+      button.setAttribute('title', clipboardBlockedTitle);
+    } else if (button.dataset.prevTitle !== undefined) {
+      const prev = button.dataset.prevTitle;
+      if (prev) {
+        button.setAttribute('title', prev);
+      } else {
+        button.removeAttribute('title');
+      }
+      delete button.dataset.prevTitle;
+    }
+  };
+  const updateClipboardUI = () => {
+    const enabled = clipboardAvailable;
+    [
+      copyTimetable,
+      copyCourseTimetableButton,
+      courseTimetableTeacherCopyButton,
+      copyHistory,
+      copyNextSemester,
+    ].forEach((button) => setClipboardButtonState(button, enabled));
+  };
+  updateClipboardUI();
   let modalLocked = false;
   let modalPrevStyle = null;
   let courseTimetableView = 'grid';
@@ -773,11 +840,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     stack.add(id);
     const prereqs = prerequisites[id] || [];
-    const semDelay = notRunningIds.has(id) && !treatPlannedComplete ? 1 : 0;
     if (!prereqs.length) {
-      memo.set(id, 1 + semDelay);
+      const result = alignDistanceToAvailability(id, 1);
+      memo.set(id, result);
       stack.delete(id);
-      return 1 + semDelay;
+      return result;
     }
     let maxDepth = 0;
     for (const pre of prereqs) {
@@ -803,7 +870,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, majorDistance);
     }
-    const result = maxDepth + 1 + semDelay;
+    const result = alignDistanceToAvailability(id, maxDepth + 1);
     memo.set(id, result);
     stack.delete(id);
     return result;
@@ -880,13 +947,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const distNoDelay = computeSemesterDistanceNoDelay(id, completedSet, plannedSet, treatPlannedComplete, memoNoDelay);
       const label = dist === Infinity ? '?' : dist;
       el.textContent = label;
+      const availability = getSemesterAvailability(id);
+      const isRunningNow = isRunningThisSemester(id);
+      const semesterLabel = availability !== 'Any' ? getSemesterLabel(availability) : '';
       el.dataset.reason =
         dist === 0
           ? 'Already completed.'
           : dist === 1
             ? 'Prerequisites satisfied; can complete this semester.'
-            : notRunningIds.has(id)
-              ? 'Not running this semester; earliest completion next semester.'
+            : !isRunningNow && availability !== 'Any'
+              ? `Runs in ${semesterLabel} only; earliest completion next semester.`
               : `Requires at least ${dist} semesters based on prerequisites.`;
       if (!completedSet.has(id) && !isPlaceholder(cell) && Number.isFinite(dist) && dist > 0) {
         distanceData.push({ cell, dist, distNoDelay, el, id });
@@ -930,6 +1000,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const chainSet = new Set();
       const distNoDelayMap = new Map();
       const chainMemoNoDelay = new Map();
+      const chainMemoWithDelay = new Map();
       const plannedSetForChain = plannedSetActual;
       const chainRemaining = getRemainingSubjectsCount();
       const chainOptimalSemesters = Math.max(1, Math.ceil(chainRemaining / Math.max(1, loadThreshold)));
@@ -947,10 +1018,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         distNoDelayMap.set(id, distNoDelay);
       });
       const getDistNoDelay = (code) => distNoDelayMap.get(code) ?? 0;
+      const getDistWithDelay = (code) =>
+        computeSemesterDistance(code, completedSet, plannedSetForChain, chainTreatPlannedComplete, chainMemoWithDelay);
       const chainDistanceMap = new Map();
       const getChainDistance = (code) => {
         if (chainDistanceMap.has(code)) return chainDistanceMap.get(code);
-        const base = getDistNoDelay(code);
+        const base = getDistWithDelay(code);
         if (!Number.isFinite(base) || base <= 0) {
           chainDistanceMap.set(code, base);
           return base;
@@ -963,11 +1036,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const electiveSlotSet = new Set(electiveSlotCodes);
         const activeElectiveCount = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase()))).length;
         const electiveSlotsRemaining = Math.max(0, programRequirements.elective - activeElectiveCount);
-        let electivesConstrain = false;
+      let electivesConstrain = false;
       if (electiveSlotsRemaining > 0) {
-        const chainMemoWithDelay = new Map();
-        const getElectiveDistance = (code) =>
-          computeSemesterDistance(code, completedSet, plannedSetForChain, chainTreatPlannedComplete, chainMemoWithDelay);
+        const getElectiveDistance = (code) => getDistWithDelay(code);
         const remainingElectiveCodes = electiveSlotCodes.filter((code) => {
           const st = subjectState.get(code);
           return !(st?.completed || st?.toggled);
@@ -992,8 +1063,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       [...new Set([...planCandidateIds, ...electiveCandidateIds])].forEach((id) => {
         const st = subjectState.get(id);
         if (!st || st.completed) return;
-        const distNoDelay = getDistNoDelay(id);
-        if (!Number.isFinite(distNoDelay) || distNoDelay <= 0) return;
+        const chainDist = getChainDistance(id);
+        if (!Number.isFinite(chainDist) || chainDist <= 0) return;
         chainCandidates.push(id);
       });
       const shouldHighlightChain = (code) => {
@@ -1054,7 +1125,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       let longestChainDist = 0;
       const canTakeIfRunningNow = (code) =>
         !completedSet.has(code) &&
-        notRunningIds.has(code) &&
+        !isRunningThisSemester(code) &&
         (prerequisites[code] || []).every(
           (pre) => completedSet.has(pre) || (treatPlannedComplete && plannedSet.has(pre))
         );
@@ -1128,10 +1199,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const chainIntro = chainOverrunsPlan
           ? `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. However there is a chain of subjects with prerequisites that runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so putting at risk your optimal graduation date:`
           : `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. Your longest prerequisite chain also runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so it is right at the limit for your optimal graduation date:`;
+        const hasAvailabilityDelay = relevantPaths.some((path) => {
+          const head = path[0];
+          const withDelay = getChainDistance(head);
+          const withoutDelay = getDistNoDelay(head);
+          return Number.isFinite(withDelay) && Number.isFinite(withoutDelay) && withDelay > withoutDelay;
+        });
+        const availabilityNote = hasAvailabilityDelay
+          ? '<p class="alert-inline-text">Note: One or more subjects in these chains run only in Semester 1 or Semester 2, which can add an extra semester.</p>'
+          : '';
         chainDelayError = {
           title: chainTitle,
           severity,
-          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-warning'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro}</span></p>${body}`,
+          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-warning'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro}</span></p>${body}${availabilityNote}`,
         };
       }
     } else {
@@ -1144,6 +1224,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         targets.forEach(({ el }) => el?.classList.add('final-sem-pill'));
         if ((targets.length > 4 || maxDist >= 5) && !completedMode && plannedCount >= loadThreshold && !chainDelayError) {
           const completionSemesters = Math.max(1, Math.ceil(remaining / Math.max(1, loadThreshold)));
+          const hasAvailabilityDelay = targets.some(
+            ({ dist, distNoDelay }) =>
+              Number.isFinite(distNoDelay) && Number.isFinite(dist) && distNoDelay > 0 && dist > distNoDelay
+          );
+          const availabilityNote = hasAvailabilityDelay
+            ? ' Note: One or more subjects run only in Semester 1 or Semester 2, which can add an extra semester.'
+            : '';
           const subjectList = targets
             .map(({ cell }) => cell?.dataset?.subject)
             .filter(Boolean);
@@ -1153,7 +1240,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               : subjectList.join(', ');
           finalSemWarning = {
             title: 'Tight prerequisite chain',
-            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${completionSemesters} semester chain: <strong>${formattedList}</strong>.</span></p>`,
+            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${completionSemesters} semester chain: <strong>${formattedList}</strong>.${availabilityNote}</span></p>`,
           };
         }
       }
@@ -1405,6 +1492,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const bitCode = electiveBitState[idx];
       const bitState = bitCode ? subjectState.get(bitCode) : null;
       const useCode = electivePlaceholderState[idx] || '';
+      const appliedCode = (bitCode || useCode || '').toUpperCase();
+      if (appliedCode) {
+        cell.dataset.electiveCode = appliedCode;
+      } else {
+        cell.removeAttribute('data-elective-code');
+      }
       const useText = useCode ? `${useCode} ${useDisplayNames[useCode] || 'Unspecified Elective'}` : '';
       const text = displayEntries[idx] || useText || '';
       const useMatch = text ? text.match(/^(USE\d{3})/i) : null;
@@ -1447,6 +1540,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     });
     updatePlaceholderDisplayForMode();
+    updateElectivesFullUI();
   };
 
   const buildElectiveAssignments = () => {
@@ -1607,7 +1701,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
         return;
       }
-      const isNotThisSem = notRunningIds.has(id);
+      const isNotThisSem = !isRunningThisSemester(id);
       cell.classList.toggle('satisfied', met);
       const canSelectNow = id === 'BIT371' ? met && !isNotThisSem : metNow && !isNotThisSem;
       cell.classList.toggle('can-select-now', canSelectNow);
@@ -1804,7 +1898,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const showList = plannedCount >= threshold;
       if (!showList || !rows.length) {
         const li = document.createElement('li');
-        li.textContent = 'Select this semester’s subjects first, and next semester’s options will be revealed.';
+        li.textContent = 'Select this semesterâ€™s subjects first, and next semesterâ€™s options will be revealed.';
         nextSemList.appendChild(li);
       } else {
         rows.forEach((item) => {
@@ -1907,13 +2001,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!cell.querySelector('.not-this-sem-label')) {
       const label = document.createElement('div');
       label.className = 'not-this-sem-label';
-      label.textContent = 'Running next semester only';
+      const availability = getSemesterAvailability(cell.dataset.subject || '');
+      const semesterLabel = availability !== 'Any' ? getSemesterLabel(availability) : 'next semester';
+      label.textContent =
+        availability !== 'Any' ? `Runs in ${semesterLabel} only` : 'Running next semester only';
       cell.appendChild(label);
     }
     if (!cell.querySelector('.not-running-tooltip')) {
       const tip = document.createElement('div');
       tip.className = 'not-running-tooltip';
-      tip.textContent = 'This subject is not running this semester. It will run next semester';
+      const availability = getSemesterAvailability(cell.dataset.subject || '');
+      const semesterLabel = availability !== 'Any' ? getSemesterLabel(availability) : 'next semester';
+      tip.textContent =
+        availability !== 'Any'
+          ? `This subject runs in ${semesterLabel} only. It will run next semester.`
+          : 'This subject is not running this semester. It will run next semester';
       cell.appendChild(tip);
     }
   };
@@ -1959,7 +2061,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const titleBlock = document.createElement('div');
       titleBlock.innerHTML = `<div class="subject-code">${id}</div><div class="tooltip-name">${name}</div>`;
       tooltip.appendChild(titleBlock);
-      const isNotThisSem = notRunningIds.has(id);
+      const isNotThisSem = !isRunningThisSemester(id);
       if (isNotThisSem) {
         const nextSemHeading = document.createElement('div');
         nextSemHeading.className = 'next-sem-heading';
@@ -2094,7 +2196,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.classList.toggle('completed', !!st?.completed);
     cell.classList.toggle('toggled', !!st?.toggled);
     cell.setAttribute('aria-pressed', st?.completed || st?.toggled ? 'true' : 'false');
-    if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
+    if (!isRunningThisSemester(code)) ensureNotThisSemUI(cell);
 
     // Remove existing text nodes and rebuild display
     cell.querySelectorAll('.subject-code, .subject-note, .subject-title, .course, .prerequsites-note, .note, .sas').forEach((n) => n.remove());
@@ -2247,7 +2349,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       renderSubjectInCell(cell, code, null);
       applyElectiveStyling(cell, code, majorKey);
-      if (notRunningIds.has(code)) ensureNotThisSemUI(cell);
+      if (!isRunningThisSemester(code)) ensureNotThisSemUI(cell);
       attachTooltip(cell);
     });
     rebuildElectiveBitStateFromState();
@@ -2620,7 +2722,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       grid.set(day, slotMap);
     });
     Object.entries(timetable).forEach(([id, data]) => {
-      if (notRunningIds.has(id)) return;
+      if (!isRunningThisSemester(id)) return;
       const day = data.day || '';
       const slot = data.slot || '';
       const dayMap = grid.get(day);
@@ -2813,7 +2915,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (courseTimetableNotRunningList) {
       courseTimetableNotRunningList.innerHTML = '';
-      const ids = Array.from(notRunningIds).sort();
+      const ids = Array.from(getNotRunningIds()).sort();
       if (!ids.length) {
         const item = document.createElement('li');
         item.textContent = 'None';
@@ -2841,12 +2943,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const copyCourseTimetableForWord = () => {
-    if (!navigator.clipboard) return;
+    if (!clipboardAvailable) return;
     const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const slotOrder = { Morning: 0, Afternoon: 1 };
     const noteValue = getSemesterNote();
     const rows = Object.entries(timetable)
-      .filter(([id]) => !notRunningIds.has(id))
+      .filter(([id]) => isRunningThisSemester(id))
       .map(([id, data]) => {
         const { start, end } = getSlotStartEnd(data.slot || '');
         return {
@@ -2926,7 +3028,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const copyCourseTimetableToClipboard = () => {
-    if (!navigator.clipboard) return;
+    if (!clipboardAvailable) return;
     const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
     const textRows = [];
     textRows.push(['Day', ...slotNames.map(getSlotHeading)].join('\t'));
@@ -3212,8 +3314,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const id = cell.dataset.subject;
     if (!id) return;
     const placeholder = isPlaceholder(cell);
-    const notThisSem = notRunningIds.has(id);
+    const notThisSem = !isRunningThisSemester(id);
     if (!completedMode && notThisSem) return;
+    if (areElectivesFull() && !placeholder && isElectivesGridCell(cell)) {
+      const st = subjectState.get(id);
+      if (!(st?.completed || st?.toggled)) return;
+    }
     const placeholders = placeholder ? getElectivePlaceholders() : [];
     const placeholderIdx = placeholder ? placeholders.indexOf(cell) : -1;
     if (placeholder && placeholderIdx >= 0) {
@@ -3458,7 +3564,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
 
-    if (notRunningIds.has(id)) {
+    if (id && !isRunningThisSemester(id)) {
       ensureNotThisSemUI(cell);
     }
     if (id === 'BIT371' || id === 'BIT372') {
@@ -4043,7 +4149,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
 
   const copyTimetableToClipboard = () => {
-    if (!timetableTable || !navigator.clipboard) return;
+    if (!timetableTable || !clipboardAvailable) return;
     const rows = Array.from(timetableTable.querySelectorAll('tr'));
     const now = new Date();
     const heading = timetableTitleEl
@@ -4092,7 +4198,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const copySimpleTableToClipboard = (tableEl, headingText = '') => {
-    if (!tableEl || !navigator.clipboard) return;
+    if (!tableEl || !clipboardAvailable) return;
     const rows = Array.from(tableEl.querySelectorAll('tr')).filter((row) => !row.dataset.skipCopy);
     const textBody = rows
       .map((row) =>
@@ -4216,8 +4322,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const id = cell.dataset.subject || '';
         if (!id || isPlaceholder(cell)) return false;
         if (completedSet.has(id)) return false;
-        if (notRunningIds.has(id)) return false;
+        if (!isRunningThisSemester(id)) return false;
         const st = subjectState.get(id);
+        if (areElectivesFull() && isElectivesGridCell(cell)) return false;
         const isChosen = !!st?.toggled;
         if (isChosen) return true;
         const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
@@ -4270,6 +4377,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const id = cell.dataset.subject || '';
         if (!id || isPlaceholder(cell)) return false;
         if (completedSet.has(id) || plannedSet.has(id)) return false;
+        if (!isRunningNextSemester(id)) return false;
         // Use requisite check to decide availability for next sem
         const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
           id,
@@ -4514,6 +4622,58 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     return [...useCodes, ...activeBits];
   };
+  const getFilledElectiveSlotCodes = () => {
+    const placeholders = getElectivePlaceholders();
+    return placeholders.map((cell, idx) => {
+      const datasetCode = cell?.dataset?.electiveCode;
+      if (datasetCode) return datasetCode.toUpperCase();
+      const useCode = electivePlaceholderState[idx];
+      if (useCode) return useCode.toUpperCase();
+      const bitCode = electiveBitState[idx];
+      if (bitCode) return bitCode.toUpperCase();
+      const text = (cell?.textContent || '').toUpperCase();
+      const match = text.match(/\b(BIT\d{3}|USE\d{3})\b/);
+      if (match) return match[1];
+      const filled =
+        cell?.classList?.contains('filled-elective') ||
+        cell?.classList?.contains('completed') ||
+        cell?.classList?.contains('toggled');
+      return filled ? 'FILLED' : '';
+    });
+  };
+  const getElectiveFilledSlotCount = () =>
+    getFilledElectiveSlotCodes().filter(Boolean).length;
+  const areElectivesFull = () => getElectiveFilledSlotCount() >= programRequirements.elective;
+
+  const updateElectivesFullUI = () => {
+    const full = areElectivesFull();
+    const electiveCells = subjects.filter((cell) => {
+      const id = cell.dataset.subject || '';
+      return id && !isPlaceholder(cell) && isElectivesGridCell(cell);
+    });
+    const filledBitCodes = new Set(
+      getFilledElectiveSlotCodes().filter((code) => code.startsWith('BIT'))
+    );
+    electiveCells.forEach((cell) => {
+      const id = cell.dataset.subject;
+      const shouldMark = full && !filledBitCodes.has(String(id).toUpperCase());
+      cell.classList.toggle('electives-full', shouldMark);
+      if (shouldMark) {
+        cell.classList.remove('can-select-now', 'satisfied');
+      }
+      const existing = cell.querySelector('.electives-full-pill');
+      if (shouldMark) {
+        if (!existing) {
+          const pill = document.createElement('div');
+          pill.className = 'electives-full-pill';
+          pill.textContent = 'Electives are full';
+          cell.appendChild(pill);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
+    });
+  };
 
   const updateElectiveWarning = () => {
     const placeholders = getElectivePlaceholders();
@@ -4559,6 +4719,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       electiveError = null;
       el.style.display = 'none';
     }
+    updateElectivesFullUI();
     refreshErrorAlerts();
   };
 
@@ -4739,4 +4900,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   // Initial sync of reset button state
   updateResetState();
   updateVaryLoadLabel();
-})();
+
+  if (window.isSecureContext && "serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }})();
+
