@@ -809,25 +809,45 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorKey = getMajorKeyFromUi();
     const majorCodes = majorConfig[majorKey]?.codes || [];
     if (!majorCodes.length) return 0;
-    const completedMajorSet = new Set(
-      majorCodes.filter((code) => completedSet.has(code))
-    );
-    if (treatPlannedComplete) {
-      majorCodes.forEach((code) => {
-        if (plannedSet.has(code)) completedMajorSet.add(code);
-      });
-    }
-    const remainingNeeded = Math.max(0, 3 - completedMajorSet.size);
-    if (!remainingNeeded) return 0;
-    const memo = new Map();
+    const lockCurrentSemester = plannedSet.size > 0;
+    const requiredTotal = Math.min(5, majorCodes.length);
     const compute = useDelay ? computeSemesterDistance : computeSemesterDistanceNoDelay;
-    const distances = majorCodes
-      .filter((code) => !completedMajorSet.has(code))
-      .map((code) => compute(code, completedSet, plannedSet, treatPlannedComplete, memo))
-      .filter((dist) => Number.isFinite(dist) && dist > 0)
-      .sort((a, b) => a - b);
-    if (distances.length < remainingNeeded) return Infinity;
-    return distances[remainingNeeded - 1];
+    const memo = new Map();
+    const majorDistances = majorCodes
+      .map((code) => {
+        const isDone = completedSet.has(code) || (treatPlannedComplete && plannedSet.has(code));
+        const baseDist = isDone ? 0 : compute(code, completedSet, plannedSet, treatPlannedComplete, memo);
+        let dist = baseDist;
+        if (lockCurrentSemester && !isDone && baseDist === 1) {
+          dist = useDelay ? alignDistanceToAvailability(code, baseDist + 1) : baseDist + 1;
+        }
+        return { code, dist };
+      })
+      .filter(({ dist }) => Number.isFinite(dist));
+    if (majorDistances.length < requiredTotal) return Infinity;
+    const maxDist = Math.max(...majorDistances.map(({ dist }) => dist));
+    const maxSemester = Math.max(1, maxDist + 2);
+    for (let semester = 1; semester <= maxSemester; semester += 1) {
+      const semesterKey = getSemesterKeyForOffset(semester - 1);
+      const completedBefore = new Set();
+      const totalPossible = new Set();
+      majorDistances.forEach(({ code, dist }) => {
+        if (dist <= semester - 1) {
+          completedBefore.add(code);
+          totalPossible.add(code);
+        }
+        if (dist <= semester) {
+          const availability = getSemesterAvailability(code);
+          if (!useDelay || availability === 'Any' || availability === semesterKey) {
+            totalPossible.add(code);
+          }
+        }
+      });
+      if (completedBefore.size >= 3 && totalPossible.size >= requiredTotal) {
+        return semester - 1;
+      }
+    }
+    return Infinity;
   };
 
   const computeSemesterDistance = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
@@ -1170,7 +1190,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const hasEqual = filteredEqual.length > 0;
         const allowChainWarning = chainRemaining > 8;
         const chainOverrunsPlan = hasOverrun;
-        const severity = hasOverrun ? 'error' : hasEqual && allowChainWarning ? 'warning' : null;
+        const fullLoadSelected = plannedCount >= loadThreshold;
+        const severity = fullLoadSelected
+          ? hasOverrun
+            ? 'error'
+            : hasEqual && allowChainWarning
+              ? 'warning'
+              : null
+          : null;
       if (severity) {
         const formatChainSubject = (code) =>
           canTakeIfRunningNow(code) ? `${code} (not running this semester)` : code;
@@ -1206,7 +1233,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           return Number.isFinite(withDelay) && Number.isFinite(withoutDelay) && withDelay > withoutDelay;
         });
         const availabilityNote = hasAvailabilityDelay
-          ? '<p class="alert-inline-text">Note: One or more subjects in these chains run only in Semester 1 or Semester 2, which can add an extra semester.</p>'
+          ? '<p class="alert-inline-text">Note: This delay is caused by subjects that alternate between Semester 1 and Semester 2. They may not appear in the chain list above, but they can add an extra semester.</p>'
           : '';
         chainDelayError = {
           title: chainTitle,
@@ -1440,7 +1467,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     placeholders.forEach((cell) => attachTooltip(cell));
   };
 
-  const getElectivePlaceholders = () => electivePlaceholderCells;
+  const getElectivePlaceholders = () => {
+    const ordered = electivePlaceholderOrder
+      .map((code) => document.querySelector(`[data-subject="${code}"]`))
+      .filter(Boolean);
+    return ordered.length ? ordered : electivePlaceholderCells;
+  };
 
   const formatDate = (d) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -1706,6 +1738,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const canSelectNow = id === 'BIT371' ? met && !isNotThisSem : metNow && !isNotThisSem;
       cell.classList.toggle('can-select-now', canSelectNow);
       cell.classList.toggle('locked', !met);
+      if (areElectivesFull() && isElectivesGridCell(cell)) {
+        cell.classList.remove('satisfied', 'can-select-now');
+        cell.classList.add('locked');
+      }
       cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
       if (coreqMetPlanned && !st?.completed) {
         cell.classList.remove('locked');
@@ -1757,6 +1793,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cell.classList.toggle('locked', !shouldShow);
     });
 
+    updateElectivesFullUI();
     updateNextSemWarning();
   };
 
@@ -2985,7 +3022,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const table = document.createElement('table');
     table.style.borderCollapse = 'collapse';
     table.style.border = '1px solid #ccc';
-    table.style.fontFamily = 'Calibri, Arial, sans-serif';
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
     header.forEach((label) => {
@@ -3055,8 +3091,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const table = document.createElement('table');
     table.style.borderCollapse = 'collapse';
     table.style.border = '1px solid #ccc';
-    table.style.fontFamily = 'Calibri, Arial, sans-serif';
-    table.style.fontSize = '12px';
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
     const corner = document.createElement('th');
@@ -3103,7 +3137,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             const name = document.createElement('span');
             name.textContent = getSubjectName(id);
             const meta = document.createElement('div');
-            meta.style.fontSize = '11px';
             meta.style.color = '#444';
             const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
             const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
@@ -3322,6 +3355,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const placeholders = placeholder ? getElectivePlaceholders() : [];
     const placeholderIdx = placeholder ? placeholders.indexOf(cell) : -1;
+    if (!completedMode && placeholder && placeholderIdx >= 0 && !electiveBitState[placeholderIdx]) {
+      return;
+    }
     if (placeholder && placeholderIdx >= 0) {
       const bitCode = electiveBitState[placeholderIdx];
       if (bitCode) {
@@ -3386,32 +3422,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.setAttribute('aria-pressed', 'false');
       }
     } else {
-      if (placeholder) {
-        const placeholders = getElectivePlaceholders();
-        const idx = placeholders.indexOf(cell);
-        if (idx >= 0) {
-          const currentCode = electivePlaceholderState[idx];
-          if (currentCode) {
-            electivePlaceholderState[idx] = '';
-            cell.classList.remove('completed', 'filled-elective', 'use-credit');
-            cell.setAttribute('aria-pressed', 'false');
-            fillFirstFreeSlotFromOverflow();
-          } else {
-            const nextUse = electiveCodeOrder.find((code) => !electivePlaceholderState.includes(code));
-            if (!nextUse) return;
-            electivePlaceholderState[idx] = nextUse;
-            cell.classList.add('completed');
-            cell.classList.remove('toggled');
-            cell.setAttribute('aria-pressed', 'false');
-          }
-          setElectiveCredits(buildElectiveAssignments(), true);
-          updateElectiveWarning();
-          updateSelectedList();
-          conditionalRecompute({ force: true, usePlanned: false });
-          updateResetState();
-          return;
-        }
-      }
+      // In selection mode, do not allow adding USE credits to empty placeholders.
+      if (placeholder) return;
       const st = subjectState.get(id) || { completed: false, toggled: false };
       if (st.completed) return;
       const already = !!st.toggled;
@@ -4170,7 +4182,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          const baseStyle = 'border:1px solid #ccc;text-align:left;font-size:12px;font-family:Calibri, Arial, sans-serif;line-height:1;';
+          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;';
           const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
           const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
           const style = tag === 'th' ? headStyle : bodyStyle;
@@ -4179,10 +4191,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const headingHtml = includeHeading
-      ? `<div style="font-family:Calibri, Arial, sans-serif;font-size:13px;margin-bottom:6px;">${heading}</div>`
-      : '';
-    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;font-family:Calibri, Arial, sans-serif;border-spacing:0;">${htmlRows}</table>`;
+    const headingHtml = includeHeading ? `<div style="margin-bottom:6px;">${heading}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;">${htmlRows}</table>`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -4214,8 +4224,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          const baseStyle =
-            'border:1px solid #ccc;text-align:left;font-size:12px;font-family:Calibri, Arial, sans-serif;line-height:1;';
+          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;';
           const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
           const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
           const style = tag === 'th' ? headStyle : bodyStyle;
@@ -4224,10 +4233,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const headingHtml = heading
-      ? `<div style="font-family:Calibri, Arial, sans-serif;font-size:13px;margin-bottom:6px;">${heading}</div>`
-      : '';
-    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;font-family:Calibri, Arial, sans-serif;border-spacing:0;">${htmlRows}</table>`;
+    const headingHtml = heading ? `<div style="margin-bottom:6px;">${heading}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;">${htmlRows}</table>`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -4641,8 +4648,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return filled ? 'FILLED' : '';
     });
   };
-  const getElectiveFilledSlotCount = () =>
-    getFilledElectiveSlotCodes().filter(Boolean).length;
+  const getElectiveFillCountFromDom = () => {
+    const placeholders = getElectivePlaceholders();
+    return placeholders.reduce((count, cell, idx) => {
+      if (!cell) return count;
+      const text = (cell.textContent || '').toUpperCase();
+      const hasCodeInText = /\b(BIT\d{3}|USE\d{3})\b/.test(text);
+      const hasUse = !!electivePlaceholderState[idx];
+      const hasBit = !!electiveBitState[idx];
+      const hasClass =
+        cell.classList.contains('filled-elective') ||
+        cell.classList.contains('completed') ||
+        cell.classList.contains('toggled');
+      return hasCodeInText || hasUse || hasBit || hasClass ? count + 1 : count;
+    }, 0);
+  };
+  const getElectiveFilledSlotCount = () => {
+    const placeholderCount = getFilledElectiveSlotCodes().filter(Boolean).length;
+    const activeCount = new Set(getActiveElectiveCodes().map((code) => code.toUpperCase())).size;
+    const domCount = getElectiveFillCountFromDom();
+    return Math.max(placeholderCount, activeCount, domCount);
+  };
   const areElectivesFull = () => getElectiveFilledSlotCount() >= programRequirements.elective;
 
   const updateElectivesFullUI = () => {
@@ -4652,7 +4678,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return id && !isPlaceholder(cell) && isElectivesGridCell(cell);
     });
     const filledBitCodes = new Set(
-      getFilledElectiveSlotCodes().filter((code) => code.startsWith('BIT'))
+      [...getFilledElectiveSlotCodes(), ...getActiveElectiveCodes()]
+        .filter((code) => typeof code === 'string' && code.toUpperCase().startsWith('BIT'))
+        .map((code) => code.toUpperCase())
     );
     electiveCells.forEach((cell) => {
       const id = cell.dataset.subject;
@@ -4666,7 +4694,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!existing) {
           const pill = document.createElement('div');
           pill.className = 'electives-full-pill';
-          pill.textContent = 'Electives are full';
+          pill.textContent = 'All 4 Electives are full';
           cell.appendChild(pill);
         }
       } else if (existing) {
@@ -4722,6 +4750,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateElectivesFullUI();
     refreshErrorAlerts();
   };
+
+  const debugApi = {
+    areElectivesFull,
+    getFilledElectiveSlotCodes,
+    getActiveElectiveCodes,
+    getElectiveFilledSlotCount,
+  };
+  if (typeof window !== 'undefined') {
+    window.__plannerDebug = debugApi;
+    window.plannerDebug = debugApi;
+  }
+  if (typeof globalThis !== 'undefined') {
+    globalThis.__plannerDebug = debugApi;
+    globalThis.plannerDebug = debugApi;
+  }
 
   initSubjectStateFromData();
   applySubjectStateToCells();
