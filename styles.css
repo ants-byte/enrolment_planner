@@ -859,7 +859,8 @@ input:checked+.slider:before {
 }
 
 .title {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
   background: transparent;
@@ -871,6 +872,25 @@ input:checked+.slider:before {
   width: 100%;
   box-sizing: border-box;
 }
+
+.title-alerts {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  justify-self: start;
+}
+
+.title-alerts.is-collapsed {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 
 .title-buttons {
   display: flex;
@@ -896,7 +916,42 @@ input:checked+.slider:before {
   gap: 12px;
   flex: 1 1 auto;
   min-width: 0;
+  justify-self: center;
 }
+
+.title-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.subject-counts {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: right;
+  display: none;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  align-self: center;
+  justify-self: end;
+}
+
+.subject-counts.is-visible {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.subject-counts-line {
+  white-space: nowrap;
+}
+
 
 .title-icon {
   width: 40px;
@@ -1410,6 +1465,41 @@ input:checked+.slider:before {
   display: block;
 }
 
+.subject-card > .subject-code {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+}
+
+.subject-card > .subject-code::after {
+  font-weight: 400;
+  font-size: 0.75em;
+  color: #333;
+  margin-left: auto;
+}
+
+.subject-card.core > .subject-code::after {
+  content: "Core";
+}
+
+.subject-card.network > .subject-code::after {
+  content: "NS";
+}
+
+.subject-card.ba > .subject-code::after {
+  content: "BA";
+}
+
+.subject-card.software > .subject-code::after {
+  content: "SD";
+}
+
+.subject-card.dual > .subject-code::after,
+.subject-card.dual-split > .subject-code::after {
+  content: "BA/SD";
+}
+
 .subject-note {
   font-weight: 400;
   display: block;
@@ -1650,13 +1740,14 @@ input:checked+.slider:before {
 
 .toggled {
   box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.35),
-    inset 0 -2px 4px rgba(255, 255, 255, 0.45);
-  border: 1px solid #2f2f2f !important;
+    inset 0 4px 10px rgba(0, 0, 0, 0.45),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.55),
+    0 0 0 2px rgba(29, 110, 209, 0.4);
+  border: 2px solid #1d6fd1 !important;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transform: translateY(1px);
+  transform: translateY(2px);
 }
 
 .toggled::after {
@@ -1669,14 +1760,14 @@ input:checked+.slider:before {
   left: 50%;
   transform: translateX(-50%);
   bottom: 2px;
-  background: rgba(29, 110, 209, 0.9);
+  background: #1d6fd1;
   color: #fff;
   font-weight: 700;
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 6px;
-  border: 0.5px solid rgba(255, 255, 255, 0.53);
-  box-shadow: 0px -1px 6px rgba(0, 0, 0, 0.6);
+  border: 1px solid #0f4c94;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.6);
   text-align: center;
   pointer-events: none;
   white-space: nowrap;
@@ -1861,7 +1952,8 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .not-this-sem .not-this-sem-label {
   position: absolute;
-  right: .4em;
+  right: 30px;
+  left: auto;
   top: var(--card-band-height);
   transform: none;
   background: rgba(124, 124, 124, 0.205);
@@ -1874,6 +1966,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   border-top: none;
   border-radius: 0 0 4px 4px;
   width: 8.5em;
+  text-align: left;
 }
 
 .not-this-sem .subject-note {
@@ -1905,6 +1998,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .not-this-sem:hover .not-running-tooltip {
   opacity: 1;
+  transition-delay: 0.4s;
 }
 
 .completed-mode .not-this-sem .not-this-sem-label,
@@ -2055,6 +2149,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .show-tooltip .subject-tooltip {
   opacity: 1;
+  transition-delay: 0.4s;
 }
 
 .timetable-table-wrapper {
@@ -2446,10 +2541,11 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   cursor: default;
   filter: saturate(1.05);
   box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.35),
-    inset 0 -2px 4px rgba(255, 255, 255, 0.45);
-  border: 1px solid #2f2f2f !important;
-  transform: translateY(1px);
+    inset 0 4px 10px rgba(0, 0, 0, 0.45),
+    inset 0 -3px 6px rgba(255, 255, 255, 0.55),
+    0 0 0 2px rgba(122, 122, 122, 0.35);
+  border: 2px solid #7a7a7a !important;
+  transform: translateY(2px);
 }
 
 .subject-card.electives-full {
@@ -2466,22 +2562,23 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 .electives-full-pill {
   position: absolute;
   left: 50%;
-  bottom: 4px;
-  transform: translate(-50%, -150%);
+  top: 40px;
+  bottom: auto;
+  transform: translateX(-50%);
   width: 82%;
-  background: #6b6b6b;
+  background: #7a7a7a;
   color: #fff;
   font-weight: 700;
   font-size: 11px;
-  line-height: 1.2;
-  padding: 2px 2px;
+  line-height: 1.25;
+  padding: 3px 4px;
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-  border: 0.5px solid rgba(255, 255, 255, 0.75);
+  border: 1px solid #9a9a9a;
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
-  z-index: 5;
+  z-index: 12;
 }
 
 .completed .subject-note {
@@ -2496,15 +2593,15 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   bottom: 4px;
   transform: translateX(-50%);
   width: 82%;
-  background: #444;
+  background: #7a7a7a;
   color: #fff;
   font-weight: 700;
   font-size: 11px;
   line-height: 1.2;
   padding: 2px 2px;
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-  border: 0.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 1px solid #9a9a9a;
   text-align: center;
   box-sizing: border-box;
   z-index: 5;

@@ -155,7 +155,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PA114', teacher: 'Yaona Zhao' },
     BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio' },
     BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone' },
-    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'BIT362', teacher: 'Nikki Wan' },
+    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'PE327', teacher: 'Nikki Wan' },
     BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Shzaa Niazi' },
     BIT231: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Nidha Qazi' },
     BIT357: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Ye Wei (Silva)' },
@@ -228,10 +228,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
   const infoButton = document.getElementById('btn-info');
+  const subjectCountsEl = document.getElementById('subject-counts');
+  const titleAlerts = document.getElementById('title-alerts');
+
+  const updateAlertBoxVisibility = () => {
+    if (!titleAlerts) return;
+    const hasVisible = [errorButton, warningButton, infoButton].some((btn) => btn && !btn.classList.contains('hidden'));
+    titleAlerts.classList.toggle('is-collapsed', !hasVisible);
+  };
+
   const hideAllAlertButtons = () => {
     [errorButton, warningButton, infoButton].forEach((btn) => {
       if (btn) btn.classList.add('hidden');
     });
+    updateAlertBoxVisibility();
   };
   hideAllAlertButtons();
   const dropZone = document.getElementById('drop-zone');
@@ -1809,6 +1819,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const useCredits = getUseCreditsCount();
     return Math.max(0, total - completed - planned - useCredits);
   };
+
+  const updateSubjectCounts = () => {
+    if (!subjectCountsEl) return;
+    const completed = getCompletedCount();
+    const useCredits = getUseCreditsCount();
+    const selected = getPlannedCount();
+    const remaining = getRemainingSubjectsCount();
+    const completedTotal = completed + useCredits;
+    const hasAny = completedTotal > 0 || selected > 0;
+    if (!hasAny) {
+      subjectCountsEl.innerHTML = '';
+      subjectCountsEl.classList.remove('is-visible');
+      return;
+    }
+    subjectCountsEl.innerHTML = `<div class="subject-counts-line">${completedTotal} subjects completed, ${selected} selected</div><div class="subject-counts-line">${remaining} remaining</div>`;
+    subjectCountsEl.classList.add('is-visible');
+  };
+
   const getLoadThreshold = () => Math.max(1, fullLoadCap || 4);
 
   const conditionalRecompute = ({ force = false, usePlanned = null } = {}) => {
@@ -1821,6 +1849,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       document.body.classList.toggle('show-availability', plannedCount >= threshold || livePrereqUpdates);
       updatePrereqErrors();
+      updateSubjectCounts();
       return;
     }
     if (livePrereqUpdates || plannedCount >= threshold) {
@@ -1834,6 +1863,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       document.body.classList.remove('show-availability');
     }
     updatePrereqErrors();
+    updateSubjectCounts();
   };
 
   const updateNextSemWarning = () => {
@@ -3020,6 +3050,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const text = textRows.map((row) => row.join('\t')).join('\n');
 
     const table = document.createElement('table');
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '11pt';
     table.style.borderCollapse = 'collapse';
     table.style.border = '1px solid #ccc';
     const thead = document.createElement('thead');
@@ -3031,6 +3063,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       th.style.padding = '4px 6px';
       th.style.background = '#efefef';
       th.style.textAlign = 'left';
+      th.style.fontFamily = 'Calibri, Arial, sans-serif';
+      th.style.fontSize = '11pt';
       headRow.appendChild(th);
     });
     thead.appendChild(headRow);
@@ -3043,6 +3077,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         td.textContent = value;
         td.style.border = '1px solid #ccc';
         td.style.padding = '4px 6px';
+        td.style.fontFamily = 'Calibri, Arial, sans-serif';
+        td.style.fontSize = '11pt';
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -3089,6 +3125,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const text = textRows.join('\n');
 
     const table = document.createElement('table');
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '11pt';
     table.style.borderCollapse = 'collapse';
     table.style.border = '1px solid #ccc';
     const thead = document.createElement('thead');
@@ -3099,6 +3137,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     corner.style.padding = '6px 8px';
     corner.style.textAlign = 'center';
     corner.style.background = '#f2f2f2';
+    corner.style.fontFamily = 'Calibri, Arial, sans-serif';
+    corner.style.fontSize = '11pt';
     headRow.appendChild(corner);
     slotNames.forEach((slot) => {
       const th = document.createElement('th');
@@ -3107,6 +3147,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       th.style.padding = '6px 8px';
       th.style.textAlign = 'left';
       th.style.background = '#f2f2f2';
+      th.style.fontFamily = 'Calibri, Arial, sans-serif';
+      th.style.fontSize = '11pt';
       headRow.appendChild(th);
     });
     thead.appendChild(headRow);
@@ -3120,12 +3162,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       dayCell.style.padding = '6px 8px';
       dayCell.style.textAlign = 'left';
       dayCell.style.background = '#f9f9f9';
+      dayCell.style.fontFamily = 'Calibri, Arial, sans-serif';
+      dayCell.style.fontSize = '11pt';
       row.appendChild(dayCell);
       slotNames.forEach((slot) => {
         const td = document.createElement('td');
         td.style.border = '1px solid #ccc';
         td.style.padding = '6px 8px';
         td.style.verticalAlign = 'top';
+        td.style.fontFamily = 'Calibri, Arial, sans-serif';
+        td.style.fontSize = '11pt';
         const entries = grid.get(day)?.get(slot) || [];
         if (!entries.length) {
           td.textContent = 'No subjects running.';
@@ -4079,6 +4125,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         hideAlertModal();
       }
     }
+    updateAlertBoxVisibility();
   };
 
   const showAlertModal = (type) => {
@@ -4182,7 +4229,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;';
+          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;';
           const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
           const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
           const style = tag === 'th' ? headStyle : bodyStyle;
@@ -4191,8 +4238,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const headingHtml = includeHeading ? `<div style="margin-bottom:6px;">${heading}</div>` : '';
-    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;">${htmlRows}</table>`;
+    const headingHtml = includeHeading ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${heading}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -4224,7 +4271,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;';
+          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;';
           const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
           const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
           const style = tag === 'th' ? headStyle : bodyStyle;
@@ -4233,8 +4280,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const headingHtml = heading ? `<div style="margin-bottom:6px;">${heading}</div>` : '';
-    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;">${htmlRows}</table>`;
+    const headingHtml = heading ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${heading}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -4694,7 +4741,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!existing) {
           const pill = document.createElement('div');
           pill.className = 'electives-full-pill';
-          pill.textContent = 'All 4 Electives are full';
+          pill.textContent = "Can't select. All 4 Elective slots are full";
           cell.appendChild(pill);
         }
       } else if (existing) {
@@ -4809,6 +4856,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   setElectiveCredits(buildElectiveAssignments());
   updateElectiveWarning();
   updateSelectedList();
+  updateSubjectCounts();
   updateMajor();
   const selectedCount = getSelectedRows().length;
   if (showTimetableButton) {

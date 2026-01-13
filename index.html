@@ -122,16 +122,21 @@ Created: December 30, 2025
     <main id="main-content" role="main" class="main-content">
       <div class="sheet">
         <div class="title">
-          <div class="title-buttons">
-            <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
-            <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
-            <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
+          <div id="title-alerts" class="title-alerts">
+            <div class="title-buttons">
+              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
+              <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
+              <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
+            </div>
           </div>
           <div class="title-text">
-            <button id="open-course-timetable-icon" class="title-icon" type="button"
-              aria-label="Show full Bachelor of IT timetable" data-tooltip="Show full Bachelor of IT timetable"></button>
-            <h1>Your subject planner</h1>
+            <div class="title-heading">
+              <button id="open-course-timetable-icon" class="title-icon" type="button"
+                aria-label="Show full Bachelor of IT timetable" data-tooltip="Show full Bachelor of IT timetable"></button>
+              <h1>Your subject planner</h1>
+            </div>
           </div>
+          <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
         </div>
 
         <div id="container">
