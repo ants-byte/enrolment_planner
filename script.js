@@ -819,18 +819,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorKey = getMajorKeyFromUi();
     const majorCodes = majorConfig[majorKey]?.codes || [];
     if (!majorCodes.length) return 0;
-    const lockCurrentSemester = plannedSet.size > 0;
+    const lockCurrentSemester = treatPlannedComplete;
     const requiredTotal = Math.min(5, majorCodes.length);
     const compute = useDelay ? computeSemesterDistance : computeSemesterDistanceNoDelay;
     const memo = new Map();
     const majorDistances = majorCodes
       .map((code) => {
         const isDone = completedSet.has(code) || (treatPlannedComplete && plannedSet.has(code));
-        const baseDist = isDone ? 0 : compute(code, completedSet, plannedSet, treatPlannedComplete, memo);
-        let dist = baseDist;
-        if (lockCurrentSemester && !isDone && baseDist === 1) {
-          dist = useDelay ? alignDistanceToAvailability(code, baseDist + 1) : baseDist + 1;
-        }
+        const dist = isDone
+          ? 0
+          : compute(code, completedSet, plannedSet, treatPlannedComplete, lockCurrentSemester, memo);
         return { code, dist };
       })
       .filter(({ dist }) => Number.isFinite(dist));
@@ -860,7 +858,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return Infinity;
   };
 
-  const computeSemesterDistance = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
+  const computeSemesterDistance = (
+    id,
+    completedSet,
+    plannedSet,
+    treatPlannedComplete = false,
+    lockCurrentSemester = false,
+    memo = new Map(),
+    stack = new Set()
+  ) => {
     if (memo.has(id)) return memo.get(id);
     if (stack.has(id)) return Infinity;
     const isDone = completedSet.has(id) || (treatPlannedComplete && plannedSet.has(id));
@@ -871,14 +877,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     stack.add(id);
     const prereqs = prerequisites[id] || [];
     if (!prereqs.length) {
-      const result = alignDistanceToAvailability(id, 1);
+      const base = lockCurrentSemester ? 2 : 1;
+      const result = alignDistanceToAvailability(id, base);
       memo.set(id, result);
       stack.delete(id);
       return result;
     }
     let maxDepth = 0;
     for (const pre of prereqs) {
-      const dist = computeSemesterDistance(pre, completedSet, plannedSet, treatPlannedComplete, memo, stack);
+      const dist = computeSemesterDistance(
+        pre,
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        lockCurrentSemester,
+        memo,
+        stack
+      );
       if (!Number.isFinite(dist)) {
         memo.set(id, Infinity);
         stack.delete(id);
@@ -900,12 +915,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, majorDistance);
     }
-    const result = alignDistanceToAvailability(id, maxDepth + 1);
+    let base = maxDepth + 1;
+    if (lockCurrentSemester && base === 1) {
+      base = 2;
+    }
+    const result = alignDistanceToAvailability(id, base);
     memo.set(id, result);
     stack.delete(id);
     return result;
   };
-  const computeSemesterDistanceNoDelay = (id, completedSet, plannedSet, treatPlannedComplete = false, memo = new Map(), stack = new Set()) => {
+  const computeSemesterDistanceNoDelay = (
+    id,
+    completedSet,
+    plannedSet,
+    treatPlannedComplete = false,
+    lockCurrentSemester = false,
+    memo = new Map(),
+    stack = new Set()
+  ) => {
     if (memo.has(id)) return memo.get(id);
     if (stack.has(id)) return Infinity;
     const isDone = completedSet.has(id) || (treatPlannedComplete && plannedSet.has(id));
@@ -916,13 +943,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     stack.add(id);
     const prereqs = prerequisites[id] || [];
     if (!prereqs.length) {
-      memo.set(id, 1);
+      const result = lockCurrentSemester ? 2 : 1;
+      memo.set(id, result);
       stack.delete(id);
-      return 1;
+      return result;
     }
     let maxDepth = 0;
     for (const pre of prereqs) {
-      const dist = computeSemesterDistanceNoDelay(pre, completedSet, plannedSet, treatPlannedComplete, memo, stack);
+      const dist = computeSemesterDistanceNoDelay(
+        pre,
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        lockCurrentSemester,
+        memo,
+        stack
+      );
       if (!Number.isFinite(dist)) {
         memo.set(id, Infinity);
         stack.delete(id);
@@ -944,7 +980,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, majorDistance);
     }
-    const result = maxDepth + 1;
+    let result = maxDepth + 1;
+    if (lockCurrentSemester && result === 1) {
+      result = 2;
+    }
     memo.set(id, result);
     stack.delete(id);
     return result;
@@ -962,6 +1001,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
     const treatPlannedComplete = plannedCount >= loadThreshold;
+    const lockCurrentSemester = treatPlannedComplete;
     const plannedSetActual = new Set(
       Array.from(subjectState.entries())
         .filter(([, st]) => st?.toggled)
@@ -973,8 +1013,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const existing = cell.querySelector('.sem-count');
       const el = existing || document.createElement('div');
       el.className = 'sem-count';
-      const dist = computeSemesterDistance(id, completedSet, plannedSet, treatPlannedComplete, memo);
-      const distNoDelay = computeSemesterDistanceNoDelay(id, completedSet, plannedSet, treatPlannedComplete, memoNoDelay);
+      const dist = computeSemesterDistance(
+        id,
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        lockCurrentSemester,
+        memo
+      );
+      const distNoDelay = computeSemesterDistanceNoDelay(
+        id,
+        completedSet,
+        plannedSet,
+        treatPlannedComplete,
+        lockCurrentSemester,
+        memoNoDelay
+      );
       const label = dist === Infinity ? '?' : dist;
       el.textContent = label;
       const availability = getSemesterAvailability(id);
@@ -1034,7 +1088,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const plannedSetForChain = plannedSetActual;
       const chainRemaining = getRemainingSubjectsCount();
       const chainOptimalSemesters = Math.max(1, Math.ceil(chainRemaining / Math.max(1, loadThreshold)));
-      const chainTreatPlannedComplete = plannedSetActual.size > 0;
+      const fullLoadSelected = lockCurrentSemester;
+      const chainTreatPlannedComplete = fullLoadSelected;
       subjects.forEach((cell) => {
         const id = cell.dataset.subject;
         if (!id) return;
@@ -1043,13 +1098,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           completedSet,
           plannedSetForChain,
           chainTreatPlannedComplete,
+          fullLoadSelected,
           chainMemoNoDelay
         );
         distNoDelayMap.set(id, distNoDelay);
       });
       const getDistNoDelay = (code) => distNoDelayMap.get(code) ?? 0;
       const getDistWithDelay = (code) =>
-        computeSemesterDistance(code, completedSet, plannedSetForChain, chainTreatPlannedComplete, chainMemoWithDelay);
+        computeSemesterDistance(
+          code,
+          completedSet,
+          plannedSetForChain,
+          chainTreatPlannedComplete,
+          fullLoadSelected,
+          chainMemoWithDelay
+        );
       const chainDistanceMap = new Map();
       const getChainDistance = (code) => {
         if (chainDistanceMap.has(code)) return chainDistanceMap.get(code);
@@ -1062,10 +1125,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return base;
       };
       const majorKeyForChain = getMajorKeyFromUi();
-        const electiveSlotCodes = getElectiveSlotCodes(majorKeyForChain).filter(Boolean);
-        const electiveSlotSet = new Set(electiveSlotCodes);
-        const activeElectiveCount = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase()))).length;
-        const electiveSlotsRemaining = Math.max(0, programRequirements.elective - activeElectiveCount);
+      const electiveSlotCodes = getElectiveSlotCodes(majorKeyForChain).filter(Boolean);
+      const electiveSlotSet = new Set(electiveSlotCodes);
+      const activeElectiveCount = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase()))).length;
+      const electiveSlotsRemaining = Math.max(0, programRequirements.elective - activeElectiveCount);
       let electivesConstrain = false;
       if (electiveSlotsRemaining > 0) {
         const getElectiveDistance = (code) => getDistWithDelay(code);
@@ -1084,11 +1147,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           electivesConstrain = bottleneck > chainOptimalSemesters;
         }
       }
-        const chainCandidates = [];
-        let electiveChainOverrun = false;
-        const planCandidateIds = mainGridCells
-          .map((cell) => cell.dataset.subject)
-          .filter((id) => id && subjectState.has(id));
+      const chainCandidates = [];
+      let electiveChainOverrun = false;
+      const planCandidateIds = mainGridCells
+        .map((cell) => cell.dataset.subject)
+        .filter((id) => id && subjectState.has(id));
       const electiveCandidateIds = electivesConstrain ? electiveSlotCodes : [];
       [...new Set([...planCandidateIds, ...electiveCandidateIds])].forEach((id) => {
         const st = subjectState.get(id);
@@ -1157,37 +1220,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         !completedSet.has(code) &&
         !isRunningThisSemester(code) &&
         (prerequisites[code] || []).every(
-          (pre) => completedSet.has(pre) || (treatPlannedComplete && plannedSet.has(pre))
+          (pre) => completedSet.has(pre) || (chainTreatPlannedComplete && plannedSetForChain.has(pre))
         );
-        chainCandidates.forEach((id) => {
-          const chainDist = getChainDistance(id);
-          longestChainDist = Math.max(longestChainDist, chainDist);
-          if (chainDist > chainOptimalSemesters) {
-            const paths = buildChainPaths(id);
-            overrunPaths.push(...paths);
-            if (electiveSlotSet.has(id)) electiveChainOverrun = true;
-          } else if (chainDist === chainOptimalSemesters) {
-            const paths = buildChainPaths(id);
-            equalPaths.push(...paths);
-          }
+      chainCandidates.forEach((id) => {
+        const chainDist = getChainDistance(id);
+        longestChainDist = Math.max(longestChainDist, chainDist);
+        if (chainDist > chainOptimalSemesters) {
+          const paths = buildChainPaths(id);
+          overrunPaths.push(...paths);
+          if (electiveSlotSet.has(id)) electiveChainOverrun = true;
+        } else if (chainDist === chainOptimalSemesters) {
+          const paths = buildChainPaths(id);
+          equalPaths.push(...paths);
+        }
+      });
+      if (overrunPaths.length) {
+        addChainPaths(overrunPaths);
+      }
+      const highlightElectivePlaceholders = electivesConstrain && electiveChainOverrun;
+      if (highlightElectivePlaceholders) {
+        electiveSlotCodes.forEach((code) => chainSet.delete(code));
+      }
+      mainGridCells.forEach((cell) => {
+        if (chainSet.has(cell.dataset.subject)) cell.classList.add('chain-delay');
+      });
+      if (highlightElectivePlaceholders) {
+        const placeholders = getElectivePlaceholders();
+        placeholders.forEach((cell, idx) => {
+          const isFilled = !!electivePlaceholderState[idx] || !!electiveBitState[idx];
+          if (!isFilled) cell.classList.add('chain-delay');
         });
-        if (overrunPaths.length) {
-          addChainPaths(overrunPaths);
-        }
-        const highlightElectivePlaceholders = electivesConstrain && electiveChainOverrun;
-        if (highlightElectivePlaceholders) {
-          electiveSlotCodes.forEach((code) => chainSet.delete(code));
-        }
-        mainGridCells.forEach((cell) => {
-          if (chainSet.has(cell.dataset.subject)) cell.classList.add('chain-delay');
-        });
-        if (highlightElectivePlaceholders) {
-          const placeholders = getElectivePlaceholders();
-          placeholders.forEach((cell, idx) => {
-            const isFilled = !!electivePlaceholderState[idx] || !!electiveBitState[idx];
-            if (!isFilled) cell.classList.add('chain-delay');
-          });
-        }
+      }
       const filteredOverrun = overrunPaths.filter((path) => {
         const head = path[0];
         return getChainDistance(head) > chainOptimalSemesters;
@@ -1196,18 +1259,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const head = path[0];
         return getChainDistance(head) === chainOptimalSemesters;
       });
-        const hasOverrun = filteredOverrun.length > 0;
-        const hasEqual = filteredEqual.length > 0;
-        const allowChainWarning = chainRemaining > 8;
-        const chainOverrunsPlan = hasOverrun;
-        const fullLoadSelected = plannedCount >= loadThreshold;
-        const severity = fullLoadSelected
-          ? hasOverrun
-            ? 'error'
-            : hasEqual && allowChainWarning
-              ? 'warning'
-              : null
-          : null;
+      const hasOverrun = filteredOverrun.length > 0;
+      const hasEqual = filteredEqual.length > 0;
+      const allowChainWarning = chainRemaining > 8;
+      const chainOverrunsPlan = hasOverrun;
+      const severity = fullLoadSelected
+        ? hasOverrun
+          ? 'error'
+          : hasEqual && allowChainWarning
+            ? 'warning'
+            : null
+        : null;
       if (severity) {
         const formatChainSubject = (code) =>
           canTakeIfRunningNow(code) ? `${code} (not running this semester)` : code;
