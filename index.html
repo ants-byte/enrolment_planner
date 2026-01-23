@@ -38,22 +38,28 @@ Created: December 30, 2025
       <div id="drop-zone" class="drop-zone" aria-hidden="true">
         <div class="drop-zone-text">Drop students workbook here</div>
       </div>
+      <div class="student-id-section hidden-initial" id="student-id-section">
+        <label for="student-id-input">Student ID, email, or name</label>
+        <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
+        <div id="student-search-dropdown" class="student-search-dropdown" hidden></div>
+        <div id="student-data-preview" class="student-data-preview" aria-live="polite"></div>
+      </div>
     </aside>
     <aside class="sidebar">
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
-          aria-controls="instructions-modal" aria-expanded="false">Instructions</button>
+          aria-controls="instructions-modal" aria-expanded="false" data-tooltip="Open a quick guide to using the planner.">Instructions</button>
       </div>
       <div class="sidebar-section reset-section" id="reset-section">
-        <button id="clear-selections" class="clear-button">Reset</button>
+        <button id="clear-selections" class="clear-button" data-tooltip="Clear your current selections and start fresh.">Reset</button>
       </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
-            id="sidebar-section-descriptor"><b>Major.</b> Select what's likely.</span></div>
+            class="sidebar-section-descriptor"><b>Major.</b> Select what's likely.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
             <span id="major-current-label">Unsure (using Network Security)</span>
-            <span class="major-caret">▾</span>
+            <span class="major-caret">?</span>
           </button>
           <ul class="major-options" role="listbox">
             <li role="option" data-value="undecided" class="selected">Undecided</li>
@@ -69,39 +75,48 @@ Created: December 30, 2025
           <span class="sidebar-section-descriptor"><b>History.</b> Enter your passes & credits</span>
         </div>
         <div class="buttons">
-          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false">Clicking mode</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false">Typing mode</button>
+          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false" data-tooltip="Click to go into 'history mode' where you can click on
+           subjects to mark your completed subjects and/or credit transfers as 'completed'">Clicking mode</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false" data-tooltip="Click to open a window that you can 
+          enter your history into.  You can paste in result tables, or type in codes only.">Typing mode</button>
         </div>
       </div>
 
       <div class="sidebar-section timetable-panel dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span>
-          <span class="sidebar-section-descriptor"><b>Choose your subjects</b> by clicking here or in grid to right.</span>
+          <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the subjects below or in grid to right, or use this 'Available now' popup.</span>
           </div>
         <div id="selected-list-section">
           <button class="available-heading" id="available-heading" type="button"
-            aria-label="Show available subjects">Available now</button>
+            aria-label="Show available subjects" data-tooltip="Open a popup that list the subjects you can take right now and click in there to make your selections for this semester">Available now</button>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
           <div class="toggle-row load-row">
             <span id="load-label">Your load = 4 subjects</span>
-            <button id="vary-load" class="clear-button secondary load-button" type="button">Change</button>
+            <button id="vary-load" class="clear-button secondary load-button" type="button" data-tooltip="Will you be studying a full load of 4 subjects, or something else?">Change</button>
           </div>
-          <div class="toggle-row">
-            <label class="switch">
-              <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
-              <span class="slider"></span>
-            </label>
-            <span class="switch-label dim-when-complete">Override prerequisites</span>
-          </div>
-          <div class="toggle-row hidden-initial" id="live-prereq-row">
-            <label class="switch">
-              <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
-              <span class="slider"></span>
-            </label>
+            <div class="toggle-row" data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisites.">
+              <label class="switch">
+                <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label dim-when-complete">Override prerequisites</span>
+            </div>
+            <div class="toggle-row pass-enrolments-tooltip" data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;">
+              <label class="switch">
+                <input type="checkbox" id="pass-for-enrolments" aria-label="Pass for enrolments">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">Pass current enrolments</span>
+            </div>
+            <div class="toggle-row hidden-initial" id="live-prereq-row">
+              <label class="switch">
+                <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
+                <span class="slider"></span>
+              </label>
             <span class="switch-label">Live prerequisite updates</span>
           </div>
-          <div class="toggle-row">
+          <div class="toggle-row" data-tooltip="Show with numbers on each subject the minimum amount of semesters each will take to complete.">
             <label class="switch">
               <input type="checkbox" id="toggle-sem-counts" aria-label="Show semesters remaining">
               <span class="slider"></span>
@@ -110,13 +125,15 @@ Created: December 30, 2025
           </div>
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
-            <button id="open-next-semester" class="clear-button secondary" type="button">Your next semester</button>
+            <button id="open-remaining" class="clear-button secondary" type="button" data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining subjects</button>
+            <button id="open-course-map" class="clear-button secondary" type="button">Course Map</button>
+            <button id="open-next-semester" class="clear-button secondary" type="button">Next semester options</button>
           </div>
         </div>
 
       </div>
-      <div class="sidebar-section course-timetable-section dim-when-complete">
-        <button id="show-course-timetable" class="clear-button secondary" type="button">Full course timetable</button>
+      <div class="sidebar-section semester-timetable-section dim-when-complete">
+        <button id="show-semester-timetable" class="clear-button secondary" type="button" data-tooltip="See the complete semester offering from our school.">Full Semester Timetable</button>
       </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
@@ -131,7 +148,7 @@ Created: December 30, 2025
           </div>
           <div class="title-text">
             <div class="title-heading">
-              <button id="open-course-timetable-icon" class="title-icon" type="button"
+              <button id="open-semester-timetable-icon" class="title-icon" type="button"
                 aria-label="Show full Bachelor of IT timetable" data-tooltip="Show full Bachelor of IT timetable"></button>
               <h1>Your subject planner</h1>
             </div>
@@ -431,25 +448,28 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
-  <div id="course-timetable-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal course-timetable-modal" role="dialog" aria-modal="true" aria-labelledby="course-timetable-title">
+  <div id="semester-timetable-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal semester-timetable-modal" role="dialog" aria-modal="true" aria-labelledby="semester-timetable-title">
       <div class="modal-header">
-        <div class="modal-title" id="course-timetable-title">Course timetable</div>
+        <div class="modal-title" id="semester-timetable-title">The full Bachelor of IT semester timetable</div>
+        <button class="modal-close" id="close-semester-timetable" aria-label="Close Semester timetable">X</button>
       </div>
       <div class="modal-body">
-        <div id="course-timetable-content" class="course-timetable-content"></div>
-        <div id="course-timetable-not-running" class="course-timetable-not-running">
-          <div class="course-timetable-subtitle">Not running this semester. <span
-              class="course-timetable-subtitle-note">These subjects will run next semester:</span></div>
-          <ul id="course-timetable-not-running-list" class="course-timetable-not-running-list"></ul>
+        <div id="semester-timetable-content" class="semester-timetable-content"></div>
+        <div id="semester-timetable-not-running" class="semester-timetable-not-running">
+          <div class="semester-timetable-subtitle">Not running this semester. <span
+              class="semester-timetable-subtitle-note">These subjects will run next semester:</span></div>
+          <ul id="semester-timetable-not-running-list" class="semester-timetable-not-running-list"></ul>
         </div>
       </div>
-      <div class="modal-actions course-timetable-actions">
-        <button id="course-timetable-list" class="clear-button secondary course-timetable-toggle is-inactive"
+      <div class="modal-actions semester-timetable-actions">
+        <button id="semester-timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
+          aria-pressed="true">Colours Off</button>
+        <button id="semester-timetable-list" class="clear-button secondary semester-timetable-toggle is-inactive"
           type="button" aria-pressed="false">List</button>
-        <button id="course-timetable-grid" class="clear-button secondary course-timetable-toggle" type="button"
+        <button id="semester-timetable-grid" class="clear-button secondary semester-timetable-toggle" type="button"
           aria-pressed="true" disabled>Grid</button>
-        <button id="copy-course-timetable" class="clear-button secondary course-timetable-copy" type="button">
+        <button id="copy-semester-timetable" class="clear-button secondary semester-timetable-copy" type="button">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
               <path
@@ -459,8 +479,8 @@ Created: December 30, 2025
           </span>
           Copy to clipboard
         </button>
-        <button id="course-timetable-teacher-copy"
-          class="clear-button secondary course-timetable-copy course-timetable-teacher-copy" type="button"
+        <button id="semester-timetable-teacher-copy"
+          class="clear-button secondary semester-timetable-copy semester-timetable-teacher-copy" type="button"
           aria-label="Copy timetable for Word" title="Copy timetable for Word">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
@@ -470,7 +490,7 @@ Created: December 30, 2025
             </svg>
           </span>
         </button>
-        <button id="close-course-timetable-cta" class="clear-button" type="button">Close</button>
+        <button id="close-semester-timetable-cta" class="clear-button" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -543,19 +563,124 @@ Created: December 30, 2025
           <p class="current-enrolments-title">Current enrolments? These won't be inserted into the grid.</p>
           <ul id="current-enrolments-list" class="current-enrolments-list"></ul>
         </div>
-        <div class="timetable-actions">
-          <button id="copy-history" class="clear-button secondary" type="button">
-            <span class="clipboard-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="img" focusable="false">
-                <path
-                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                  fill="currentColor" />
-              </svg>
-            </span>
-            Copy
+        <div class="timetable-actions subject-table-actions">
+          <button id="copy-history-codes" class="clear-button secondary modal-copy-codes" type="button"
+            aria-label="Copy subject codes" title="Copy subject codes">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
           </button>
-          <button id="close-history-cta" class="clear-button secondary" type="button">Close</button>
+          <div class="modal-action-group">
+            <button id="copy-history" class="clear-button secondary" type="button">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              Copy
+            </button>
+            <button id="close-history-cta" class="clear-button secondary" type="button">Close</button>
+          </div>
         </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="remaining-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal subject-list-modal" role="dialog" aria-modal="true" aria-labelledby="remaining-title">
+      <div class="modal-header">
+        <div class="modal-title" id="remaining-title">Remaining</div>
+        <button class="modal-close" id="close-remaining" aria-label="Close remaining modal">X</button>
+      </div>
+      <div class="modal-body">
+        <div id="remaining-summary" class="remaining-summary"></div>
+        <div class="timetable-table-wrapper">
+          <table id="remaining-table" class="subject-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Core/Stream</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="remaining-electives-section" class="remaining-electives-section" hidden>
+          <div class="semester-timetable-subtitle">Elective options</div>
+          <div class="timetable-table-wrapper">
+            <table id="remaining-electives-table" class="subject-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Core/Stream</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="timetable-actions subject-table-actions">
+          <button id="copy-remaining-codes" class="clear-button secondary modal-copy-codes" type="button"
+            aria-label="Copy subject codes" title="Copy subject codes">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+          </button>
+          <div class="modal-action-group">
+            <button id="copy-remaining" class="clear-button secondary" type="button">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              Copy
+            </button>
+            <button id="close-remaining-cta" class="clear-button secondary" type="button">Close</button>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="course-map-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal course-map-modal" role="dialog" aria-modal="true" aria-labelledby="course-map-title">
+      <div class="modal-header">
+        <div class="modal-title" id="course-map-title">Course Map</div>
+        <button class="modal-close" id="close-course-map" aria-label="Close course map">X</button>
+      </div>
+      <div class="modal-body">
+        <div id="course-map-key" class="course-map-key"></div>
+        <div id="course-map-content" class="course-map-content"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="copy-course-map-image" class="clear-button secondary" type="button"
+          data-tooltip="Copy the course map image to the clipboard.">
+          <span class="clipboard-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                fill="currentColor" />
+            </svg>
+          </span>
+          Copy image
+        </button>
+        <button id="download-course-map-image" class="clear-button secondary" type="button"
+          data-tooltip="Download the course map as an image.">Download image</button>
+        <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -578,18 +703,31 @@ Created: December 30, 2025
             <tbody></tbody>
           </table>
         </div>
-        <div class="timetable-actions">
-          <button id="copy-next-semester" class="clear-button secondary" type="button">
-            <span class="clipboard-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="img" focusable="false">
-                <path
-                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                  fill="currentColor" />
-              </svg>
-            </span>
-            Copy
+        <div class="timetable-actions subject-table-actions">
+          <button id="copy-next-semester-codes" class="clear-button secondary modal-copy-codes" type="button"
+            aria-label="Copy subject codes" title="Copy subject codes">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
           </button>
-          <button id="close-next-semester-cta" class="clear-button secondary" type="button">Close</button>
+          <div class="modal-action-group">
+            <button id="copy-next-semester" class="clear-button secondary" type="button">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              Copy
+            </button>
+            <button id="close-next-semester-cta" class="clear-button secondary" type="button">Close</button>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -617,18 +755,31 @@ Created: December 30, 2025
             <tbody></tbody>
           </table>
         </div>
-        <div class="timetable-actions">
-          <button id="copy-timetable" class="clear-button secondary">
-            <span class="clipboard-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="img" focusable="false">
-                <path
-                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                  fill="currentColor" />
-              </svg>
-            </span>
-            Copy
+        <div class="timetable-actions subject-table-actions">
+          <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
+            aria-label="Copy subject codes" title="Copy subject codes">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
           </button>
-          <button id="hide-timetable" class="clear-button secondary">Close</button>
+          <div class="modal-action-group">
+            <button id="copy-timetable" class="clear-button secondary" type="button">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              Copy
+            </button>
+            <button id="hide-timetable" class="clear-button secondary" type="button">Close</button>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -674,6 +825,7 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="script.js"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
@@ -682,4 +834,6 @@ Created: December 30, 2025
 </body>
 
 </html>
+
+
 

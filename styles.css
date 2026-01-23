@@ -44,17 +44,33 @@ Created: December 30, 2025
       color-mix(in srgb, var(--software) 80%, rgb(255, 255, 255) 20%),
       color-mix(in srgb, var(--ba) 80%, rgb(255, 255, 255) 20%));
   --core-band: #ffb240;
+  --core-band-strong: color-mix(in srgb, var(--core-band) 55%, #7a3a00 45%);
   --core-body: var(--core);
   --network-band: rgb(0, 160, 95);
+  --network-band-strong: color-mix(in srgb, var(--network-band) 55%, #003d26 45%);
   --network-body: color-mix(in srgb, var(--network) 55%, #fff 45%);
   --software-band: rgb(190, 40, 165);
+  --software-band-strong: color-mix(in srgb, var(--software-band) 55%, #43004f 45%);
   --software-body: color-mix(in srgb, var(--software) 55%, #fff 45%);
   --ba-band: rgb(0, 120, 210);
+  --ba-band-strong: color-mix(in srgb, var(--ba-band) 60%, #004a9a 40%);
   --ba-body: color-mix(in srgb, var(--ba) 55%, #fff 45%);
   --dual-band: color-mix(in srgb, var(--dual) 80%, #000 20%);
   --dual-body: color-mix(in srgb, var(--dual) 55%, #fff 45%);
   --elective-band: rgb(131, 130, 130);
   --elective-body: color-mix(in srgb, var(--software-body) 50%, var(--ba-body) 50%);
+  --completed-core-bg: #412d01be;
+  --completed-core-text: #b9b8b8;
+  --completed-network-bg: #012d1fa8;
+  --completed-network-text: #cfd4d4;
+  --completed-software-bg: #210136b3;
+  --completed-software-text: #d3cfe0;
+  --completed-ba-bg: #030363ad;
+  --completed-ba-text: #cfd6e0;
+  --completed-dual-bg: linear-gradient(165deg, var(--completed-ba-bg) 0%, var(--completed-software-bg) 100%);
+  --completed-dual-text: #d0d0d0;
+  --completed-elective-bg: #424242c2;
+  --completed-elective-text: #d0d0c2;
   --card-band-height: 4px;
   --card-min-height: 100px;
   --card-max-height: 100px;
@@ -219,6 +235,41 @@ td,
   line-height: 1.3;
 }
 
+.drop-zone {
+  position: relative;
+}
+
+.drop-zone-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+}
+
+.drop-zone-spinner::after {
+  content: '';
+  display: block;
+  width: inherit;
+  height: inherit;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  border-top-color: transparent;
+  animation: dropZoneSpin 0.8s linear infinite;
+}
+
+@keyframes dropZoneSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .drop-zone.drag-over {
   border-color: #b6f064;
   color: #b6f064;
@@ -227,6 +278,166 @@ td,
 
 .drop-zone .drop-zone-text {
   pointer-events: none;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 400;
+}
+
+.drop-zone-line {
+  margin: 0 0 2px;
+}
+
+.drop-zone-line:last-child {
+  margin-bottom: 0;
+}
+
+.student-id-section {
+  margin-top: 10px;
+  text-align: left;
+  position: relative;
+}
+
+.student-id-section label {
+  display: block;
+  margin-bottom: 4px;
+  color: #f7f7f7;
+}
+
+#student-id-input {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #888;
+  padding: 6px 8px;
+  background: #1b1b1b;
+  color: #f7f7f7;
+}
+
+#student-id-input::placeholder {
+  color: #888;
+}
+
+#student-id-input.student-match-found {
+  font-weight: 700;
+  animation: matchPulse 0.7s ease;
+  box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7), 0 0 0 0 rgba(76, 175, 80, 0.35);
+}
+
+@keyframes matchPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7), 0 0 0 0 rgba(76, 175, 80, 0.35);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0), 0 0 0 18px rgba(76, 175, 80, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(182, 240, 100, 0), 0 0 0 0 rgba(182, 240, 100, 0);
+  }
+}
+
+.student-search-dropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  min-width: 100%;
+  width: max-content;
+  max-width: 90vw;
+  background: #111;
+  color: #f5f5f5;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  z-index: 2500;
+  padding: 4px 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.student-search-dropdown[hidden] {
+  display: none;
+}
+
+.student-search-option {
+  padding: 6px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.student-search-option:hover,
+.student-search-option:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.student-search-option.is-active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.student-data-preview {
+  margin-top: 6px;
+  min-height: 80px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: inherit;
+  font-family: inherit;
+  color: #f1f1f1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: none;
+}
+
+.student-data-preview.is-visible {
+  display: block;
+}
+
+.student-data-preview>div {
+  margin: 0 0 0.5em;
+}
+
+.student-data-preview>div:last-child {
+  margin-bottom: 0;
+}
+
+.student-email-row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.student-email-link,
+.student-email-all {
+  color: #66c2ff;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.student-email-link:hover,
+.student-email-link:focus-visible,
+.student-email-all:hover,
+.student-email-all:focus-visible {
+  text-decoration: none;
+}
+
+.student-email-sep {
+  margin: 0 4px;
+  color: #66c2ff;
+}
+
+.student-email-all {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.student-email-link.copy-flash,
+.student-email-all.copy-flash {
+  animation: copyFlash 0.55s ease;
 }
 
 .sheet {
@@ -265,6 +476,43 @@ td,
   z-index: auto;
   overflow: visible;
   border-radius: 8px;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.sidebar a,
+.student-data-preview a {
+  color: #66c2ff;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.sidebar a:visited,
+.student-data-preview a:visited {
+  color: #66c2ff;
+}
+
+.sidebar a:hover,
+.sidebar a:focus-visible,
+.student-data-preview a:hover,
+.student-data-preview a:focus-visible {
+  text-decoration: none;
+  color: #7ad0ff;
+}
+
+.sidebar b,
+.sidebar strong,
+.sidebar .inline-heading {
+  font-weight: 400;
+  font-size: 1em;
+}
+
+.sidebar .clear-button,
+.sidebar .available-heading,
+.sidebar .major-toggle {
+  font-weight: inherit;
+  font-size: 1em;
 }
 
 .drop-sidebar {
@@ -302,8 +550,8 @@ td,
 }
 
 .sidebar-heading {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 1em;
+  font-weight: 400;
   margin-bottom: 2px;
   color: var(--sidebar-heading-color);
   display: inline-block;
@@ -320,12 +568,35 @@ td,
 
 .sidebar-section-descriptor {
   display: inline-block;
+  font-size: 1em;
+  font-weight: 400;
+}
+
+.sidebar .inline-heading {
+  font-size: 1em;
+  font-weight: 400;
+}
+
+.accepted-offered.is-offered {
+  color: #ffd54f;
+  font-weight: 700;
+}
+
+.trouble-country {
+  color: #1e90ff;
+  font-weight: 700;
+}
+
+.apr-excluded {
+  color: #d32f2f;
+  font-weight: 700;
 }
 
 .buttons {
   display: flex;
   gap: 4px;
   flex-wrap: nowrap;
+  position: relative;
 }
 
 .buttons .clear-button {
@@ -343,7 +614,7 @@ td,
   overflow: visible;
 }
 
-.next-sem-section .clear-button + .clear-button {
+.next-sem-section .clear-button+.clear-button {
   margin-top: 3px;
 }
 
@@ -354,7 +625,7 @@ td,
   margin-top: 6px;
 }
 
-.course-timetable-section {
+.semester-timetable-section {
   border: none;
   background: transparent;
   padding: 0;
@@ -365,6 +636,26 @@ td,
   display: flex;
   flex-direction: column;
   overflow: visible;
+}
+
+.major-stream-insights {
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  color: #d6d6d6;
+  line-height: 1.4;
+}
+
+.major-stream-summary {
+  display: block;
+  font-size: 13px;
+  color: #f4f4f4;
+}
+
+.major-stream-summary strong {
+  font-weight: 700;
 }
 
 .major-dropdown {
@@ -384,24 +675,28 @@ td,
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+  border-left: 6px solid transparent;
 }
 
 .major-dropdown.major-network .major-toggle {
   background: #c8e6c9;
   color: #000;
   border-color: #0d7a3d;
+  border-left-color: var(--network-band);
 }
 
 .major-dropdown.major-ba .major-toggle {
   background: #e0f7fa;
   color: #000;
   border-color: #0539c9;
+  border-left-color: var(--ba-band);
 }
 
 .major-dropdown.major-sd .major-toggle {
   background: #f3e5f5;
   color: #000;
   border-color: #6507da;
+  border-left-color: var(--software-band);
 }
 
 .major-dropdown.major-undecided .major-toggle {
@@ -443,6 +738,7 @@ td,
   cursor: pointer;
   background: #ffffff;
   border: 1px solid #c5c5c5;
+  border-left: 6px solid transparent;
   border-radius: 4px;
   font-weight: 400;
   transition: border-color 0.12s ease, color 0.12s ease, font-weight 0.12s ease;
@@ -451,16 +747,19 @@ td,
 .major-options li[data-value='network'] {
   background: var(--network, #9fe4a4);
   border-color: var(--network-text);
+  border-left-color: var(--network-band);
 }
 
 .major-options li[data-value='ba'] {
   background: var(--ba, #b7eafd);
   border-color: var(--ba-text);
+  border-left-color: var(--ba-band);
 }
 
 .major-options li[data-value='sd'] {
   background: var(--software, #ceb4f0);
   border-color: var(--sd-text);
+  border-left-color: var(--software-band);
 }
 
 .major-options li[data-value='undecided'] {
@@ -582,6 +881,7 @@ td,
   --available-item-bg: var(--elective-body);
 }
 
+
 .available-list .available-item.dual-split {
   background: linear-gradient(165deg,
       var(--ba-body) 0,
@@ -608,14 +908,16 @@ td,
   font-weight: 400;
 }
 
-.available-item:hover  {
+.available-item:hover {
   filter: brightness(0.98);
   border-color: var(--btn-primary-hover-end) !important;
 }
-.available-list .available-item.chosen:hover{
+
+.available-list .available-item.chosen:hover {
   filter: brightness(0.96);
   border-color: var(--btn-primary-hover-end) !important;
 }
+
 .timetable-table-wrapper .chosen-row {
   font-weight: 400;
 }
@@ -725,7 +1027,7 @@ td,
   background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
   color: #f7f9ff;
   border-color: var(--btn-primary-border);
-  margin-top:3px;
+  margin-top: 3px;
 }
 
 .clear-button.secondary:hover {
@@ -749,6 +1051,33 @@ td,
   transform: scale(0.99);
 }
 
+.clear-button.copy-flash {
+  animation: copyFlash 0.55s ease;
+}
+
+.student-summary-id {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.student-summary-id.copy-flash {
+  animation: copyFlash 0.55s ease;
+}
+
+@keyframes copyFlash {
+  0% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(200, 200, 200, 0.9);
+  }
+
+  70% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 0 14px rgba(200, 200, 200, 0);
+  }
+
+  100% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(200, 200, 200, 0);
+  }
+}
+
 #clear-selections {
   margin: 6px 0 8px;
 }
@@ -770,6 +1099,7 @@ td,
 
 .load-value-select {
   width: 120px;
+  padding: 4px;
 }
 
 .load-lock-msg {
@@ -856,6 +1186,26 @@ input:checked+.slider:before {
 .switch-label.active {
   color: #f7f9ff;
   font-weight: 800;
+}
+
+.switch-label.pass-enrolments-highlight {
+  color: #ffd54f;
+}
+
+.ui-tooltip {
+  position: fixed;
+  max-width: 280px;
+  padding: 6px 8px 6px 13px;
+  background: rgba(17, 17, 17, 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  white-space: pre-line;
+  pointer-events: none;
+  z-index: 3000;
+  display: none;
 }
 
 .title {
@@ -952,12 +1302,36 @@ input:checked+.slider:before {
   white-space: nowrap;
 }
 
+.subject-counts-item {
+  cursor: default;
+}
+
+.ui-tooltip.ui-tooltip-counts {
+  background: #d9d9d9;
+  color: #111;
+  border-color: #bdbdbd;
+  max-width: none;
+  white-space: pre;
+}
+
+.ui-tooltip.ui-tooltip-counts .ui-tooltip-row {
+  margin-bottom: 3px;
+}
+
+.ui-tooltip.ui-tooltip-counts .ui-tooltip-row:last-child {
+  margin-bottom: 0;
+}
+
+.ui-tooltip.ui-tooltip-counts .ui-tooltip-title {
+  font-weight: 700;
+}
+
 
 .title-icon {
   width: 40px;
   aspect-ratio: 1 / 1;
   background: center / contain no-repeat url("images/timetable.png");
-  border: none;
+
   padding: 0;
   margin: 0;
   cursor: pointer;
@@ -979,12 +1353,13 @@ input:checked+.slider:before {
   color: #fff;
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.05s ease, transform 0.05s ease;
   z-index: 30;
+
 }
 
 .title-icon[data-tooltip]:hover::after,
@@ -1329,7 +1704,7 @@ input:checked+.slider:before {
   background: var(--elective);
 }
 
-.elective-placeholder,
+.elective-placeholder:not(.filled-elective),
 .placeholder-card {
   background: linear-gradient(to bottom,
       #555 0%,
@@ -1428,10 +1803,7 @@ input:checked+.slider:before {
   border-color: color-mix(in srgb, var(--ba-band) 50%, var(--software-band) 50%);
 }
 
-.ba:not(.subject-card),
-.elective-stream.ba:not(.subject-card) {
-  background: var(--ba);
-}
+
 
 .dual:not(.subject-card),
 .elective-stream.dual:not(.subject-card),
@@ -1465,38 +1837,38 @@ input:checked+.slider:before {
   display: block;
 }
 
-.subject-card > .subject-code {
+.subject-card>.subject-code {
   display: flex;
   align-items: baseline;
   gap: 8px;
   width: 100%;
 }
 
-.subject-card > .subject-code::after {
+.subject-card>.subject-code::after {
   font-weight: 400;
   font-size: 0.75em;
   color: #333;
   margin-left: auto;
 }
 
-.subject-card.core > .subject-code::after {
+.subject-card.core>.subject-code::after {
   content: "Core";
 }
 
-.subject-card.network > .subject-code::after {
+.subject-card.network>.subject-code::after {
   content: "NS";
 }
 
-.subject-card.ba > .subject-code::after {
+.subject-card.ba>.subject-code::after {
   content: "BA";
 }
 
-.subject-card.software > .subject-code::after {
+.subject-card.software>.subject-code::after {
   content: "SD";
 }
 
-.subject-card.dual > .subject-code::after,
-.subject-card.dual-split > .subject-code::after {
+.subject-card.dual>.subject-code::after,
+.subject-card.dual-split>.subject-code::after {
   content: "BA/SD";
 }
 
@@ -1505,6 +1877,7 @@ input:checked+.slider:before {
   display: block;
   margin-bottom: 2px;
 }
+
 
 .prerequsites-note {
   font-size: 0.85em !important;
@@ -1564,22 +1937,16 @@ input:checked+.slider:before {
 
 .info-card {
   cursor: default;
+  padding-left: 14px;
+  line-height: 1.3em;
+  padding-top: 4px;
   box-shadow: none;
+  border: 1px dashed #9b9898;
   background: linear-gradient(to bottom,
       #eaeaea 0%,
       #eaeaea var(--card-band-height),
       #f6f6f6 var(--card-band-height),
       #f6f6f6 100%);
-  border: 1px dashed #9b9898;
-  line-height: 1.3em;
-}
-.info-card{
-  padding:2px;
-}
-.info-card ul,
-.info-card li {
-  margin: 0;
-  padding-left: 16px;
 }
 
 .info-card:hover {
@@ -1593,17 +1960,17 @@ input:checked+.slider:before {
   padding-left: 0;
 }
 
-.info-card ul li {
+.info-card li {
   position: relative;
   padding-left: 1.2em;
-  /* controls text indent from your bullet */
 }
 
-.info-card ul li::before {
+.info-card li::before {
   content: "•";
   position: absolute;
   left: 4px;
 }
+
 
 .stream-label {
   font-weight: 700;
@@ -1707,17 +2074,18 @@ input:checked+.slider:before {
   left: 0;
   width: 100%;
   z-index: 2;
-  border: 2px solid #fff;
+  border: 1px solid var(--btn-primary-border);
   border-radius: 8px;
 }
 
-#show-course-timetable {
+#show-semester-timetable {
   margin-top: 0;
   outline: none;
+  border-color: var(--btn-primary-border);
 }
 
-#show-course-timetable:focus,
-#show-course-timetable:focus-visible {
+#show-semester-timetable:focus,
+#show-semester-timetable:focus-visible {
   outline: none;
 }
 
@@ -1739,11 +2107,10 @@ input:checked+.slider:before {
 }
 
 .toggled {
-  box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.45),
-    inset 0 -3px 6px rgba(255, 255, 255, 0.55),
-    0 0 0 2px rgba(29, 110, 209, 0.4);
-  border: 1px solid #1d6fd1; 
+
+  border-left: 2px solid #034ba3 !important;
+  border-right: 2px solid #1d6fd1 !important;
+  border-bottom: 2px solid #034ba3 !important;
 
   cursor: pointer;
   position: relative;
@@ -1751,15 +2118,21 @@ input:checked+.slider:before {
   transform: translateY(2px);
 }
 
+.toggled.show-tooltip,
+.toggled.hover-active {
+  overflow: visible;
+}
+
 .toggled::after {
   content: none;
 }
 
 .toggled::before {
-  content: "Chosen for this semester";
+  content: "Will study this semester";
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: -4px;
+  right: -4px;
+  transform: none;
   bottom: 4px;
   background: #1d6fd1;
   color: #fff;
@@ -1771,12 +2144,12 @@ input:checked+.slider:before {
   text-align: center;
   pointer-events: none;
   white-space: nowrap;
-  width:100%;
+  width: auto;
   background: linear-gradient(to right,
-        #11519e 0%,
-        #2275da 10%,
-        #2275da 90%,
-        #11519e 100%);
+      #11519e 0%,
+      #2275da 10%,
+      #2275da 90%,
+      #11519e 100%);
 }
 
 .elective-placeholder.toggled::after {
@@ -1792,20 +2165,11 @@ input:checked+.slider:before {
 .satisfied.can-select-now {
   box-shadow: 0px -1px 8px rgba(0, 0, 0, 0.803) !important;
   cursor: pointer;
-  box-shadow: none;
   position: relative;
-  border:.5px grey solid
+  border: .5px grey solid;
 }
 
-.satisfied:not(.background: linear-gradient(
-  to right,
-  #1f6fbf 0%,
-  #2f8fe6 25%,
-  #4fb2ff 50%,
-  #2f8fe6 75%,
-  #1f6fbf 100%
-);
-can-select-now) {
+.satisfied:not(.can-select-now) {
   box-shadow: none;
 }
 
@@ -1866,8 +2230,8 @@ can-select-now) {
   margin-bottom: 6px;
 }
 
-.satisfied-tooltip .subject-tooltip .satisfied-heading,
-body.show-availability .satisfied .subject-tooltip .satisfied-heading {
+.satisfied-tooltip:not(.toggled):not(.completed) .subject-tooltip .satisfied-heading,
+body.show-availability .satisfied:not(.toggled):not(.completed) .subject-tooltip .satisfied-heading {
   display: block;
 }
 
@@ -1883,8 +2247,8 @@ body.show-availability .satisfied .subject-tooltip .satisfied-heading {
   margin-bottom: 6px;
 }
 
-.satisfied-tooltip.not-this-sem .subject-tooltip .next-sem-heading,
-body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-heading {
+.satisfied-tooltip.not-this-sem:not(.toggled):not(.completed) .subject-tooltip .next-sem-heading,
+body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .subject-tooltip .next-sem-heading {
   display: block;
 }
 
@@ -1964,24 +2328,28 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   box-shadow: none;
 }
 
-.not-this-sem .not-this-sem-label {
+.alternate-semester-label {
   position: absolute;
-  right: 30px;
+  right: 33px;
   left: auto;
   top: var(--card-band-height);
   transform: none;
-  background: rgba(182, 181, 181, 0.605);
+  background: rgba(182, 181, 181, 0.15);
   color: #000;
   font-size: .8em;
-  padding: 1px 8px !important;
+  padding: 1px 4px !important;
   pointer-events: none;
   z-index: 3;
-  border: 1px solid #6d6d6d8f;
+  border: 1px solid #b9b8b8;
   border-top: none;
   border-radius: 0 0 4px 4px;
-  width: 64px;
-  text-align: left;
-  line-height: 1.1em;
+  width: 72px;
+  text-align: center;
+  line-height: 1.2em;
+}
+
+.alternate-semester-label .alt-sem-line {
+  display: block;
 }
 
 .not-this-sem .subject-note {
@@ -2016,7 +2384,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   transition-delay: 0.4s;
 }
 
-.completed-mode .not-this-sem .not-this-sem-label,
+.completed-mode .not-this-sem .alternate-semester-label,
 .completed-mode .not-this-sem .not-running-tooltip {
   display: none;
 }
@@ -2037,7 +2405,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   opacity: 1 !important;
 }
 
-.completed.not-this-sem .not-this-sem-label,
+.completed.not-this-sem .alternate-semester-label,
 .completed.not-this-sem .not-running-tooltip {
   display: none !important;
 }
@@ -2157,6 +2525,12 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   display: block;
 }
 
+.completed-mode .elective-placeholder .subject-tooltip {
+  top: 88%;
+  transform: translateY(-12%);
+  border: 1px solid #bdbdbd;
+}
+
 .hide-tooltip .subject-tooltip {
   display: none !important;
   opacity: 0 !important;
@@ -2249,7 +2623,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .subject-table tr.history-fail td {
   color: #333;
-  font-style: italic;
+  font-style: normal;
 }
 
 .current-enrolments {
@@ -2272,6 +2646,24 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 .current-enrolments-list li {
   margin: 2px 0;
+}
+
+.remaining-summary {
+  margin: 0 0 8px;
+  color: #111;
+  line-height: 1.35;
+}
+
+.remaining-summary p {
+  margin: 0 0 6px;
+}
+
+.remaining-summary p:last-child {
+  margin-bottom: 0;
+}
+
+.remaining-electives-section {
+  margin-top: 12px;
 }
 
 #timetable-table th,
@@ -2396,6 +2788,31 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   padding: 4px 12px;
 }
 
+.subject-table-actions {
+  display: grid;
+  grid-template-columns: var(--code-col-width, 80px) 1fr var(--code-col-width, 80px);
+  align-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.subject-table-actions .modal-copy-codes {
+  grid-column: 1;
+  justify-self: center;
+  min-width: 0;
+  width: 34px;
+  height: 32px;
+  padding: 0;
+}
+
+.subject-table-actions .modal-action-group {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .alert-item {
   border: 1px solid transparent;
   border-radius: 6px;
@@ -2416,7 +2833,10 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   opacity: 0.92;
 }
 
-.subject-card.chain-delay {border-right: red solid 2px;border-left: red solid 2px;border-bottom: red solid 2px;
+.subject-card.chain-delay {
+  border-right: red solid 2px;
+  border-left: red solid 2px;
+  border-bottom: red solid 2px;
   outline: none;
 }
 
@@ -2537,17 +2957,19 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   cursor: default !important;
 }
 
+.locked .subject-code,
+.locked .subject-code::after,
 .locked .subject-note {
-  color: #000;
+  color: #333;
   font-weight: 400;
 }
 
 .locked .prerequsites-note {
-  color: #000;
+  color: #333;
 }
 
 .completed {
-  color: #222;
+  color: var(--completed-text, #cfcfcf);
   position: relative;
   cursor: default;
   filter: saturate(1.05);
@@ -2559,15 +2981,127 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   transform: translateY(2px);
 }
 
+.subject-card.completed {
+  background: var(--completed-bg, #333);
+  border-color: color-mix(in srgb, var(--completed-bg, #333) 70%, #000 30%) !important;
+}
+
+.subject-card.completed>.subject-code::after {
+  color: var(--completed-text, #cfcfcf);
+}
+
+.subject-card.completed .subject-note,
+.subject-card.completed .prerequsites-note {
+  color: var(--completed-text, #cfcfcf);
+}
+
+.subject-card.completed.core {
+  --completed-bg: var(--completed-core-bg);
+  --completed-text: var(--completed-core-text);
+}
+
+.subject-card.completed.network {
+  --completed-bg: var(--completed-network-bg);
+  --completed-text: var(--completed-network-text);
+}
+
+.subject-card.completed.software {
+  --completed-bg: var(--completed-software-bg);
+  --completed-text: var(--completed-software-text);
+}
+
+.subject-card.completed.ba {
+  --completed-bg: var(--completed-ba-bg);
+  --completed-text: var(--completed-ba-text);
+}
+
+.subject-card.completed.dual,
+.subject-card.completed.dual-split {
+  --completed-bg: var(--completed-dual-bg);
+  --completed-text: var(--completed-dual-text);
+}
+
+.subject-card.completed.dual-split {
+  background: linear-gradient(135deg,
+      var(--completed-ba-bg) 0%,
+      var(--completed-ba-bg) calc(50% - 10px),
+      var(--completed-software-bg) calc(50% + 10px),
+      var(--completed-software-bg) 100%);
+}
+
+.subject-card.completed.elective,
+.subject-card.completed.elective-stream {
+  --completed-bg: var(--completed-elective-bg);
+  --completed-text: var(--completed-elective-text);
+}
+
+.subject-card.completed.elective-stream.network {
+  --completed-bg: var(--completed-network-bg);
+  --completed-text: var(--completed-network-text);
+}
+
+.subject-card.completed.elective-stream.ba {
+  --completed-bg: var(--completed-ba-bg);
+  --completed-text: var(--completed-ba-text);
+}
+
+.subject-card.completed.elective-stream.software {
+  --completed-bg: var(--completed-software-bg);
+  --completed-text: var(--completed-software-text);
+}
+
+.subject-card.completed.elective-stream.dual,
+.subject-card.completed.elective-stream.dual-split {
+  --completed-bg: var(--completed-dual-bg);
+  --completed-text: var(--completed-dual-text);
+}
+
+.subject-card.completed.elective-stream {
+  background: var(--completed-bg) !important;
+  border-color: color-mix(in srgb, var(--completed-bg) 70%, #000 30%) !important;
+  color: var(--completed-text, #cfcfcf);
+}
+
+.subject-card.completed.elective-stream>.subject-code::after,
+.subject-card.completed.elective-stream .subject-note,
+.subject-card.completed.elective-stream .prerequsites-note {
+  color: var(--completed-text, #cfcfcf);
+}
+
 .subject-card.electives-full {
   background: #efefef;
+  position: relative;
 }
 
 .subject-card.electives-full .subject-code,
 .subject-card.electives-full .subject-note,
 .subject-card.electives-full .prerequsites-note {
   color: #333;
-  font-style: italic;
+  font-style: normal;
+}
+
+.subject-card.electives-full:not(.completed) {
+  filter: saturate(0.25) brightness(1.15);
+  box-shadow: inset 0 0 0 9999px rgba(255, 255, 255, 0.7);
+}
+
+.subject-card.completed.electives-full,
+.subject-card.completed.locked {
+  background: var(--completed-bg, #333);
+  border-color: color-mix(in srgb, var(--completed-bg, #333) 70%, #000 30%) !important;
+  color: var(--completed-text, #cfcfcf);
+}
+
+.subject-card.completed.electives-full .subject-code,
+.subject-card.completed.electives-full .subject-note,
+.subject-card.completed.electives-full .prerequsites-note,
+.subject-card.completed.electives-full>.subject-code::after,
+.subject-card.completed.locked .subject-code,
+.subject-card.completed.locked .subject-note,
+.subject-card.completed.locked .prerequsites-note,
+.subject-card.completed.locked>.subject-code::after {
+  color: var(--completed-text, #cfcfcf);
+  font-style: normal;
 }
 
 .electives-full-pill {
@@ -2577,8 +3111,8 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   bottom: auto;
   transform: translateX(-50%);
   width: 82%;
-  background: #e4e2e2;
-  color: #111111;
+  background: #6b6b6b;
+  color: #fff;
   font-size: 11px;
   line-height: 1.25;
   padding: 3px 4px;
@@ -2603,28 +3137,53 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   bottom: 6px;
   transform: translateX(-50%);
   width: 100%;
-  background: #949393;
+  background: #4b4b4b;
   color: #fff;
   font-size: 11px;
   padding: 2px 2px;
-  border-top: 1px solid #6b6b6b;
-  border-bottom: 1px solid #646464;
+  border-top: 1px solid #3d3d3d;
+  border-bottom: 1px solid #3a3a3a;
   text-align: center;
   box-sizing: border-box;
   z-index: 5;
-    background: linear-gradient(to right,
-          #616060 0%,
-          #7c7c7c 10%,
-          #7c7c7c 90%,
-          #616060 100%);
+  background: linear-gradient(to right,
+      #3a3a3a 0%,
+      #4f4f4f 10%,
+      #4f4f4f 90%,
+      #3a3a3a 100%);
+}
+
+.completed.completed-pending::after {
+  color: #ffd54f;
+}
+
+.completed-pending .subject-code,
+.completed-pending .subject-code::after,
+.completed-pending .subject-note,
+.completed-pending .prerequsites-note {
+  color: #ffd54f !important;
+}
+
+body:not(.completed-mode) .completed:hover::after {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 100%;
+}
+
+body.completed-mode .completed:hover::after {
+  left: -4px;
+  right: -4px;
+  transform: none;
+  width: auto;
 }
 
 .completed.capstone::after {
-  content: "Completed via pass";
+  content: "Completed";
 }
 
 .subject-card.use-credit.completed::after {
-  content: "Completed via credit";
+  content: "Completed";
 }
 
 .modal-overlay {
@@ -2635,7 +3194,7 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   align-items: center;
   justify-content: center;
   padding: 16px;
-  z-index: 1000;
+  z-index: 4000;
 }
 
 .modal-overlay.show {
@@ -2645,11 +3204,12 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 .modal {
   background: #fff;
   color: #111;
-  width: min(600px, 90vw);
+  width: min(820px, 96vw);
   border-radius: 6px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   padding: 16px;
   border: 2px solid #222;
+  position: relative;
 }
 
 .subject-list-modal {
@@ -2659,6 +3219,334 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.course-map-modal {
+  width: 80vw;
+  max-width: 96vw;
+  max-height: 90vh;
+  overflow: auto;
+  resize: both;
+  min-width: 520px;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-map-modal .modal-body {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+#course-map-modal .modal-close {
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 0;
+}
+
+#course-map-modal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 24px;
+}
+
+.course-map-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.course-map-core-block,
+.course-map-streams-block {
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.course-map-streams-block {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: transparent;
+}
+
+.course-map-core-block {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.course-map-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: 4px;
+}
+
+.course-map-cell {
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  padding: 6px;
+  min-height: 48px;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: #111;
+}
+
+.course-map-cell .course-map-code {
+  font-weight: 600;
+}
+
+.course-map-cell .course-map-name {
+  font-weight: 400;
+}
+
+.course-map-placeholder {
+  background: #e5e5e5;
+}
+
+.course-map-shared-placeholder {
+  border-style: dashed;
+}
+
+.course-map-empty {
+  background: transparent;
+  border: 1px dashed #d0d0d0;
+}
+
+.course-map-status-passed {
+  background: #c8efc0 !important;
+}
+
+.course-map-status-current {
+  background: linear-gradient(165deg, #1b5e20, #c8efc0) !important;
+  background-color: #1b5e20 !important;
+  color: #fff !important;
+}
+
+.course-map-status-selected {
+  background: rgb(27, 94, 32) !important;
+  color: #fff !important;
+}
+
+.course-map-status-next {
+  background: #cfcfcf !important;
+}
+
+.course-map-status-later {
+  background: #7d7d7d !important;
+  color: #fff !important;
+}
+
+.course-map-stream {
+  display: grid;
+  grid-template-columns: 140px repeat(7, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px;
+  border: none;
+  padding: 0;
+}
+
+.course-map-stream .course-map-cell:not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected):not(.course-map-status-next):not(.course-map-status-later) {
+  background: #fff;
+}
+
+.course-map-stream-label {
+  grid-column: 1 / 2;
+  text-align: right;
+  font-weight: 400;
+  color: inherit;
+}
+
+.course-map-stream.ns {
+  color: var(--network-band-strong);
+}
+
+.course-map-stream.ba {
+  color: var(--ba-band-strong);
+}
+
+.course-map-stream.sd {
+  color: var(--software-band-strong);
+}
+
+.course-map-core-grid {
+  grid-column: 1 / -1;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: 1px solid var(--core-band-strong);
+  border-bottom: 0;
+}
+
+.course-map-major-grid {
+  grid-column: 3 / span 5;
+  border: 1px solid var(--core-band-strong);
+  border-radius: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+.course-map-cell[data-subject="BIT106"],
+.course-map-cell[data-subject="BIT121"] {
+  border-bottom: 2px solid var(--core-band-strong);
+}
+
+
+.course-map-stream-grid {
+  grid-column: 4 / span 3;
+  gap: 2px;
+  width: 120%;
+  justify-self: start;
+  grid-template-columns: repeat(3, minmax(0, 1.2fr));
+  margin-left: 30px;
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
+  padding: 3px;
+  background: transparent;
+
+}
+
+.course-map-stream.ns .course-map-stream-grid {
+  border-color: var(--network-band-strong);
+}
+
+.course-map-stream.ba .course-map-stream-grid {
+  border-color: var(--ba-band-strong);
+}
+
+.course-map-stream.sd .course-map-stream-grid {
+  border-color: var(--software-band-strong);
+}
+
+.course-map-shared {
+  display: grid;
+  grid-template-columns: 140px repeat(7, minmax(0, 1fr));
+  align-items: center;
+  margin: 0;
+  position: relative;
+}
+
+.course-map-shared-cell {
+  grid-column: 3 / span 1;
+  position: relative;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  width: 110%;
+  justify-self: start;
+  margin-right: 18px;
+  z-index: 4;
+
+}
+
+.course-map-arrow {
+  position: absolute;
+  right: -10px;
+  width: 96px;
+  height: 2px;
+  background: #1a5c7a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  transform-origin: left center;
+  z-index: 1;
+}
+
+.course-map-arrow::before {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #1a5c7a;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  z-index: 1;
+}
+
+.course-map-arrow::after {
+  content: '';
+  position: absolute;
+  right: -25px;
+  top: -7px;
+  width: 14px;
+  height: 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 999px;
+  background: transparent;
+  z-index: 1;
+  transform: rotate(0deg);
+}
+
+
+
+.course-map-arrow-up {
+  top: calc(100% - 34px);
+  transform: rotate(-20deg);
+}
+
+.course-map-arrow-down {
+  top: calc(100% - 16px);
+  transform: rotate(20deg);
+}
+
+.course-map-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.course-map-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #111;
+}
+
+.course-map-key-swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #7c7c7c;
+  background: #fff;
+}
+
+.course-map-tooltip {
+  position: fixed;
+  background: #111;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  white-space: pre-line;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  display: none;
+  z-index: 5000;
+}
+
+#course-map-modal .modal-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 8px 0 0;
+  z-index: 3;
+}
+
+#course-map-modal .modal-actions .clear-button {
+  width: auto;
+  min-width: 120px;
+  padding: 0 16px;
 }
 
 .subject-list-modal .modal-body {
@@ -2682,117 +3570,127 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   overflow-y: auto;
 }
 
-#course-timetable-modal .course-timetable-modal {
-  width: min(1200px, 96vw);
-  max-height: calc(100vh - 32px);
+#semester-timetable-modal {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+#semester-timetable-modal .semester-timetable-modal {
+  width: min(980px, 96vw);
+  max-height: none;
   display: flex;
   flex-direction: column;
   padding: 14.4px;
+  overflow: visible;
 }
 
-#course-timetable-modal .modal-body {
+#semester-timetable-modal .modal-body {
   flex: 1 1 auto;
-  overflow: auto;
+  overflow: visible;
   padding-right: 4px;
 }
 
-#course-timetable-modal .modal-header {
+#semester-timetable-modal .modal-header {
   margin-bottom: 5.4px;
 }
 
-#course-timetable-modal .modal-body p {
+#semester-timetable-modal .modal-body p {
   margin-bottom: 7.2px;
 }
 
-.course-timetable-content {
+.semester-timetable-content {
   display: grid;
   grid-template-columns: repeat(2, minmax(420px, 1fr));
   gap: 5.4px;
   margin-top: 5.4px;
-  min-width: 860px;
+  min-width: 0;
 }
 
-.course-timetable-content.course-timetable-list-mode {
+.semester-timetable-content.semester-timetable-list-mode {
   display: block;
   min-width: 0;
 }
 
-.course-timetable-content .course-timetable-table {
+.semester-timetable-content .semester-timetable-table {
   grid-column: 1 / -1;
   width: 100%;
-  min-width: 900px;
+  min-width: 0;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.course-timetable-content .course-timetable-table th,
-.course-timetable-content .course-timetable-table td {
+.semester-timetable-content .semester-timetable-table th,
+.semester-timetable-content .semester-timetable-table td {
   border: 1px solid #cfcfcf;
   padding: 3.5px;
   vertical-align: top;
 }
 
-.course-timetable-content .course-timetable-table thead th {
+.semester-timetable-content .semester-timetable-table td {
+  background: #f2f2f2;
+}
+
+.semester-timetable-content .semester-timetable-table thead th {
   background: #ececec;
   font-weight: 700;
   text-align: left;
 }
 
-.course-timetable-content .course-timetable-table .course-timetable-day,
-.course-timetable-content .course-timetable-table .course-timetable-corner {
+.semester-timetable-content .semester-timetable-table .semester-timetable-day,
+.semester-timetable-content .semester-timetable-table .semester-timetable-corner {
   background: #f0f0f0;
   font-weight: 700;
   width: 100px;
 }
 
-.course-timetable-content .course-timetable-table .course-timetable-corner {
+.semester-timetable-content .semester-timetable-table .semester-timetable-corner {
   text-align: center;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-section {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-section {
   margin-bottom: 5.4px;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-item {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-item {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 3.6px;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-item + .course-timetable-item {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-item+.semester-timetable-item {
   border-top: 0;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-code,
-.course-timetable-content.course-timetable-list-mode .course-timetable-name {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-code,
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-name {
   font-weight: 400;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-item-row {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-item-row {
   display: inline-flex;
   gap: 2.7px;
   align-items: baseline;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-meta {
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-meta {
   display: inline-flex;
   gap: 2.7px;
   margin-top: 0;
 }
 
-.course-timetable-toggle.is-inactive {
+.semester-timetable-toggle.is-inactive {
   opacity: 0.65;
   cursor: default;
 }
 
-.course-timetable-copy {
+.semester-timetable-copy {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.course-timetable-actions {
+.semester-timetable-actions {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2801,15 +3699,28 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   flex-wrap: wrap;
 }
 
-.course-timetable-teacher-copy {
-  padding: 9.2px;
-  min-width: 34px;
-}
-
-.course-timetable-actions .clear-button {
+.semester-timetable-actions .clear-button {
   width: auto;
   padding: 9.2px 10px;
   font-size: 0.85rem;
+}
+
+.modal-actions .clear-button,
+.timetable-actions .clear-button,
+.semester-timetable-actions .clear-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
+  height: 32px;
+  padding: 0 12px;
+}
+
+.semester-timetable-teacher-copy {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
 }
 
 .clipboard-icon {
@@ -2824,74 +3735,115 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   display: block;
 }
 
-.course-timetable-section {
+.semester-timetable-section {
   border: .5px solid rgb(68, 68, 68);
   border-radius: 6px;
   padding: 3.6px;
 }
 
-.course-timetable-heading {
+.semester-timetable-heading {
   font-weight: 700;
   margin-bottom: 2.7px;
 }
 
-.course-timetable-time-range {
+.semester-timetable-time-range {
   font-weight: 400;
 }
 
-.course-timetable-empty {
+.semester-timetable-empty {
   color: #666;
   font-style: italic;
 }
 
-.course-timetable-list {
+.semester-timetable-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 2.7px;
+  gap: 4px;
 }
 
-.course-timetable-content.course-timetable-list-mode .course-timetable-list {
-  gap: 0;
+.semester-timetable-content.semester-timetable-list-mode .semester-timetable-list {
+  gap: 4px;
 }
 
-.course-timetable-table .course-timetable-list {
-  gap: 0;
+.semester-timetable-table .semester-timetable-list {
+  gap: 4px;
 }
 
-.course-timetable-table .course-timetable-item + .course-timetable-item {
+.semester-timetable-table .semester-timetable-item+.semester-timetable-item {
   border-top: 0;
 }
 
-.course-timetable-item {
-  border: 1px solid #d4d4d4;
+.semester-timetable-item {
+  border: 0;
+  border-left: 4px solid transparent;
   border-radius: 4px;
-  padding: 2.7px;
+  padding: 2.7px 6px 2.7px 8px;
   background: #fff;
   cursor: default;
   position: relative;
 }
 
-.course-timetable-item-row {
+.semester-timetable-item.core {
+  border-left-color: var(--core-band);
+  background: var(--core-body);
+}
+
+.semester-timetable-item.network {
+  border-left-color: var(--network-band);
+  background: var(--network-body);
+}
+
+.semester-timetable-item.ba {
+  border-left-color: var(--ba-band);
+  background: var(--ba-body);
+}
+
+.semester-timetable-item.software {
+  border-left-color: var(--software-band);
+  background: var(--software-body);
+}
+
+.semester-timetable-item.dual,
+.semester-timetable-item.dual-split {
+  border-left-color: var(--dual-band);
+  background: linear-gradient(to bottom,
+      var(--ba-body) 0%,
+      var(--ba-body) 48%,
+      var(--software-body) 52%,
+      var(--software-body) 100%);
+}
+
+.semester-timetable-item.elective {
+  border-left-color: var(--elective-band);
+  background: var(--elective-body);
+}
+
+#semester-timetable-modal.semester-timetable-colours-off .semester-timetable-item,
+#semester-timetable-modal.semester-timetable-colours-off .semester-timetable-not-running-item {
+  background: #fff;
+}
+
+.semester-timetable-item-row {
   display: flex;
   gap: 3px;
   align-items: baseline;
 }
 
-.course-timetable-code {
-  font-weight: 700;
+.semester-timetable-code {
+  font-weight: 400;
   min-width: 48px;
 }
 
-.course-timetable-name {
+.semester-timetable-name {
   flex: 1 1 auto;
-  font-weight: 700;
+  font-weight: 400;
   min-width: 0;
 }
 
-.course-timetable-meta {
+.semester-timetable-meta {
   font-size: 0.85rem;
   color: #444;
   margin-top: 0.9px;
@@ -2930,61 +3882,111 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   font-weight: 700;
 }
 
-.course-timetable-item:hover .course-tooltip,
-.course-timetable-not-running-list li:hover .course-tooltip {
+.semester-timetable-item:hover .course-tooltip,
+.semester-timetable-not-running-list li:hover .course-tooltip {
   opacity: 1;
   transform: translateY(0);
 }
 
-.course-timetable-not-running-list li {
+.semester-timetable-not-running-list li {
   position: relative;
   cursor: default;
 }
 
-.course-timetable-subtitle {
+.semester-timetable-subtitle {
   font-weight: 700;
-  margin-bottom: 3.6px;
+  margin-bottom:6px;
 }
 
-.course-timetable-subtitle-note {
+.semester-timetable-subtitle-note {
   font-weight: 400;
 }
 
-.course-timetable-not-running {
+.semester-timetable-not-running {
   margin-top: 9px;
   padding: 4.5px;
   border: 0.5px solid rgba(120, 120, 120, 0.5);
   border-radius: 6px;
+  background: #f2f2f2;
 }
 
-.course-timetable-not-running-list {
+.semester-timetable-not-running-list {
   list-style: none;
   padding: 0;
   margin: 1.8px 0 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.8px;
-}
-
-.course-timetable-not-running-list li {
-  background: #fff;
-  border: 1px solid #cfcfcf;
-  border-radius: 4px;
-  padding: 3px 5px;
   display: flex;
-  gap: 4px;
-  align-items: baseline;
   flex-wrap: wrap;
+  align-items: stretch;
+  gap: 4px;
 }
 
-.course-timetable-not-running-list li .course-tooltip {
+.semester-timetable-not-running-list li:not(.semester-timetable-not-running-item) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  display: block;
+}
+
+.semester-timetable-not-running-item {
+  border: 1px solid #cfcfcf;
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: 6px;
+  padding: 3px 6px 3px 8px;
+  background: #fff;
+  min-height: 2.6em;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  flex: 0 0 calc(40% - 2px);
+  margin-left: 10px;
+}
+
+.semester-timetable-not-running-item .semester-timetable-code {
+  margin-right: 12px;
+}
+
+.semester-timetable-not-running-item.core {
+  border-left-color: var(--core-band);
+  background: var(--core-body);
+}
+
+.semester-timetable-not-running-item.network {
+  border-left-color: var(--network-band);
+  background: var(--network-body);
+}
+
+.semester-timetable-not-running-item.ba {
+  border-left-color: var(--ba-band);
+  background: var(--ba-body);
+}
+
+.semester-timetable-not-running-item.software {
+  border-left-color: var(--software-band);
+  background: var(--software-body);
+}
+
+.semester-timetable-not-running-item.dual,
+.semester-timetable-not-running-item.dual-split {
+  border-left-color: var(--dual-band);
+  background: var(--dual-body);
+}
+
+.semester-timetable-not-running-item.elective {
+  border-left-color: var(--elective-band);
+  background: var(--elective-body);
+}
+
+.semester-timetable-not-running-list li .course-tooltip {
   top: auto;
   bottom: 100%;
   transform: translateY(-4px);
   z-index: 20;
 }
 
-.course-timetable-not-running-list li:hover .course-tooltip {
+.semester-timetable-not-running-list li:hover .course-tooltip {
   transform: translateY(-2px);
 }
 
@@ -2997,9 +3999,51 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   margin-bottom: 6px;
 }
 
+.modal.is-draggable .modal-header {
+  cursor: move;
+}
+
+.modal-copy-codes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 0;
+  padding: 4px 6px;
+  line-height: 1;
+}
+
+.modal-copy-codes .clipboard-icon,
+.modal-copy-codes .clipboard-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.modal.is-dragging,
+.modal.is-resizing {
+  user-select: none;
+}
+
+.modal-resizer {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  cursor: se-resize;
+  background: linear-gradient(135deg, transparent 0 45%, rgba(0, 0, 0, 0.45) 45% 100%);
+  border-radius: 2px;
+  z-index: 5;
+}
+
+#semester-timetable-modal .modal-resizer {
+  right: -10px;
+  bottom: -10px;
+}
+
 .modal-title {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .modal-close {
@@ -3058,11 +4102,11 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   line-height: 1.45;
 }
 
-.instructions-list > li {
+.instructions-list>li {
   margin-bottom: 12px;
 }
 
-.instructions-list > li:last-child {
+.instructions-list>li:last-child {
   margin-bottom: 0;
 }
 
@@ -3203,12 +4247,18 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
 
 #toggle-completed-mode.completed-mode-wide {
   width: 14em;
-  position: absolute;
+  position: relative;
   display: block;
-  margin-top: .1em;
-  margin-left: 2em;
-  z-index: 2;
+  margin-top: 0;
+  margin-left: 0;
+  z-index: 3000;
   padding: 4px 4px;
+}
+
+#toggle-completed-mode.completed-mode-wide.completed-mode-stuck {
+  position: fixed;
+  top: 10px;
+  left: 10px;
 }
 
 .load-row {
@@ -3363,18 +4413,4 @@ body.show-availability .satisfied.not-this-sem .subject-tooltip .next-sem-headin
   .sidebar {
     width: 260px;
   }
-
-  /*
-  .timetable-actions .clear-button {
-  }
-
-  #timetable-table th,
-  #timetable-table td {
-  }
-
-  .main-grid .subject-card,
-  .electives-grid td {
-  }
-}
-*/
 }

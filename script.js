@@ -61,7 +61,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT231: ['BIT111'],
     BIT233: ['BIT121'],
     BIT236: ['BIT231', 'BIT106'],
-    BIT235: ['BIT245', 'BIT111'],
+    BIT235: ['BIT245'],
     BIT241: ['BIT106', 'BIT105'],
     BIT242: ['BIT230'],
     BIT213: [],
@@ -219,11 +219,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const openCodeModal = document.getElementById('open-code-modal');
   const overrideToggle = document.getElementById('override-toggle');
   const overrideLabel = document.querySelector('.switch-label');
-  const livePrereqToggle = document.getElementById('live-prereq-toggle');
-  const livePrereqRow = document.getElementById('live-prereq-row');
+    const livePrereqToggle = document.getElementById('live-prereq-toggle');
+    const livePrereqRow = document.getElementById('live-prereq-row');
+    const passForEnrolmentsToggle = document.getElementById('pass-for-enrolments');
   const showTimetableButton = document.getElementById('show-timetable');
-  const showCourseTimetableButton = document.getElementById('show-course-timetable');
-  const courseTimetableIconButton = document.getElementById('open-course-timetable-icon');
+  const showCourseTimetableButton = document.getElementById('show-semester-timetable');
+  const courseTimetableIconButton = document.getElementById('open-semester-timetable-icon');
   const varyLoadButton = document.getElementById('vary-load');
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
@@ -246,21 +247,128 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   hideAllAlertButtons();
   const dropZone = document.getElementById('drop-zone');
   const dropSidebar = document.getElementById('drop-sidebar');
+  const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
+  const dropZoneDefaultText = dropZoneTextEl?.textContent || 'Drop students workbook here';
+    const dropZoneSpinner = dropZone
+    ? (() => {
+        const spinner = document.createElement('div');
+        spinner.className = 'drop-zone-spinner hidden-initial';
+        dropZone.appendChild(spinner);
+        return spinner;
+      })()
+    : null;
+    const setDropZoneSpinnerVisible = (visible) => {
+      if (!dropZoneSpinner) return;
+      dropZoneSpinner.classList.toggle('hidden-initial', !visible);
+    };
+    let lastDroppedFileInfo = null;
+    const formatFileDateInfo = (file) => {
+      if (!file || !Number.isFinite(file.lastModified)) return '';
+      const modified = new Date(file.lastModified);
+      const dateLabel = isNaN(modified.getTime()) ? '' : formatDisplayDate(modified);
+      const daysAgo = Math.floor((Date.now() - file.lastModified) / (1000 * 60 * 60 * 24));
+      const daysLabel = Number.isFinite(daysAgo) ? `${daysAgo} day${daysAgo === 1 ? '' : 's'} ago` : '';
+      const parts = [dateLabel ? `Last saved: ${dateLabel}` : '', daysLabel ? `(${daysLabel})` : '']
+        .filter(Boolean)
+        .join(' ');
+      return parts || '';
+    };
+    const renderDropZoneStatus = (lines) => {
+      if (!dropZoneTextEl) return;
+      dropZoneTextEl.innerHTML = '';
+      (lines || []).filter(Boolean).forEach((line) => {
+        const span = document.createElement('span');
+        span.className = 'drop-zone-line';
+        span.textContent = line;
+        dropZoneTextEl.appendChild(span);
+      });
+    };
+  const studentIdSection = document.getElementById('student-id-section');
+  const studentIdInput = document.getElementById('student-id-input');
+  const studentSearchDropdown = document.getElementById('student-search-dropdown');
+  const studentDataPreview = document.getElementById('student-data-preview');
+    const STUDENT_COLUMNS = [
+    'Student_IDs_Unique',
+    'In_AllResults',
+    'In_CurrentStudents',
+    'In_Deferred',
+    'In_StrataApplications',
+    'In_InternationalsAccepted',
+    'In_AllInternationals',
+    'In_Diploma',
+    'Full_Name',
+    'Family_Name',
+    'Given_Name',
+    'Primary_Email',
+    'Institute_Email',
+    'Secondary_Email',
+    'Mobile',
+    'DOB',
+    'Nationality',
+    'Visa_Type',
+    'Accepted_Offered',
+    'Intake_Start_Date',
+    'Application_Status',
+    'Application_Type',
+    'International_Office_Notes',
+    'FMP',
+    'Suspended',
+    'Suspended_Names',
+    'Passed_subjects',
+    'Results_List',
+    'CRT_Location',
+    'SharePoint_StudentForms',
+    'SuppsAndHolds',
+    'APR_APP',
+    'APR_APP_Condition',
+    'APR_APP_Attended',
+      'Student_Flag',
+    ];
+    const COURSE_INFO_RANGES = [
+      'Semester_Start_Date',
+      'Price_per_CSP_Unit',
+      'Price_per_Unit',
+      'CensusDate',
+      'EndOfWeekTwoDate',
+      'Countries_facing_troubles',
+    ];
+    const studentIdPattern = /(\d{7})/;
+    let extractedStudentId = '';
+    let studentRecords = [];
+    let activeStudentId = '';
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const normalizeStudentId = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return String(Math.trunc(value)).padStart(7, '0');
+      }
+      const raw = String(value).trim();
+      const digits = (raw.match(/\d+/g) || []).join('');
+      if (!digits) return '';
+      if (digits.length >= 7) return digits.slice(-7);
+      return digits.padStart(7, '0');
+    };
+  const normalizeHeader = (value) =>
+    String(value ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
   const timetableModal = document.getElementById('timetable-modal');
   const closeTimetable = document.getElementById('close-timetable');
   const hideTimetable = document.getElementById('hide-timetable');
   const copyTimetable = document.getElementById('copy-timetable');
+  const copyTimetableCodes = document.getElementById('copy-timetable-codes');
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
-  const courseTimetableModal = document.getElementById('course-timetable-modal');
-  const closeCourseTimetable = document.getElementById('close-course-timetable');
-  const closeCourseTimetableCta = document.getElementById('close-course-timetable-cta');
-  const courseTimetableContent = document.getElementById('course-timetable-content');
-  const courseTimetableNotRunningList = document.getElementById('course-timetable-not-running-list');
-  const courseTimetableListButton = document.getElementById('course-timetable-list');
-  const courseTimetableGridButton = document.getElementById('course-timetable-grid');
-  const copyCourseTimetableButton = document.getElementById('copy-course-timetable');
-  const courseTimetableTeacherCopyButton = document.getElementById('course-timetable-teacher-copy');
+  const courseTimetableModal = document.getElementById('semester-timetable-modal');
+  const closeCourseTimetable = document.getElementById('close-semester-timetable');
+  const closeCourseTimetableCta = document.getElementById('close-semester-timetable-cta');
+  const courseTimetableContent = document.getElementById('semester-timetable-content');
+  const courseTimetableNotRunningList = document.getElementById('semester-timetable-not-running-list');
+  const courseTimetableListButton = document.getElementById('semester-timetable-list');
+  const courseTimetableGridButton = document.getElementById('semester-timetable-grid');
+  const courseTimetableColoursButton = document.getElementById('semester-timetable-colours');
+  const copyCourseTimetableButton = document.getElementById('copy-semester-timetable');
+  const courseTimetableTeacherCopyButton = document.getElementById('semester-timetable-teacher-copy');
   const instructionsModal = document.getElementById('instructions-modal');
   const closeInstructionsModal = document.getElementById('close-instructions-modal');
   const closeInstructionsCta = document.getElementById('close-instructions-cta');
@@ -287,25 +395,47 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const selectedListSection = document.getElementById('selected-list-section');
   const selectedListEl = document.getElementById('selected-list');
   const availableHeading = document.getElementById('available-heading');
+  const sidebarSectionDescriptor = document.getElementById('sidebar-section-descriptor');
   const resetSection = document.getElementById('reset-section');
   const nextSemList = document.getElementById('next-sem-list');
   const historyButton = document.getElementById('open-history');
+  const remainingButton = document.getElementById('open-remaining');
+  const courseMapButton = document.getElementById('open-course-map');
   const nextSemesterButton = document.getElementById('open-next-semester');
   const historyModal = document.getElementById('history-modal');
   const historyTitleEl = document.getElementById('history-title');
   const historyTable = document.getElementById('history-table');
+  const remainingModal = document.getElementById('remaining-modal');
+  const remainingTitleEl = document.getElementById('remaining-title');
+  const remainingSummary = document.getElementById('remaining-summary');
+  const remainingTable = document.getElementById('remaining-table');
+  const remainingElectivesSection = document.getElementById('remaining-electives-section');
+  const remainingElectivesTable = document.getElementById('remaining-electives-table');
+  const courseMapModal = document.getElementById('course-map-modal');
+  const courseMapContent = document.getElementById('course-map-content');
+  const courseMapKey = document.getElementById('course-map-key');
+  const closeCourseMap = document.getElementById('close-course-map');
+  const closeCourseMapCta = document.getElementById('close-course-map-cta');
+  const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
+  const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
   const currentEnrolmentsList = document.getElementById('current-enrolments-list');
   const historySortButtons = Array.from(document.querySelectorAll('#history-table .subject-table-sort-button'));
   const closeHistory = document.getElementById('close-history');
   const closeHistoryCta = document.getElementById('close-history-cta');
   const copyHistory = document.getElementById('copy-history');
+  const copyHistoryCodes = document.getElementById('copy-history-codes');
+  const closeRemaining = document.getElementById('close-remaining');
+  const closeRemainingCta = document.getElementById('close-remaining-cta');
+  const copyRemaining = document.getElementById('copy-remaining');
+  const copyRemainingCodes = document.getElementById('copy-remaining-codes');
   const nextSemesterModal = document.getElementById('next-semester-modal');
   const nextSemesterTitleEl = document.getElementById('next-semester-title');
   const nextSemesterTable = document.getElementById('next-semester-table');
   const closeNextSemester = document.getElementById('close-next-semester');
   const closeNextSemesterCta = document.getElementById('close-next-semester-cta');
   const copyNextSemester = document.getElementById('copy-next-semester');
+  const copyNextSemesterCodes = document.getElementById('copy-next-semester-codes');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
   const semCountsLabel = toggleSemCountsBtn?.closest('.toggle-row')?.querySelector('.switch-label');
   const electivesLabel = document.getElementById('electives-label');
@@ -335,22 +465,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const enabled = clipboardAvailable;
     [
       copyTimetable,
+      copyTimetableCodes,
       copyCourseTimetableButton,
       courseTimetableTeacherCopyButton,
       copyHistory,
+      copyHistoryCodes,
+      copyRemaining,
+      copyRemainingCodes,
       copyNextSemester,
+      copyNextSemesterCodes,
     ].forEach((button) => setClipboardButtonState(button, enabled));
   };
   updateClipboardUI();
+  const flashCopyButton = (button) => {
+    if (!button) return;
+    button.classList.remove('copy-flash');
+    void button.offsetWidth;
+    button.classList.add('copy-flash');
+  };
   let modalLocked = false;
   let modalPrevStyle = null;
   let courseTimetableView = 'grid';
+  let courseTimetableColoursOn = true;
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
   let hoverTooltipTimer = null;
-  const subjectMeta = {
-    BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
+    const subjectMeta = {
+      BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
     BIT106: { name: 'Foundations of Software, Hardware & Cloud Computing', note: '', classes: ['core', 'sas'] },
     BIT108: { name: 'Foundations of Business', note: '', classes: ['core'] },
     BIT111: { name: 'Programming Concepts', note: '', classes: ['core'] },
@@ -362,7 +504,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
     BIT235: { name: 'Object Oriented Programming', note: 'Prerequisites: BIT245', classes: ['software'] },
     BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
-    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisite: BIT121, BIT106', classes: ['core'] },
+    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisite: BIT105, BIT106', classes: ['core'] },
     BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
     BIT244: { name: 'IT & Business Crime', note: 'Prerequisite: BIT106', classes: ['network'] },
     BIT245: { name: 'Web Development', note: 'Prerequisites: BIT111', classes: ['dual-split'] },
@@ -384,9 +526,69 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       note: 'Prerequisites: BIT242 & 5 major subjects (2 can be concurrent)',
       classes: ['core'],
     },
-    BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
-  };
-  const passGrades = new Set(['CRT', 'PA', 'CR', 'D', 'HD', 'RPL', 'PS', 'SP', 'UP']);
+      BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
+    };
+    const normalizeSubjectCode = (value) =>
+      (value || '')
+        .toString()
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
+    let staffWorkbookStudentRecord = null;
+    let staffWorkbookCourseInfo = null;
+    const staffWorkbookState = (() => {
+      const workbookSubjects = new Map();
+      return {
+        setWorkbookSubjects(records = []) {
+          workbookSubjects.clear();
+          const entries = records instanceof Map ? Array.from(records.values()) : Array.isArray(records) ? records : Object.values(records || {});
+          entries.forEach((record) => {
+            if (!record) return;
+            const rawCode =
+              record.code || record.subject || record.subjectCode || record.id || '';
+            const code = normalizeSubjectCode(rawCode);
+            if (!code) return;
+            workbookSubjects.set(code, { ...record, code });
+          });
+        },
+        getSubjectRecord(code) {
+          if (!code) return null;
+          return workbookSubjects.get(normalizeSubjectCode(code)) || null;
+        },
+        getSubjectCodes() {
+          return Array.from(workbookSubjects.keys());
+        },
+        setStudentRecord(record) {
+          staffWorkbookStudentRecord = record || null;
+        },
+        getStudentRecord() {
+          return staffWorkbookStudentRecord;
+        },
+        setCourseInfo(info) {
+          staffWorkbookCourseInfo = info || null;
+        },
+        getCourseInfo() {
+          return staffWorkbookCourseInfo;
+        },
+        reset() {
+          workbookSubjects.clear();
+          staffWorkbookStudentRecord = null;
+          staffWorkbookCourseInfo = null;
+        },
+      };
+    })();
+    const getAllSubjectCodes = () => {
+      const baseCodes = Object.keys(subjectMeta).map((code) => normalizeSubjectCode(code));
+      const workbookCodes = staffWorkbookState.getSubjectCodes();
+      return new Set([...baseCodes, ...workbookCodes]);
+    };
+    const validSubjectCodes = new Set();
+    const refreshValidSubjectCodes = () => {
+      validSubjectCodes.clear();
+      getAllSubjectCodes().forEach((code) => validSubjectCodes.add(code));
+    };
+    refreshValidSubjectCodes();
+    const passGrades = new Set(['CRT', 'PA', 'CR', 'D', 'HD', 'RPL', 'PS', 'SP', 'UP']);
   const failGrades = new Set(['W', 'WNA', 'N', 'WE', 'H', 'SC', 'SAH', 'CNI', 'WN']);
   const legacySubjectPairs = [
     ['BIT102', 'BIT121'],
@@ -451,9 +653,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const manualEntryAliases = new Map();
   const manualEntryMeta = new Map();
   const manualEntryCurrent = new Map();
+  const workbookCurrent = new Map();
   const manualEntryUnknown = [];
-  const validSubjectCodes = new Set(Object.keys(subjectMeta));
-  const manualCodeRegex = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/;
+    const manualCodeRegex = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/;
   const manualCodeRegexGlobal = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/g;
   const gradeHeadingRegex = /\b(grade|credit|score|outcome|result)\b/i;
   const dateHeadingRegex = /\b(year|date|session|semester|term)\b/i;
@@ -494,11 +696,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!mapped) return;
     manualEntryCurrent.set(mapped, { date: date || '' });
   };
-  const addUnknownEntry = ({ result = '', date = '' } = {}) => {
+  const addUnknownEntry = ({ code = '', result = '', date = '' } = {}) => {
     const formatted = formatHistoryResult(result);
+    const displayCode = (code || '').toUpperCase();
     manualEntryUnknown.push({
-      id: `??-${manualEntryUnknown.length + 1}`,
-      displayCode: '??',
+      id: `unknown-${manualEntryUnknown.length + 1}`,
+      displayCode: displayCode || '??',
       displayName: '',
       displayStream: '',
       result: formatted,
@@ -512,6 +715,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
   const formatHistoryCode = (id) => {
+    if (id && id.startsWith('USE')) return `${id} Unspecified Elective (USE)`;
     const aliases = manualEntryAliases.get(id);
     if (!aliases || aliases.size === 0) return id;
     const aliasList = Array.from(aliases).sort();
@@ -558,6 +762,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const token = normalizeGradeToken(value);
     if (!token) return '';
     return isFailGradeToken(token) ? `x${token}` : token;
+  };
+  const getHistoryDateSortValue = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return Number.MAX_SAFE_INTEGER;
+    const isoMatch = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (isoMatch) {
+      const year = parseInt(isoMatch[1], 10);
+      const month = parseInt(isoMatch[2], 10);
+      const day = parseInt(isoMatch[3], 10);
+      return year * 10000 + month * 100 + day;
+    }
+    const semMatch = text.match(/(\d{4})\s*Sem\s*([12])/i);
+    if (semMatch) {
+      const year = parseInt(semMatch[1], 10);
+      const sem = parseInt(semMatch[2], 10);
+      const month = sem === 1 ? 6 : 11;
+      return year * 10000 + month * 100 + 15;
+    }
+    const ssMatch = text.match(/(\d{4})\s*SS/i);
+    if (ssMatch) {
+      const year = parseInt(ssMatch[1], 10);
+      return year * 10000 + 3 * 100 + 15;
+    }
+    const yearMatch = text.match(/\b(19|20)\d{2}\b/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[0], 10);
+      return year * 10000 + 12 * 100 + 31;
+    }
+    return Number.MAX_SAFE_INTEGER;
   };
   const formatSemesterLabel = (year, month, day) => {
     if (!year || !month) return '';
@@ -689,10 +922,60 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   sidebarTooltip.className = 'hover-tooltip';
   document.body.appendChild(sidebarTooltip);
   let sidebarTooltipTimer = null;
-  const isFileProtocol = location.protocol === 'file:';
-  const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-  const isLocalEnv = isFileProtocol || isLocalHost;
-  const isSharePointHost = /sharepoint/i.test(location.hostname);
+
+  const courseMapTooltip = document.createElement('div');
+  courseMapTooltip.className = 'course-map-tooltip';
+  document.body.appendChild(courseMapTooltip);
+  let courseMapTooltipTimer = null;
+  let courseMapTooltipTarget = null;
+  let courseMapTooltipPos = { x: 0, y: 0 };
+
+  const getCourseMapPrereqText = (code) => {
+    const prereqs = prerequisites[code] || [];
+    const coreqs = corequisites[code] || [];
+    const lines = [];
+    if (prereqs.length) lines.push(`Prerequisites: ${prereqs.join(', ')}`);
+    if (coreqs.length) lines.push(`Co-requisites: ${coreqs.join(', ')}`);
+    return lines.length ? lines.join('\n') : 'No prerequisites.';
+  };
+
+  const positionCourseMapTooltip = () => {
+    courseMapTooltip.style.left = `${courseMapTooltipPos.x + 12}px`;
+    courseMapTooltip.style.top = `${courseMapTooltipPos.y + 12}px`;
+  };
+
+  const showCourseMapTooltip = (code) => {
+    if (!code) return;
+    courseMapTooltip.textContent = getCourseMapPrereqText(code);
+    positionCourseMapTooltip();
+    courseMapTooltip.style.display = 'block';
+  };
+
+  const hideCourseMapTooltip = () => {
+    courseMapTooltip.style.display = 'none';
+  };
+    const isFileProtocol = location.protocol === 'file:';
+    const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    const isLocalEnv = isFileProtocol || isLocalHost;
+    const isSharePointHost = /sharepoint/i.test(location.hostname);
+    const getQueryParam = (key) => {
+      const search = location.search || '';
+      if (typeof URLSearchParams !== 'undefined') {
+        try {
+          return new URLSearchParams(search).get(key);
+        } catch (error) {
+          // fall through to manual parsing if URLSearchParams is unavailable
+        }
+      }
+      const pattern = new RegExp(`[?&]${key}=([^&]+)`, 'i');
+      const match = pattern.exec(search);
+      return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
+    };
+    const staffModeParam = (getQueryParam('mode') || '').trim().toLowerCase();
+    const isStaffModeParam = staffModeParam === 'staff';
+    const staffFacing = isLocalHost || isSharePointHost || isStaffModeParam;
+    const shouldShowTeacherCopy = isSharePointHost || isStaffModeParam;
+    const dropZoneEnabled = isLocalEnv || isSharePointHost || isStaffModeParam;
 
   const lockModalPosition = () => {
     if (modalLocked || !timetableModal) return;
@@ -729,6 +1012,104 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalLocked = false;
     modalPrevStyle = null;
   };
+  const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
+  const enableModalDragResize = (modalEl) => {
+    if (!modalEl || modalEl.dataset.dragResize === 'true') return;
+    modalEl.dataset.dragResize = 'true';
+    modalEl.classList.add('is-draggable');
+
+    const header = modalEl.querySelector('.modal-header');
+    const resizer = document.createElement('div');
+    resizer.className = 'modal-resizer';
+    modalEl.appendChild(resizer);
+
+    const ensureFixed = () => {
+      const rect = modalEl.getBoundingClientRect();
+      modalEl.style.position = 'fixed';
+      modalEl.style.left = `${rect.left}px`;
+      modalEl.style.top = `${rect.top}px`;
+      modalEl.style.margin = '0';
+      modalEl.style.transform = 'none';
+      modalEl.style.width = `${rect.width}px`;
+      modalEl.style.height = `${rect.height}px`;
+      modalEl.style.maxWidth = 'none';
+      modalEl.style.maxHeight = 'none';
+      return rect;
+    };
+
+    const startDrag = (event) => {
+      if (event.button !== 0) return;
+      if (event.target.closest('button, input, select, textarea, a')) return;
+      event.preventDefault();
+      const rect = ensureFixed();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startLeft = rect.left;
+      const startTop = rect.top;
+      const width = rect.width;
+      const height = rect.height;
+      const margin = 8;
+
+      modalEl.classList.add('is-dragging');
+
+      const onMove = (e) => {
+        const nextLeft = clampValue(startLeft + (e.clientX - startX), margin, window.innerWidth - width - margin);
+        const nextTop = clampValue(startTop + (e.clientY - startY), margin, window.innerHeight - height - margin);
+        modalEl.style.left = `${nextLeft}px`;
+        modalEl.style.top = `${nextTop}px`;
+      };
+
+      const onUp = () => {
+        modalEl.classList.remove('is-dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    const startResize = (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      const rect = ensureFixed();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startWidth = rect.width;
+      const startHeight = rect.height;
+      const minWidth = 280;
+      const minHeight = 180;
+      const margin = 8;
+
+      modalEl.classList.add('is-resizing');
+
+      const onMove = (e) => {
+        const nextWidth = clampValue(startWidth + (e.clientX - startX), minWidth, window.innerWidth - margin * 2);
+        const nextHeight = clampValue(startHeight + (e.clientY - startY), minHeight, window.innerHeight - margin * 2);
+        modalEl.style.width = `${nextWidth}px`;
+        modalEl.style.height = `${nextHeight}px`;
+        const rectNow = modalEl.getBoundingClientRect();
+        const nextLeft = clampValue(rectNow.left, margin, window.innerWidth - rectNow.width - margin);
+        const nextTop = clampValue(rectNow.top, margin, window.innerHeight - rectNow.height - margin);
+        modalEl.style.left = `${nextLeft}px`;
+        modalEl.style.top = `${nextTop}px`;
+      };
+
+      const onUp = () => {
+        modalEl.classList.remove('is-resizing');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        const table = modalEl.querySelector('table');
+        if (table) syncSubjectTableActions(table);
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    if (header) header.addEventListener('mousedown', startDrag);
+    resizer.addEventListener('mousedown', startResize);
+  };
   const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const slotOrder = { Morning: 0, Afternoon: 1 };
   const getDaySortIndex = (dayLabel = '') => {
@@ -755,21 +1136,47 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorLabel = document.getElementById('major-current-label');
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
+  const majorPickerSection = document.querySelector('.major-picker');
+  const majorPickerSelectContainer =
+    majorToggle?.closest('.major-picker__select') || majorToggle?.parentElement;
+  const majorStreamInsightsEl = document.createElement('div');
+  majorStreamInsightsEl.className = 'major-stream-insights hidden-initial';
+  majorStreamInsightsEl.setAttribute('aria-live', 'polite');
+  if (majorPickerSelectContainer?.parentElement) {
+    majorPickerSelectContainer.insertAdjacentElement('afterend', majorStreamInsightsEl);
+  } else if (majorPickerSection) {
+    majorPickerSection.appendChild(majorStreamInsightsEl);
+  }
+  const majorStreamDefinitions = [
+    { key: 'ns', shortLabel: 'NS', label: 'Network Security' },
+    { key: 'ba', shortLabel: 'BA', label: 'Business Analytics' },
+    { key: 'sd', shortLabel: 'SD', label: 'Software Development' },
+  ];
+  const MAJOR_STREAM_YEAR_THRESHOLD = 8;
   const creditWarningIds = new Set([
     'BIT313', 'BIT314', 'BIT351', 'BIT352', 'BIT353', 'BIT355', 'BIT356', 'BIT357', 'BIT358', 'BIT362', 'BIT363', 'BIT364', 'BIT371', 'BIT372', 'BIT241'
   ]);
 
   let completedMode = false;
   let overrideMode = false;
-  let livePrereqUpdates = false;
-  let livePrereqEnabled = false;
+    let livePrereqUpdates = false;
+    let livePrereqEnabled = false;
+    let passForEnrolmentsEnabled = false;
   let fullLoadCap = 4;
   let studentType = 'international';
   let exceptionalLoadApproved = false;
   let remainingConfirmed = false;
-  let electiveError = null;
-  let prereqError = null;
-  let chainDelayError = null;
+    let electiveError = null;
+    let prereqError = null;
+    let chainDelayError = null;
+    let aprAppError = null;
+    let acceptedOfferedError = null;
+    let intakeStartError = null;
+    let infoNotes = null;
+    let countryHittingTroubles = null;
+    const passForEnrolmentsOverrides = new Set();
+    const currentEnrolmentsPlannedOverrides = new Set();
+  let loadedStudentSnapshot = null;
   let nextSemWarning = null;
   let finalSemWarning = null;
   let warningPayloads = [];
@@ -810,16 +1217,76 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return { completedMajorCount, plannedMajorCount };
   };
 
+  const getMajorStreamCounts = () => {
+    const counts = {};
+    majorStreamDefinitions.forEach((stream) => {
+      const codes = majorLayouts[stream.key] || [];
+      counts[stream.key] = codes.reduce(
+        (total, code) => total + (subjectState.get(code)?.completed ? 1 : 0),
+        0
+      );
+    });
+    return counts;
+  };
+  const getBestMajorSelection = () => {
+    const streamCounts = getMajorStreamCounts();
+    const map = [
+      { key: 'ns', value: 'network' },
+      { key: 'ba', value: 'ba' },
+      { key: 'sd', value: 'sd' },
+    ];
+    const bestCount = Math.max(...map.map(({ key }) => streamCounts[key] || 0));
+    if (!bestCount) return 'network';
+    const bestEntry = map.find(({ key }) => (streamCounts[key] || 0) === bestCount);
+    return bestEntry ? bestEntry.value : null;
+  };
+  const setMajorDropdownSelection = (value) => {
+    if (!majorDropdown) return;
+    majorDropdown.dataset.value = value;
+    majorOptions.forEach((opt) => {
+      opt.classList.toggle('selected', opt.dataset.value === value);
+    });
+    updateMajor();
+    updateMajorStreamInsights();
+  };
+
+  const updateMajorStreamInsights = () => {
+    if (!majorStreamInsightsEl) return;
+    if (completedMode) {
+      majorStreamInsightsEl.classList.add('hidden-initial');
+      return;
+    }
+    const completed = getCompletedCount();
+    if (completed < MAJOR_STREAM_YEAR_THRESHOLD) {
+      majorStreamInsightsEl.classList.add('hidden-initial');
+      return;
+    }
+    const streamCounts = getMajorStreamCounts();
+    const summary = majorStreamDefinitions
+      .map((stream) => `${stream.shortLabel} ${streamCounts[stream.key] || 0}`)
+      .join('.  ');
+    majorStreamInsightsEl.innerHTML = `<span class="major-stream-summary">${summary}</span>`;
+    majorStreamInsightsEl.classList.remove('hidden-initial');
+  };
+
+  const getMajorDisplayName = () => {
+    const val = majorDropdown?.dataset?.value || currentMajorValue || 'undecided';
+    if (val === 'network') return 'Network Security';
+    if (val === 'ba') return 'Business Analytics';
+    if (val === 'sd') return 'Software Development';
+    return 'Network Security';
+  };
+
   const getMajorRequirementDistance = ({
     completedSet,
     plannedSet,
     treatPlannedComplete,
+    lockCurrentSemester = treatPlannedComplete,
     useDelay = false,
   }) => {
     const majorKey = getMajorKeyFromUi();
     const majorCodes = majorConfig[majorKey]?.codes || [];
     if (!majorCodes.length) return 0;
-    const lockCurrentSemester = treatPlannedComplete;
     const requiredTotal = Math.min(5, majorCodes.length);
     const compute = useDelay ? computeSemesterDistance : computeSemesterDistanceNoDelay;
     const memo = new Map();
@@ -906,6 +1373,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         completedSet,
         plannedSet,
         treatPlannedComplete,
+        lockCurrentSemester,
         useDelay: true,
       });
       if (!Number.isFinite(majorDistance)) {
@@ -971,6 +1439,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         completedSet,
         plannedSet,
         treatPlannedComplete,
+        lockCurrentSemester,
         useDelay: false,
       });
       if (!Number.isFinite(majorDistance)) {
@@ -1002,6 +1471,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const loadThreshold = getLoadThreshold();
     const treatPlannedComplete = plannedCount >= loadThreshold;
     const lockCurrentSemester = treatPlannedComplete;
+    const adjustForLockedSemester = (value) => {
+      if (!lockCurrentSemester) return value;
+      if (!Number.isFinite(value) || value <= 0) return value;
+      return Math.max(1, value - 1);
+    };
     const plannedSetActual = new Set(
       Array.from(subjectState.entries())
         .filter(([, st]) => st?.toggled)
@@ -1009,11 +1483,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
     subjects.forEach((cell) => {
       const id = cell.dataset.subject;
-      if (!id) return;
+      if (!id) {
+        const existing = cell.querySelector('.sem-count');
+        if (existing) existing.remove();
+        return;
+      }
       const existing = cell.querySelector('.sem-count');
       const el = existing || document.createElement('div');
       el.className = 'sem-count';
-      const dist = computeSemesterDistance(
+      const rawDist = computeSemesterDistance(
         id,
         completedSet,
         plannedSet,
@@ -1021,7 +1499,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         lockCurrentSemester,
         memo
       );
-      const distNoDelay = computeSemesterDistanceNoDelay(
+      const rawDistNoDelay = computeSemesterDistanceNoDelay(
         id,
         completedSet,
         plannedSet,
@@ -1029,6 +1507,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         lockCurrentSemester,
         memoNoDelay
       );
+      const dist = adjustForLockedSemester(rawDist);
+      const distNoDelay = adjustForLockedSemester(rawDistNoDelay);
       const label = dist === Infinity ? '?' : dist;
       el.textContent = label;
       const availability = getSemesterAvailability(id);
@@ -1037,10 +1517,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       el.dataset.reason =
         dist === 0
           ? 'Already completed.'
-          : dist === 1
-            ? 'Prerequisites satisfied; can complete this semester.'
-            : !isRunningNow && availability !== 'Any'
-              ? `Runs in ${semesterLabel} only; earliest completion next semester.`
+          : !isRunningNow && availability !== 'Any'
+            ? `Runs in ${semesterLabel} only; earliest completion next semester.`
+            : dist === 1
+              ? lockCurrentSemester
+                ? 'Prerequisites satisfied; can complete next semester.'
+                : 'Prerequisites satisfied; can complete this semester.'
               : `Requires at least ${dist} semesters based on prerequisites.`;
       if (!completedSet.has(id) && !isPlaceholder(cell) && Number.isFinite(dist) && dist > 0) {
         distanceData.push({ cell, dist, distNoDelay, el, id });
@@ -1090,28 +1572,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const chainOptimalSemesters = Math.max(1, Math.ceil(chainRemaining / Math.max(1, loadThreshold)));
       const fullLoadSelected = lockCurrentSemester;
       const chainTreatPlannedComplete = fullLoadSelected;
+      const chainLockCurrentSemester = fullLoadSelected;
       subjects.forEach((cell) => {
         const id = cell.dataset.subject;
         if (!id) return;
-        const distNoDelay = computeSemesterDistanceNoDelay(
+        const rawDistNoDelay = computeSemesterDistanceNoDelay(
           id,
           completedSet,
           plannedSetForChain,
           chainTreatPlannedComplete,
-          fullLoadSelected,
+          chainLockCurrentSemester,
           chainMemoNoDelay
         );
-        distNoDelayMap.set(id, distNoDelay);
+        distNoDelayMap.set(id, adjustForLockedSemester(rawDistNoDelay));
       });
       const getDistNoDelay = (code) => distNoDelayMap.get(code) ?? 0;
       const getDistWithDelay = (code) =>
-        computeSemesterDistance(
-          code,
-          completedSet,
-          plannedSetForChain,
-          chainTreatPlannedComplete,
-          fullLoadSelected,
-          chainMemoWithDelay
+        adjustForLockedSemester(
+          computeSemesterDistance(
+            code,
+            completedSet,
+            plannedSetForChain,
+            chainTreatPlannedComplete,
+            chainLockCurrentSemester,
+            chainMemoWithDelay
+          )
         );
       const chainDistanceMap = new Map();
       const getChainDistance = (code) => {
@@ -1274,8 +1759,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const formatChainSubject = (code) =>
           canTakeIfRunningNow(code) ? `${code} (not running this semester)` : code;
         const relevantPaths = hasOverrun ? filteredOverrun : filteredEqual;
+        const hasAvailabilityDelay = relevantPaths.some((path) => {
+          const head = path[0];
+          const withDelay = getChainDistance(head);
+          const withoutDelay = getDistNoDelay(head);
+          return Number.isFinite(withDelay) && Number.isFinite(withoutDelay) && withDelay > withoutDelay;
+        });
+        const availabilityPrefix = hasAvailabilityDelay ? 'Alternating subject(s) \u2192 ' : '';
         const pathStrings = relevantPaths
-          .map((path) => trimPathForDisplay(path).map(formatChainSubject).join(' \u2192 '))
+          .map((path) => `${availabilityPrefix}${trimPathForDisplay(path).map(formatChainSubject).join(' \u2192 ')}`)
           .filter((s, idx, arr) => s && arr.indexOf(s) === idx);
         const chainLengths = relevantPaths
           .map((path) => getChainDistance(path[0]))
@@ -1298,14 +1790,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const chainIntro = chainOverrunsPlan
           ? `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. However there is a chain of subjects with prerequisites that runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so putting at risk your optimal graduation date:`
           : `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. Your longest prerequisite chain also runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so it is right at the limit for your optimal graduation date:`;
-        const hasAvailabilityDelay = relevantPaths.some((path) => {
-          const head = path[0];
-          const withDelay = getChainDistance(head);
-          const withoutDelay = getDistNoDelay(head);
-          return Number.isFinite(withDelay) && Number.isFinite(withoutDelay) && withDelay > withoutDelay;
-        });
         const availabilityNote = hasAvailabilityDelay
-          ? '<p class="alert-inline-text">Note: This delay is caused by subjects that alternate between Semester 1 and Semester 2. They may not appear in the chain list above, but they can add an extra semester.</p>'
+          ? '<p class="alert-inline-text"><strong>Note</strong>: This delay is caused by subjects that run only <strong>once per year</strong>. They haven\'t been named in the chain list above, but they can add an extra semester if not taken when available.</p>'
           : '';
         chainDelayError = {
           title: chainTitle,
@@ -1316,12 +1802,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } else {
       chainDelayError = null;
     }
-      if (remaining > 8 && distanceData.length) {
+    if (remaining > 8 && distanceData.length) {
       const maxDist = distanceData.reduce((max, d) => Math.max(max, d.dist), 0);
+      const warningMaxDist = maxDist;
       if (maxDist > 0 && Number.isFinite(maxDist)) {
         const targets = distanceData.filter((d) => d.dist === maxDist);
         targets.forEach(({ el }) => el?.classList.add('final-sem-pill'));
-        if ((targets.length > 4 || maxDist >= 5) && !completedMode && plannedCount >= loadThreshold && !chainDelayError) {
+        if ((targets.length > 4 || warningMaxDist >= 5) && !completedMode && plannedCount >= loadThreshold && !chainDelayError) {
           const completionSemesters = Math.max(1, Math.ceil(remaining / Math.max(1, loadThreshold)));
           const hasAvailabilityDelay = targets.some(
             ({ dist, distNoDelay }) =>
@@ -1337,9 +1824,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             subjectList.length > 1
               ? `${subjectList.slice(0, -1).join(', ')} and ${subjectList.slice(-1)}`
               : subjectList.join(', ');
+          const chainSemesters = warningMaxDist;
           finalSemWarning = {
             title: 'Tight prerequisite chain',
-            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${completionSemesters} semester chain: <strong>${formattedList}</strong>.${availabilityNote}</span></p>`,
+            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${chainSemesters} semester chain: <strong>${formattedList}</strong>.${availabilityNote}</span></p>`,
           };
         }
       }
@@ -1403,7 +1891,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const initSubjectStateFromData = () => {
     subjectState.clear();
-    Object.keys(subjectMeta).forEach((code) => {
+    getAllSubjectCodes().forEach((code) => {
+      if (!code) return;
       subjectState.set(code, { completed: false, toggled: false });
     });
   };
@@ -1413,7 +1902,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const id = cell.dataset.subject;
       if (!id || isPlaceholder(cell)) return;
       const st = subjectState.get(id);
-      cell.classList.remove('completed', 'toggled');
+      cell.classList.remove('completed', 'toggled', 'completed-pending');
       cell.setAttribute('aria-pressed', 'false');
       if (st?.completed) {
         cell.classList.add('completed');
@@ -1422,6 +1911,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (st?.toggled) {
         cell.classList.add('toggled');
         cell.setAttribute('aria-pressed', 'true');
+      }
+    });
+    passForEnrolmentsOverrides.forEach((code) => {
+      const cell = getCellByCode(code);
+      if (cell && cell.classList.contains('completed')) {
+        cell.classList.add('completed-pending');
       }
     });
   };
@@ -1546,12 +2041,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return ordered.length ? ordered : electivePlaceholderCells;
   };
 
-  const formatDate = (d) => {
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  };
+  const formatDate = (d) => formatDisplayDate(d);
 
   const getTimetableLabel = (d) => {
     const m = d.getMonth(); // 0 = Jan
@@ -1608,6 +2098,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isUseCredit = !!useCode && !bitCode;
       const isBitPlanned = !!(bitCode && bitState?.toggled);
       const isBitCompleted = !!(bitCode && bitState?.completed);
+      const isBitPending = !!(bitCode && passForEnrolmentsOverrides.has(bitCode));
       const isEmpty = !bitCode && !useCode;
       cell.classList.remove(...placeholderStyleClasses);
       if (bitCode) {
@@ -1634,12 +2125,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.toggle('use-credit', isUseCredit);
         cell.classList.toggle('completed', isUseCredit || isBitCompleted);
         cell.classList.toggle('toggled', isBitPlanned);
+        cell.classList.toggle('completed-pending', isBitPending);
         cell.setAttribute('aria-pressed', isUseCredit || isBitCompleted || isBitPlanned ? 'true' : 'false');
       } else {
         // Only restore original label if clearing (no persisted state)
         if (titleEl && cell.dataset.originalTitle) titleEl.textContent = cell.dataset.originalTitle;
         if (noteEl && cell.dataset.originalNote) noteEl.textContent = cell.dataset.originalNote;
-        cell.classList.remove('toggled', 'completed', 'filled-elective', 'use-credit');
+        cell.classList.remove('toggled', 'completed', 'filled-elective', 'use-credit', 'completed-pending');
         cell.setAttribute('aria-pressed', 'false');
       }
     });
@@ -1802,7 +2294,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
       if (st?.toggled || st?.completed) {
         cell.classList.remove('locked');
-        cell.classList.toggle('satisfied-tooltip', headingMet && availabilityOn && plannedCount >= loadThreshold);
+        cell.classList.remove('satisfied-tooltip');
         return;
       }
       const isNotThisSem = !isRunningThisSemester(id);
@@ -1893,10 +2385,51 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!hasAny) {
       subjectCountsEl.innerHTML = '';
       subjectCountsEl.classList.remove('is-visible');
+      updateMajorStreamInsights();
       return;
     }
-    subjectCountsEl.innerHTML = `<div class="subject-counts-line">${completedTotal} subjects completed, ${selected} selected</div><div class="subject-counts-line">${remaining} remaining</div>`;
+    const completedCodes = new Set();
+    subjectState.forEach((st, code) => {
+      if (st?.completed) completedCodes.add(code);
+    });
+    electivePlaceholderState.forEach((code) => {
+      if (code && validSubjectCodes.has(code)) completedCodes.add(code);
+    });
+    const selectedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code);
+    const remainingCodes = new Set();
+    getRemainingRows().forEach((row) => remainingCodes.add(row.id));
+    getRemainingElectiveRows().forEach((row) => remainingCodes.add(row.id));
+
+    const formatListHtml = (title, codes) => {
+      if (!codes.length) {
+        return `<div class="ui-tooltip-row ui-tooltip-title">${escapeHtml(title)}: none</div>`;
+      }
+      const lines = codes
+        .map((code) => `${formatHistoryCode(code)} ${getSubjectName(code)}`.trim())
+        .sort((a, b) => a.localeCompare(b));
+      const rows = lines
+        .map((line) => `<div class="ui-tooltip-row">${escapeHtml(line)}</div>`)
+        .join('');
+      return `<div class="ui-tooltip-row ui-tooltip-title">${escapeHtml(title)}</div>${rows}`;
+    };
+
+    const completedTooltip = formatListHtml('Completed', Array.from(completedCodes));
+    const selectedTooltip = formatListHtml('Selected', selectedCodes);
+    const remainingTooltip = formatListHtml('Remaining', Array.from(remainingCodes));
+
+    subjectCountsEl.innerHTML =
+      `<div class="subject-counts-line">` +
+      `<span class="subject-counts-item" data-tooltip-html="${completedTooltip}">${completedTotal} subjects completed</span>, ` +
+      `<span class="subject-counts-item" data-tooltip-html="${selectedTooltip}">${selected} selected</span>` +
+      `</div>` +
+      `<div class="subject-counts-line">` +
+      `<span class="subject-counts-item" data-tooltip-html="${remainingTooltip}">${remaining} remaining</span>` +
+      `</div>`;
     subjectCountsEl.classList.add('is-visible');
+    initTooltips();
+    updateMajorStreamInsights();
   };
 
   const getLoadThreshold = () => Math.max(1, fullLoadCap || 4);
@@ -2019,6 +2552,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const hasHistory = getHistoryRows().length > 0 || manualEntryCurrent.size > 0 || manualEntryUnknown.length > 0;
       historyButton.style.display = hasHistory ? '' : 'none';
     }
+    if (remainingButton) {
+      remainingButton.style.display = '';
+      remainingButton.classList.remove('hidden-initial');
+    }
     if (nextSemList) {
       const rows = getNextSemRows();
       nextSemList.innerHTML = '';
@@ -2027,7 +2564,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const showList = plannedCount >= threshold;
       if (!showList || !rows.length) {
         const li = document.createElement('li');
-        li.textContent = 'Select this semesterâ€™s subjects first, and next semesterâ€™s options will be revealed.';
+        li.textContent = 'Select this semester’s subjects first, and next semester’s options will be revealed.';
         nextSemList.appendChild(li);
       } else {
         rows.forEach((item) => {
@@ -2048,8 +2585,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
       }
     }
+    updateSubjectCounts();
     updatePrereqErrors();
     updateNextSemWarning();
+  };
+
+  let completedModeStickyTop = null;
+  const updateCompletedModeSticky = () => {
+    if (!completedModeButton) return;
+    if (!completedMode) {
+      completedModeButton.classList.remove('completed-mode-stuck');
+      return;
+    }
+    if (completedModeStickyTop === null) {
+      const rect = completedModeButton.getBoundingClientRect();
+      completedModeStickyTop = rect.top + window.scrollY;
+    }
+    const shouldStick = window.scrollY + 10 >= completedModeStickyTop;
+    completedModeButton.classList.toggle('completed-mode-stuck', shouldStick);
   };
 
   const updateCompletedModeUI = () => {
@@ -2057,6 +2610,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     completedModeButton.textContent = completedMode ? 'Exit this history mode (start selecting subjects)' : 'Clicking mode';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
+    if (!completedMode) {
+      completedModeStickyTop = null;
+      completedModeButton.classList.remove('completed-mode-stuck');
+    } else {
+      completedModeStickyTop = null;
+      requestAnimationFrame(updateCompletedModeSticky);
+    }
     document.body.classList.toggle('completed-mode', completedMode);
     updatePlaceholderDisplayForMode();
 
@@ -2092,17 +2652,73 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
-  const updateSemCountUI = () => {
-    if (!toggleSemCountsBtn) return;
-    toggleSemCountsBtn.checked = showSemCounts;
-    toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
-    if (semCountsLabel) {
-      semCountsLabel.textContent = showSemCounts
-        ? 'Show semesters remaining (active)'
-        : 'Show semesters remaining';
-      semCountsLabel.classList.toggle('active', showSemCounts);
-    }
-  };
+    const updateSemCountUI = () => {
+      if (!toggleSemCountsBtn) return;
+      toggleSemCountsBtn.checked = showSemCounts;
+      toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
+      if (semCountsLabel) {
+        semCountsLabel.textContent = showSemCounts
+          ? 'Show semesters remaining (active)'
+          : 'Show semesters remaining';
+        semCountsLabel.classList.toggle('active', showSemCounts);
+      }
+    };
+
+    const updatePassForEnrolmentsIndicator = () => {
+      const label = passForEnrolmentsToggle?.closest('.toggle-row')?.querySelector('.switch-label');
+      if (!label) return;
+      const highlight = passForEnrolmentsEnabled && passForEnrolmentsOverrides.size > 0;
+      label.classList.toggle('pass-enrolments-highlight', highlight);
+    };
+
+    const applyPassForEnrolmentsState = () => {
+      // Roll back any previous overrides first.
+      passForEnrolmentsOverrides.forEach((code) => {
+        const st = subjectState.get(code);
+        if (st?.completed) {
+          subjectState.set(code, { completed: false, toggled: st.toggled });
+        }
+      });
+      passForEnrolmentsOverrides.clear();
+      currentEnrolmentsPlannedOverrides.forEach((code) => {
+        const st = subjectState.get(code);
+        if (st?.toggled && !st?.completed) {
+          subjectState.set(code, { completed: false, toggled: false });
+        }
+      });
+      currentEnrolmentsPlannedOverrides.clear();
+
+      const allCurrent = new Set([
+        ...Array.from(workbookCurrent.keys()),
+        ...Array.from(manualEntryCurrent.keys()),
+      ]);
+      if (passForEnrolmentsEnabled) {
+        allCurrent.forEach((code) => {
+          if (!validSubjectCodes.has(code)) return;
+          const st = subjectState.get(code) || { completed: false, toggled: false };
+          if (st.completed) return;
+          subjectState.set(code, { completed: true, toggled: st.toggled });
+          passForEnrolmentsOverrides.add(code);
+        });
+      } else {
+        allCurrent.forEach((code) => {
+          if (!validSubjectCodes.has(code)) return;
+          const st = subjectState.get(code) || { completed: false, toggled: false };
+          if (st.completed) return;
+          subjectState.set(code, { completed: false, toggled: true });
+          currentEnrolmentsPlannedOverrides.add(code);
+        });
+      }
+
+      applySubjectStateToCells();
+      rebuildElectiveBitStateFromState();
+      setElectiveCredits(buildElectiveAssignments(), true);
+      updateElectiveWarning();
+      updateSelectedList();
+      conditionalRecompute({ force: true, usePlanned: completedMode ? false : null });
+      updateResetState();
+      updatePassForEnrolmentsIndicator();
+    };
 
   const setLivePrereqEnabled = (enabled) => {
     livePrereqEnabled = enabled;
@@ -2122,20 +2738,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return opts;
   };
 
+  const buildSemesterBadgeHtml = (availability) => {
+    const semesterNumber = availability === 'S1' ? '1' : availability === 'S2' ? '2' : '';
+    if (!semesterNumber) return '';
+    return `<span class="alt-sem-line">Only runs in</span><span class="alt-sem-line">Semester <strong>${semesterNumber}</strong></span>`;
+  };
+
+  const ensureSemesterBadgeUI = (cell) => {
+    if (!cell) return;
+    const availability = getSemesterAvailability(cell.dataset.subject || '');
+    if (availability === 'Any') return;
+    const html = buildSemesterBadgeHtml(availability);
+    if (!html) return;
+    const existing = cell.querySelector('.alternate-semester-label');
+    if (existing) {
+      existing.innerHTML = html;
+      return;
+    }
+    const label = document.createElement('div');
+    label.className = 'alternate-semester-label';
+    label.innerHTML = html;
+    cell.appendChild(label);
+  };
+
   const ensureNotThisSemUI = (cell) => {
     if (!cell) return;
     cell.classList.add('not-this-sem');
     cell.classList.remove('clickable');
     cell.tabIndex = 0;
-    if (!cell.querySelector('.not-this-sem-label')) {
-      const label = document.createElement('div');
-      label.className = 'not-this-sem-label';
-      const availability = getSemesterAvailability(cell.dataset.subject || '');
-      const semesterLabel = availability !== 'Any' ? getSemesterLabel(availability) : 'next semester';
-      label.textContent =
-        availability !== 'Any' ? `Runs in ${semesterLabel} only` : 'Running next semester only';
-      cell.appendChild(label);
-    }
+    ensureSemesterBadgeUI(cell);
     if (!cell.querySelector('.not-running-tooltip')) {
       const tip = document.createElement('div');
       tip.className = 'not-running-tooltip';
@@ -2248,13 +2879,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const positionTooltip = (event) => {
       const rect = cell.getBoundingClientRect();
       const tooltipWidth = tooltip.offsetWidth || rect.width * 0.9;
-      const offsetX = event.clientX - rect.left - tooltipWidth / 2;
+      const isMouseEvent =
+        !!event && (event.type.startsWith('mouse') || (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent));
+      const isTouchLike = isTouchDevice && !isMouseEvent;
+      const clientX = event?.clientX ?? rect.left + rect.width / 2;
+      const clientY = event?.clientY ?? rect.top + rect.height * 0.7;
+      const offsetX = clientX - rect.left - tooltipWidth / 2;
       // On smaller screens allow the tooltip to overflow the card so content isn't cramped.
       const allowOverflow = window.innerWidth < 1300;
       const minX = allowOverflow ? -tooltipWidth * 0.35 : 0;
       const maxX = allowOverflow ? rect.width - tooltipWidth * 0.65 : rect.width - tooltipWidth;
       const clampedX = Math.max(minX, Math.min(offsetX, maxX));
-      let offsetY = event.clientY - rect.top + 27;
+      let offsetY = isTouchLike ? rect.height * 0.7 : clientY - rect.top + 27;
       const tooltipHeight = tooltip.offsetHeight || 0;
       const viewportPadding = 8;
       if (tooltipHeight) {
@@ -2269,6 +2905,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tooltip.style.top = `${offsetY}px`;
     };
     const showTooltip = (event) => {
+      const isMouseEvent =
+        !!event && (event.type.startsWith('mouse') || (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent));
+      if (isTouchDevice && completedMode && isPlaceholderCell() && !isMouseEvent) {
+        return;
+      }
       if (!cell.classList.contains('hide-tooltip')) {
         cell.classList.add('show-tooltip');
       }
@@ -2298,7 +2939,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const clearNotThisSemUI = (cell) => {
     if (!cell) return;
     cell.classList.remove('not-this-sem');
-    const label = cell.querySelector('.not-this-sem-label');
+    const label = cell.querySelector('.alternate-semester-label');
     const tip = cell.querySelector('.not-running-tooltip');
     if (label) label.remove();
     if (tip) tip.remove();
@@ -2325,6 +2966,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.classList.toggle('completed', !!st?.completed);
     cell.classList.toggle('toggled', !!st?.toggled);
     cell.setAttribute('aria-pressed', st?.completed || st?.toggled ? 'true' : 'false');
+    if (isSemesterRestricted(code)) ensureSemesterBadgeUI(cell);
     if (!isRunningThisSemester(code)) ensureNotThisSemUI(cell);
 
     // Remove existing text nodes and rebuild display
@@ -2468,6 +3110,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const code = electiveList[slot];
       if (!code) {
         cell.dataset.subject = '';
+        cell.querySelectorAll('.sem-count, .electives-full-pill').forEach((n) => n.remove());
         cell.querySelectorAll('.subject-code, .subject-note, .prerequsites-note, .course, .note, .sas').forEach((n) => n.remove());
         cell.className = 'subject-card elective-spacer placeholder-card empty';
         cell.removeAttribute('role');
@@ -2478,6 +3121,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       renderSubjectInCell(cell, code, null);
       applyElectiveStyling(cell, code, majorKey);
+      if (isSemesterRestricted(code)) ensureSemesterBadgeUI(cell);
       if (!isRunningThisSemester(code)) ensureNotThisSemUI(cell);
       attachTooltip(cell);
     });
@@ -2521,6 +3165,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const warningList = [...warningPayloads];
     if (electiveError) errorPayloads.push(electiveError);
     if (prereqError) errorPayloads.push(prereqError);
+    if (aprAppError) errorPayloads.push(aprAppError);
+    if (acceptedOfferedError) errorPayloads.push(acceptedOfferedError);
+    if (intakeStartError) errorPayloads.push(intakeStartError);
     if (chainDelayError) {
       const isWarning = chainDelayError.severity === 'warning';
       (isWarning ? warningList : errorPayloads).push(chainDelayError);
@@ -2671,14 +3318,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateVaryLoadLabel();
   };
 
-  const initDropZone = () => {
-    if (!dropZone) return;
-    if (dropSidebar) {
-      dropSidebar.style.display = isLocalEnv ? 'flex' : 'none';
-      dropSidebar.classList.remove('is-active');
-    }
-    dropZone.style.display = isLocalEnv ? 'flex' : 'none';
-    if (!isLocalEnv) return;
+    const initDropZone = () => {
+      if (!dropZone) return;
+      if (dropSidebar) {
+        dropSidebar.style.display = dropZoneEnabled ? 'flex' : 'none';
+        dropSidebar.classList.toggle('is-active', dropZoneEnabled);
+      }
+      dropZone.style.display = dropZoneEnabled ? 'flex' : 'none';
+      if (!dropZoneEnabled) return;
     const add = () => dropZone.classList.add('drag-over');
     const remove = () => dropZone.classList.remove('drag-over');
     ['dragenter', 'dragover'].forEach((evt) =>
@@ -2695,13 +3342,152 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         remove();
       })
     );
-    dropZone.addEventListener('drop', (e) => {
-      // Placeholder for future file handling
-      if (dropSidebar) dropSidebar.classList.add('is-active');
-    });
+      dropZone.addEventListener('drop', (e) => {
+        if (dropSidebar) dropSidebar.classList.add('is-active');
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        lastDroppedFileInfo = {
+          fileName: file.name,
+          savedLine: formatFileDateInfo(file),
+        };
+        renderDropZoneStatus([lastDroppedFileInfo.fileName, lastDroppedFileInfo.savedLine]);
+        if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
+        loadWorkbookFromFile(file);
+      });
   };
 
   initDropZone();
+  if (!studentRecords.length && window.location.protocol.startsWith('http')) {
+    loadWorkbookFromUrl('../Source.xlsx');
+  }
+  if (studentIdInput) {
+    studentIdInput.addEventListener('input', handleStudentIdInput);
+    studentIdInput.addEventListener('keydown', (event) => {
+      if (!studentSearchDropdown || studentSearchDropdown.hidden) return;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        moveStudentSearchActive(1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        moveStudentSearchActive(-1);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        selectActiveStudentSearch();
+      }
+    });
+  }
+  if (studentSearchDropdown) {
+    studentSearchDropdown.addEventListener('click', (event) => {
+      const option = event.target?.closest?.('.student-search-option');
+      if (!option) return;
+      const id = option.getAttribute('data-student-id') || '';
+      const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+      if (record) applyStudentSearchSelection(record);
+    });
+    studentSearchDropdown.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const option = event.target?.closest?.('.student-search-option');
+      if (!option) return;
+      event.preventDefault();
+      const id = option.getAttribute('data-student-id') || '';
+      const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+      if (record) applyStudentSearchSelection(record);
+    });
+  }
+
+  let uiTooltipEl = null;
+  let uiTooltipTimer = null;
+  let uiTooltipActiveTarget = null;
+  let uiTooltipPoint = { x: 0, y: 0 };
+
+  const initTooltips = () => {
+    const tooltipTargets = Array.from(document.querySelectorAll('[data-tooltip]'));
+    if (!tooltipTargets.length) return;
+    if (!uiTooltipEl) {
+      uiTooltipEl = document.createElement('div');
+      uiTooltipEl.className = 'ui-tooltip';
+      document.body.appendChild(uiTooltipEl);
+    }
+
+    const clearTooltipTimer = () => {
+      if (uiTooltipTimer) {
+        clearTimeout(uiTooltipTimer);
+        uiTooltipTimer = null;
+      }
+    };
+
+    const hideTooltip = () => {
+      clearTooltipTimer();
+      uiTooltipEl.style.display = 'none';
+      uiTooltipEl.textContent = '';
+      uiTooltipActiveTarget = null;
+    };
+
+    const positionTooltip = (x, y, alignRight = false) => {
+      const offsetX = 15;
+      const offsetY = 12;
+      const tooltipRect = uiTooltipEl.getBoundingClientRect();
+      const maxX = window.innerWidth - tooltipRect.width - 8;
+      const maxY = window.innerHeight - tooltipRect.height - 8;
+      const baseLeft = alignRight ? x - tooltipRect.width : x + offsetX;
+      const baseTop = alignRight ? y : y + offsetY;
+      const nextLeft = Math.min(maxX, Math.max(8, baseLeft));
+      const nextTop = Math.min(maxY, Math.max(8, baseTop));
+      uiTooltipEl.style.left = `${nextLeft}px`;
+      uiTooltipEl.style.top = `${nextTop}px`;
+    };
+
+    const showTooltip = (target, x, y) => {
+      const html = target?.getAttribute('data-tooltip-html');
+      const text = target?.getAttribute('data-tooltip') || '';
+      if (!text && !html) return;
+      const isCounts = target.classList.contains('subject-counts-item');
+      uiTooltipEl.classList.toggle('ui-tooltip-counts', isCounts);
+      if (html) {
+        uiTooltipEl.innerHTML = html;
+      } else {
+        uiTooltipEl.textContent = text;
+      }
+      uiTooltipEl.style.display = 'block';
+      positionTooltip(x, y, isCounts);
+    };
+
+    const bindTarget = (target) => {
+      if (target.dataset.tooltipBound === 'true') return;
+      target.dataset.tooltipBound = 'true';
+      target.addEventListener('mouseenter', (event) => {
+        uiTooltipActiveTarget = target;
+        uiTooltipPoint = { x: event.clientX, y: event.clientY };
+        clearTooltipTimer();
+        uiTooltipTimer = setTimeout(() => {
+          if (uiTooltipActiveTarget === target) showTooltip(target, uiTooltipPoint.x, uiTooltipPoint.y);
+        }, 250);
+      });
+      target.addEventListener('mousemove', (event) => {
+        uiTooltipPoint = { x: event.clientX, y: event.clientY };
+        if (uiTooltipEl.style.display === 'block') {
+          positionTooltip(uiTooltipPoint.x, uiTooltipPoint.y);
+        }
+      });
+      target.addEventListener('mouseleave', hideTooltip);
+      target.addEventListener('focus', (event) => {
+        const rect = event.target.getBoundingClientRect();
+        uiTooltipPoint = { x: rect.right, y: rect.bottom };
+        clearTooltipTimer();
+        uiTooltipTimer = setTimeout(() => {
+          if (uiTooltipActiveTarget === target || !uiTooltipActiveTarget) {
+            uiTooltipActiveTarget = target;
+            showTooltip(target, uiTooltipPoint.x, uiTooltipPoint.y);
+          }
+        }, 250);
+      });
+      target.addEventListener('blur', hideTooltip);
+    };
+
+    tooltipTargets.forEach((target) => bindTarget(target));
+  };
+
+  initTooltips();
 
   subjects.forEach((cell) => {
     const id = cell.dataset.subject;
@@ -2729,34 +3515,128 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const captureStudentSnapshot = () => ({
+    subjectState: new Map(
+      Array.from(subjectState.entries()).map(([code, st]) => [
+        code,
+        { completed: !!st?.completed, toggled: !!st?.toggled },
+      ])
+    ),
+    electivePlaceholderState: [...electivePlaceholderState],
+    electiveBitState: [...electiveBitState],
+    manualEntryAliases: new Map(
+      Array.from(manualEntryAliases.entries()).map(([code, set]) => [code, new Set(set || [])])
+    ),
+    manualEntryMeta: new Map(
+      Array.from(manualEntryMeta.entries()).map(([code, meta]) => [
+        code,
+        { result: meta?.result || '', date: meta?.date || '' },
+      ])
+    ),
+    manualEntryCurrent: new Map(
+      Array.from(manualEntryCurrent.entries()).map(([code, meta]) => [
+        code,
+        { date: meta?.date || '' },
+      ])
+    ),
+    manualEntryUnknown: manualEntryUnknown.map((entry) => ({ ...entry })),
+    passForEnrolmentsOverrides: new Set(passForEnrolmentsOverrides),
+    currentEnrolmentsPlannedOverrides: new Set(currentEnrolmentsPlannedOverrides),
+    workbookCurrent: new Map(
+      Array.from(workbookCurrent.entries()).map(([code, meta]) => [code, { ...meta }])
+    ),
+    majorValue: majorDropdown?.dataset?.value || currentMajorValue || 'undecided',
+  });
+
+  const restoreStudentSnapshot = (snapshot) => {
+    if (!snapshot) return false;
+    electivePlaceholderState = [...snapshot.electivePlaceholderState];
+    electiveBitState = [...snapshot.electiveBitState];
+    manualEntryAliases.clear();
+    snapshot.manualEntryAliases.forEach((set, code) =>
+      manualEntryAliases.set(code, new Set(set || []))
+    );
+    manualEntryMeta.clear();
+    snapshot.manualEntryMeta.forEach((meta, code) =>
+      manualEntryMeta.set(code, { result: meta?.result || '', date: meta?.date || '' })
+    );
+    workbookCurrent.clear();
+    if (snapshot.workbookCurrent) {
+      snapshot.workbookCurrent.forEach((meta, code) =>
+        workbookCurrent.set(code, { date: meta?.date || '' })
+      );
+    }
+    workbookCurrent.clear();
+    if (snapshot.workbookCurrent) {
+      snapshot.workbookCurrent.forEach((meta, code) =>
+        workbookCurrent.set(code, { date: meta?.date || '' })
+      );
+    }
+    manualEntryCurrent.clear();
+    snapshot.manualEntryCurrent.forEach((meta, code) =>
+      manualEntryCurrent.set(code, { date: meta?.date || '' })
+    );
+    manualEntryUnknown.length = 0;
+    snapshot.manualEntryUnknown.forEach((entry) => manualEntryUnknown.push({ ...entry }));
+    passForEnrolmentsOverrides.clear();
+    snapshot.passForEnrolmentsOverrides.forEach((code) => passForEnrolmentsOverrides.add(code));
+    currentEnrolmentsPlannedOverrides.clear();
+    snapshot.currentEnrolmentsPlannedOverrides.forEach((code) =>
+      currentEnrolmentsPlannedOverrides.add(code)
+    );
+    subjectState.clear();
+    snapshot.subjectState.forEach((st, code) => subjectState.set(code, { ...st }));
+    if (snapshot.majorValue) setMajorDropdownSelection(snapshot.majorValue);
+
+    clearPlanned();
+    clearCompleted();
+    applySubjectStateToCells();
+    rebuildElectiveBitStateFromState();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateResetState();
+    setElectiveCredits(buildElectiveAssignments(), true);
+    updateElectiveWarning();
+    updateSelectedList();
+    updateWarnings();
+    updatePassForEnrolmentsIndicator();
+    return true;
+  };
+
+  const resetStudentSelections = () => {
+    if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
+      if (restoreStudentSnapshot(loadedStudentSnapshot)) return;
+    }
+    // Reset in-memory state first so all downstream UI refreshes read from the new truth.
+    electivePlaceholderState = ['', '', '', ''];
+    electiveBitState = ['', '', '', ''];
+    manualEntryAliases.clear();
+    manualEntryMeta.clear();
+    manualEntryCurrent.clear();
+    workbookCurrent.clear();
+    manualEntryUnknown.length = 0;
+    subjectState.clear();
+    subjects.forEach((cell) => {
+      const code = cell.dataset.subject;
+      if (!code || isPlaceholder(cell)) return;
+      subjectState.set(code, { completed: false, toggled: false });
+    });
+
+    // Then wipe DOM classes and reapply from empty state.
+    clearPlanned();
+    clearCompleted();
+    applySubjectStateToCells();
+    setElectiveCredits([], true);
+
+    setLivePrereqEnabled(true);
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateResetState();
+    updateElectiveWarning();
+    updateSelectedList();
+  };
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       if (clearButton.disabled) return;
-      // Reset in-memory state first so all downstream UI refreshes read from the new truth.
-      electivePlaceholderState = ['', '', '', ''];
-      electiveBitState = ['', '', '', ''];
-      manualEntryAliases.clear();
-      manualEntryMeta.clear();
-      manualEntryCurrent.clear();
-      manualEntryUnknown.length = 0;
-      subjectState.clear();
-      subjects.forEach((cell) => {
-        const code = cell.dataset.subject;
-        if (!code || isPlaceholder(cell)) return;
-        subjectState.set(code, { completed: false, toggled: false });
-      });
-
-      // Then wipe DOM classes and reapply from empty state.
-      clearPlanned();
-      clearCompleted();
-      applySubjectStateToCells();
-      setElectiveCredits([], true);
-
-      setLivePrereqEnabled(true);
-      conditionalRecompute({ force: true, usePlanned: false });
-      updateResetState();
-      updateElectiveWarning();
-      updateSelectedList();
+      resetStudentSelections();
     });
   }
 
@@ -2906,24 +3786,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildCourseTimetableItemList = (entries) => {
     if (!entries.length) return null;
     const list = document.createElement('ul');
-    list.className = 'course-timetable-list';
+    list.className = 'semester-timetable-list';
     entries.forEach(({ id, data }) => {
       const item = document.createElement('li');
-      item.className = 'course-timetable-item';
+      item.className = 'semester-timetable-item';
+      applyDisplayTypeClass(item, id);
       item.appendChild(buildCourseTimetableTooltip(id));
       const row = document.createElement('div');
-      row.className = 'course-timetable-item-row';
+      row.className = 'semester-timetable-item-row';
       const code = document.createElement('span');
-      code.className = 'course-timetable-code';
+      code.className = 'semester-timetable-code';
       code.textContent = id;
       const name = document.createElement('span');
-      name.className = 'course-timetable-name';
+      name.className = 'semester-timetable-name';
       name.textContent = getSubjectName(id);
       row.appendChild(code);
       row.appendChild(name);
       item.appendChild(row);
       const meta = document.createElement('div');
-      meta.className = 'course-timetable-meta';
+      meta.className = 'semester-timetable-meta';
       const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
       const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
       meta.textContent = `${room} \u00b7 ${teacher}`;
@@ -2947,6 +3828,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const updateCourseTimetableColoursButton = () => {
+    if (!courseTimetableColoursButton || !courseTimetableModal) return;
+    courseTimetableColoursButton.textContent = courseTimetableColoursOn ? 'Colours Off' : 'Colours On';
+    courseTimetableColoursButton.setAttribute('aria-pressed', String(courseTimetableColoursOn));
+    courseTimetableModal.classList.toggle('semester-timetable-colours-off', !courseTimetableColoursOn);
+  };
+
   const setCourseTimetableView = (view) => {
     courseTimetableView = view;
     updateCourseTimetableButtons();
@@ -2960,20 +3848,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseTimetableContent.innerHTML = '';
     const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
     const isList = courseTimetableView === 'list';
-    courseTimetableContent.classList.toggle('course-timetable-list-mode', isList);
+    courseTimetableContent.classList.toggle('semester-timetable-list-mode', isList);
     if (isList) {
       dayNames.forEach((day) => {
         slotNames.forEach((slot) => {
           const entries = grid.get(day)?.get(slot) || [];
           const section = document.createElement('section');
-          section.className = 'course-timetable-section';
+          section.className = 'semester-timetable-section';
           const heading = document.createElement('div');
-          heading.className = 'course-timetable-heading';
+          heading.className = 'semester-timetable-heading';
           const dayLabel = document.createElement('span');
-          dayLabel.className = 'course-timetable-day-label';
+          dayLabel.className = 'semester-timetable-day-label';
           dayLabel.textContent = day;
           const slotLabel = document.createElement('span');
-          slotLabel.className = 'course-timetable-slot-label';
+          slotLabel.className = 'semester-timetable-slot-label';
           slotLabel.textContent = getSlotAbbreviation(slot);
           heading.appendChild(dayLabel);
           heading.appendChild(document.createTextNode(' '));
@@ -2981,7 +3869,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const timeRange = formatTimeRange(timeSlots[slot] || '');
           if (timeRange) {
             const timeLabel = document.createElement('span');
-            timeLabel.className = 'course-timetable-time-range';
+            timeLabel.className = 'semester-timetable-time-range';
             timeLabel.textContent = `. ${timeRange}`;
             heading.appendChild(timeLabel);
           }
@@ -2989,7 +3877,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const list = buildCourseTimetableItemList(entries);
           if (!list) {
             const empty = document.createElement('div');
-            empty.className = 'course-timetable-empty';
+            empty.className = 'semester-timetable-empty';
             empty.textContent = 'No subjects running.';
             section.appendChild(empty);
           } else {
@@ -3000,12 +3888,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     } else {
       const table = document.createElement('table');
-      table.className = 'course-timetable-table';
+      table.className = 'semester-timetable-table';
       const thead = document.createElement('thead');
       const headRow = document.createElement('tr');
       const corner = document.createElement('th');
-      corner.className = 'course-timetable-corner';
-      corner.textContent = 'Day';
+      corner.className = 'semester-timetable-corner';
+      corner.textContent = '';
       headRow.appendChild(corner);
       slotNames.forEach((slot) => {
         const th = document.createElement('th');
@@ -3020,7 +3908,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const row = document.createElement('tr');
         const dayCell = document.createElement('th');
         dayCell.scope = 'row';
-        dayCell.className = 'course-timetable-day';
+        dayCell.className = 'semester-timetable-day';
         dayCell.textContent = day;
         row.appendChild(dayCell);
         slotNames.forEach((slot) => {
@@ -3029,7 +3917,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const list = buildCourseTimetableItemList(entries);
           if (!list) {
             const empty = document.createElement('div');
-            empty.className = 'course-timetable-empty';
+            empty.className = 'semester-timetable-empty';
             empty.textContent = 'No subjects running.';
             td.appendChild(empty);
           } else {
@@ -3052,15 +3940,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         ids.forEach((id) => {
           const item = document.createElement('li');
-          item.className = 'course-timetable-not-running-item';
+          item.className = 'semester-timetable-not-running-item';
+          applyDisplayTypeClass(item, id);
           const name = getSubjectName(id);
           const code = document.createElement('span');
-          code.className = 'course-timetable-code';
+          code.className = 'semester-timetable-code';
           code.textContent = id;
           item.appendChild(code);
           if (name) {
             const nameSpan = document.createElement('span');
-            nameSpan.className = 'course-timetable-name';
+            nameSpan.className = 'semester-timetable-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
           }
@@ -3275,10 +4164,79 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
-  const updateCourseTimetableTeacherCopyButton = () => {
-    if (!courseTimetableTeacherCopyButton) return;
-    courseTimetableTeacherCopyButton.hidden = !isSharePointHost;
+  const copyCourseTimetableListToClipboard = () => {
+    if (!clipboardAvailable) return;
+    const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
+    const textRows = [];
+    const sections = [];
+    dayNames.forEach((day) => {
+      slotNames.forEach((slot) => {
+        const entries = grid.get(day)?.get(slot) || [];
+        const timeRange = formatTimeRange(timeSlots[slot] || '');
+        const heading = `${day} ${getSlotAbbreviation(slot)}${timeRange ? ` ${timeRange}` : ''}`;
+        sections.push({ heading, entries });
+        textRows.push(heading);
+        if (!entries.length) {
+          textRows.push('No subjects running.');
+        } else {
+          entries.forEach(({ id, data }) => {
+            const name = getSubjectName(id);
+            const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+            const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+            textRows.push(`${id} ${name} - ${room} \u00b7 ${teacher}`);
+          });
+        }
+        textRows.push('');
+      });
+    });
+    const text = textRows.join('\n').trim();
+
+    const wrapper = document.createElement('div');
+    wrapper.style.fontFamily = 'Calibri, Arial, sans-serif';
+    wrapper.style.fontSize = '11pt';
+    sections.forEach((section) => {
+      const block = document.createElement('div');
+      block.style.marginBottom = '10px';
+      const heading = document.createElement('div');
+      heading.textContent = section.heading;
+      heading.style.fontWeight = '700';
+      heading.style.marginBottom = '4px';
+      block.appendChild(heading);
+      if (!section.entries.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No subjects running.';
+        block.appendChild(empty);
+      } else {
+        section.entries.forEach(({ id, data }) => {
+          const line = document.createElement('div');
+          const name = getSubjectName(id);
+          const room = data.room ? `Room: ${data.room}` : 'Room: TBA';
+          const teacher = data.teacher ? `Lecturer: ${data.teacher}` : 'Lecturer: TBA';
+          line.textContent = `${id} ${name} - ${room} \u00b7 ${teacher}`;
+          block.appendChild(line);
+        });
+      }
+      wrapper.appendChild(block);
+    });
+    const html = wrapper.innerHTML;
+
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
   };
+
+    const updateCourseTimetableTeacherCopyButton = () => {
+      if (!courseTimetableTeacherCopyButton) return;
+      courseTimetableTeacherCopyButton.hidden = !shouldShowTeacherCopy;
+    };
 
   const showCourseTimetableModal = () => {
     if (!courseTimetableModal) return;
@@ -3289,6 +4247,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (showCourseTimetableButton) showCourseTimetableButton.setAttribute('aria-expanded', 'true');
     if (closeCourseTimetableCta) closeCourseTimetableCta.focus();
     updateCourseTimetableButtons();
+    updateCourseTimetableColoursButton();
   };
 
   const hideCourseTimetableModal = () => {
@@ -3299,17 +4258,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (showCourseTimetableButton) showCourseTimetableButton.focus();
   };
 
-  const applyCodes = () => {
-    if (!codeInput) return;
-    const raw = codeInput.value || '';
-    manualEntryCurrent.clear();
-    manualEntryUnknown.length = 0;
-    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const parseManualEntriesFromText = (raw) => {
+    const safeRaw = (raw || '').toString();
+    const lines = safeRaw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     let extractedEntries = [];
     let useTranscriptParsing = false;
     let canIdentifyCurrent = false;
+    const resultListPattern = /([A-Z]{3,4}\d{3})\s+([A-Z0-9/]+)\s+(\d{4})\s+(\d{1,2})\s+(\d{1,2})/g;
+    const resultListEntries = [];
+    if (safeRaw.includes(',') && resultListPattern.test(safeRaw)) {
+      resultListPattern.lastIndex = 0;
+      let match = resultListPattern.exec(safeRaw);
+      while (match) {
+        const rawCode = match[1];
+        const grade = match[2];
+        const year = parseInt(match[3], 10);
+        const month = parseInt(match[4], 10);
+        const day = parseInt(match[5], 10);
+        const dateToken = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const status = getGradeStatus(grade) || 'pass';
+        resultListEntries.push({ rawCode, grade, date: dateToken, status });
+        match = resultListPattern.exec(safeRaw);
+      }
+    }
 
-    if (lines.length > 1) {
+    if (resultListEntries.length) {
+      extractedEntries = resultListEntries;
+      useTranscriptParsing = true;
+    } else if (lines.length > 1) {
       const gradeHeader = findGradeColumnFromHeader(lines);
       const dateHeader = findDateColumnFromHeader(lines);
       let gradeColIndex = gradeHeader.index;
@@ -3340,7 +4316,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
         const hasDates =
           dateColIndex !== -1 && rowData.some(({ columns }) => extractDateToken(columns[dateColIndex] || ''));
-        canIdentifyCurrent = hasResults && hasDates;
+        canIdentifyCurrent = hasResults;
         extractedEntries = rowData
           .map(({ line, columns }) => {
             const upper = line.toUpperCase();
@@ -3351,7 +4327,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
             const dateToken = extractDateToken(dateCell);
             if (!status) {
-              if (canIdentifyCurrent && dateToken) {
+              if (canIdentifyCurrent) {
                 return { rawCode: match[0], grade: '', date: dateToken, status: 'current' };
               }
               return null;
@@ -3368,31 +4344,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     if (!useTranscriptParsing) {
-      extractedEntries = (raw.toUpperCase().match(manualCodeRegexGlobal) || []).map((code) => ({
-        rawCode: code,
-        grade: '',
-        date: '',
-        status: 'pass',
-      }));
+      const hasAnyGradeToken = lines.some((line) => !!getGradeStatus(line));
+      extractedEntries = lines
+        .map((line) => {
+          const upper = line.toUpperCase();
+          const match = upper.match(manualCodeRegex);
+          if (!match) return null;
+          const lineStatus = getGradeStatus(line);
+          if (hasAnyGradeToken && !lineStatus) {
+            return { rawCode: match[0], grade: '', date: '', status: 'current' };
+          }
+          return { rawCode: match[0], grade: '', date: '', status: 'pass' };
+        })
+        .filter(Boolean);
     }
 
     const resolvedSubjectCodes = [];
     const resolvedUseCodes = [];
     const seenSubjects = new Set();
     const seenUses = new Set();
+    const metaEntries = new Map();
+    const aliasEntries = new Map();
+    const currentEntries = new Map();
+    const unknownEntries = [];
 
     extractedEntries.forEach(({ rawCode, grade, date, status }) => {
       const { mapped, original } = resolveLegacyCode(rawCode);
       if (!mapped) return;
       const normalizedGrade = normalizeGradeToken(grade);
       if (status !== 'current' && normalizedGrade && !validUseCodes.has(mapped) && !validSubjectCodes.has(mapped)) {
-        addUnknownEntry({ result: normalizedGrade, date });
+        unknownEntries.push({ code: original || mapped, result: normalizedGrade, date });
         return;
       }
       if (status === 'current') {
         if (validSubjectCodes.has(mapped) && canIdentifyCurrent) {
-          recordManualAlias(mapped, original);
-          recordCurrentEnrollment(mapped, date);
+          const aliasSet = aliasEntries.get(mapped) || new Set();
+          if (original && mapped !== original) aliasSet.add(original);
+          if (aliasSet.size) aliasEntries.set(mapped, aliasSet);
+          currentEntries.set(mapped, { date: date || '' });
         }
         return;
       }
@@ -3410,15 +4399,101 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           seenSubjects.add(mapped);
         }
       }
-      recordManualAlias(mapped, original);
+      if (original && mapped !== original) {
+        const aliasSet = aliasEntries.get(mapped) || new Set();
+        aliasSet.add(original);
+        aliasEntries.set(mapped, aliasSet);
+      }
       if (normalizedGrade || date) {
-        const existing = manualEntryMeta.get(mapped) || {};
-        manualEntryMeta.set(mapped, {
+        const existing = metaEntries.get(mapped) || {};
+        metaEntries.set(mapped, {
           result: normalizedGrade || existing.result || '',
           date: date || existing.date || '',
         });
       }
     });
+
+    return {
+      resolvedSubjectCodes,
+      resolvedUseCodes,
+      metaEntries,
+      aliasEntries,
+      currentEntries,
+      unknownEntries,
+    };
+  };
+
+  const parseCurrentEntriesFromResults = (raw) => {
+    const safeRaw = (raw || '').toString();
+    const lines = safeRaw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length < 2) return new Map();
+
+    const gradeHeader = findGradeColumnFromHeader(lines);
+    const dateHeader = findDateColumnFromHeader(lines);
+    let gradeColIndex = gradeHeader.index;
+    let dateColIndex = dateHeader.index;
+    let dataLines = lines;
+    if (gradeColIndex !== -1 || dateColIndex !== -1) {
+      const startRow = Math.max(gradeHeader.startRow, dateHeader.startRow);
+      dataLines = lines.slice(startRow);
+    }
+
+    const rowData = dataLines
+      .map((line) => {
+        const upper = line.toUpperCase();
+        if (!manualCodeRegex.test(upper)) return null;
+        return { line, columns: splitManualColumns(line) };
+      })
+      .filter(Boolean);
+
+    if (rowData.length >= 2) {
+      if (gradeColIndex === -1) gradeColIndex = detectGradeColumnByPattern(rowData);
+      if (dateColIndex === -1) dateColIndex = detectDateColumnByPattern(rowData);
+    }
+
+    if (gradeColIndex === -1) return new Map();
+    const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
+    if (!hasResults) return new Map();
+
+    const currentEntries = new Map();
+    rowData.forEach(({ line, columns }) => {
+      const upper = line.toUpperCase();
+      const match = upper.match(manualCodeRegex);
+      if (!match) return;
+      const gradeCell = columns[gradeColIndex] || '';
+      const status = getGradeStatus(gradeCell);
+      if (status) return;
+      const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
+      const dateToken = extractDateToken(dateCell);
+      const { mapped } = resolveLegacyCode(match[0]);
+      if (!mapped) return;
+      currentEntries.set(mapped, { date: dateToken || '' });
+    });
+    return currentEntries;
+  };
+
+  const applyCodes = () => {
+    if (!codeInput) return;
+    const raw = codeInput.value || '';
+    manualEntryCurrent.clear();
+    workbookCurrent.clear();
+    manualEntryUnknown.length = 0;
+    const parsed = parseManualEntriesFromText(raw);
+    parsed.aliasEntries.forEach((aliases, mapped) => {
+      aliases.forEach((original) => recordManualAlias(mapped, original));
+    });
+    parsed.currentEntries.forEach((meta, mapped) => manualEntryCurrent.set(mapped, meta));
+    parsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
+    parsed.metaEntries.forEach((meta, mapped) => {
+      const existing = manualEntryMeta.get(mapped) || {};
+      manualEntryMeta.set(mapped, {
+        result: meta.result || existing.result || '',
+        date: meta.date || existing.date || '',
+      });
+    });
+
+    const resolvedSubjectCodes = parsed.resolvedSubjectCodes;
+    const resolvedUseCodes = parsed.resolvedUseCodes;
 
     const electivePlaceholders = getElectivePlaceholders();
     let electiveIndex = 0;
@@ -3573,13 +4648,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const active = !already;
       subjectState.set(id, { completed: st.completed, toggled: active });
       cell.classList.toggle('toggled', active);
+      cell.classList.remove('show-tooltip', 'hover-active');
       cell.setAttribute('aria-pressed', active ? 'true' : 'false');
-      cell.classList.toggle('hide-tooltip', active);
       if (active) {
         cell.classList.remove('satisfied');
         cell.classList.remove('can-select-now');
-      } else {
-        cell.classList.remove('hide-tooltip');
       }
     }
     // Sync BIT slot state after any toggle on elective grid cells
@@ -3628,40 +4701,118 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateOverrideUI();
     });
   }
-  if (livePrereqToggle) {
-    livePrereqToggle.addEventListener('change', () => {
-      livePrereqUpdates = livePrereqToggle.checked;
-      setLivePrereqEnabled(true);
-    });
-  }
+    if (livePrereqToggle) {
+      livePrereqToggle.addEventListener('change', () => {
+        livePrereqUpdates = livePrereqToggle.checked;
+        setLivePrereqEnabled(true);
+      });
+    }
+    if (passForEnrolmentsToggle) {
+      passForEnrolmentsToggle.addEventListener('change', () => {
+        passForEnrolmentsEnabled = passForEnrolmentsToggle.checked;
+        applyPassForEnrolmentsState();
+      });
+    }
+    const triggerFlash = (el) => {
+      if (!el) return;
+      el.classList.remove('copy-flash');
+      void el.offsetWidth;
+      el.classList.add('copy-flash');
+    };
+    const buildStudentMailto = (emails, firstName) => {
+      const list = (emails || []).map((email) => email.trim()).filter(Boolean);
+      if (!list.length) return '';
+      const subject = encodeURIComponent('Student Declaration');
+      const body = encodeURIComponent(`Hello ${firstName || ''}`);
+      return `mailto:${list.join(',')}?subject=${subject}&body=${body}`;
+    };
+    const openStudentEmail = (emails, firstName) => {
+      const mailto = buildStudentMailto(emails, firstName);
+      if (!mailto) return;
+      window.location.href = mailto;
+    };
+    if (studentDataPreview) {
+      studentDataPreview.addEventListener('dblclick', (event) => {
+        const emailTarget = event.target?.closest?.('.student-email-link');
+        if (emailTarget) {
+          event.preventDefault();
+          const email = emailTarget.getAttribute('data-email') || '';
+          const firstName = emailTarget.getAttribute('data-first-name') || '';
+          openStudentEmail([email], firstName);
+          triggerFlash(emailTarget);
+          return;
+        }
+        const target = event.target?.closest?.('.student-summary-id');
+        if (!target) return;
+        const text = target.getAttribute('data-copy') || '';
+        if (!text || !clipboardAvailable) return;
+        navigator.clipboard.writeText(text).then(() => {
+          triggerFlash(target);
+        }).catch(() => {});
+      });
+      studentDataPreview.addEventListener('click', (event) => {
+        const emailTarget = event.target?.closest?.('.student-email-link');
+        if (emailTarget) {
+          event.preventDefault();
+          return;
+        }
+        const emailAllTarget = event.target?.closest?.('.student-email-all');
+        if (!emailAllTarget) return;
+        event.preventDefault();
+        const emails = (emailAllTarget.getAttribute('data-emails') || '')
+          .split(',')
+          .map((email) => email.trim())
+          .filter(Boolean);
+        const firstName = emailAllTarget.getAttribute('data-first-name') || '';
+        openStudentEmail(emails, firstName);
+        triggerFlash(emailAllTarget);
+      });
+    }
 
   if (openInstructionsModal) openInstructionsModal.addEventListener('click', showInstructionsModal);
   if (closeInstructionsModal) closeInstructionsModal.addEventListener('click', hideInstructionsModal);
   if (closeInstructionsCta) closeInstructionsCta.addEventListener('click', hideInstructionsModal);
-  if (openCodeModal) openCodeModal.addEventListener('click', () => {
-    if (openCodeModal.disabled) return;
-    showCodeModal();
-  });
+    if (openCodeModal) openCodeModal.addEventListener('click', () => {
+      if (openCodeModal.disabled) return;
+      showCodeModal();
+    });
   if (closeCodeModal) closeCodeModal.addEventListener('click', hideCodeModal);
   if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
   if (applyCodeModal) applyCodeModal.addEventListener('click', applyCodes);
   if (showCourseTimetableButton) showCourseTimetableButton.addEventListener('click', showCourseTimetableModal);
-  if (courseTimetableIconButton) courseTimetableIconButton.addEventListener('click', showCourseTimetableModal);
-  if (closeCourseTimetable) closeCourseTimetable.addEventListener('click', hideCourseTimetableModal);
-  if (closeCourseTimetableCta) closeCourseTimetableCta.addEventListener('click', hideCourseTimetableModal);
+    if (courseTimetableIconButton) courseTimetableIconButton.addEventListener('click', showCourseTimetableModal);
+    if (closeCourseTimetable) closeCourseTimetable.addEventListener('click', hideCourseTimetableModal);
+    if (closeCourseTimetableCta) closeCourseTimetableCta.addEventListener('click', hideCourseTimetableModal);
   if (courseTimetableListButton) {
     courseTimetableListButton.addEventListener('click', () => setCourseTimetableView('list'));
   }
   if (courseTimetableGridButton) {
     courseTimetableGridButton.addEventListener('click', () => setCourseTimetableView('grid'));
   }
+  if (courseTimetableColoursButton) {
+    courseTimetableColoursButton.addEventListener('click', () => {
+      courseTimetableColoursOn = !courseTimetableColoursOn;
+      updateCourseTimetableColoursButton();
+    });
+    updateCourseTimetableColoursButton();
+  }
   if (copyCourseTimetableButton) {
-    copyCourseTimetableButton.addEventListener('click', copyCourseTimetableToClipboard);
+    copyCourseTimetableButton.addEventListener('click', () => {
+      flashCopyButton(copyCourseTimetableButton);
+      if (courseTimetableView === 'list') {
+        copyCourseTimetableListToClipboard();
+      } else {
+        copyCourseTimetableToClipboard();
+      }
+    });
   }
-  if (courseTimetableTeacherCopyButton) {
-    courseTimetableTeacherCopyButton.addEventListener('click', copyCourseTimetableForWord);
-    courseTimetableTeacherCopyButton.hidden = !isSharePointHost;
-  }
+    if (courseTimetableTeacherCopyButton) {
+      courseTimetableTeacherCopyButton.addEventListener('click', () => {
+        flashCopyButton(courseTimetableTeacherCopyButton);
+        copyCourseTimetableForWord();
+      });
+      courseTimetableTeacherCopyButton.hidden = !shouldShowTeacherCopy;
+    }
   if (codeInput) {
     codeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -3684,6 +4835,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
 
+    if (id && isSemesterRestricted(id)) {
+      ensureSemesterBadgeUI(cell);
+    }
     if (id && !isRunningThisSemester(id)) {
       ensureNotThisSemUI(cell);
     }
@@ -3722,7 +4876,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
 
   let currentTableMode = 'selected';
-  const historySortState = { key: 'code', direction: 'asc' };
+  const historySortState = { key: 'date', direction: 'asc' };
 
   const renderTimetableTable = (rowsOverride = null, highlightSelection = false) => {
     if (!timetableTable) return;
@@ -3791,6 +4945,826 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       tbody.appendChild(row);
     });
+    syncSubjectTableActions(timetableTable);
+  };
+
+  const syncSubjectTableActions = (tableEl) => {
+    if (!tableEl) return;
+    requestAnimationFrame(() => {
+      const modal = tableEl.closest('.modal');
+      if (!modal) return;
+      const actions = modal.querySelector('.subject-table-actions');
+      if (!actions) return;
+      const headerRow = tableEl.querySelector('thead tr:last-child') || tableEl.querySelector('thead tr');
+      const headerCell = headerRow ? headerRow.querySelector('th') : null;
+      if (!headerCell) return;
+      const width = headerCell.getBoundingClientRect().width;
+      if (!width || width < 1) return;
+      actions.style.setProperty('--code-col-width', `${Math.ceil(width)}px`);
+    });
+  };
+
+  function renderStudentPreview(content, asJson = false) {
+    if (!studentDataPreview) return;
+    studentDataPreview.innerHTML = '';
+    if (asJson) {
+      const pre = document.createElement('pre');
+      pre.textContent = content;
+      studentDataPreview.appendChild(pre);
+      return;
+    }
+    studentDataPreview.textContent = content;
+  };
+
+  const renderStudentPreviewHtml = (content) => {
+    if (!studentDataPreview) return;
+    studentDataPreview.innerHTML = content;
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const getSharePointParentInfo = (value) => {
+    const raw = (value || '').toString().trim();
+    if (!raw) return null;
+    const clean = raw.split('#')[0].split('?')[0].replace(/\/$/, '');
+    const parts = clean.split('/');
+    if (parts.length < 2) {
+      return { parentName: raw, studentUrl: raw };
+    }
+    const parentName = parts[parts.length - 2] || raw;
+    return { parentName, studentUrl: clean };
+  };
+
+  const getTroubleCountryMatch = (nationalityValue, courseInfo) => {
+    const nationality = (nationalityValue || '').toString().trim();
+    if (!nationality || !courseInfo?.Countries_facing_troubles) return null;
+    const list = courseInfo.Countries_facing_troubles
+      .toString()
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const match = list.find((country) => country.toLowerCase() === nationality.toLowerCase());
+    return match || null;
+  };
+
+  const parseExcelSerialDate = (value) => {
+    if (!Number.isFinite(value)) return null;
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    return new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+  };
+
+  const toDateValue = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return parseExcelSerialDate(value);
+    }
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber) && String(value).trim() !== '') {
+      return parseExcelSerialDate(asNumber);
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const formatDisplayDate = (value) => {
+    const date = toDateValue(value);
+    if (!date) return String(value ?? '').trim();
+    return new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+  };
+
+  const parseIntakeMonth = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const date = parseExcelSerialDate(value);
+      if (!date) return null;
+      return date.getUTCMonth() + 1;
+    }
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed.getMonth() + 1;
+    const match = String(value).match(/(19|20)\d{2}[/-](\d{1,2})/);
+    if (match) return parseInt(match[2], 10);
+    return null;
+  };
+
+  const formatStudentSummary = (record) => {
+    if (!record) return '';
+    const lines = [];
+    const studentId = (record.Student_IDs_Unique || '').toString().trim();
+    const family = (record.Family_Name || '').toString().trim();
+    const given = (record.Given_Name || '').toString().trim();
+    const firstName = given.split(/\s+/).filter(Boolean)[0] || '';
+    const mpEmail = (record.Institute_Email || '').toString().trim();
+    const primaryEmail = (record.Primary_Email || '').toString().trim();
+    const acceptedOffered = (record.Accepted_Offered || '').toString().trim();
+    const notes = (record.International_Office_Notes || '').toString().trim();
+    const intakeStart = (record.Intake_Start_Date || '').toString().trim();
+    const nationality = (record.Nationality || '').toString().trim();
+    const visaType = (record.Visa_Type || '').toString().trim();
+    const suspended = (record.Suspended || '').toString().trim();
+    const suspensionReason = (record.Suspended_Names || '').toString().trim();
+    const aprApp = (record.APR_APP || '').toString().trim();
+    const aprAppCondition = (record.APR_APP_Condition || '').toString().trim();
+    const aprAppAttended = (record.APR_APP_Attended || '').toString().trim();
+    const sharePoint = (record.SharePoint_StudentForms || '').toString().trim();
+    const crtLocation = (record.CRT_Location || '').toString().trim();
+    const suppsAndHolds = (record.SuppsAndHolds || '').toString().trim();
+    const passedSubjects = (record.Passed_subjects || '').toString().trim();
+    const resultsList = (record.Results_List || '').toString().trim();
+    const hasHistory = !!(passedSubjects || resultsList);
+    const isInternational = !!(
+      record.In_AllInternationals ||
+      record.In_InternationalsAccepted ||
+      record.In_AllInternationals === 'Yes' ||
+      record.In_InternationalsAccepted === 'Yes'
+    );
+
+    if (studentId || family || given) {
+      const name = [family, given].filter(Boolean).join(', ');
+      const display = [studentId, name].filter(Boolean).join(' ');
+      lines.push(
+        `<div class="student-summary-id" data-copy="${escapeHtml(display)}">${escapeHtml(display)}</div>`
+      );
+    }
+    if (mpEmail || primaryEmail) {
+      const emailList = [mpEmail, primaryEmail].filter(Boolean);
+      const emailLinks = emailList
+        .map(
+          (email) =>
+            `<a href="#" class="student-email-link" data-email="${escapeHtml(email)}" data-first-name="${escapeHtml(firstName)}">${escapeHtml(email)}</a>`
+        )
+        .join(' ');
+      const allEmails = emailList.join(',');
+      const multiIcon =
+        emailList.length > 1
+          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">@</button>`
+          : '';
+      lines.push(`<div class="student-email-row">${emailLinks}${multiIcon ? ` ${multiIcon}` : ''}</div>`);
+    }
+    if (acceptedOffered && !hasHistory) {
+      const isOffered = acceptedOffered.toLowerCase() === 'offered';
+      const text = isOffered ? `${acceptedOffered} only` : acceptedOffered;
+      const line = isOffered
+        ? `<span class="accepted-offered is-offered">${escapeHtml(text)}</span>`
+        : escapeHtml(text);
+      lines.push(line);
+    }
+    if (suppsAndHolds) lines.push('<strong>Hold on subject(s)</strong>');
+    if (notes) lines.push(escapeHtml(notes));
+    if (intakeStart && !hasHistory) {
+      lines.push(`Intake Start: ${escapeHtml(formatDisplayDate(intakeStart))}`);
+    }
+    if (isInternational) {
+      const details = [
+        countryHittingTroubles && nationality ? `Nationality: ${nationality}` : '',
+        visaType ? `Visa: ${visaType}` : '',
+      ]
+        .filter(Boolean)
+        .join(', ');
+      lines.push(escapeHtml(details ? `International - ${details}` : 'International'));
+    } else {
+      lines.push('Domestic');
+    }
+    if (countryHittingTroubles) {
+      lines.push(`<span class="trouble-country">${escapeHtml(countryHittingTroubles)}</span>`);
+    }
+    if (suspended) {
+      const cleanReason = suspensionReason.replace(/\u2014/g, '\u2013');
+      const reason = cleanReason ? ` \u2013 ${cleanReason}` : '';
+      lines.push(escapeHtml(`Suspended${reason}`));
+    }
+    if (aprApp) {
+      const condition = aprAppCondition || '';
+      const hasExcluded = /excluded/i.test(condition);
+      const conditionHtml = hasExcluded
+        ? `<span class="apr-excluded">${escapeHtml(condition)}</span>`
+        : escapeHtml(condition);
+      let attendanceLabel = '';
+      if (aprAppAttended) {
+        const attendedValue = aprAppAttended.toLowerCase();
+        if (attendedValue.includes('no') || attendedValue.includes('not')) {
+          attendanceLabel = "Didn't attend";
+        } else {
+          attendanceLabel = 'Did attend';
+        }
+      }
+      const detailParts = [conditionHtml, attendanceLabel].filter(Boolean);
+      const detailText = detailParts.join('. ');
+      lines.push(detailText ? `${escapeHtml(aprApp)} - ${detailText}` : escapeHtml(aprApp));
+    }
+    const sharePointInfo = getSharePointParentInfo(sharePoint);
+    if (sharePointInfo) {
+      lines.push(
+        `On SharePoint: <a href="${escapeHtml(sharePointInfo.studentUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+          sharePointInfo.parentName
+        )}</a>`
+      );
+    }
+    if (crtLocation) {
+      lines.push(
+        `<a href="${escapeHtml(crtLocation)}" target="_blank" rel="noopener noreferrer">CRT form</a>`
+      );
+    }
+    return lines.filter(Boolean).map((line) => (line.startsWith('<div') ? line : `<div>${line}</div>`)).join('');
+  };
+
+  const setStudentLookupVisible = (visible) => {
+    if (!studentIdSection) return;
+    studentIdSection.style.display = visible ? '' : 'none';
+    studentIdSection.classList.toggle('hidden-initial', !visible);
+  };
+
+  const setStudentPreviewVisible = (visible) => {
+    if (!studentDataPreview) return;
+    studentDataPreview.classList.toggle('is-visible', visible);
+  };
+
+  function applyStudentRecord(record) {
+    if (!record) return;
+    resetStudentSelections();
+    staffWorkbookState.setStudentRecord(record);
+    const courseInfo = staffWorkbookState.getCourseInfo();
+
+    const passedRaw = record.Passed_subjects || '';
+    const resultsRaw = record.Results_List || '';
+    const passedParsed = parseManualEntriesFromText(passedRaw);
+    const resultsParsed = parseManualEntriesFromText(resultsRaw);
+    const resultsCurrent = parseCurrentEntriesFromResults(resultsRaw);
+
+    resultsParsed.aliasEntries.forEach((aliases, mapped) => {
+      aliases.forEach((original) => recordManualAlias(mapped, original));
+    });
+    workbookCurrent.clear();
+    resultsCurrent.forEach((meta, mapped) => workbookCurrent.set(mapped, meta));
+    resultsParsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
+    resultsParsed.metaEntries.forEach((meta, mapped) => {
+      manualEntryMeta.set(mapped, {
+        result: meta.result || '',
+        date: meta.date || '',
+      });
+    });
+    resultsParsed.resolvedSubjectCodes.forEach((code) => {
+      if (!manualEntryMeta.has(code)) {
+        manualEntryMeta.set(code, { result: '', date: '' });
+      }
+    });
+
+    const resolvedUseCodes = passedParsed.resolvedUseCodes;
+    electivePlaceholderState = electivePlaceholderState.map((_, idx) => resolvedUseCodes[idx] || '');
+
+    passedParsed.resolvedSubjectCodes.forEach((code) => {
+      const cell = subjects.find((c) => c.dataset.subject === code);
+      if (!cell) return;
+      subjectState.set(code, { completed: true, toggled: false });
+    });
+
+    workbookCurrent.forEach((meta, code) => {
+      if (!validSubjectCodes.has(code)) return;
+      if (subjectState.get(code)?.completed) {
+        subjectState.set(code, { completed: false, toggled: false });
+      }
+      if (!manualEntryMeta.has(code)) {
+        manualEntryMeta.set(code, { result: '', date: meta?.date || '' });
+      }
+    });
+
+    const acceptedOffered = (record.Accepted_Offered || '').toString().trim();
+    const aprApp = (record.APR_APP || '').toString().trim();
+    const aprAppCondition = (record.APR_APP_Condition || '').toString().trim();
+    const aprAppAttended = (record.APR_APP_Attended || '').toString().trim();
+    const intakeStart = (record.Intake_Start_Date || '').toString().trim();
+    const intakeMonth = parseIntakeMonth(intakeStart);
+    const notes = (record.International_Office_Notes || '').toString().trim();
+    const nationality = (record.Nationality || '').toString().trim();
+    const suppsAndHolds = (record.SuppsAndHolds || '').toString().trim();
+    countryHittingTroubles = getTroubleCountryMatch(nationality, courseInfo);
+
+    if (acceptedOffered) {
+      const isOffered = acceptedOffered.toLowerCase() === 'offered';
+      if (isOffered) {
+        acceptedOfferedError = {
+          title: 'Accepted/Offered',
+          html: `<p><strong class="alert-inline-title alert-title-error">Accepted/Offered</strong> <span class="alert-inline-text">${escapeHtml(
+            acceptedOffered
+          )} only.</span></p>`,
+        };
+      } else {
+        acceptedOfferedError = null;
+      }
+    } else {
+      acceptedOfferedError = null;
+    }
+
+    if (intakeStart) {
+      const intakeDate = toDateValue(intakeStart);
+      const now = new Date();
+      const threeMonthsAhead = new Date(now.getTime());
+      threeMonthsAhead.setMonth(now.getMonth() + 3);
+      if (intakeDate && intakeDate > threeMonthsAhead) {
+        const displayIntake = formatDisplayDate(intakeStart) || intakeStart;
+        intakeStartError = {
+          title: 'Intake Start',
+          html: `<p><strong class="alert-inline-title alert-title-error">Intake Start</strong> <span class="alert-inline-text">${escapeHtml(
+            displayIntake
+          )}</span></p>`,
+        };
+      } else {
+        intakeStartError = null;
+      }
+    } else {
+      intakeStartError = null;
+    }
+
+    if (aprApp) {
+      const detailParts = [];
+      if (aprAppCondition) detailParts.push(`Condition: ${escapeHtml(aprAppCondition)}`);
+      if (aprAppAttended) detailParts.push(`Attended: ${escapeHtml(aprAppAttended)}`);
+      const detailHtml = detailParts.length ? `<div class="tight-lead">${detailParts.join('<br>')}</div>` : '';
+      aprAppError = {
+        title: `APR/APP: ${aprApp}`,
+        html: `<p><strong class="alert-inline-title alert-title-error">APR/APP: ${escapeHtml(
+          aprApp
+        )}</strong>${detailHtml}</p>`,
+      };
+    } else {
+      aprAppError = null;
+    }
+    infoNotes = notes || null;
+    const infoMessages = [];
+    if (infoNotes) {
+      infoMessages.push({
+        title: 'International Office Notes',
+        html: `<p><strong class="alert-inline-title alert-title-info">International Office Notes</strong> <span class="alert-inline-text">${escapeHtml(
+          infoNotes
+        )}</span></p>`,
+      });
+    }
+    if (suppsAndHolds) {
+      const items = suppsAndHolds
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => escapeHtml(entry))
+        .join('<br>');
+      infoMessages.push({
+        title: 'Supps and/or Holds',
+        html: `<p><strong class="alert-inline-title alert-title-info">Supps and/or Holds</strong> <span class="alert-inline-text">${items}</span></p>`,
+      });
+    }
+    if (countryHittingTroubles) {
+      infoMessages.push({
+        title: 'Country Alert',
+        html: `<p><strong class="alert-inline-title alert-title-info">Country Alert</strong> <span class="alert-inline-text">Student comes from ${escapeHtml(
+          countryHittingTroubles
+        )} - a country currently facing troubles.</span></p>`,
+      });
+    }
+    setAlertMessages('info', infoMessages);
+
+    const bestMajor = getBestMajorSelection();
+    if (bestMajor) setMajorDropdownSelection(bestMajor);
+
+    applyPassForEnrolmentsState();
+
+    applySubjectStateToCells();
+    rebuildElectiveBitStateFromState();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateResetState();
+    const assignments = buildElectiveAssignments();
+    setElectiveCredits(assignments, true);
+    updateElectiveWarning();
+    updateSelectedList();
+    loadedStudentSnapshot = captureStudentSnapshot();
+  };
+
+  const toProperCase = (value) =>
+    String(value || '')
+      .toLowerCase()
+      .split(/(\s|-|')/)
+      .map((part) => (/[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+      .join('');
+
+  const formatStudentSearchLabel = (record, includeEmail = false) => {
+    if (!record) return '';
+    const id = normalizeStudentId(record.Student_IDs_Unique || '');
+    const given = toProperCase(record.Given_Name || '');
+    const family = String(record.Family_Name || '').toUpperCase();
+    const primaryEmail = String(record.Primary_Email || '').toLowerCase();
+    const parts = [id, given, family].filter(Boolean);
+    if (includeEmail && primaryEmail) parts.push(primaryEmail);
+    return parts.join(' ');
+  };
+
+  const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const clearStudentSearchDropdown = () => {
+    if (!studentSearchDropdown) return;
+    studentSearchDropdown.innerHTML = '';
+    studentSearchDropdown.hidden = true;
+  };
+
+  const renderStudentSearchDropdown = (records, includeEmail = false) => {
+    if (!studentSearchDropdown) return;
+    studentSearchDropdown.innerHTML = '';
+    if (!records || !records.length) {
+      studentSearchDropdown.hidden = true;
+      return;
+    }
+    studentSearchDropdown.dataset.activeIndex = '0';
+    records.forEach((record) => {
+      const option = document.createElement('div');
+      option.className = 'student-search-option';
+      option.textContent = formatStudentSearchLabel(record, includeEmail);
+      option.setAttribute('data-student-id', normalizeStudentId(record.Student_IDs_Unique || ''));
+      option.tabIndex = 0;
+      studentSearchDropdown.appendChild(option);
+    });
+    const firstOption = studentSearchDropdown.querySelector('.student-search-option');
+    if (firstOption) firstOption.classList.add('is-active');
+    studentSearchDropdown.hidden = false;
+  };
+
+  const moveStudentSearchActive = (direction) => {
+    if (!studentSearchDropdown || studentSearchDropdown.hidden) return;
+    const options = Array.from(studentSearchDropdown.querySelectorAll('.student-search-option'));
+    if (!options.length) return;
+    const currentIndex = Number(studentSearchDropdown.dataset.activeIndex || '0');
+    const nextIndex = (currentIndex + direction + options.length) % options.length;
+    options.forEach((option, idx) => option.classList.toggle('is-active', idx === nextIndex));
+    studentSearchDropdown.dataset.activeIndex = String(nextIndex);
+    options[nextIndex].scrollIntoView({ block: 'nearest' });
+  };
+
+  const selectActiveStudentSearch = () => {
+    if (!studentSearchDropdown || studentSearchDropdown.hidden) return;
+    const options = Array.from(studentSearchDropdown.querySelectorAll('.student-search-option'));
+    if (!options.length) return;
+    const currentIndex = Number(studentSearchDropdown.dataset.activeIndex || '0');
+    const option = options[currentIndex] || options[0];
+    const id = option.getAttribute('data-student-id') || '';
+    const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+    if (record) applyStudentSearchSelection(record);
+  };
+  const applyStudentSearchSelection = (record) => {
+    if (!record) return;
+    const id = normalizeStudentId(record.Student_IDs_Unique || '');
+    extractedStudentId = id;
+    if (studentIdInput && id) studentIdInput.value = id;
+    clearStudentSearchDropdown();
+    updateStudentPreview();
+  };
+
+  function updateStudentPreview() {
+    if (!studentDataPreview) return;
+    if (!studentRecords.length) {
+      renderStudentPreview('');
+      setStudentLookupVisible(false);
+      setStudentPreviewVisible(false);
+      if (studentIdInput) studentIdInput.classList.remove('student-match-found');
+      clearStudentSearchDropdown();
+      return;
+    }
+    setStudentLookupVisible(true);
+    if (!extractedStudentId) {
+      renderStudentPreview('');
+      setStudentPreviewVisible(false);
+      if (studentIdInput) studentIdInput.classList.remove('student-match-found');
+      return;
+    }
+    const matchId = normalizeStudentId(extractedStudentId);
+    const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === matchId);
+    if (!record) {
+      renderStudentPreview('');
+      setStudentPreviewVisible(false);
+      if (studentIdInput) studentIdInput.classList.remove('student-match-found');
+      return;
+    }
+    setStudentPreviewVisible(true);
+    if (activeStudentId !== matchId) {
+      activeStudentId = matchId;
+      applyStudentRecord(record);
+    }
+    if (studentIdInput) studentIdInput.classList.add('student-match-found');
+    renderStudentPreviewHtml(formatStudentSummary(record));
+  };
+
+  function handleStudentIdInput() {
+    if (!studentIdInput) return;
+    studentIdInput.classList.remove('student-match-found');
+    const rawValue = studentIdInput.value || '';
+    const trimmedValue = rawValue.trim();
+    const idMatch = studentIdPattern.exec(trimmedValue);
+    if (idMatch) {
+      extractedStudentId = idMatch[1];
+      studentIdInput.value = idMatch[1];
+      clearStudentSearchDropdown();
+      updateStudentPreview();
+      return;
+    }
+
+    extractedStudentId = '';
+    const sPrefixMatch = trimmedValue.match(/^[sS](\d{1,7})$/);
+    const numericQuery = sPrefixMatch ? sPrefixMatch[1] : trimmedValue.match(/^\d{1,7}$/)?.[0];
+    if (numericQuery && studentRecords.length) {
+      let matches = studentRecords.filter((record) =>
+        normalizeStudentId(record.Student_IDs_Unique || '').startsWith(numericQuery)
+      );
+      if (!matches.length) {
+        matches = studentRecords.filter((record) =>
+          normalizeStudentId(record.Student_IDs_Unique || '').includes(numericQuery)
+        );
+      }
+      if (matches.length === 1) {
+        applyStudentSearchSelection(matches[0]);
+        return;
+      }
+      renderStudentSearchDropdown(matches);
+      updateStudentPreview();
+      return;
+    }
+
+    const valueWithoutLeadingS = sPrefixMatch ? trimmedValue.replace(/^[sS]\s*/, '') : trimmedValue;
+    const searchValue = valueWithoutLeadingS.trim();
+    const hasEmailQuery = searchValue.includes('@');
+    if ((searchValue.length < 2 && !hasEmailQuery) || !studentRecords.length) {
+      clearStudentSearchDropdown();
+      updateStudentPreview();
+      return;
+    }
+
+    const isWordSearch = /[A-Za-z][\s.]$/.test(rawValue);
+    const nameQuery = searchValue.replace(/[.\s]+$/g, '');
+    const lowerQuery = nameQuery.toLowerCase();
+    const emailQuery = searchValue.toLowerCase();
+    const includeEmailInDropdown = hasEmailQuery;
+    const seen = new Set();
+    const results = [];
+    const getNameWords = (value) =>
+      String(value || '')
+        .toLowerCase()
+        .split(/[^a-z]+/g)
+        .filter(Boolean);
+
+    studentRecords.forEach((record) => {
+      const id = normalizeStudentId(record.Student_IDs_Unique || '');
+      if (!id || seen.has(id)) return;
+      const given = String(record.Given_Name || '');
+      const family = String(record.Family_Name || '');
+      const fullName = String(record.Full_Name || '');
+      const email = String(record.Primary_Email || '');
+      const secondaryEmail = String(record.Secondary_Email || '');
+      let matched = false;
+
+      if (!isWordSearch || emailQuery.includes('@')) {
+        const emailMatches = (val) =>
+          val && val.toLowerCase().startsWith(emailQuery);
+        if (emailMatches(email) || emailMatches(secondaryEmail)) {
+          matched = true;
+        }
+      }
+      if (!matched && nameQuery.length >= 2) {
+        if (isWordSearch) {
+          const words = [
+            ...getNameWords(given),
+            ...getNameWords(family),
+            ...getNameWords(fullName),
+          ];
+          matched = words.includes(lowerQuery);
+        } else {
+          const fullLower = fullName.toLowerCase();
+          matched =
+            given.toLowerCase().startsWith(lowerQuery) ||
+            family.toLowerCase().startsWith(lowerQuery) ||
+            (fullLower && fullLower.startsWith(lowerQuery)) ||
+            getNameWords(fullName).some((word) => word.startsWith(lowerQuery));
+        }
+      }
+
+      if (matched) {
+        seen.add(id);
+        results.push(record);
+      }
+    });
+
+    if (results.length === 1) {
+      applyStudentSearchSelection(results[0]);
+      return;
+    }
+
+    renderStudentSearchDropdown(results, includeEmailInDropdown);
+    updateStudentPreview();
+  };
+
+  function stripRangeRef(ref) {
+    return ref.replace(/\$|'/g, '');
+  }
+
+  function getRangeValues(sheet, rangeRef, columnName) {
+    if (!sheet || !rangeRef) return [];
+    const cleaned = stripRangeRef(rangeRef);
+    const parts = cleaned.split('!');
+    if (!parts.length) return [];
+    const range = parts[parts.length - 1];
+    const sheetRef = sheet['!ref'] || '';
+    let decoded = null;
+      try {
+        decoded = XLSX.utils.decode_range(range);
+      } catch {
+      const hashMatch = range.match(/^([A-Z]+)(\d+)#$/i);
+      if (hashMatch && sheetRef) {
+        const sheetBounds = XLSX.utils.decode_range(sheetRef);
+        const expandedRange = `${hashMatch[1]}${hashMatch[2]}:${hashMatch[1]}${sheetBounds.e.r}`;
+        try {
+          decoded = XLSX.utils.decode_range(expandedRange);
+        } catch {
+          return [];
+        }
+      } else {
+        return [];
+      }
+      if (
+        decoded &&
+        decoded.s.c === decoded.e.c &&
+        decoded.s.r === decoded.e.r &&
+        sheetRef
+      ) {
+        try {
+          const sheetBounds = XLSX.utils.decode_range(sheetRef);
+          decoded = XLSX.utils.decode_range(
+            `${XLSX.utils.encode_col(decoded.s.c)}${decoded.s.r + 1}:${XLSX.utils.encode_col(decoded.e.c)}${sheetBounds.e.r + 1}`
+          );
+        } catch {
+          return [];
+        }
+      }
+    }
+    const values = [];
+    for (let row = decoded.s.r; row <= decoded.e.r; row += 1) {
+      const cellAddress = XLSX.utils.encode_cell({ c: decoded.s.c, r: row });
+      const cell = sheet[cellAddress];
+      values.push(cell ? cell.v : '');
+    }
+    const normalized = values.map((value) => (value ?? '').toString().trim());
+    const headerMarker = columnName.replace(/_/g, ' ').split(' ')[0].toLowerCase();
+    if (normalized.length && headerMarker && normalized[0].toLowerCase().includes(headerMarker)) {
+      normalized.shift();
+    }
+    while (normalized.length && normalized[0] === '') {
+      normalized.shift();
+    }
+    return normalized;
+  };
+
+  function buildStudentRecordsFromWorkbook(workbook) {
+    if (!workbook) return [];
+    const sheetName = 'Students';
+    const sheet = workbook.Sheets?.[sheetName];
+    if (!sheet) return [];
+      const names = workbook.Workbook?.Names || [];
+      let columnMap = {};
+      names.forEach((nameEntry) => {
+        if (!nameEntry?.Name || !STUDENT_COLUMNS.includes(nameEntry.Name) || !nameEntry.Ref) return;
+        const cleanedRef = stripRangeRef(nameEntry.Ref);
+        if (!cleanedRef.includes(`${sheetName}!`)) return;
+        columnMap[nameEntry.Name] = getRangeValues(sheet, nameEntry.Ref, nameEntry.Name);
+      });
+      let rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
+      if (rowCount <= 1) {
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        if (rows.length > 1) {
+          const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
+            acc[normalizeHeader(col)] = col;
+            return acc;
+          }, {});
+          let bestHeaderIndex = -1;
+          let bestHeaderMatches = 0;
+          const scanLimit = Math.min(rows.length, 5);
+          for (let i = 0; i < scanLimit; i += 1) {
+            const row = rows[i] || [];
+            let matches = 0;
+            row.forEach((cell) => {
+              if (columnKeyMap[normalizeHeader(cell)]) matches += 1;
+            });
+            if (matches > bestHeaderMatches) {
+              bestHeaderMatches = matches;
+              bestHeaderIndex = i;
+            }
+          }
+          if (bestHeaderIndex >= 0 && bestHeaderMatches > 0) {
+            const headerRow = rows[bestHeaderIndex] || [];
+            const colIndexMap = {};
+            headerRow.forEach((cell, idx) => {
+              const key = columnKeyMap[normalizeHeader(cell)];
+              if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+            });
+            columnMap = {};
+            STUDENT_COLUMNS.forEach((columnName) => {
+              columnMap[columnName] = [];
+            });
+            for (let rowIndex = bestHeaderIndex + 1; rowIndex < rows.length; rowIndex += 1) {
+              const row = rows[rowIndex] || [];
+              STUDENT_COLUMNS.forEach((columnName) => {
+                const idx = colIndexMap[columnName];
+                const cellValue = idx === undefined ? '' : row[idx];
+                columnMap[columnName].push(
+                  typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? ''
+                );
+              });
+            }
+            rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
+          }
+        }
+      }
+      const records = [];
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+      const record = {};
+      let hasValue = false;
+      STUDENT_COLUMNS.forEach((columnName) => {
+        const value = columnMap[columnName]?.[rowIndex] ?? '';
+        if (value) hasValue = true;
+        record[columnName] = value;
+      });
+        const studentId = normalizeStudentId(record.Student_IDs_Unique);
+        if (!studentId || !hasValue) continue;
+        record.Student_IDs_Unique = studentId;
+      records.push(record);
+    }
+    return records;
+  };
+
+  function buildCourseInfoFromWorkbook(workbook) {
+    if (!workbook) return null;
+    const sheetName = 'Info';
+    const sheet = workbook.Sheets?.[sheetName];
+    if (!sheet) return null;
+    const names = workbook.Workbook?.Names || [];
+    const info = {};
+    names.forEach((nameEntry) => {
+      if (!nameEntry?.Name || !COURSE_INFO_RANGES.includes(nameEntry.Name) || !nameEntry.Ref) return;
+      const cleanedRef = stripRangeRef(nameEntry.Ref);
+      if (!cleanedRef.includes(`${sheetName}!`)) return;
+      const values = getRangeValues(sheet, nameEntry.Ref, nameEntry.Name);
+      const value = values.find((val) => val !== '') ?? '';
+      info[nameEntry.Name] = value;
+    });
+    return info;
+  };
+
+  function loadWorkbookFromFile(file) {
+    if (!file) {
+      if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+      return;
+    }
+    if (typeof XLSX === 'undefined') {
+      renderStudentPreview('Workbook library is not available in this environment.');
+      if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+      return;
+    }
+    if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+          const workbook = XLSX.read(event.target.result, { type: 'array' });
+          const records = buildStudentRecordsFromWorkbook(workbook);
+          const courseInfo = buildCourseInfoFromWorkbook(workbook);
+          studentRecords = records;
+          activeStudentId = '';
+          staffWorkbookState.setStudentRecord(null);
+          staffWorkbookState.setCourseInfo(courseInfo);
+          loadedStudentSnapshot = null;
+          clearStudentSearchDropdown();
+          const countLine = `${records.length} students listed`;
+          if (lastDroppedFileInfo) {
+            renderDropZoneStatus([
+              lastDroppedFileInfo.fileName,
+              lastDroppedFileInfo.savedLine,
+              countLine,
+            ]);
+          } else if (dropZoneTextEl) {
+            renderDropZoneStatus([countLine]);
+          }
+          updateStudentPreview();
+          if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+      } catch (error) {
+        renderStudentPreview(`Workbook parse error: ${error.message}`);
+        if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+      }
+    };
+    reader.onerror = () => {
+      renderStudentPreview('Failed to read the workbook file.');
+      if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const renderSubjectTable = (tableEl, rows, emptyMessage = 'No subjects to show.') => {
@@ -3800,7 +5774,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     tbody.innerHTML = '';
     const items = rows || [];
     const isHistoryTable = tableEl.id === 'history-table';
-    const columns = isHistoryTable ? ['code', 'name', 'result', 'date', 'stream'] : ['code', 'name', 'stream'];
+    const isRemainingTable = tableEl.id === 'remaining-table';
+    const columns = isHistoryTable ? ['code', 'name', 'result', 'date', 'stream'] : isRemainingTable ? ['code', 'name', 'stream'] : ['code', 'name', 'stream'];
     if (!items.length) {
       const row = document.createElement('tr');
       const td = document.createElement('td');
@@ -3808,6 +5783,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       td.colSpan = columns.length;
       row.appendChild(td);
       tbody.appendChild(row);
+      syncSubjectTableActions(tableEl);
       return;
     }
     items.forEach(({ cell, id, result = '', date = '', isFail = false, displayCode, displayName, displayStream }) => {
@@ -3834,13 +5810,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       tbody.appendChild(row);
     });
+    syncSubjectTableActions(tableEl);
   };
 
   const getHistorySortValue = (row, key) => {
     const id = row?.id || '';
     if (key === 'code') return row?.sortCode || row?.displayCode || id;
     if (key === 'result') return row?.result || '';
-    if (key === 'date') return row?.date || '';
+    if (key === 'date') return getHistoryDateSortValue(row?.date || '');
     if (key === 'stream') return row?.displayStream || buildStreamLabel(id);
     return '';
   };
@@ -3873,6 +5850,655 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderSubjectTable(historyTable, rows, 'No completed subjects to show.');
     renderCurrentEnrolments();
     updateHistorySortButtons();
+  };
+
+  const renderRemainingModal = () => {
+    const rows = getRemainingRows();
+    renderSubjectTable(remainingTable, rows, 'No remaining core or major subjects to show.');
+    if (remainingSummary) {
+      const majorName = getMajorDisplayName();
+      const remainingElectives = getRemainingElectiveCount();
+      remainingSummary.innerHTML = `<p>These are the Core and ${majorName} Major subjects that you have not yet completed.</p><p>You also have ${remainingElectives} Elective${remainingElectives === 1 ? '' : 's'} to complete.</p>`;
+    }
+    if (remainingElectivesSection && remainingElectivesTable) {
+      const electiveRows = getRemainingElectiveRows();
+      if (electiveRows.length) {
+        renderSubjectTable(remainingElectivesTable, electiveRows, 'No elective subjects to show.');
+        remainingElectivesSection.hidden = false;
+      } else {
+        remainingElectivesSection.hidden = true;
+        if (remainingElectivesTable) {
+          const tbody = remainingElectivesTable.querySelector('tbody');
+          if (tbody) tbody.innerHTML = '';
+        }
+      }
+    }
+  };
+
+  let courseMapBuilt = false;
+  const courseMapCells = new Map();
+  const courseMapSharedPlaceholders = [];
+  const courseMapMajorPlaceholders = [];
+  const courseMapElectivePlaceholders = [];
+  let courseMapSharedRefs = null;
+
+  const createCourseMapCell = ({ code, label, placeholder, empty }) => {
+    const cell = document.createElement('div');
+    cell.className = 'course-map-cell';
+    if (placeholder) cell.classList.add('course-map-placeholder');
+    if (empty) cell.classList.add('course-map-empty');
+    if (code) {
+      cell.dataset.subject = code;
+      const codeEl = document.createElement('div');
+      codeEl.className = 'course-map-code';
+      codeEl.textContent = code;
+      const nameEl = document.createElement('div');
+      nameEl.className = 'course-map-name';
+      nameEl.textContent = getSubjectName(code);
+      cell.appendChild(codeEl);
+      cell.appendChild(nameEl);
+      courseMapCells.set(code, cell);
+    } else if (label) {
+      const labelEl = document.createElement('div');
+      labelEl.className = 'course-map-name';
+      labelEl.textContent = label;
+      cell.appendChild(labelEl);
+    }
+    return cell;
+  };
+
+  const buildCourseMapGrid = (rows, cols, className = '') => {
+    const grid = document.createElement('div');
+    grid.className = `course-map-grid ${className}`.trim();
+    grid.style.setProperty('--cols', String(cols));
+    rows.forEach((row) => {
+      row.forEach((entry) => {
+        if (!entry) {
+          grid.appendChild(createCourseMapCell({ empty: true }));
+          return;
+        }
+        if (typeof entry === 'object') {
+          const cell = createCourseMapCell({ placeholder: true });
+          if (entry.placeholder) {
+            cell.classList.add('course-map-shared-placeholder');
+            cell.dataset.placeholder = entry.placeholder;
+            cell.title =
+              "BIT245 belongs to both BA and SD streams. If your major is NS, BIT245 is treated as a single elective. If your major is BA or SD, it's treated as one major subject.";
+            courseMapSharedPlaceholders.push(cell);
+          }
+          grid.appendChild(cell);
+          return;
+        }
+        const isMajorPlaceholder = entry.startsWith('Major Subject');
+        const isElectivePlaceholder = entry.startsWith('Elective Subject');
+        if (isMajorPlaceholder || isElectivePlaceholder) {
+          const cell = createCourseMapCell({ label: entry, placeholder: true });
+          if (isMajorPlaceholder) courseMapMajorPlaceholders.push(cell);
+          if (isElectivePlaceholder) courseMapElectivePlaceholders.push(cell);
+          grid.appendChild(cell);
+          return;
+        }
+        grid.appendChild(createCourseMapCell({ code: entry }));
+      });
+    });
+    return grid;
+  };
+
+  const buildCourseMapKey = () => {
+    if (!courseMapKey) return;
+    courseMapKey.innerHTML = '';
+    const items = [
+      { label: '(White background) Available to you this semseter', color: '#ffffff' },
+      { label: 'Completed - passed or credit', color: '#c8efc0' },
+      { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #1b5e20, #c8efc0)', textColor: '#fff' },
+      { label: 'Selected here today', color: '#1b5e20', textColor: '#fff' },
+      { label: 'You can tick-off prerequisite requirements this semesterand study it next semester', color: '#cfcfcf' },
+      { label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' },
+    ];
+    items.forEach((item) => {
+      const keyItem = document.createElement('div');
+      keyItem.className = 'course-map-key-item';
+      const swatch = document.createElement('span');
+      swatch.className = 'course-map-key-swatch';
+      swatch.style.background = item.color;
+      if (item.textColor) swatch.style.borderColor = '#666';
+      const label = document.createElement('span');
+      label.textContent = item.label;
+      keyItem.appendChild(swatch);
+      keyItem.appendChild(label);
+      courseMapKey.appendChild(keyItem);
+    });
+  };
+
+  const buildCourseMapLayout = () => {
+    if (!courseMapContent) return;
+    courseMapContent.innerHTML = '';
+    courseMapCells.clear();
+    courseMapSharedPlaceholders.length = 0;
+    courseMapMajorPlaceholders.length = 0;
+    courseMapElectivePlaceholders.length = 0;
+
+    const coreRows = [
+      ['BIT105', 'BIT111', 'BIT112', 'BIT231', 'BIT241', 'BIT371', 'BIT372'],
+      ['BIT106', 'BIT121', 'BIT108', 'BIT230', 'BIT242', 'BIT352', 'BIT314'],
+    ];
+    const majorRows = [
+      ['Major Subject 1', 'Major Subject 3', 'Major Subject 5', 'Elective Subject 1', 'Elective Subject 3'],
+      ['Major Subject 2', 'Major Subject 4', 'Major Subject 6', 'Elective Subject 2', 'Elective Subject 4'],
+    ];
+    const networkRows = [
+      ['BIT233', 'BIT244', 'BIT313'],
+      ['BIT213', 'BIT353', 'BIT362'],
+    ];
+    const baRows = [
+      ['BIT236', 'BIT357', 'BIT356'],
+      [{ placeholder: 'bit245-ba' }, 'BIT355', 'BIT363'],
+    ];
+    const sdRows = [
+      [{ placeholder: 'bit245-sd' }, 'BIT246', 'BIT358'],
+      ['BIT235', 'BIT351', 'BIT364'],
+    ];
+
+    const coreBlock = document.createElement('div');
+    coreBlock.className = 'course-map-core-block';
+    coreBlock.appendChild(buildCourseMapGrid(coreRows, 7, 'course-map-core-grid'));
+    coreBlock.appendChild(buildCourseMapGrid(majorRows, 5, 'course-map-major-grid'));
+    courseMapContent.appendChild(coreBlock);
+
+    const streamsBlock = document.createElement('div');
+    streamsBlock.className = 'course-map-streams-block';
+
+    const nsSection = document.createElement('div');
+    nsSection.className = 'course-map-stream ns';
+    const nsLabel = document.createElement('div');
+    nsLabel.className = 'course-map-stream-label';
+    nsLabel.textContent = 'Network Security';
+    nsSection.appendChild(nsLabel);
+    nsSection.appendChild(buildCourseMapGrid(networkRows, 3, 'course-map-stream-grid'));
+    streamsBlock.appendChild(nsSection);
+
+    const baSection = document.createElement('div');
+    baSection.className = 'course-map-stream ba';
+    const baLabel = document.createElement('div');
+    baLabel.className = 'course-map-stream-label';
+    baLabel.textContent = 'Business Analytics';
+    baSection.appendChild(baLabel);
+    baSection.appendChild(buildCourseMapGrid(baRows, 3, 'course-map-stream-grid'));
+    streamsBlock.appendChild(baSection);
+
+    const shared = document.createElement('div');
+    shared.className = 'course-map-shared';
+    const sharedCell = createCourseMapCell({ code: 'BIT245' });
+    sharedCell.classList.add('course-map-shared-cell');
+    sharedCell.title =
+      "BIT245 belongs to both the Business Analtyics (BA) and Software Development (SD) streams.\n  - If your major is Network Security, BIT245 is treated as a single elective.\n  - If your major is BA or SD, it's treated as a single major subject.";
+    shared.appendChild(sharedCell);
+    const arrowUp = document.createElement('div');
+    arrowUp.className = 'course-map-arrow course-map-arrow-up';
+    const arrowDown = document.createElement('div');
+    arrowDown.className = 'course-map-arrow course-map-arrow-down';
+    sharedCell.appendChild(arrowUp);
+    sharedCell.appendChild(arrowDown);
+    courseMapSharedRefs = { container: shared, cell: sharedCell, arrowUp, arrowDown };
+    streamsBlock.appendChild(shared);
+
+    const sdSection = document.createElement('div');
+    sdSection.className = 'course-map-stream sd';
+    const sdLabel = document.createElement('div');
+    sdLabel.className = 'course-map-stream-label';
+    sdLabel.textContent = 'Software Development';
+    sdSection.appendChild(sdLabel);
+    sdSection.appendChild(buildCourseMapGrid(sdRows, 3, 'course-map-stream-grid'));
+    streamsBlock.appendChild(sdSection);
+
+    courseMapContent.appendChild(streamsBlock);
+
+    buildCourseMapKey();
+  };
+
+  const positionCourseMapArrows = () => {
+    // Arrows are now positioned via CSS within the BIT245 cell.
+  };
+
+  const updateCourseMapStatuses = () => {
+    const completedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.completed)
+        .map(([code]) => code)
+    );
+    const plannedSet = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+    const memo = new Map();
+    const currentCodes = new Set([
+      ...Array.from(workbookCurrent.keys()),
+      ...Array.from(manualEntryCurrent.keys()),
+    ]);
+    courseMapSharedPlaceholders.forEach((cell) => {
+      cell.classList.remove(
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later'
+      );
+    });
+    courseMapMajorPlaceholders.forEach((cell) => {
+      cell.classList.remove(
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later'
+      );
+    });
+    courseMapElectivePlaceholders.forEach((cell) => {
+      cell.classList.remove(
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later'
+      );
+    });
+    courseMapCells.forEach((cell, code) => {
+      cell.classList.remove(
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later'
+      );
+      const st = subjectState.get(code);
+      if (!st) return;
+      const isCurrent = currentCodes.has(code) || passForEnrolmentsOverrides.has(code);
+      if (isCurrent) {
+        cell.classList.add('course-map-status-current');
+        return;
+      }
+      if (st.toggled) {
+        cell.classList.add('course-map-status-selected');
+        return;
+      }
+      if (st.completed) {
+        cell.classList.add('course-map-status-passed');
+        return;
+      }
+      const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
+        id: code,
+        completedSet,
+        plannedSet,
+        usePlanned: false,
+      });
+      const hasCoreq = (corequisites[code] || []).length > 0;
+      const meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+      if (!meetsNow) {
+        const dist = computeSemesterDistance(code, completedSet, plannedSet, false, false, memo);
+        if (Number.isFinite(dist) && dist <= 2) {
+          cell.classList.add('course-map-status-next');
+        } else {
+          cell.classList.add('course-map-status-later');
+        }
+      }
+    });
+
+    const sharedCell = courseMapCells.get('BIT245');
+    if (sharedCell && courseMapSharedPlaceholders.length) {
+      const statusClass = [
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later',
+      ].find((cls) => sharedCell.classList.contains(cls));
+      if (statusClass) {
+        courseMapSharedPlaceholders.forEach((cell) => cell.classList.add(statusClass));
+      }
+    }
+
+    const getStatusForCode = (code) => {
+      const st = subjectState.get(code);
+      if (!st) return '';
+      const isCurrent = currentCodes.has(code) || passForEnrolmentsOverrides.has(code);
+      if (isCurrent) return 'course-map-status-current';
+      if (st.toggled) return 'course-map-status-selected';
+      if (st.completed) return 'course-map-status-passed';
+      return '';
+    };
+
+    const majorCodes = Array.from(subjectState.keys()).filter((code) => {
+      if (code === 'BIT245') return false;
+      const meta = subjectMeta[code];
+      if (!meta?.classes) return false;
+      const isCore = meta.classes.includes('core');
+      const isElective = meta.classes.includes('elective') || code.startsWith('USE') || code.startsWith('ELECTIVE');
+      return !isCore && !isElective;
+    });
+    const electiveCodes = Array.from(subjectState.keys()).filter((code) => {
+      if (code === 'BIT245') return false;
+      const meta = subjectMeta[code];
+      return (meta?.classes || []).includes('elective') || code.startsWith('USE') || code.startsWith('ELECTIVE');
+    });
+
+    const buildStatusQueue = (codes) => {
+      const buckets = {
+        'course-map-status-current': [],
+        'course-map-status-selected': [],
+        'course-map-status-passed': [],
+      };
+      codes.forEach((code) => {
+        const status = getStatusForCode(code);
+        if (status) buckets[status].push(code);
+      });
+      return [
+        ...buckets['course-map-status-current'],
+        ...buckets['course-map-status-selected'],
+        ...buckets['course-map-status-passed'],
+      ].map((code) => getStatusForCode(code));
+    };
+
+    const applyPlaceholderStatuses = (cells, codes) => {
+      const statuses = buildStatusQueue(codes);
+      cells.forEach((cell, idx) => {
+        const status = statuses[idx];
+        if (status) cell.classList.add(status);
+      });
+    };
+
+    applyPlaceholderStatuses(courseMapMajorPlaceholders, majorCodes);
+    applyPlaceholderStatuses(courseMapElectivePlaceholders, electiveCodes);
+  };
+
+  const renderCourseMapModal = () => {
+    if (!courseMapContent) return;
+    if (!courseMapBuilt) {
+      buildCourseMapLayout();
+      courseMapBuilt = true;
+    }
+    updateCourseMapStatuses();
+  };
+
+  const getCourseMapCaptureTarget = () =>
+    courseMapModal ? courseMapModal.querySelector('.modal-body') : null;
+
+  const collectInlineStyles = () => {
+    const chunks = [];
+    Array.from(document.styleSheets).forEach((sheet) => {
+      try {
+        Array.from(sheet.cssRules || []).forEach((rule) => {
+          if (!rule?.cssText) return;
+          if (rule.type === CSSRule.FONT_FACE_RULE) return;
+          const sanitized = rule.cssText.replace(/url\([^)]*\)/gi, 'none');
+          chunks.push(sanitized);
+        });
+      } catch (err) {
+        // ignore cross-origin stylesheets
+      }
+    });
+    return chunks.join('\n');
+  };
+
+  const buildCourseMapSvgFromDom = (element) => {
+    if (!element) return null;
+    const containerRect = element.getBoundingClientRect();
+    const width = Math.ceil(Math.max(containerRect.width, element.scrollWidth || 0));
+    const height = Math.ceil(Math.max(containerRect.height, element.scrollHeight || 0));
+    if (!width || !height) return null;
+
+    const escapeXml = (value = '') =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/\'/g, '&#39;');
+
+    const toNumber = (value) => {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const relativeRect = (el) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        x: rect.left - containerRect.left + element.scrollLeft,
+        y: rect.top - containerRect.top + element.scrollTop,
+        width: rect.width,
+        height: rect.height,
+      };
+    };
+
+    const svgParts = [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`,
+      `<rect width="${width}" height="${height}" fill="#fff"/>`,
+    ];
+
+    const addRect = (rect, { fill, stroke, strokeWidth, rx = 0, ry = 0, dashArray } = {}) => {
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+      const strokeAttr = stroke ? ` stroke="${stroke}"` : '';
+      const strokeWidthAttr = strokeWidth ? ` stroke-width="${strokeWidth}"` : '';
+      const dashAttr = dashArray ? ` stroke-dasharray="${dashArray}"` : '';
+      svgParts.push(
+        `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="${rx}" ry="${ry}" fill="${fill || 'none'}"${strokeAttr}${strokeWidthAttr}${dashAttr}/>`
+      );
+    };
+
+    const addText = (text, x, y, styles) => {
+      if (!text) return;
+      const attrs = [
+        `x="${x}"`,
+        `y="${y}"`,
+        `fill="${styles.color || '#111'}"`,
+        `font-size="${styles.fontSize || '12px'}"`,
+        `font-weight="${styles.fontWeight || '400'}"`,
+        `font-family="${styles.fontFamily || 'Arial, sans-serif'}"`,
+        `dominant-baseline="hanging"`,
+      ];
+      svgParts.push(`<text ${attrs.join(' ')}>${escapeXml(text)}</text>`);
+    };
+
+    const drawBorderedGrids = (selector) => {
+      element.querySelectorAll(selector).forEach((grid) => {
+        const rect = relativeRect(grid);
+        const style = window.getComputedStyle(grid);
+        const stroke = style.borderColor;
+        const strokeWidth = toNumber(style.borderWidth);
+        addRect(rect, { fill: 'none', stroke, strokeWidth });
+      });
+    };
+
+    drawBorderedGrids('.course-map-core-grid, .course-map-major-grid, .course-map-stream-grid');
+
+    const bit245Cell = element.querySelector('.course-map-cell[data-subject="BIT245"]');
+    if (bit245Cell) {
+      const rect = relativeRect(bit245Cell);
+      const baseX = rect.x + rect.width;
+      const angles = [-20, 20];
+      const offsets = [0.35, 0.65];
+      const lineLength = 96;
+      angles.forEach((deg, idx) => {
+        const y = rect.y + rect.height * offsets[idx];
+        const rad = (deg * Math.PI) / 180;
+        const x2 = baseX + Math.cos(rad) * lineLength;
+        const y2 = y + Math.sin(rad) * lineLength;
+        const stroke = '#1a5c7a';
+        const strokeWidth = 2;
+        svgParts.push(
+          `<line x1="${baseX}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${strokeWidth}" />`
+        );
+        const headLength = 8;
+        const headWidth = 5;
+        const perp = rad + Math.PI / 2;
+        const hx = x2;
+        const hy = y2;
+        const p1x = hx - Math.cos(rad) * headLength;
+        const p1y = hy - Math.sin(rad) * headLength;
+        const p2x = p1x + Math.cos(perp) * headWidth;
+        const p2y = p1y + Math.sin(perp) * headWidth;
+        const p3x = p1x - Math.cos(perp) * headWidth;
+        const p3y = p1y - Math.sin(perp) * headWidth;
+        svgParts.push(
+          `<polygon points="${hx},${hy} ${p2x},${p2y} ${p3x},${p3y}" fill="${stroke}" />`
+        );
+        svgParts.push(
+          `<ellipse cx="${x2 + 7}" cy="${y2}" rx="7" ry="5" fill="none" stroke="#bdbdbd" stroke-width="1" />`
+        );
+      });
+    }
+
+    element.querySelectorAll('.course-map-cell').forEach((cell) => {
+      const rect = relativeRect(cell);
+      const style = window.getComputedStyle(cell);
+      const fill = style.backgroundColor;
+      const stroke = style.borderColor;
+      const strokeWidth = toNumber(style.borderWidth);
+      const dash = style.borderStyle === 'dashed' ? '4,3' : null;
+      addRect(rect, { fill, stroke, strokeWidth, dashArray: dash });
+
+      const padLeft = toNumber(style.paddingLeft);
+      const padTop = toNumber(style.paddingTop);
+      const codeEl = cell.querySelector('.course-map-code');
+      const nameEl = cell.querySelector('.course-map-name');
+      if (codeEl) {
+        const codeStyle = window.getComputedStyle(codeEl);
+        const fontSize = toNumber(codeStyle.fontSize);
+        const lineHeight = toNumber(codeStyle.lineHeight) || fontSize * 1.2;
+        addText(
+          codeEl.textContent.trim(),
+          rect.x + padLeft,
+          rect.y + padTop,
+          codeStyle
+        );
+        if (nameEl) {
+          const nameStyle = window.getComputedStyle(nameEl);
+          addText(
+            nameEl.textContent.trim(),
+            rect.x + padLeft,
+            rect.y + padTop + lineHeight,
+            nameStyle
+          );
+        }
+      } else if (nameEl) {
+        const nameStyle = window.getComputedStyle(nameEl);
+        addText(
+          nameEl.textContent.trim(),
+          rect.x + padLeft,
+          rect.y + padTop,
+          nameStyle
+        );
+      }
+    });
+
+    element.querySelectorAll('.course-map-stream-label').forEach((label) => {
+      const rect = relativeRect(label);
+      const style = window.getComputedStyle(label);
+      addText(label.textContent.trim(), rect.x, rect.y + 2, style);
+    });
+
+    element.querySelectorAll('.course-map-key-item').forEach((item) => {
+      const itemRect = relativeRect(item);
+      const style = window.getComputedStyle(item);
+      const swatch = item.querySelector('.course-map-key-swatch');
+      if (swatch) {
+        const swatchRect = relativeRect(swatch);
+        const swatchStyle = window.getComputedStyle(swatch);
+        addRect(swatchRect, {
+          fill: swatchStyle.backgroundColor,
+          stroke: swatchStyle.borderColor,
+          strokeWidth: toNumber(swatchStyle.borderWidth),
+        });
+        addText(
+          item.textContent.trim(),
+          swatchRect.x + swatchRect.width + 6,
+          itemRect.y + 2,
+          style
+        );
+      } else {
+        addText(item.textContent.trim(), itemRect.x, itemRect.y + 2, style);
+      }
+    });
+
+    svgParts.push('</svg>');
+    return { svg: svgParts.join(''), width, height };
+  };
+
+  const buildElementSvg = (element) => buildCourseMapSvgFromDom(element);
+
+  const renderElementToSvgBlob = (element) => {
+    const built = buildCourseMapSvgFromDom(element) || buildElementSvg(element);
+    if (!built) return null;
+    return new Blob([built.svg], { type: 'image/svg+xml;charset=utf-8' });
+  };
+
+  const renderElementToPngBlob = (element) => {
+    const built = buildElementSvg(element);
+    if (!built) return Promise.resolve(null);
+    const { svg, width, height } = built;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.crossOrigin = 'anonymous';
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const finish = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            resolve(null);
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            URL.revokeObjectURL(url);
+            resolve(blob || null);
+          }, 'image/png');
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+        }
+      };
+      img.onload = () => finish();
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  };
+
+  const copyCourseMapImage = async () => {
+    if (!window.ClipboardItem || !navigator.clipboard?.write) return;
+    const target = getCourseMapCaptureTarget();
+    const blob = await renderElementToPngBlob(target);
+    if (blob) {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).catch(() => {});
+      return;
+    }
+    const svgBlob = renderElementToSvgBlob(target);
+    if (svgBlob) {
+      navigator.clipboard.write([new ClipboardItem({ 'image/svg+xml': svgBlob })]).catch(() => {});
+    }
+  };
+
+  const downloadCourseMapImage = async () => {
+    const target = getCourseMapCaptureTarget();
+    const blob = await renderElementToPngBlob(target);
+    const finalBlob = blob || renderElementToSvgBlob(target);
+    if (!finalBlob) return;
+    const url = URL.createObjectURL(finalBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = blob ? 'course-map.png' : 'course-map.svg';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const adjustTableColumnWidths = () => {
@@ -3993,6 +6619,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderTimetableTable();
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
+    syncSubjectTableActions(timetableTable);
     lockModalPosition();
     scheduleAdjustTimetable();
   };
@@ -4018,6 +6645,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderTimetableTable(rows, true);
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
+    syncSubjectTableActions(timetableTable);
     lockModalPosition();
     scheduleAdjustTimetable();
   };
@@ -4027,6 +6655,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderHistoryModal();
     historyModal.classList.add('show');
     historyModal.setAttribute('aria-hidden', 'false');
+    syncSubjectTableActions(historyTable);
   };
 
   const hideHistoryModal = () => {
@@ -4035,12 +6664,70 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     historyModal.setAttribute('aria-hidden', 'true');
   };
 
+  const showRemainingModal = () => {
+    if (!remainingModal) return;
+    renderRemainingModal();
+    remainingModal.classList.add('show');
+    remainingModal.setAttribute('aria-hidden', 'false');
+    syncSubjectTableActions(remainingTable);
+    if (remainingElectivesTable && remainingElectivesSection && !remainingElectivesSection.hidden) {
+      syncSubjectTableActions(remainingElectivesTable);
+    }
+  };
+
+  const hideRemainingModal = () => {
+    if (!remainingModal) return;
+    remainingModal.classList.remove('show');
+    remainingModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showCourseMapModal = () => {
+    if (!courseMapModal) return;
+    const doc = document.documentElement;
+    const top = window.scrollY || doc.scrollTop || 0;
+    courseMapModal.style.top = `${top}px`;
+    courseMapModal.style.height = `${doc.scrollHeight - top}px`;
+    renderCourseMapModal();
+    courseMapModal.classList.add('show');
+    courseMapModal.setAttribute('aria-hidden', 'false');
+    if (closeCourseMapCta) closeCourseMapCta.focus();
+    if (!courseMapResizeObserver) {
+      courseMapResizeObserver = observeCourseMapResize();
+    }
+  };
+
+  const hideCourseMapModal = () => {
+    if (!courseMapModal) return;
+    courseMapModal.classList.remove('show');
+    courseMapModal.setAttribute('aria-hidden', 'true');
+    courseMapModal.style.top = '';
+    courseMapModal.style.height = '';
+    if (courseMapButton) courseMapButton.focus();
+    if (courseMapResizeObserver) {
+      courseMapResizeObserver.disconnect();
+      courseMapResizeObserver = null;
+    }
+  };
+
+  const observeCourseMapResize = () => {
+    if (!courseMapModal || typeof ResizeObserver === 'undefined') return null;
+    const target = courseMapModal.querySelector('.course-map-modal') || courseMapModal;
+    const observer = new ResizeObserver(() => {
+      positionCourseMapArrows();
+    });
+    observer.observe(target);
+    return observer;
+  };
+
+  let courseMapResizeObserver = observeCourseMapResize();
+
   const showNextSemesterModal = () => {
     if (!nextSemesterModal) return;
     const rows = getNextSemTableRows();
     renderSubjectTable(nextSemesterTable, rows, 'No subjects available next semester.');
     nextSemesterModal.classList.add('show');
     nextSemesterModal.setAttribute('aria-hidden', 'false');
+    syncSubjectTableActions(nextSemesterTable);
   };
 
   const hideNextSemesterModal = () => {
@@ -4358,6 +7045,131 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const buildSimpleTableCopyData = (tableEl, headingText = '') => {
+    if (!tableEl) return { text: '', html: '' };
+    const rows = Array.from(tableEl.querySelectorAll('tr')).filter((row) => !row.dataset.skipCopy);
+    const textBody = rows
+      .map((row) =>
+        Array.from(row.querySelectorAll('th,td'))
+          .map((c) => c.textContent.trim())
+          .join('\t')
+      )
+      .join('\n');
+    const heading = headingText ? headingText.trim() : '';
+    const text = heading ? `${heading}\n${textBody}` : textBody;
+
+    const htmlRows = rows
+      .map((row) => {
+        const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
+          const tag = c.tagName.toLowerCase();
+          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;';
+          const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;`;
+          const bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
+          const style = tag === 'th' ? headStyle : bodyStyle;
+          return `<${tag} style="${style}">${c.textContent.trim()}</${tag}>`;
+        });
+        return `<tr>${cells.join('')}</tr>`;
+      })
+      .join('');
+    const headingHtml = heading ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${heading}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>`;
+    return { text, html };
+  };
+
+  const copySimpleTablesToClipboard = (tables, headings = []) => {
+    if (!clipboardAvailable) return;
+    const parts = tables
+      .map((tableEl, idx) => buildSimpleTableCopyData(tableEl, headings[idx] || ''))
+      .filter((part) => part.text);
+    if (!parts.length) return;
+    const text = parts.map((part) => part.text).join('\n\n');
+    const html = parts.map((part) => part.html).join('<br><br>');
+
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const copySubjectCodesFromTable = (tableEl) => {
+    if (!tableEl || !clipboardAvailable) return;
+    const rows = Array.from(tableEl.querySelectorAll('tbody tr'));
+    const codes = [];
+    rows.forEach((row) => {
+      const dataCode = (row.dataset.subject || '').toUpperCase();
+      if (/^(BIT[0-9A-Z]{3}|USE[0-9]{3})$/.test(dataCode)) {
+        if (!codes.includes(dataCode)) codes.push(dataCode);
+        return;
+      }
+      const firstCell = row.querySelector('td');
+      if (!firstCell) return;
+      const match = firstCell.textContent.toUpperCase().match(/\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/);
+      if (!match) return;
+      const code = match[1];
+      if (!codes.includes(code)) codes.push(code);
+    });
+    if (!codes.length) return;
+    navigator.clipboard.writeText(codes.join('\n')).catch(() => { });
+  };
+
+  const copySubjectCodesFromTables = (tables) => {
+    if (!clipboardAvailable) return;
+    const codes = [];
+    tables.forEach((tableEl) => {
+      if (!tableEl) return;
+      const rows = Array.from(tableEl.querySelectorAll('tbody tr'));
+      rows.forEach((row) => {
+        const dataCode = (row.dataset.subject || '').toUpperCase();
+        if (/^(BIT[0-9A-Z]{3}|USE[0-9]{3})$/.test(dataCode)) {
+          if (!codes.includes(dataCode)) codes.push(dataCode);
+          return;
+        }
+        const firstCell = row.querySelector('td');
+        if (!firstCell) return;
+        const match = firstCell.textContent.toUpperCase().match(/\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/);
+        if (!match) return;
+        const code = match[1];
+        if (!codes.includes(code)) codes.push(code);
+      });
+    });
+    if (!codes.length) return;
+    navigator.clipboard.writeText(codes.join('\n')).catch(() => { });
+  };
+  const installModalCodeCopyButtons = () => {
+    const configs = [
+      { button: copyHistoryCodes, table: historyTable },
+      { button: copyRemainingCodes, table: remainingTable },
+      { button: copyNextSemesterCodes, table: nextSemesterTable },
+      { button: copyTimetableCodes, table: timetableTable },
+    ];
+    configs.forEach(({ button, table }) => {
+      if (!button) return;
+      button.hidden = !staffFacing;
+      if (!button.dataset.codesBound) {
+        button.dataset.codesBound = 'true';
+        button.addEventListener('click', () => {
+          flashCopyButton(button);
+          if (button === copyRemainingCodes) {
+            const tables = [remainingTable];
+            if (remainingElectivesSection && !remainingElectivesSection.hidden && remainingElectivesTable) {
+              tables.push(remainingElectivesTable);
+            }
+            copySubjectCodesFromTables(tables);
+            return;
+          }
+          copySubjectCodesFromTable(table);
+        });
+      }
+      setClipboardButtonState(button, clipboardAvailable);
+    });
+  };
   const getCellByCode = (code) => subjects.find((c) => c.dataset.subject === code);
 
   const getSelectedRows = () => {
@@ -4382,19 +7194,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.completed)
         .map(([code]) => code)
     );
-    const allCodes = new Set([...completedCodes, ...manualEntryMeta.keys()]);
+    electivePlaceholderState.forEach((code) => {
+      if (code) completedCodes.add(code);
+    });
+    const allCodes = new Set([
+      ...completedCodes,
+      ...manualEntryMeta.keys(),
+      ...workbookCurrent.keys(),
+      ...manualEntryCurrent.keys(),
+    ]);
     const historyRows = Array.from(allCodes)
-      .filter((id) => validSubjectCodes.has(id))
+      .filter((id) => validSubjectCodes.has(id) || validUseCodes.has(id))
       .map((id) => {
-        const data = timetable[id] || {};
+        const isUse = id.startsWith('USE');
+        const data = isUse ? {} : timetable[id] || {};
         const dayFull = data.day || '';
         const dayShort = dayFull.slice(0, 3);
         const slot = data.slot || '';
-        const cell = getCellByCode(id);
+        const cell = isUse ? null : getCellByCode(id);
         const meta = manualEntryMeta.get(id) || {};
         const result = formatHistoryResult(meta.result || '');
         const isFail = isFailGradeToken(result);
-        return { cell, id, data, dayFull, dayShort, slot, result, date: meta.date || '', isFail };
+        const displayCode = isUse ? id : null;
+        const displayName = isUse ? 'Unspecified Elective (USE)' : null;
+        const displayStream = isUse ? 'Elective' : null;
+        return {
+          cell,
+          id,
+          data,
+          dayFull,
+          dayShort,
+          slot,
+          result,
+          date: meta.date || '',
+          isFail,
+          displayCode,
+          displayName,
+          displayStream,
+        };
       })
       .sort(compareByDaySlotThenCode);
     const unknownRows = manualEntryUnknown.map((entry) => ({
@@ -4404,18 +7241,50 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return [...historyRows, ...unknownRows].sort(compareByDaySlotThenCode);
   };
 
+  const getRemainingRows = () => {
+    const majorKey = getMajorKeyFromUi();
+    const majorCodes = majorConfig[majorKey]?.codes || [];
+    const coreCodes = Object.keys(subjectMeta).filter((code) => subjectMeta[code]?.classes?.includes('core'));
+    const remainingCodes = new Set([...coreCodes, ...majorCodes]);
+    return Array.from(remainingCodes)
+      .filter((id) => validSubjectCodes.has(id))
+      .filter((id) => !subjectState.get(id)?.completed)
+      .map((id) => ({ id, cell: getCellByCode(id) }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  };
+
+  const getRemainingElectiveRows = () => {
+    if (areElectivesFull()) return [];
+    const slotCodes = getElectiveSlotCodes(getMajorKeyFromUi()).filter(Boolean);
+    const unique = Array.from(new Set(slotCodes));
+    return unique
+      .filter((id) => validSubjectCodes.has(id))
+      .filter((id) => !subjectState.get(id)?.completed)
+      .map((id) => ({ id, cell: getCellByCode(id) }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  };
+
   const renderCurrentEnrolments = () => {
     if (!currentEnrolmentsSection || !currentEnrolmentsList) return;
     currentEnrolmentsList.innerHTML = '';
-    const rows = Array.from(manualEntryCurrent.entries())
+    const rows = [
+      ...Array.from(workbookCurrent.entries()),
+      ...Array.from(manualEntryCurrent.entries()),
+    ]
+      .reduce((acc, [id, meta]) => {
+        if (!acc.has(id)) acc.set(id, meta);
+        return acc;
+      }, new Map())
+      ;
+    const listRows = Array.from(rows.entries())
       .filter(([id]) => validSubjectCodes.has(id) && !subjectState.get(id)?.completed)
       .map(([id, meta]) => ({ id, date: meta?.date || '' }))
       .sort((a, b) => a.id.localeCompare(b.id));
-    if (!rows.length) {
+    if (!listRows.length) {
       currentEnrolmentsSection.hidden = true;
       return;
     }
-    rows.forEach(({ id }) => {
+    listRows.forEach(({ id }) => {
       const li = document.createElement('li');
       const name = getSubjectName(id);
       const codeLabel = formatHistoryCode(id);
@@ -4423,6 +7292,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       currentEnrolmentsList.appendChild(li);
     });
     currentEnrolmentsSection.hidden = false;
+  };
+
+  const loadWorkbookFromUrl = async (url) => {
+    if (typeof XLSX === 'undefined') return;
+    try {
+      if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const records = buildStudentRecordsFromWorkbook(workbook);
+      const courseInfo = buildCourseInfoFromWorkbook(workbook);
+      studentRecords = records;
+      activeStudentId = '';
+      staffWorkbookState.setStudentRecord(null);
+      staffWorkbookState.setCourseInfo(courseInfo);
+      loadedStudentSnapshot = null;
+      clearStudentSearchDropdown();
+      lastDroppedFileInfo = {
+        fileName: url.split('/').pop() || 'Source.xlsx',
+        savedLine: 'Auto-loaded',
+      };
+      renderDropZoneStatus([lastDroppedFileInfo.fileName, lastDroppedFileInfo.savedLine, `${records.length} students listed`]);
+      updateStudentPreview();
+    } catch (error) {
+      // ignore auto-load failures; user can still drop the workbook manually
+    } finally {
+      if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
+    }
   };
 
   const getAvailableRows = () => {
@@ -4530,11 +7428,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const slot = row.slot || data.slot || '';
         return { ...row, data, dayFull, dayShort, slot };
       })
-      .sort(compareByDaySlotThenCode);
+      .sort((a, b) => a.id.localeCompare(b.id));
 
   const updateSelectedList = () => {
     if (!selectedListSection || !selectedListEl) return;
     const available = getAvailableRows();
+    if (sidebarSectionDescriptor) {
+      const count = available.length;
+      const subjectLabel = count === 1 ? 'subject' : 'subjects';
+      sidebarSectionDescriptor.textContent =
+        `Choose your subjects. Click among the ${count} ${subjectLabel} below or in grid to right, or use the 'Available now' popup.`;
+    }
     selectedListEl.innerHTML = '';
     selectedListEl.setAttribute('role', 'list');
     if (!available.length) {
@@ -4591,6 +7495,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     }
     selectedListSection.style.display = '';
+    updateSubjectCounts();
   };
 
   if (showTimetableButton) showTimetableButton.addEventListener('click', showTimetableModal);
@@ -4606,8 +7511,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (closeTimetable) closeTimetable.addEventListener('click', hideTimetableModal);
     if (hideTimetable) hideTimetable.addEventListener('click', hideTimetableModal);
-    if (copyTimetable) copyTimetable.addEventListener('click', copyTimetableToClipboard);
+    if (copyTimetable) {
+      copyTimetable.addEventListener('click', () => {
+        flashCopyButton(copyTimetable);
+        copyTimetableToClipboard();
+      });
+    }
     if (historyButton) historyButton.addEventListener('click', showHistoryModal);
+    if (remainingButton) remainingButton.addEventListener('click', showRemainingModal);
+    if (courseMapButton) courseMapButton.addEventListener('click', showCourseMapModal);
     if (nextSemesterButton) nextSemesterButton.addEventListener('click', showNextSemesterModal);
     if (historySortButtons.length) {
       historySortButtons.forEach((button) => {
@@ -4626,19 +7538,105 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (closeHistory) closeHistory.addEventListener('click', hideHistoryModal);
     if (closeHistoryCta) closeHistoryCta.addEventListener('click', hideHistoryModal);
-    if (copyHistory) copyHistory.addEventListener('click', () => copySimpleTableToClipboard(historyTable, historyTitleEl?.textContent || 'History'));
+    if (copyHistory) {
+      copyHistory.addEventListener('click', () => {
+        flashCopyButton(copyHistory);
+        copySimpleTableToClipboard(historyTable, historyTitleEl?.textContent || 'History');
+      });
+    }
     if (historyModal) {
       historyModal.addEventListener('click', (e) => {
         if (e.target === historyModal) hideHistoryModal();
       });
     }
+    if (closeRemaining) closeRemaining.addEventListener('click', hideRemainingModal);
+    if (closeRemainingCta) closeRemainingCta.addEventListener('click', hideRemainingModal);
+    if (copyRemaining) {
+      copyRemaining.addEventListener('click', () => {
+        flashCopyButton(copyRemaining);
+        const tables = [remainingTable];
+        const headings = [remainingTitleEl?.textContent || 'Remaining'];
+        if (remainingElectivesSection && !remainingElectivesSection.hidden && remainingElectivesTable) {
+          tables.push(remainingElectivesTable);
+          headings.push('Elective options');
+        }
+        copySimpleTablesToClipboard(tables, headings);
+      });
+    }
+    if (remainingModal) {
+      remainingModal.addEventListener('click', (e) => {
+        if (e.target === remainingModal) hideRemainingModal();
+      });
+    }
+    if (closeCourseMap) closeCourseMap.addEventListener('click', hideCourseMapModal);
+    if (closeCourseMapCta) closeCourseMapCta.addEventListener('click', hideCourseMapModal);
+    if (courseMapModal) {
+      courseMapModal.addEventListener('click', (e) => {
+        if (e.target === courseMapModal) hideCourseMapModal();
+      });
+    }
+    if (copyCourseMapImageButton) {
+      copyCourseMapImageButton.addEventListener('click', () => {
+        flashCopyButton(copyCourseMapImageButton);
+        copyCourseMapImage();
+      });
+    }
+    if (downloadCourseMapImageButton) {
+      downloadCourseMapImageButton.addEventListener('click', () => {
+        flashCopyButton(downloadCourseMapImageButton);
+        downloadCourseMapImage();
+      });
+    }
     if (closeNextSemester) closeNextSemester.addEventListener('click', hideNextSemesterModal);
     if (closeNextSemesterCta) closeNextSemesterCta.addEventListener('click', hideNextSemesterModal);
     if (copyNextSemester) {
-      copyNextSemester.addEventListener('click', () =>
-        copySimpleTableToClipboard(nextSemesterTable, nextSemesterTitleEl?.textContent || 'Available next semester')
-      );
+      copyNextSemester.addEventListener('click', () => {
+        flashCopyButton(copyNextSemester);
+        copySimpleTableToClipboard(nextSemesterTable, nextSemesterTitleEl?.textContent || 'Available next semester');
+      });
     }
+    if (courseMapContent) {
+      courseMapContent.addEventListener('mousemove', (event) => {
+        courseMapTooltipPos = { x: event.clientX, y: event.clientY };
+        if (courseMapTooltip.style.display === 'block') {
+          positionCourseMapTooltip();
+        }
+      });
+      courseMapContent.addEventListener('mouseover', (event) => {
+        const cell = event.target?.closest?.('.course-map-cell');
+        if (!cell || !courseMapContent.contains(cell)) return;
+        const code = cell.dataset.subject;
+        if (!code) return;
+        if (courseMapTooltipTarget === cell) return;
+        courseMapTooltipTarget = cell;
+        if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
+        courseMapTooltipTimer = setTimeout(() => {
+          showCourseMapTooltip(code);
+        }, 300);
+      });
+      courseMapContent.addEventListener('mouseout', (event) => {
+        const leaving = event.target?.closest?.('.course-map-cell');
+        if (!leaving || leaving !== courseMapTooltipTarget) return;
+        courseMapTooltipTarget = null;
+        if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
+        hideCourseMapTooltip();
+      });
+      courseMapContent.addEventListener('mouseleave', () => {
+        courseMapTooltipTarget = null;
+        if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
+        hideCourseMapTooltip();
+      });
+    }
+    window.addEventListener('scroll', () => {
+      updateCompletedModeSticky();
+      if (courseMapModal?.classList.contains('show')) {
+        positionCourseMapArrows();
+      }
+    }, { passive: true });
+    window.addEventListener('resize', () => {
+      completedModeStickyTop = null;
+      updateCompletedModeSticky();
+    });
     if (nextSemesterModal) {
       nextSemesterModal.addEventListener('click', (e) => {
         if (e.target === nextSemesterModal) hideNextSemesterModal();
@@ -4738,6 +7736,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     return [...useCodes, ...activeBits];
   };
+  const getCompletedElectiveCount = () => {
+    const useCodes = electivePlaceholderState.filter(Boolean).map((code) => String(code).toUpperCase());
+    const majorKey = getMajorKeyFromUi();
+    const majorSet = new Set(majorLayouts[majorKey] || []);
+    const slotCodes = getElectiveSlotCodes(majorKey);
+    const completedBits = slotCodes
+      .filter((code) => {
+        if (!code || majorSet.has(code)) return false;
+        const st = subjectState.get(code);
+        return st?.completed;
+      })
+      .map((code) => String(code).toUpperCase());
+    const unique = new Set([...useCodes, ...completedBits]);
+    return Math.min(programRequirements.elective, unique.size);
+  };
+  const getRemainingElectiveCount = () =>
+    Math.max(0, programRequirements.elective - getCompletedElectiveCount());
   const getFilledElectiveSlotCodes = () => {
     const placeholders = getElectivePlaceholders();
     return placeholders.map((cell, idx) => {
@@ -4946,6 +7961,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   renderAlertButton('warning');
   renderAlertButton('info');
   showMobileNotice();
+  Array.from(document.querySelectorAll('.modal')).forEach((modalEl) => enableModalDragResize(modalEl));
+  installModalCodeCopyButtons();
   setTimeout(() => {
     initialLoad = false;
   }, 0);
@@ -5031,16 +8048,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateSemesterCounts(completedSet, plannedSet);
     });
   document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        hideAlertModal();
-        hideCodeModal();
-        hideCourseTimetableModal();
-        hideTimetableModal();
-        hideHistoryModal();
-        hideNextSemesterModal();
-        hideLoadModal();
-        hideInstructionsModal();
+    if (e.key === 'Escape') {
+      hideAlertModal();
+      hideCodeModal();
+      hideCourseTimetableModal();
+      hideTimetableModal();
+      hideHistoryModal();
+      hideRemainingModal();
+      hideCourseMapModal();
+      hideNextSemesterModal();
+      hideLoadModal();
+      hideInstructionsModal();
     } else if (e.key === 'Enter') {
+      if (codeModal && codeModal.classList.contains('show')) {
+        const activeEl = document.activeElement;
+        if (activeEl && codeModal.contains(activeEl) && activeEl.matches('textarea, input')) {
+          return;
+        }
+      }
       if (loadModal && loadModal.classList.contains('show')) {
         e.preventDefault();
         applyLoadSettings();
@@ -5054,9 +8079,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   updateResetState();
   updateVaryLoadLabel();
 
-  if (window.isSecureContext && "serviceWorker" in navigator) {
+  const shouldRegisterServiceWorker = () => {
+    if (!window.isSecureContext || !("serviceWorker" in navigator)) return false;
+    const host = window.location.hostname || '';
+    const isLocal =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '[::1]';
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('sw') === '0') return false;
+    return !isLocal;
+  };
+  if (shouldRegisterServiceWorker()) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("sw.js").catch(() => {});
     });
   }})();
+
 
