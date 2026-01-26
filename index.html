@@ -36,7 +36,7 @@ Created: December 30, 2025
   <div class="page">
     <aside id="drop-sidebar" class="drop-sidebar" aria-label="Student workbook drop zone">
       <div id="drop-zone" class="drop-zone" aria-hidden="true">
-        <div class="drop-zone-text">Drop students workbook here</div>
+        <div class="drop-zone-text">Drop students workbook here.<br><br>Or click to load Source.xlsx from one folder level higher</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
@@ -153,7 +153,10 @@ Created: December 30, 2025
               <h1>Your subject planner</h1>
             </div>
           </div>
-          <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
+          <div class="title-right">
+            <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false">Data Error?</button>
+            <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
+          </div>
         </div>
 
         <div id="container">
@@ -526,6 +529,15 @@ Created: December 30, 2025
         <button class="modal-close" id="close-history" aria-label="Close history modal">X</button>
       </div>
       <div class="modal-body">
+        <div id="current-enrolments-section" class="current-enrolments" hidden>
+          <p class="current-enrolments-title">Current Enrolments in your student record:</p>
+          <div class="timetable-table-wrapper">
+            <table id="current-enrolments-table" class="subject-table">
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="history-graded-heading" class="semester-timetable-subtitle" hidden>Graded Enrolments</div>
         <div class="timetable-table-wrapper">
           <table id="history-table" class="subject-table">
             <thead>
@@ -559,10 +571,6 @@ Created: December 30, 2025
             <tbody></tbody>
           </table>
         </div>
-        <div id="current-enrolments-section" class="current-enrolments" hidden>
-          <p class="current-enrolments-title">Current enrolments? These won't be inserted into the grid.</p>
-          <ul id="current-enrolments-list" class="current-enrolments-list"></ul>
-        </div>
         <div class="timetable-actions subject-table-actions">
           <button id="copy-history-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
@@ -585,6 +593,11 @@ Created: December 30, 2025
               </span>
               Copy
             </button>
+            <button id="history-colours" class="clear-button secondary semester-timetable-toggle" type="button"
+              aria-pressed="false">Colours On</button>
+            <button id="history-only-passed" class="clear-button secondary" type="button" aria-pressed="false">
+              Hide Ws &amp; Ns
+            </button>
             <button id="close-history-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
@@ -595,7 +608,7 @@ Created: December 30, 2025
   <div id="remaining-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal subject-list-modal" role="dialog" aria-modal="true" aria-labelledby="remaining-title">
       <div class="modal-header">
-        <div class="modal-title" id="remaining-title">Remaining</div>
+        <div class="modal-title" id="remaining-title">Subjects Remaining (not yet completed)</div>
         <button class="modal-close" id="close-remaining" aria-label="Close remaining modal">X</button>
       </div>
       <div class="modal-body">
@@ -613,7 +626,7 @@ Created: December 30, 2025
           </table>
         </div>
         <div id="remaining-electives-section" class="remaining-electives-section" hidden>
-          <div class="semester-timetable-subtitle">Elective options</div>
+          <div class="semester-timetable-subtitle">Elective options (maximum of 4 electives)</div>
           <div class="timetable-table-wrapper">
             <table id="remaining-electives-table" class="subject-table">
               <thead>
@@ -649,6 +662,8 @@ Created: December 30, 2025
               </span>
               Copy
             </button>
+            <button id="remaining-colours" class="clear-button secondary semester-timetable-toggle" type="button"
+              aria-pressed="false">Colours On</button>
             <button id="close-remaining-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
@@ -755,6 +770,7 @@ Created: December 30, 2025
             <tbody></tbody>
           </table>
         </div>
+        <div id="timetable-fees" class="timetable-fees" hidden></div>
         <div class="timetable-actions subject-table-actions">
           <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
@@ -777,6 +793,40 @@ Created: December 30, 2025
               </span>
               Copy
             </button>
+            <button id="download-timetable-image" class="clear-button secondary" type="button">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-4l-2 2h-4l-2-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm8 4a4 4 0 1 0 0 8a4 4 0 0 0 0-8zm0 2.1a1.9 1.9 0 1 1 0 3.8a1.9 1.9 0 0 1 0-3.8z" fill="currentColor" />
+                </svg>
+              </span>
+              Image
+            </button>
+            <div class="timetable-email-actions">
+              <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
+                <span class="email-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                  </svg>
+                </span>
+                Primary
+              </button>
+              <button id="email-institute" class="clear-button secondary timetable-email" type="button" hidden>
+                <span class="email-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                  </svg>
+                </span>
+                Institute
+              </button>
+              <button id="email-both" class="clear-button secondary timetable-email" type="button" hidden>
+                <span class="email-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                  </svg>
+                </span>
+                Both
+              </button>
+            </div>
             <button id="hide-timetable" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>

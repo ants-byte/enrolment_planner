@@ -115,6 +115,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ba: ['BIT245', 'BIT236', 'BIT357', 'BIT356', 'BIT363', 'BIT355'],
     sd: ['BIT245', 'BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
   };
+  const courseMapStreamLayouts = {
+    ns: [
+      ['BIT233', 'BIT244', 'BIT313'],
+      ['BIT213', 'BIT353', 'BIT362'],
+    ],
+    ba: [
+      ['BIT236', 'BIT357', 'BIT356'],
+      [{ placeholder: 'bit245-ba', code: 'BIT245' }, 'BIT355', 'BIT363'],
+    ],
+    sd: [
+      [{ placeholder: 'bit245-sd', code: 'BIT245' }, 'BIT246', 'BIT358'],
+      ['BIT235', 'BIT351', 'BIT364'],
+    ],
+  };
   const electiveGridLayouts = {
     ns: [
       ['BIT245', null, null, null, null],
@@ -229,17 +243,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
   const infoButton = document.getElementById('btn-info');
+  const dataErrorButton = document.getElementById('btn-data-error');
   const subjectCountsEl = document.getElementById('subject-counts');
   const titleAlerts = document.getElementById('title-alerts');
 
   const updateAlertBoxVisibility = () => {
     if (!titleAlerts) return;
-    const hasVisible = [errorButton, warningButton, infoButton].some((btn) => btn && !btn.classList.contains('hidden'));
+    const hasVisible = [errorButton, warningButton, infoButton].some(
+      (btn) => btn && !btn.classList.contains('hidden')
+    );
     titleAlerts.classList.toggle('is-collapsed', !hasVisible);
   };
 
   const hideAllAlertButtons = () => {
-    [errorButton, warningButton, infoButton].forEach((btn) => {
+    [errorButton, warningButton, infoButton, dataErrorButton].forEach((btn) => {
       if (btn) btn.classList.add('hidden');
     });
     updateAlertBoxVisibility();
@@ -248,7 +265,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZone = document.getElementById('drop-zone');
   const dropSidebar = document.getElementById('drop-sidebar');
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
-  const dropZoneDefaultText = dropZoneTextEl?.textContent || 'Drop students workbook here';
+  const dropZoneDefaultText = dropZoneTextEl?.textContent || 'Drop students workbook here\nor click to load Source.xlsx from 1 folder level higher';
     const dropZoneSpinner = dropZone
     ? (() => {
         const spinner = document.createElement('div');
@@ -272,6 +289,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(Boolean)
         .join(' ');
       return parts || '';
+    };
+    const formatHttpDateInfo = (value) => {
+      if (!value) return 'Last saved: Unknown';
+      const modified = new Date(value);
+      if (isNaN(modified.getTime())) return 'Last saved: Unknown';
+      const dateLabel = formatDisplayDate(modified);
+      const daysAgo = Math.floor((Date.now() - modified.getTime()) / (1000 * 60 * 60 * 24));
+      const daysLabel = Number.isFinite(daysAgo) ? `${daysAgo} day${daysAgo === 1 ? '' : 's'} ago` : '';
+      const parts = [dateLabel ? `Last saved: ${dateLabel}` : '', daysLabel ? `(${daysLabel})` : '']
+        .filter(Boolean)
+        .join(' ');
+      return parts || 'Last saved: Unknown';
     };
     const renderDropZoneStatus = (lines) => {
       if (!dropZoneTextEl) return;
@@ -316,6 +345,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'Suspended_Names',
     'Passed_subjects',
     'Results_List',
+    'Failed_Count',
     'CRT_Location',
     'SharePoint_StudentForms',
     'SuppsAndHolds',
@@ -325,12 +355,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Student_Flag',
     ];
     const COURSE_INFO_RANGES = [
-      'Semester_Start_Date',
-      'Price_per_CSP_Unit',
-      'Price_per_Unit',
-      'CensusDate',
-      'EndOfWeekTwoDate',
-      'Countries_facing_troubles',
+    'Semester_Start_Date',
+    'Price_per_CSP_Unit',
+    'Price_per_Unit',
+    'CensusDate',
+    'Credit_Points_Earned',
+    'EndOfWeekTwoDate',
+    'Countries_facing_troubles',
     ];
     const studentIdPattern = /(\d{7})/;
     let extractedStudentId = '';
@@ -359,6 +390,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyTimetableCodes = document.getElementById('copy-timetable-codes');
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
+  const timetableFees = document.getElementById('timetable-fees');
+  const downloadTimetableImageButton = document.getElementById('download-timetable-image');
+  const emailPrimaryButton = document.getElementById('email-primary');
+  const emailInstituteButton = document.getElementById('email-institute');
+  const emailBothButton = document.getElementById('email-both');
   const courseTimetableModal = document.getElementById('semester-timetable-modal');
   const closeCourseTimetable = document.getElementById('close-semester-timetable');
   const closeCourseTimetableCta = document.getElementById('close-semester-timetable-cta');
@@ -405,12 +441,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const historyModal = document.getElementById('history-modal');
   const historyTitleEl = document.getElementById('history-title');
   const historyTable = document.getElementById('history-table');
+  const historyColoursButton = document.getElementById('history-colours');
+  const historyOnlyPassedButton = document.getElementById('history-only-passed');
   const remainingModal = document.getElementById('remaining-modal');
   const remainingTitleEl = document.getElementById('remaining-title');
   const remainingSummary = document.getElementById('remaining-summary');
   const remainingTable = document.getElementById('remaining-table');
   const remainingElectivesSection = document.getElementById('remaining-electives-section');
   const remainingElectivesTable = document.getElementById('remaining-electives-table');
+  const remainingColoursButton = document.getElementById('remaining-colours');
   const courseMapModal = document.getElementById('course-map-modal');
   const courseMapContent = document.getElementById('course-map-content');
   const courseMapKey = document.getElementById('course-map-key');
@@ -419,7 +458,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
-  const currentEnrolmentsList = document.getElementById('current-enrolments-list');
+  const currentEnrolmentsTable = document.getElementById('current-enrolments-table');
+  const historyGradedHeading = document.getElementById('history-graded-heading');
   const historySortButtons = Array.from(document.querySelectorAll('#history-table .subject-table-sort-button'));
   const closeHistory = document.getElementById('close-history');
   const closeHistoryCta = document.getElementById('close-history-cta');
@@ -486,7 +526,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let modalLocked = false;
   let modalPrevStyle = null;
   let courseTimetableView = 'grid';
-  let courseTimetableColoursOn = true;
+  let courseTimetableColoursOn = false;
+  let remainingColoursOn = false;
+  let historyOnlyPassed = false;
+  let historyColoursOn = false;
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
@@ -536,6 +579,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .replace(/[^A-Z0-9]/g, '');
     let staffWorkbookStudentRecord = null;
     let staffWorkbookCourseInfo = null;
+    let creditPointsEarned = '';
     const staffWorkbookState = (() => {
       const workbookSubjects = new Map();
       return {
@@ -566,6 +610,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         },
         setCourseInfo(info) {
           staffWorkbookCourseInfo = info || null;
+          creditPointsEarned = info?.Credit_Points_Earned ?? '';
         },
         getCourseInfo() {
           return staffWorkbookCourseInfo;
@@ -574,6 +619,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           workbookSubjects.clear();
           staffWorkbookStudentRecord = null;
           staffWorkbookCourseInfo = null;
+          creditPointsEarned = '';
         },
       };
     })();
@@ -655,6 +701,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const manualEntryCurrent = new Map();
   const workbookCurrent = new Map();
   const manualEntryUnknown = [];
+  let manualEntryResults = [];
     const manualCodeRegex = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/;
   const manualCodeRegexGlobal = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/g;
   const gradeHeadingRegex = /\b(grade|credit|score|outcome|result)\b/i;
@@ -758,6 +805,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const token = normalizeGradeToken(value);
     return !!token && (failGrades.has(token) || token.startsWith('WN/'));
   };
+  const isWithdrawOrFailGrade = (value) => {
+    const token = normalizeGradeToken(value);
+    if (!token) return false;
+    if (token === 'H') return false;
+    if (token.startsWith('W') || token.startsWith('WN/')) return true;
+    if (failGrades.has(token)) return true;
+    return false;
+  };
   const formatHistoryResult = (value) => {
     const token = normalizeGradeToken(value);
     if (!token) return '';
@@ -809,6 +864,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const text = (value || '').trim();
     if (!text) return '';
     const upper = text.toUpperCase();
+    if (/\b1900[\/\-\s]+0?1[\/\-\s]+0?0\b/.test(upper)) return '';
     const yearMatch = upper.match(/\b(19|20)\d{2}\b/);
     const semLabelMatch = upper.match(/\bSEM\s*([12])\b/);
     if (yearMatch && semLabelMatch) {
@@ -973,9 +1029,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
     const staffModeParam = (getQueryParam('mode') || '').trim().toLowerCase();
     const isStaffModeParam = staffModeParam === 'staff';
+    const isStudentModeParam = staffModeParam === 'student';
     const staffFacing = isLocalHost || isSharePointHost || isStaffModeParam;
     const shouldShowTeacherCopy = isSharePointHost || isStaffModeParam;
     const dropZoneEnabled = isLocalEnv || isSharePointHost || isStaffModeParam;
+    if (timetableModal && staffFacing) timetableModal.classList.add('staff-mode');
 
   const lockModalPosition = () => {
     if (modalLocked || !timetableModal) return;
@@ -2052,6 +2110,162 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return `${d.getFullYear() + 1} Semester 1`; // Dec -> next year Sem 1
   };
 
+  const formatShortDate = (value) => {
+    const date = toDateValue(value);
+    if (!date) return String(value ?? '').trim();
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+    }).format(date);
+  };
+
+  const formatCurrency = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '';
+    return `$ ${num.toLocaleString('en-AU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+  const parseCreditPoints = (value) => {
+    if (value === null || value === undefined) return null;
+    const cleaned = String(value).replace(/[^0-9.-]/g, '');
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const getActiveStudentRecord = () => {
+    const id = activeStudentId || normalizeStudentId(studentIdInput?.value || '');
+    if (!id) return staffWorkbookState.getStudentRecord();
+    return (
+      studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id) ||
+      staffWorkbookState.getStudentRecord()
+    );
+  };
+
+  const isInternationalStudent = (record) =>
+    !!(
+      record &&
+      (record.In_AllInternationals ||
+        record.In_InternationalsAccepted ||
+        record.In_AllInternationals === 'Yes' ||
+        record.In_InternationalsAccepted === 'Yes')
+    );
+
+  const getStudentDisplayName = (record) => {
+    if (!record) return '';
+    const given = toProperCase(record.Given_Name || '');
+    const family = String(record.Family_Name || '').toUpperCase();
+    return [given, family].filter(Boolean).join(' ').trim();
+  };
+
+  const getStudentFirstName = (record) => {
+    const given = String(record?.Given_Name || '').trim();
+    return given.split(/\s+/).filter(Boolean)[0] || '';
+  };
+
+  const setTimetableHeading = (mode) => {
+    if (!timetableTitleEl) return;
+    if (mode === 'available') {
+      timetableTitleEl.textContent = 'Available subjects (click to add)';
+      return;
+    }
+    const now = new Date();
+    const label = getTimetableLabel(now);
+    const prepared = formatDate(now);
+    if (!staffFacing) {
+      timetableTitleEl.textContent = `Timetable for ${label}. Prepared ${prepared}`;
+      return;
+    }
+    const record = getActiveStudentRecord();
+    const studentId = record ? normalizeStudentId(record.Student_IDs_Unique) : '';
+    const name = record ? getStudentDisplayName(record) : '';
+    const studentText = [studentId, name].filter(Boolean).join(' ').trim();
+    const strongText = `Timetable for ${label}`;
+    const restText = `. Prepared ${prepared}${studentText ? `, for ${studentText}` : ''}`;
+    timetableTitleEl.textContent = '';
+    const strongEl = document.createElement('span');
+    strongEl.className = 'timetable-title-strong';
+    strongEl.textContent = strongText;
+    timetableTitleEl.appendChild(strongEl);
+    timetableTitleEl.appendChild(document.createTextNode(restText));
+  };
+
+  const updateTimetableFees = () => {
+    if (!timetableFees) return;
+    const record = getActiveStudentRecord();
+    if (!staffFacing || !record || currentTableMode !== 'selected') {
+      timetableFees.hidden = true;
+      timetableFees.textContent = '';
+      return;
+    }
+    const courseInfo = staffWorkbookState.getCourseInfo();
+    const census = formatShortDate(courseInfo?.CensusDate || '');
+    const censusText = census || 'N/A';
+    if (isInternationalStudent(record)) {
+      timetableFees.textContent =
+        `Fee and Cancellation information: Census Date: ${censusText}. ` +
+        'Fees as per international student payment schedule.';
+    } else {
+      const price = formatCurrency(courseInfo?.Price_per_CSP_Unit || courseInfo?.Price_per_Unit || '');
+      const priceText = price ? `${price} per subject` : 'Fees per subject';
+      timetableFees.textContent =
+        `Fee and Cancellation information: Census Date: ${censusText}. ${priceText}`;
+    }
+    timetableFees.hidden = false;
+  };
+
+  const updateTimetableEmailButtons = () => {
+    const record = getActiveStudentRecord();
+    const shouldShow = staffFacing && currentTableMode === 'selected' && !!record;
+    const primary = String(record?.Primary_Email || '').trim();
+    const institute = String(record?.Institute_Email || '').trim();
+    if (emailPrimaryButton) {
+      emailPrimaryButton.hidden = !shouldShow;
+      emailPrimaryButton.disabled = false;
+      emailPrimaryButton.setAttribute('title', primary || 'No primary email on record.');
+    }
+    if (emailInstituteButton) {
+      emailInstituteButton.hidden = !shouldShow;
+      emailInstituteButton.disabled = false;
+      emailInstituteButton.setAttribute(
+        'title',
+        institute || 'No institute email on record.'
+      );
+    }
+    if (emailBothButton) {
+      const both = [primary, institute].filter(Boolean).join(', ');
+      emailBothButton.hidden = !shouldShow;
+      emailBothButton.disabled = false;
+      emailBothButton.setAttribute(
+        'title',
+        both || 'Both email addresses required.'
+      );
+    }
+  };
+
+  const updateTimetableStaffContent = (mode) => {
+    if (!staffFacing) return;
+    setTimetableHeading(mode);
+    updateTimetableFees();
+    updateTimetableEmailButtons();
+  };
+
+  const updateHistoryOnlyPassedButton = () => {
+    if (!historyOnlyPassedButton) return;
+    historyOnlyPassedButton.setAttribute('aria-pressed', historyOnlyPassed ? 'true' : 'false');
+    historyOnlyPassedButton.classList.toggle('is-active', historyOnlyPassed);
+    historyOnlyPassedButton.textContent = historyOnlyPassed ? 'Show W & N' : 'Hide W & N';
+  };
+
+  const updateHistoryColoursButton = () => {
+    if (!historyColoursButton || !historyModal) return;
+    historyColoursButton.textContent = historyColoursOn ? 'Colours Off' : 'Colours On';
+    historyColoursButton.setAttribute('aria-pressed', String(historyColoursOn));
+    historyModal.classList.toggle('history-colours-off', !historyColoursOn);
+  };
+
   const getSubjectName = (code) => {
     const metaName = subjectMeta[code]?.name;
     return metaName || code;
@@ -2381,10 +2595,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selected = getPlannedCount();
     const remaining = getRemainingSubjectsCount();
     const completedTotal = completed + useCredits;
+    const creditPointsValue = parseCreditPoints(creditPointsEarned);
+    const creditSubjects =
+      creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
+    const creditMismatch =
+      creditSubjects !== null &&
+      Number.isFinite(creditSubjects) &&
+      Math.abs(creditSubjects - completedTotal) > 0.01;
+    const formatCountValue = (value) =>
+      Number.isInteger(value) ? value.toString() : value.toFixed(1);
     const hasAny = completedTotal > 0 || selected > 0;
     if (!hasAny) {
       subjectCountsEl.innerHTML = '';
       subjectCountsEl.classList.remove('is-visible');
+      document.querySelectorAll('.student-summary-credit').forEach((el) => {
+        el.classList.remove('counts-mismatch');
+      });
+      setAlertMessages('data', []);
+      renderAlertButton('data');
       updateMajorStreamInsights();
       return;
     }
@@ -2398,38 +2626,87 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selectedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
-    const remainingCodes = new Set();
-    getRemainingRows().forEach((row) => remainingCodes.add(row.id));
-    getRemainingElectiveRows().forEach((row) => remainingCodes.add(row.id));
+    const remainingCoreMajorCodes = Array.from(
+      new Set(getRemainingRows().map((row) => row.id))
+    );
+    const remainingElectiveCodes = Array.from(
+      new Set(getRemainingElectiveRows().map((row) => row.id))
+    );
+
+    const formatListRows = (codes) =>
+      codes
+        .map((code) => `${formatHistoryCode(code)} ${getSubjectName(code)}`.trim())
+        .sort((a, b) => a.localeCompare(b))
+        .map((line) => `<div class="ui-tooltip-row">${escapeHtml(line)}</div>`)
+        .join('');
 
     const formatListHtml = (title, codes) => {
       if (!codes.length) {
         return `<div class="ui-tooltip-row ui-tooltip-title">${escapeHtml(title)}: none</div>`;
       }
-      const lines = codes
-        .map((code) => `${formatHistoryCode(code)} ${getSubjectName(code)}`.trim())
-        .sort((a, b) => a.localeCompare(b));
-      const rows = lines
-        .map((line) => `<div class="ui-tooltip-row">${escapeHtml(line)}</div>`)
-        .join('');
-      return `<div class="ui-tooltip-row ui-tooltip-title">${escapeHtml(title)}</div>${rows}`;
+      return `<div class="ui-tooltip-row ui-tooltip-title">${escapeHtml(title)}</div>${formatListRows(
+        codes
+      )}`;
     };
 
     const completedTooltip = formatListHtml('Completed', Array.from(completedCodes));
     const selectedTooltip = formatListHtml('Selected', selectedCodes);
-    const remainingTooltip = formatListHtml('Remaining', Array.from(remainingCodes));
+    const remainingTooltip = [
+      formatListHtml('Core and Major remaining', remainingCoreMajorCodes),
+      '<div class="ui-tooltip-separator"></div>',
+      formatListHtml('Electives remaining', remainingElectiveCodes),
+    ].join('');
 
-    subjectCountsEl.innerHTML =
-      `<div class="subject-counts-line">` +
-      `<span class="subject-counts-item" data-tooltip-html="${completedTooltip}">${completedTotal} subjects completed</span>, ` +
-      `<span class="subject-counts-item" data-tooltip-html="${selectedTooltip}">${selected} selected</span>` +
-      `</div>` +
-      `<div class="subject-counts-line">` +
-      `<span class="subject-counts-item" data-tooltip-html="${remainingTooltip}">${remaining} remaining</span>` +
-      `</div>`;
+    subjectCountsEl.innerHTML = '';
+    const lineOne = document.createElement('div');
+    lineOne.className = 'subject-counts-line';
+    const completedSpan = document.createElement('span');
+    completedSpan.className = 'subject-counts-item';
+    completedSpan.textContent = `${completedTotal} subjects completed`;
+    completedSpan.setAttribute('data-tooltip-html', completedTooltip);
+    if (creditMismatch) {
+      completedSpan.classList.add('counts-mismatch');
+    }
+    const selectedSpan = document.createElement('span');
+    selectedSpan.className = 'subject-counts-item';
+    selectedSpan.textContent = `${selected} selected`;
+    selectedSpan.setAttribute('data-tooltip-html', selectedTooltip);
+    lineOne.appendChild(completedSpan);
+    lineOne.appendChild(document.createTextNode(', '));
+    lineOne.appendChild(selectedSpan);
+
+    const lineTwo = document.createElement('div');
+    lineTwo.className = 'subject-counts-line';
+    const remainingSpan = document.createElement('span');
+    remainingSpan.className = 'subject-counts-item';
+    remainingSpan.textContent = `${remaining} remaining`;
+    remainingSpan.setAttribute('data-tooltip-html', remainingTooltip);
+    lineTwo.appendChild(remainingSpan);
+
+    subjectCountsEl.appendChild(lineOne);
+    subjectCountsEl.appendChild(lineTwo);
     subjectCountsEl.classList.add('is-visible');
     initTooltips();
     updateMajorStreamInsights();
+    document.querySelectorAll('.student-summary-credit').forEach((el) => {
+      el.classList.toggle('counts-mismatch', creditMismatch);
+    });
+    const dataAlerts = [];
+    if (creditMismatch) {
+      const creditPointsLabel = formatCountValue(creditPointsValue ?? 0);
+      const creditSubjectsLabel =
+        creditSubjects === null ? '' : formatCountValue(creditSubjects);
+      dataAlerts.push({
+        title: 'Credit points mismatch',
+        html: `<p><strong class="alert-inline-title alert-title-error">Credit points mismatch</strong> <span class="alert-inline-text">Credit points earned (${escapeHtml(
+          creditPointsLabel
+        )}) = ${escapeHtml(creditSubjectsLabel)} subject${creditSubjects === 1 ? '' : 's'}, but completed count is ${escapeHtml(
+          completedTotal
+        )}.</span></p>`,
+      });
+    }
+    setAlertMessages('data', dataAlerts);
+    renderAlertButton('data');
   };
 
   const getLoadThreshold = () => Math.max(1, fullLoadCap || 4);
@@ -3342,6 +3619,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         remove();
       })
     );
+      dropZone.addEventListener('click', () => {
+        if (!window.location.protocol.startsWith('http')) return;
+        if (isStudentModeParam) return;
+        if (studentRecords.length) return;
+        if (dropSidebar) dropSidebar.classList.add('is-active');
+        loadWorkbookFromUrl('Source.xlsx');
+      });
       dropZone.addEventListener('drop', (e) => {
         if (dropSidebar) dropSidebar.classList.add('is-active');
         const file = e.dataTransfer?.files?.[0];
@@ -3357,9 +3641,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   initDropZone();
-  if (!studentRecords.length && window.location.protocol.startsWith('http')) {
-    loadWorkbookFromUrl('../Source.xlsx');
-  }
   if (studentIdInput) {
     studentIdInput.addEventListener('input', handleStudentIdInput);
     studentIdInput.addEventListener('keydown', (event) => {
@@ -3401,7 +3682,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let uiTooltipPoint = { x: 0, y: 0 };
 
   const initTooltips = () => {
-    const tooltipTargets = Array.from(document.querySelectorAll('[data-tooltip]'));
+    const tooltipTargets = Array.from(
+      document.querySelectorAll('[data-tooltip], [data-tooltip-html]')
+    );
     if (!tooltipTargets.length) return;
     if (!uiTooltipEl) {
       uiTooltipEl = document.createElement('div');
@@ -3533,6 +3816,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         { result: meta?.result || '', date: meta?.date || '' },
       ])
     ),
+    manualEntryResults: manualEntryResults.map((entry) => ({ ...entry })),
     manualEntryCurrent: new Map(
       Array.from(manualEntryCurrent.entries()).map(([code, meta]) => [
         code,
@@ -3560,6 +3844,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     snapshot.manualEntryMeta.forEach((meta, code) =>
       manualEntryMeta.set(code, { result: meta?.result || '', date: meta?.date || '' })
     );
+    manualEntryResults = Array.isArray(snapshot.manualEntryResults)
+      ? snapshot.manualEntryResults.map((entry) => ({ ...entry }))
+      : [];
     workbookCurrent.clear();
     if (snapshot.workbookCurrent) {
       snapshot.workbookCurrent.forEach((meta, code) =>
@@ -3614,6 +3901,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     manualEntryCurrent.clear();
     workbookCurrent.clear();
     manualEntryUnknown.length = 0;
+    manualEntryResults = [];
     subjectState.clear();
     subjects.forEach((cell) => {
       const code = cell.dataset.subject;
@@ -3833,6 +4121,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseTimetableColoursButton.textContent = courseTimetableColoursOn ? 'Colours Off' : 'Colours On';
     courseTimetableColoursButton.setAttribute('aria-pressed', String(courseTimetableColoursOn));
     courseTimetableModal.classList.toggle('semester-timetable-colours-off', !courseTimetableColoursOn);
+  };
+  const updateRemainingColoursButton = () => {
+    if (!remainingColoursButton || !remainingModal) return;
+    remainingColoursButton.textContent = remainingColoursOn ? 'Colours Off' : 'Colours On';
+    remainingColoursButton.setAttribute('aria-pressed', String(remainingColoursOn));
+    remainingModal.classList.toggle('remaining-colours-off', !remainingColoursOn);
   };
 
   const setCourseTimetableView = (view) => {
@@ -4366,12 +4660,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const metaEntries = new Map();
     const aliasEntries = new Map();
     const currentEntries = new Map();
+    const failCountsN = new Map();
+    const resultEntries = [];
     const unknownEntries = [];
 
     extractedEntries.forEach(({ rawCode, grade, date, status }) => {
       const { mapped, original } = resolveLegacyCode(rawCode);
       if (!mapped) return;
       const normalizedGrade = normalizeGradeToken(grade);
+      if (status !== 'current' && validSubjectCodes.has(mapped)) {
+        if (normalizedGrade === 'N') {
+          failCountsN.set(mapped, (failCountsN.get(mapped) || 0) + 1);
+        }
+      }
       if (status !== 'current' && normalizedGrade && !validUseCodes.has(mapped) && !validSubjectCodes.has(mapped)) {
         unknownEntries.push({ code: original || mapped, result: normalizedGrade, date });
         return;
@@ -4411,6 +4712,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           date: date || existing.date || '',
         });
       }
+      if (normalizedGrade) {
+        resultEntries.push({ id: mapped, result: normalizedGrade, date: date || '' });
+      }
     });
 
     return {
@@ -4419,12 +4723,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       metaEntries,
       aliasEntries,
       currentEntries,
+      failCountsN,
+      resultEntries,
       unknownEntries,
     };
   };
 
   const parseCurrentEntriesFromResults = (raw) => {
     const safeRaw = (raw || '').toString();
+    if (!/\r?\n/.test(safeRaw) && safeRaw.includes(',')) {
+      const segments = safeRaw
+        .split(',')
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+      const hasAnyGradeToken = segments.some((segment) => !!getGradeStatus(segment));
+      if (hasAnyGradeToken) {
+        const currentEntries = new Map();
+        segments.forEach((segment) => {
+          if (getGradeStatus(segment)) return;
+          const match = segment.toUpperCase().match(manualCodeRegex);
+          if (!match) return;
+          const { mapped } = resolveLegacyCode(match[0]);
+          if (!mapped) return;
+          const dateToken = extractDateToken(segment);
+          currentEntries.set(mapped, { date: dateToken || '' });
+        });
+        if (currentEntries.size) return currentEntries;
+      }
+    }
     const lines = safeRaw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     if (lines.length < 2) return new Map();
 
@@ -4469,6 +4795,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!mapped) return;
       currentEntries.set(mapped, { date: dateToken || '' });
     });
+    if (currentEntries.size) return currentEntries;
+
+    // Fallback: if any grades exist in the text, treat code-only lines as current.
+    const hasAnyGradeToken = lines.some((line) => !!getGradeStatus(line));
+    if (!hasAnyGradeToken) return currentEntries;
+    lines.forEach((line) => {
+      const upper = line.toUpperCase();
+      const match = upper.match(manualCodeRegex);
+      if (!match) return;
+      if (getGradeStatus(line)) return;
+      const { mapped } = resolveLegacyCode(match[0]);
+      if (!mapped) return;
+      currentEntries.set(mapped, { date: '' });
+    });
     return currentEntries;
   };
 
@@ -4484,11 +4824,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     parsed.currentEntries.forEach((meta, mapped) => manualEntryCurrent.set(mapped, meta));
     parsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
+    manualEntryResults = parsed.resultEntries ? [...parsed.resultEntries] : [];
     parsed.metaEntries.forEach((meta, mapped) => {
       const existing = manualEntryMeta.get(mapped) || {};
       manualEntryMeta.set(mapped, {
         result: meta.result || existing.result || '',
         date: meta.date || existing.date || '',
+        failCountN: parsed.failCountsN?.get(mapped) || existing.failCountN || 0,
       });
     });
 
@@ -4796,6 +5138,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     updateCourseTimetableColoursButton();
   }
+  if (remainingColoursButton) {
+    remainingColoursButton.addEventListener('click', () => {
+      remainingColoursOn = !remainingColoursOn;
+      updateRemainingColoursButton();
+    });
+    updateRemainingColoursButton();
+  }
   if (copyCourseTimetableButton) {
     copyCourseTimetableButton.addEventListener('click', () => {
       flashCopyButton(copyCourseTimetableButton);
@@ -5081,6 +5430,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const suppsAndHolds = (record.SuppsAndHolds || '').toString().trim();
     const passedSubjects = (record.Passed_subjects || '').toString().trim();
     const resultsList = (record.Results_List || '').toString().trim();
+    const failedCount = (record.Failed_Count || '').toString().trim();
+    const creditPointsValue = parseCreditPoints(creditPointsEarned);
+    const formatCountValue = (value) =>
+      Number.isInteger(value) ? value.toString() : value.toFixed(1);
+    const creditSubjects =
+      creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
+    const creditSubjectsLabel =
+      creditSubjects === null ? '' : formatCountValue(creditSubjects);
     const hasHistory = !!(passedSubjects || resultsList);
     const isInternational = !!(
       record.In_AllInternationals ||
@@ -5162,6 +5519,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const detailText = detailParts.join('. ');
       lines.push(detailText ? `${escapeHtml(aprApp)} - ${detailText}` : escapeHtml(aprApp));
     }
+    if (failedCount) {
+      lines.push(`Failed (N) count: ${escapeHtml(failedCount)}`);
+    }
+    if (creditPointsValue !== null && creditSubjects !== null) {
+      const creditPointsLabel = formatCountValue(creditPointsValue);
+      lines.push(
+        `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
+          creditSubjectsLabel
+        )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
+          creditSubjectsLabel
+        )} subjects)</div>`
+      );
+    }
     const sharePointInfo = getSharePointParentInfo(sharePoint);
     if (sharePointInfo) {
       lines.push(
@@ -5191,6 +5561,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   function applyStudentRecord(record) {
     if (!record) return;
+    const nextId = normalizeStudentId(record.Student_IDs_Unique || '');
+    if (activeStudentId && nextId && nextId !== activeStudentId) {
+      loadedStudentSnapshot = null;
+      staffWorkbookState.setStudentRecord(null);
+    }
     resetStudentSelections();
     staffWorkbookState.setStudentRecord(record);
     const courseInfo = staffWorkbookState.getCourseInfo();
@@ -5207,15 +5582,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     workbookCurrent.clear();
     resultsCurrent.forEach((meta, mapped) => workbookCurrent.set(mapped, meta));
     resultsParsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
+    manualEntryResults = resultsParsed.resultEntries ? [...resultsParsed.resultEntries] : [];
     resultsParsed.metaEntries.forEach((meta, mapped) => {
       manualEntryMeta.set(mapped, {
         result: meta.result || '',
         date: meta.date || '',
+        failCountN: resultsParsed.failCountsN?.get(mapped) || 0,
       });
     });
     resultsParsed.resolvedSubjectCodes.forEach((code) => {
       if (!manualEntryMeta.has(code)) {
-        manualEntryMeta.set(code, { result: '', date: '' });
+        manualEntryMeta.set(code, { result: '', date: '', failCountN: resultsParsed.failCountsN?.get(code) || 0 });
       }
     });
 
@@ -5223,6 +5600,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     electivePlaceholderState = electivePlaceholderState.map((_, idx) => resolvedUseCodes[idx] || '');
 
     passedParsed.resolvedSubjectCodes.forEach((code) => {
+      const cell = subjects.find((c) => c.dataset.subject === code);
+      if (!cell) return;
+      subjectState.set(code, { completed: true, toggled: false });
+      if (!manualEntryMeta.has(code)) {
+        manualEntryMeta.set(code, { result: '', date: '' });
+      }
+    });
+    resultsParsed.resolvedSubjectCodes.forEach((code) => {
       const cell = subjects.find((c) => c.dataset.subject === code);
       if (!cell) return;
       subjectState.set(code, { completed: true, toggled: false });
@@ -5234,7 +5619,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         subjectState.set(code, { completed: false, toggled: false });
       }
       if (!manualEntryMeta.has(code)) {
-        manualEntryMeta.set(code, { result: '', date: meta?.date || '' });
+        manualEntryMeta.set(code, { result: '', date: meta?.date || '', failCountN: resultsParsed.failCountsN?.get(code) || 0 });
       }
     });
 
@@ -5347,12 +5732,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     loadedStudentSnapshot = captureStudentSnapshot();
   };
 
-  const toProperCase = (value) =>
-    String(value || '')
+  function toProperCase(value) {
+    return String(value || '')
       .toLowerCase()
       .split(/(\s|-|')/)
       .map((part) => (/[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
       .join('');
+  }
 
   const formatStudentSearchLabel = (record, includeEmail = false) => {
     if (!record) return '';
@@ -5456,6 +5842,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (studentIdInput) studentIdInput.classList.add('student-match-found');
     renderStudentPreviewHtml(formatStudentSummary(record));
+    if (timetableModal && timetableModal.classList.contains('show')) {
+      updateTimetableStaffContent(currentTableMode);
+    }
   };
 
   function handleStudentIdInput() {
@@ -5704,16 +6093,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   function buildCourseInfoFromWorkbook(workbook) {
     if (!workbook) return null;
-    const sheetName = 'Info';
-    const sheet = workbook.Sheets?.[sheetName];
-    if (!sheet) return null;
+    const defaultSheetName = 'Info';
+    const defaultSheet = workbook.Sheets?.[defaultSheetName];
     const names = workbook.Workbook?.Names || [];
     const info = {};
     names.forEach((nameEntry) => {
       if (!nameEntry?.Name || !COURSE_INFO_RANGES.includes(nameEntry.Name) || !nameEntry.Ref) return;
       const cleanedRef = stripRangeRef(nameEntry.Ref);
-      if (!cleanedRef.includes(`${sheetName}!`)) return;
-      const values = getRangeValues(sheet, nameEntry.Ref, nameEntry.Name);
+      const parts = cleanedRef.split('!');
+      const refSheetName = parts.length > 1 ? parts[0] : '';
+      const refSheet =
+        (refSheetName && workbook.Sheets?.[refSheetName]) || defaultSheet;
+      if (!refSheet) return;
+      const values = getRangeValues(refSheet, nameEntry.Ref, nameEntry.Name);
       const value = values.find((val) => val !== '') ?? '';
       info[nameEntry.Name] = value;
     });
@@ -5786,12 +6178,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       syncSubjectTableActions(tableEl);
       return;
     }
-    items.forEach(({ cell, id, result = '', date = '', isFail = false, displayCode, displayName, displayStream }) => {
+    items.forEach(({ cell, id, result = '', date = '', isFail = false, repeatFail = false, displayCode, displayName, displayStream }) => {
       const row = document.createElement('tr');
       row.dataset.subject = id;
       applyDisplayTypeClass(row, cell || id);
       if (isHistoryTable && (isFail || isFailGradeToken(result))) {
         row.classList.add('history-fail');
+      }
+      if (isHistoryTable && repeatFail) {
+        row.classList.add('history-repeat-fail');
+        row.setAttribute(
+          'data-tooltip',
+          "Subjects failed 3 times can delay a student's graduation. Also, upon a 4th fail, a student will be exlcuded from the course"
+        );
       }
       const name = displayName ?? getSubjectName(id);
       const stream = displayStream ?? buildStreamLabel(id);
@@ -5846,10 +6245,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const renderHistoryModal = () => {
-    const rows = sortHistoryRows(getHistoryRows());
+    let rows = sortHistoryRows(getHistoryRows());
+    if (historyOnlyPassed) {
+      rows = rows.filter((row) => !isWithdrawOrFailGrade(row.result));
+    }
     renderSubjectTable(historyTable, rows, 'No completed subjects to show.');
     renderCurrentEnrolments();
     updateHistorySortButtons();
+    updateHistoryOnlyPassedButton();
+    updateHistoryColoursButton();
   };
 
   const renderRemainingModal = () => {
@@ -5880,7 +6284,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapSharedPlaceholders = [];
   const courseMapMajorPlaceholders = [];
   const courseMapElectivePlaceholders = [];
-  let courseMapSharedRefs = null;
 
   const createCourseMapCell = ({ code, label, placeholder, empty }) => {
     const cell = document.createElement('div');
@@ -5933,8 +6336,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const isElectivePlaceholder = entry.startsWith('Elective Subject');
         if (isMajorPlaceholder || isElectivePlaceholder) {
           const cell = createCourseMapCell({ label: entry, placeholder: true });
-          if (isMajorPlaceholder) courseMapMajorPlaceholders.push(cell);
-          if (isElectivePlaceholder) courseMapElectivePlaceholders.push(cell);
+          if (isMajorPlaceholder) {
+            const slotMatch = entry.match(/\b(\d+)\b/);
+            if (slotMatch) cell.dataset.majorSlot = slotMatch[1];
+            courseMapMajorPlaceholders.push(cell);
+          }
+          if (isElectivePlaceholder) {
+            const slotMatch = entry.match(/\b(\d+)\b/);
+            if (slotMatch) cell.dataset.electiveSlot = slotMatch[1];
+            courseMapElectivePlaceholders.push(cell);
+          }
           grid.appendChild(cell);
           return;
         }
@@ -5949,9 +6360,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapKey.innerHTML = '';
     const items = [
       { label: '(White background) Available to you this semseter', color: '#ffffff' },
-      { label: 'Completed - passed or credit', color: '#c8efc0' },
-      { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #1b5e20, #c8efc0)', textColor: '#fff' },
-      { label: 'Selected here today', color: '#1b5e20', textColor: '#fff' },
+      { label: 'Completed - passed or credit', color: '#cfe8ff' },
+      { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #0b3d91, #9ecbff)', textColor: '#fff' },
+      { label: 'Selected here today', color: '#0b3d91', textColor: '#fff' },
       { label: 'You can tick-off prerequisite requirements this semesterand study it next semester', color: '#cfcfcf' },
       { label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' },
     ];
@@ -5979,25 +6390,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapElectivePlaceholders.length = 0;
 
     const coreRows = [
-      ['BIT105', 'BIT111', 'BIT112', 'BIT231', 'BIT241', 'BIT371', 'BIT372'],
-      ['BIT106', 'BIT121', 'BIT108', 'BIT230', 'BIT242', 'BIT352', 'BIT314'],
+      ['BIT106', 'BIT111', 'BIT112', 'BIT231', 'BIT241', 'BIT314', 'BIT352'],
+      ['BIT121', 'BIT105', 'BIT108', 'BIT230', 'BIT242', 'BIT371', 'BIT372'],
     ];
     const majorRows = [
       ['Major Subject 1', 'Major Subject 3', 'Major Subject 5', 'Elective Subject 1', 'Elective Subject 3'],
       ['Major Subject 2', 'Major Subject 4', 'Major Subject 6', 'Elective Subject 2', 'Elective Subject 4'],
     ];
-    const networkRows = [
-      ['BIT233', 'BIT244', 'BIT313'],
-      ['BIT213', 'BIT353', 'BIT362'],
-    ];
-    const baRows = [
-      ['BIT236', 'BIT357', 'BIT356'],
-      [{ placeholder: 'bit245-ba' }, 'BIT355', 'BIT363'],
-    ];
-    const sdRows = [
-      [{ placeholder: 'bit245-sd' }, 'BIT246', 'BIT358'],
-      ['BIT235', 'BIT351', 'BIT364'],
-    ];
+    const networkRows = courseMapStreamLayouts.ns;
+    const baRows = courseMapStreamLayouts.ba;
+    const sdRows = courseMapStreamLayouts.sd;
 
     const coreBlock = document.createElement('div');
     coreBlock.className = 'course-map-core-block';
@@ -6010,43 +6412,45 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const nsSection = document.createElement('div');
     nsSection.className = 'course-map-stream ns';
+    nsSection.dataset.stream = 'ns';
     const nsLabel = document.createElement('div');
     nsLabel.className = 'course-map-stream-label';
     nsLabel.textContent = 'Network Security';
+    nsLabel.dataset.stream = 'ns';
     nsSection.appendChild(nsLabel);
     nsSection.appendChild(buildCourseMapGrid(networkRows, 3, 'course-map-stream-grid'));
     streamsBlock.appendChild(nsSection);
 
     const baSection = document.createElement('div');
     baSection.className = 'course-map-stream ba';
+    baSection.dataset.stream = 'ba';
     const baLabel = document.createElement('div');
     baLabel.className = 'course-map-stream-label';
     baLabel.textContent = 'Business Analytics';
+    baLabel.dataset.stream = 'ba';
     baSection.appendChild(baLabel);
     baSection.appendChild(buildCourseMapGrid(baRows, 3, 'course-map-stream-grid'));
     streamsBlock.appendChild(baSection);
 
     const shared = document.createElement('div');
     shared.className = 'course-map-shared';
+    const sharedBackground = document.createElement('div');
+    sharedBackground.className = 'background-to-bit245';
+    shared.appendChild(sharedBackground);
     const sharedCell = createCourseMapCell({ code: 'BIT245' });
     sharedCell.classList.add('course-map-shared-cell');
     sharedCell.title =
       "BIT245 belongs to both the Business Analtyics (BA) and Software Development (SD) streams.\n  - If your major is Network Security, BIT245 is treated as a single elective.\n  - If your major is BA or SD, it's treated as a single major subject.";
     shared.appendChild(sharedCell);
-    const arrowUp = document.createElement('div');
-    arrowUp.className = 'course-map-arrow course-map-arrow-up';
-    const arrowDown = document.createElement('div');
-    arrowDown.className = 'course-map-arrow course-map-arrow-down';
-    sharedCell.appendChild(arrowUp);
-    sharedCell.appendChild(arrowDown);
-    courseMapSharedRefs = { container: shared, cell: sharedCell, arrowUp, arrowDown };
     streamsBlock.appendChild(shared);
 
     const sdSection = document.createElement('div');
     sdSection.className = 'course-map-stream sd';
+    sdSection.dataset.stream = 'sd';
     const sdLabel = document.createElement('div');
     sdLabel.className = 'course-map-stream-label';
     sdLabel.textContent = 'Software Development';
+    sdLabel.dataset.stream = 'sd';
     sdSection.appendChild(sdLabel);
     sdSection.appendChild(buildCourseMapGrid(sdRows, 3, 'course-map-stream-grid'));
     streamsBlock.appendChild(sdSection);
@@ -6060,7 +6464,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // Arrows are now positioned via CSS within the BIT245 cell.
   };
 
+  const updateCourseMapStreamLabels = () => {
+    const majorKey = getMajorKeyFromUi();
+    const majorNameMap = {
+      ns: 'Network Security',
+      ba: 'Business Analytics',
+      sd: 'Software Development',
+    };
+    const majorName = majorNameMap[majorKey] || 'Network Security';
+    const labels = courseMapContent
+      ? Array.from(courseMapContent.querySelectorAll('.course-map-stream-label'))
+      : [];
+    labels.forEach((label) => {
+      const stream = label.dataset.stream || '';
+      const isMajor = stream === majorKey;
+      label.classList.toggle('is-major', isMajor);
+      const tooltipText = isMajor
+        ? 'This stream is treated as your major.'
+        : `This stream is treated as an elective. Major: ${majorName}.`;
+      if (isMajor) {
+        label.setAttribute('data-tooltip', tooltipText);
+      } else {
+        label.setAttribute('data-tooltip', tooltipText);
+      }
+      label.setAttribute('title', tooltipText);
+    });
+    initTooltips();
+  };
+
   const updateCourseMapStatuses = () => {
+    const majorKey = getMajorKeyFromUi();
     const completedSet = new Set(
       Array.from(subjectState.entries())
         .filter(([, st]) => st?.completed)
@@ -6076,6 +6509,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ...Array.from(workbookCurrent.keys()),
       ...Array.from(manualEntryCurrent.keys()),
     ]);
+    const getCourseMapStatusClass = (code) => {
+      const st = subjectState.get(code);
+      if (!st) return '';
+      const isCurrent = currentCodes.has(code) || passForEnrolmentsOverrides.has(code);
+      if (isCurrent) return 'course-map-status-current';
+      if (st.toggled) return 'course-map-status-selected';
+      if (st.completed) return 'course-map-status-passed';
+      const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
+        id: code,
+        completedSet,
+        plannedSet,
+        usePlanned: false,
+      });
+      const hasCoreq = (corequisites[code] || []).length > 0;
+      const meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+      if (!meetsNow) {
+        const dist = computeSemesterDistance(code, completedSet, plannedSet, false, false, memo);
+        if (Number.isFinite(dist) && dist <= 2) return 'course-map-status-next';
+        return 'course-map-status-later';
+      }
+      return '';
+    };
     courseMapSharedPlaceholders.forEach((cell) => {
       cell.classList.remove(
         'course-map-status-passed',
@@ -6093,6 +6548,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-next',
         'course-map-status-later'
       );
+      cell.classList.remove('course-map-major-placeholder', 'major-ns', 'major-ba', 'major-sd');
+      cell.classList.add('course-map-major-placeholder', `major-${majorKey}`);
     });
     courseMapElectivePlaceholders.forEach((cell) => {
       cell.classList.remove(
@@ -6100,7 +6557,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-current',
         'course-map-status-selected',
         'course-map-status-next',
-        'course-map-status-later'
+        'course-map-status-later',
+        'course-map-elective-unavailable'
       );
     });
     courseMapCells.forEach((cell, code) => {
@@ -6111,104 +6569,87 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-next',
         'course-map-status-later'
       );
-      const st = subjectState.get(code);
-      if (!st) return;
-      const isCurrent = currentCodes.has(code) || passForEnrolmentsOverrides.has(code);
-      if (isCurrent) {
-        cell.classList.add('course-map-status-current');
-        return;
-      }
-      if (st.toggled) {
-        cell.classList.add('course-map-status-selected');
-        return;
-      }
-      if (st.completed) {
-        cell.classList.add('course-map-status-passed');
-        return;
-      }
-      const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
-        id: code,
-        completedSet,
-        plannedSet,
-        usePlanned: false,
-      });
-      const hasCoreq = (corequisites[code] || []).length > 0;
-      const meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
-      if (!meetsNow) {
-        const dist = computeSemesterDistance(code, completedSet, plannedSet, false, false, memo);
-        if (Number.isFinite(dist) && dist <= 2) {
-          cell.classList.add('course-map-status-next');
-        } else {
-          cell.classList.add('course-map-status-later');
-        }
-      }
+      const status = getCourseMapStatusClass(code);
+      if (status) cell.classList.add(status);
     });
 
-    const sharedCell = courseMapCells.get('BIT245');
-    if (sharedCell && courseMapSharedPlaceholders.length) {
-      const statusClass = [
-        'course-map-status-passed',
-        'course-map-status-current',
-        'course-map-status-selected',
-        'course-map-status-next',
-        'course-map-status-later',
-      ].find((cls) => sharedCell.classList.contains(cls));
-      if (statusClass) {
-        courseMapSharedPlaceholders.forEach((cell) => cell.classList.add(statusClass));
-      }
+    const sharedStatus = getCourseMapStatusClass('BIT245');
+    if (sharedStatus && courseMapSharedPlaceholders.length) {
+      courseMapSharedPlaceholders.forEach((cell) => cell.classList.add(sharedStatus));
     }
 
-    const getStatusForCode = (code) => {
-      const st = subjectState.get(code);
-      if (!st) return '';
-      const isCurrent = currentCodes.has(code) || passForEnrolmentsOverrides.has(code);
-      if (isCurrent) return 'course-map-status-current';
-      if (st.toggled) return 'course-map-status-selected';
-      if (st.completed) return 'course-map-status-passed';
+    const majorStreamRows = courseMapStreamLayouts[majorKey] || courseMapStreamLayouts.ns;
+    const majorStreamCodes = majorStreamRows
+      .flatMap((row) =>
+        row.map((entry) => {
+          if (!entry) return null;
+          if (typeof entry === 'object') return entry.code || null;
+          return entry;
+        })
+      )
+      .filter(Boolean);
+    const majorStatuses = majorStreamCodes.map((code) => getCourseMapStatusClass(code));
+    courseMapMajorPlaceholders.forEach((cell, idx) => {
+      const slotRaw = cell.dataset.majorSlot;
+      const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
+      const status = majorStatuses[slotIndex];
+      if (status) cell.classList.add(status);
+    });
+    const getElectiveSlotStatus = (slotIndex) => {
+      const bitCode = electiveBitState[slotIndex];
+      if (bitCode) {
+        const st = subjectState.get(bitCode);
+        if (!st) return '';
+        const isCurrent = currentCodes.has(bitCode) || passForEnrolmentsOverrides.has(bitCode);
+        if (isCurrent) return 'course-map-status-current';
+        if (st.toggled) return 'course-map-status-selected';
+        if (st.completed) return 'course-map-status-passed';
+        return '';
+      }
+      const useCode = electivePlaceholderState[slotIndex];
+      if (useCode) return 'course-map-status-passed';
       return '';
     };
 
-    const majorCodes = Array.from(subjectState.keys()).filter((code) => {
-      if (code === 'BIT245') return false;
-      const meta = subjectMeta[code];
-      if (!meta?.classes) return false;
-      const isCore = meta.classes.includes('core');
-      const isElective = meta.classes.includes('elective') || code.startsWith('USE') || code.startsWith('ELECTIVE');
-      return !isCore && !isElective;
+    courseMapElectivePlaceholders.forEach((cell, idx) => {
+      const slotRaw = cell.dataset.electiveSlot;
+      const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
+      const status = getElectiveSlotStatus(slotIndex);
+      if (status) cell.classList.add(status);
     });
-    const electiveCodes = Array.from(subjectState.keys()).filter((code) => {
-      if (code === 'BIT245') return false;
-      const meta = subjectMeta[code];
-      return (meta?.classes || []).includes('elective') || code.startsWith('USE') || code.startsWith('ELECTIVE');
+    const electiveLayout = computeElectiveList(majorKey);
+    const electiveCandidates = Array.from(
+      new Set(Object.values(electiveLayout).filter(Boolean))
+    ).filter((code) => !(majorLayouts[majorKey] || []).includes(code));
+    const usePlanned = !completedMode;
+    const hasAvailableElective = !areElectivesFull() && electiveCandidates.some((code) => {
+      const st = subjectState.get(code);
+      if (st?.toggled) return false;
+      const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
+        id: code,
+        completedSet,
+        plannedSet,
+        usePlanned,
+      });
+      const hasCoreq = (corequisites[code] || []).length > 0;
+      return usePlanned
+        ? hasCoreq
+          ? prereqMetPlanned && coreqMetPlanned
+          : prereqMetPlanned
+        : hasCoreq
+          ? prereqMetNow && coreqMetNow
+          : prereqMetNow;
     });
-
-    const buildStatusQueue = (codes) => {
-      const buckets = {
-        'course-map-status-current': [],
-        'course-map-status-selected': [],
-        'course-map-status-passed': [],
-      };
-      codes.forEach((code) => {
-        const status = getStatusForCode(code);
-        if (status) buckets[status].push(code);
-      });
-      return [
-        ...buckets['course-map-status-current'],
-        ...buckets['course-map-status-selected'],
-        ...buckets['course-map-status-passed'],
-      ].map((code) => getStatusForCode(code));
-    };
-
-    const applyPlaceholderStatuses = (cells, codes) => {
-      const statuses = buildStatusQueue(codes);
-      cells.forEach((cell, idx) => {
-        const status = statuses[idx];
-        if (status) cell.classList.add(status);
-      });
-    };
-
-    applyPlaceholderStatuses(courseMapMajorPlaceholders, majorCodes);
-    applyPlaceholderStatuses(courseMapElectivePlaceholders, electiveCodes);
+    courseMapElectivePlaceholders.forEach((cell) => {
+      const isBlue =
+        cell.classList.contains('course-map-status-current') ||
+        cell.classList.contains('course-map-status-selected') ||
+        cell.classList.contains('course-map-status-passed');
+      if (!isBlue) {
+        cell.classList.toggle('course-map-elective-unavailable', !hasAvailableElective);
+      }
+    });
+    updateCourseMapStreamLabels();
   };
 
   const renderCourseMapModal = () => {
@@ -6243,8 +6684,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildCourseMapSvgFromDom = (element) => {
     if (!element) return null;
     const containerRect = element.getBoundingClientRect();
-    const width = Math.ceil(Math.max(containerRect.width, element.scrollWidth || 0));
-    const height = Math.ceil(Math.max(containerRect.height, element.scrollHeight || 0));
+    let width = Math.ceil(Math.max(containerRect.width, element.scrollWidth || 0));
+    let height = Math.ceil(Math.max(containerRect.height, element.scrollHeight || 0));
     if (!width || !height) return null;
 
     const escapeXml = (value = '') =>
@@ -6260,28 +6701,84 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return Number.isFinite(parsed) ? parsed : 0;
     };
 
+    const getCourseMapExportHeaderLines = () => {
+      const lines = ['Course Map.'];
+      const studentId = activeStudentId || normalizeStudentId(studentIdInput?.value || '');
+      if (!studentId) return lines;
+      const record = studentRecords.find(
+        (row) => normalizeStudentId(row.Student_IDs_Unique) === studentId
+      );
+      const given = record ? toProperCase(record.Given_Name || '') : '';
+      const family = record ? String(record.Family_Name || '').toUpperCase() : '';
+      const name = [given, family].filter(Boolean).join(' ').trim();
+      const now = new Date();
+      const pad = (value) => String(value).padStart(2, '0');
+      const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(
+        now.getHours()
+      )}:${pad(now.getMinutes())}`;
+      const detail = [studentId, name, stamp].filter(Boolean).join(' ').trim();
+      if (detail) lines.push(detail);
+      return lines;
+    };
+
+    const headerLines = getCourseMapExportHeaderLines();
+    const headerPaddingTop = 8;
+    const headerPaddingBottom = 10;
+    const headerTitleSize = 16;
+    const headerMetaSize = 12;
+    const headerLineGap = 4;
+    const headerBlockHeight = headerLines.length
+      ? headerPaddingTop +
+        headerTitleSize +
+        (headerLines.length > 1 ? headerLineGap + headerMetaSize : 0) +
+        headerPaddingBottom
+      : 0;
+    if (headerBlockHeight) height += headerBlockHeight;
+
     const relativeRect = (el) => {
       const rect = el.getBoundingClientRect();
       return {
         x: rect.left - containerRect.left + element.scrollLeft,
-        y: rect.top - containerRect.top + element.scrollTop,
+        y: rect.top - containerRect.top + element.scrollTop + headerBlockHeight,
         width: rect.width,
         height: rect.height,
       };
     };
 
+    const bit245Cell = element.querySelector('.course-map-cell[data-subject="BIT245"]');
+    if (bit245Cell) {
+      const rect = relativeRect(bit245Cell);
+      const baseX = rect.x + rect.width;
+      const lineLength = 96;
+      const arrowPad = 14;
+      const angles = [-20, 20];
+      let maxX = 0;
+      angles.forEach((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        const x2 = baseX + Math.cos(rad) * lineLength;
+        maxX = Math.max(maxX, x2 + arrowPad);
+      });
+      if (maxX > width) width = Math.ceil(maxX);
+    }
+
     const svgParts = [
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`,
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" shape-rendering="geometricPrecision">`,
       `<rect width="${width}" height="${height}" fill="#fff"/>`,
     ];
 
+    const escapeAttr = (value) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+
     const addRect = (rect, { fill, stroke, strokeWidth, rx = 0, ry = 0, dashArray } = {}) => {
       if (!rect || rect.width <= 0 || rect.height <= 0) return;
-      const strokeAttr = stroke ? ` stroke="${stroke}"` : '';
+      const strokeAttr = stroke ? ` stroke="${escapeAttr(stroke)}"` : '';
       const strokeWidthAttr = strokeWidth ? ` stroke-width="${strokeWidth}"` : '';
-      const dashAttr = dashArray ? ` stroke-dasharray="${dashArray}"` : '';
+      const dashAttr = dashArray ? ` stroke-dasharray="${escapeAttr(dashArray)}"` : '';
       svgParts.push(
-        `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="${rx}" ry="${ry}" fill="${fill || 'none'}"${strokeAttr}${strokeWidthAttr}${dashAttr}/>`
+        `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" rx="${rx}" ry="${ry}" fill="${escapeAttr(fill || 'none')}"${strokeAttr}${strokeWidthAttr}${dashAttr}/>`
       );
     };
 
@@ -6290,14 +6787,92 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const attrs = [
         `x="${x}"`,
         `y="${y}"`,
-        `fill="${styles.color || '#111'}"`,
-        `font-size="${styles.fontSize || '12px'}"`,
-        `font-weight="${styles.fontWeight || '400'}"`,
-        `font-family="${styles.fontFamily || 'Arial, sans-serif'}"`,
+        `fill="${escapeAttr(styles.color || '#111')}"`,
+        `font-size="${escapeAttr(styles.fontSize || '12px')}"`,
+        `font-weight="${escapeAttr(styles.fontWeight || '400')}"`,
+        `font-family="${escapeAttr(styles.fontFamily || 'Arial, sans-serif')}"`,
         `dominant-baseline="hanging"`,
       ];
       svgParts.push(`<text ${attrs.join(' ')}>${escapeXml(text)}</text>`);
     };
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    const getFontString = (styles) => {
+      const style = styles.fontStyle || 'normal';
+      const weight = styles.fontWeight || '400';
+      const size = styles.fontSize || '12px';
+      const family = styles.fontFamily || 'Arial, sans-serif';
+      return `${style} ${weight} ${size} ${family}`.trim();
+    };
+    const measureTextWidth = (text, styles) => {
+      if (!measureCtx) return text.length * 6;
+      measureCtx.font = getFontString(styles);
+      return measureCtx.measureText(text).width;
+    };
+    const wrapText = (text, maxWidth, styles, maxLines) => {
+      const words = String(text).trim().replace(/\s+/g, ' ').split(' ');
+      const lines = [];
+      let current = '';
+      const pushLine = (line) => {
+        if (line) lines.push(line);
+      };
+      const fits = (str) => measureTextWidth(str, styles) <= maxWidth;
+      words.forEach((word) => {
+        if (!current) {
+          if (fits(word)) {
+            current = word;
+            return;
+          }
+          let chunk = '';
+          for (let i = 0; i < word.length; i += 1) {
+            const next = chunk + word[i];
+            if (!fits(next) && chunk) {
+              pushLine(chunk);
+              chunk = word[i];
+              if (lines.length >= maxLines) break;
+            } else {
+              chunk = next;
+            }
+          }
+          current = chunk;
+          return;
+        }
+        const nextLine = `${current} ${word}`;
+        if (fits(nextLine)) {
+          current = nextLine;
+          return;
+        }
+        pushLine(current);
+        current = word;
+      });
+      pushLine(current);
+      if (lines.length > maxLines) lines.length = maxLines;
+      return lines;
+    };
+
+    if (headerLines.length) {
+      const titleStyle = {
+        color: '#111',
+        fontSize: `${headerTitleSize}px`,
+        fontWeight: '700',
+        fontFamily: 'Arial, sans-serif',
+      };
+      const metaStyle = {
+        color: '#333',
+        fontSize: `${headerMetaSize}px`,
+        fontWeight: '400',
+        fontFamily: 'Arial, sans-serif',
+      };
+      addText(headerLines[0], 12, headerPaddingTop, titleStyle);
+      if (headerLines[1]) {
+        addText(
+          headerLines[1],
+          12,
+          headerPaddingTop + headerTitleSize + headerLineGap,
+          metaStyle
+        );
+      }
+    }
 
     const drawBorderedGrids = (selector) => {
       element.querySelectorAll(selector).forEach((grid) => {
@@ -6311,7 +6886,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     drawBorderedGrids('.course-map-core-grid, .course-map-major-grid, .course-map-stream-grid');
 
-    const bit245Cell = element.querySelector('.course-map-cell[data-subject="BIT245"]');
     if (bit245Cell) {
       const rect = relativeRect(bit245Cell);
       const baseX = rect.x + rect.width;
@@ -6324,9 +6898,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const x2 = baseX + Math.cos(rad) * lineLength;
         const y2 = y + Math.sin(rad) * lineLength;
         const stroke = '#1a5c7a';
-        const strokeWidth = 2;
+        const strokeWidth = 3;
         svgParts.push(
-          `<line x1="${baseX}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${strokeWidth}" />`
+          `<line x1="${baseX}" y1="${y}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" />`
         );
         const headLength = 8;
         const headWidth = 5;
@@ -6373,21 +6947,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         );
         if (nameEl) {
           const nameStyle = window.getComputedStyle(nameEl);
-          addText(
-            nameEl.textContent.trim(),
-            rect.x + padLeft,
-            rect.y + padTop + lineHeight,
-            nameStyle
-          );
+          const nameLineHeight = toNumber(nameStyle.lineHeight) || toNumber(nameStyle.fontSize) * 1.2;
+          const availableHeight = Math.max(0, rect.height - padTop - lineHeight);
+          const maxLines = Math.max(2, Math.floor(availableHeight / nameLineHeight));
+          const maxWidth = Math.max(0, rect.width - padLeft * 2);
+          const lines = wrapText(nameEl.textContent.trim(), maxWidth, nameStyle, maxLines);
+          lines.forEach((line, idx) => {
+            addText(
+              line,
+              rect.x + padLeft,
+              rect.y + padTop + lineHeight + nameLineHeight * idx,
+              nameStyle
+            );
+          });
         }
       } else if (nameEl) {
         const nameStyle = window.getComputedStyle(nameEl);
-        addText(
-          nameEl.textContent.trim(),
-          rect.x + padLeft,
-          rect.y + padTop,
-          nameStyle
-        );
+        const nameLineHeight = toNumber(nameStyle.lineHeight) || toNumber(nameStyle.fontSize) * 1.2;
+        const maxLines = Math.max(2, Math.floor(Math.max(0, rect.height - padTop) / nameLineHeight));
+        const maxWidth = Math.max(0, rect.width - padLeft * 2);
+        const lines = wrapText(nameEl.textContent.trim(), maxWidth, nameStyle, maxLines);
+        lines.forEach((line, idx) => {
+          addText(
+            line,
+            rect.x + padLeft,
+            rect.y + padTop + nameLineHeight * idx,
+            nameStyle
+          );
+        });
       }
     });
 
@@ -6424,6 +7011,199 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return { svg: svgParts.join(''), width, height };
   };
 
+  const buildTimetableSvgFromDom = () => {
+    if (!timetableTable || !timetableTitleEl) return null;
+    const tableRect = timetableTable.getBoundingClientRect();
+    if (!tableRect.width || !tableRect.height) return null;
+    const feesRect =
+      timetableFees && !timetableFees.hidden ? timetableFees.getBoundingClientRect() : null;
+
+    const escapeXml = (value = '') =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/\'/g, '&#39;');
+
+    const escapeAttr = (value) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/\"/g, '&quot;');
+
+    const toNumber = (value) => {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    const getFontString = (styles) => {
+      const style = styles.fontStyle || 'normal';
+      const weight = styles.fontWeight || '400';
+      const size = styles.fontSize || '12px';
+      const family = styles.fontFamily || 'Arial, sans-serif';
+      return `${style} ${weight} ${size} ${family}`.trim();
+    };
+    const measureTextWidth = (text, styles) => {
+      if (!measureCtx) return text.length * 6;
+      measureCtx.font = getFontString(styles);
+      return measureCtx.measureText(text).width;
+    };
+    const wrapText = (text, maxWidth, styles, maxLines) => {
+      const words = String(text).trim().replace(/\s+/g, ' ').split(' ');
+      const lines = [];
+      let current = '';
+      const fits = (str) => measureTextWidth(str, styles) <= maxWidth;
+      const pushLine = (line) => {
+        if (line) lines.push(line);
+      };
+      words.forEach((word) => {
+        if (!current) {
+          current = word;
+          return;
+        }
+        const nextLine = `${current} ${word}`;
+        if (fits(nextLine)) {
+          current = nextLine;
+          return;
+        }
+        pushLine(current);
+        current = word;
+      });
+      pushLine(current);
+      if (lines.length > maxLines) lines.length = maxLines;
+      return lines;
+    };
+
+    const paddingX = 12;
+    const paddingTop = 10;
+    const headingGap = 6;
+    const feesGap = feesRect ? 8 : 0;
+    const headingStyle = window.getComputedStyle(timetableTitleEl);
+    const headingFontSize = toNumber(headingStyle.fontSize) || 16;
+    const headingLineHeight = toNumber(headingStyle.lineHeight) || headingFontSize * 1.2;
+    const headingText = timetableTitleEl.textContent.trim();
+    const strongEl = timetableTitleEl.querySelector('.timetable-title-strong');
+    const strongText = strongEl ? strongEl.textContent.trim() : headingText;
+    const restText = headingText.slice(strongText.length);
+
+    const width = Math.ceil(Math.max(tableRect.width, feesRect?.width || 0) + paddingX * 2);
+    const height = Math.ceil(
+      paddingTop +
+        headingLineHeight +
+        headingGap +
+        tableRect.height +
+        (feesRect ? feesRect.height : 0) +
+        feesGap +
+        paddingTop
+    );
+
+    const svgParts = [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" shape-rendering="geometricPrecision">`,
+      `<rect width="${width}" height="${height}" fill="#fff"/>`,
+    ];
+
+    const addRect = (rect, { fill, stroke, strokeWidth } = {}) => {
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+      const fillAttr = escapeAttr(fill || 'none');
+      const strokeAttr = stroke ? ` stroke="${escapeAttr(stroke)}"` : '';
+      const strokeWidthAttr = strokeWidth ? ` stroke-width="${strokeWidth}"` : '';
+      svgParts.push(
+        `<rect x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" fill="${fillAttr}"${strokeAttr}${strokeWidthAttr}/>`
+      );
+    };
+
+    const addText = (text, x, y, styles) => {
+      if (!text) return;
+      const attrs = [
+        `x="${x}"`,
+        `y="${y}"`,
+        `fill="${escapeAttr(styles.color || '#111')}"`,
+        `font-size="${escapeAttr(styles.fontSize || '12px')}"`,
+        `font-weight="${escapeAttr(styles.fontWeight || '400')}"`,
+        `font-family="${escapeAttr(styles.fontFamily || 'Arial, sans-serif')}"`,
+        `dominant-baseline="hanging"`,
+      ];
+      svgParts.push(`<text ${attrs.join(' ')}>${escapeXml(text)}</text>`);
+    };
+
+    const headingX = paddingX;
+    const headingY = paddingTop;
+    addText(strongText, headingX, headingY, {
+      color: headingStyle.color,
+      fontSize: headingStyle.fontSize,
+      fontWeight: '700',
+      fontFamily: headingStyle.fontFamily,
+    });
+    if (restText) {
+      const strongWidth = measureTextWidth(strongText, {
+        fontStyle: headingStyle.fontStyle,
+        fontWeight: '700',
+        fontSize: headingStyle.fontSize,
+        fontFamily: headingStyle.fontFamily,
+      });
+      addText(restText, headingX + strongWidth, headingY, headingStyle);
+    }
+
+    const tableOrigin = {
+      x: paddingX,
+      y: paddingTop + headingLineHeight + headingGap,
+    };
+    timetableTable.querySelectorAll('th,td').forEach((cell) => {
+      const rect = cell.getBoundingClientRect();
+      const style = window.getComputedStyle(cell);
+      const fillValue =
+        style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent'
+          ? '#fff'
+          : style.backgroundColor;
+      addRect(
+        {
+          x: tableOrigin.x + rect.left - tableRect.left,
+          y: tableOrigin.y + rect.top - tableRect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+        {
+          fill: fillValue,
+          stroke: style.borderColor,
+          strokeWidth: toNumber(style.borderWidth),
+        }
+      );
+      const padLeft = toNumber(style.paddingLeft);
+      const padTop = toNumber(style.paddingTop);
+      const lineHeight = toNumber(style.lineHeight) || toNumber(style.fontSize) * 1.2;
+      const maxWidth = Math.max(0, rect.width - padLeft * 2);
+      const maxLines = Math.max(1, Math.floor((rect.height - padTop) / lineHeight));
+      const lines = wrapText(cell.textContent.trim(), maxWidth, style, maxLines);
+      lines.forEach((line, idx) => {
+        addText(
+          line,
+          tableOrigin.x + rect.left - tableRect.left + padLeft,
+          tableOrigin.y + rect.top - tableRect.top + padTop + lineHeight * idx,
+          style
+        );
+      });
+    });
+
+    if (feesRect && timetableFees) {
+      const feeStyle = window.getComputedStyle(timetableFees);
+      const feeText = timetableFees.textContent.trim();
+      const feeLineHeight = toNumber(feeStyle.lineHeight) || toNumber(feeStyle.fontSize) * 1.3;
+      const feeMaxWidth = Math.max(0, width - paddingX * 2);
+      const feeLines = wrapText(feeText, feeMaxWidth, feeStyle, 3);
+      const feeX = paddingX;
+      const feeY = tableOrigin.y + tableRect.height + feesGap;
+      feeLines.forEach((line, idx) => {
+        addText(line, feeX, feeY + feeLineHeight * idx, feeStyle);
+      });
+    }
+
+    svgParts.push('</svg>');
+    return { svg: svgParts.join(''), width, height };
+  };
+
   const buildElementSvg = (element) => buildCourseMapSvgFromDom(element);
 
   const renderElementToSvgBlob = (element) => {
@@ -6432,11 +7212,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return new Blob([built.svg], { type: 'image/svg+xml;charset=utf-8' });
   };
 
-  const renderElementToPngBlob = (element) => {
-    const built = buildElementSvg(element);
-    if (!built) return Promise.resolve(null);
-    const { svg, width, height } = built;
-    return new Promise((resolve) => {
+  const renderSvgToPngBlob = (svg, width, height) =>
+    new Promise((resolve) => {
       const img = new Image();
       img.decoding = 'async';
       img.crossOrigin = 'anonymous';
@@ -6445,15 +7222,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const finish = () => {
         try {
           const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
+          const scale = Math.max(2, Math.round(window.devicePixelRatio || 1));
+          canvas.width = Math.round(width * scale);
+          canvas.height = Math.round(height * scale);
           const ctx = canvas.getContext('2d');
           if (!ctx) {
             URL.revokeObjectURL(url);
             resolve(null);
             return;
           }
-          ctx.drawImage(img, 0, 0);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.setTransform(scale, 0, 0, scale, 0, 0);
+          ctx.drawImage(img, 0, 0, width, height);
           canvas.toBlob((blob) => {
             URL.revokeObjectURL(url);
             resolve(blob || null);
@@ -6470,31 +7251,59 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       };
       img.src = url;
     });
+
+  const renderElementToPngBlob = (element) => {
+    const built = buildElementSvg(element);
+    if (!built) return Promise.resolve(null);
+    return renderSvgToPngBlob(built.svg, built.width, built.height);
+  };
+
+  const renderTimetableExportPngBlob = () => {
+    const built = buildTimetableSvgFromDom();
+    if (!built) return Promise.resolve(null);
+    return renderSvgToPngBlob(built.svg, built.width, built.height);
+  };
+
+  const downloadTimetableExportImage = async () => {
+    const blob = await renderTimetableExportPngBlob();
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'timetable.png';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const copyCourseMapImage = async () => {
-    if (!window.ClipboardItem || !navigator.clipboard?.write) return;
     const target = getCourseMapCaptureTarget();
-    const blob = await renderElementToPngBlob(target);
-    if (blob) {
-      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).catch(() => {});
+    if (!target) return;
+    if (!window.ClipboardItem || !navigator.clipboard?.write || !window.isSecureContext) {
+      await downloadCourseMapImage();
       return;
     }
-    const svgBlob = renderElementToSvgBlob(target);
-    if (svgBlob) {
-      navigator.clipboard.write([new ClipboardItem({ 'image/svg+xml': svgBlob })]).catch(() => {});
+    const blob = await renderElementToPngBlob(target);
+    if (!blob) {
+      await downloadCourseMapImage();
+      return;
+    }
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch (err) {
+      await downloadCourseMapImage();
     }
   };
 
   const downloadCourseMapImage = async () => {
     const target = getCourseMapCaptureTarget();
     const blob = await renderElementToPngBlob(target);
-    const finalBlob = blob || renderElementToSvgBlob(target);
-    if (!finalBlob) return;
-    const url = URL.createObjectURL(finalBlob);
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = blob ? 'course-map.png' : 'course-map.svg';
+    link.download = 'course-map.png';
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -6611,12 +7420,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!timetableModal) return;
     currentTableMode = 'selected';
     setTimetableModalMode(currentTableMode);
-    if (timetableTitleEl) {
-      const now = new Date();
-      const label = getTimetableLabel(now);
-      timetableTitleEl.textContent = `Timetable for ${label}. Prepared ${formatDate(now)}`;
-    }
+    setTimetableHeading(currentTableMode);
     renderTimetableTable();
+    updateTimetableFees();
+    updateTimetableEmailButtons();
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(timetableTable);
@@ -6633,16 +7440,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     currentTableMode = selectedCount >= threshold ? 'selected' : 'available';
     setTimetableModalMode(currentTableMode);
-    if (timetableTitleEl) {
-      if (currentTableMode === 'available') {
-        timetableTitleEl.textContent = 'Available subjects (click to add)';
-      } else {
-        const now = new Date();
-        timetableTitleEl.textContent = `Timetable for ${getTimetableLabel(now)}. Prepared ${formatDate(now)}`;
-      }
-    }
+    setTimetableHeading(currentTableMode);
     const rows = currentTableMode === 'available' ? getAvailableRows() : getSelectedRows();
     renderTimetableTable(rows, true);
+    updateTimetableFees();
+    updateTimetableEmailButtons();
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(timetableTable);
@@ -6656,10 +7458,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     historyModal.classList.add('show');
     historyModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(historyTable);
+    const historyFocusTarget = closeHistoryCta || closeHistory;
+    if (historyFocusTarget) historyFocusTarget.focus();
   };
 
   const hideHistoryModal = () => {
     if (!historyModal) return;
+    if (historyButton) historyButton.focus();
     historyModal.classList.remove('show');
     historyModal.setAttribute('aria-hidden', 'true');
   };
@@ -6748,16 +7553,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (availableHeading) {
       availableHeading.style.display = '';
     }
-    if (timetableTitleEl) {
-      if (mode === 'available') {
-        timetableTitleEl.textContent = 'Available subjects (click to add)';
-      } else {
-        const now = new Date();
-        timetableTitleEl.textContent = `Timetable for ${getTimetableLabel(now)}. Prepared ${formatDate(now)}`;
-      }
-    }
+    setTimetableHeading(mode);
     const rows = mode === 'available' ? getAvailableRows() : getSelectedRows();
     renderTimetableTable(rows, true);
+    updateTimetableFees();
+    updateTimetableEmailButtons();
     scheduleAdjustTimetable();
   };
 
@@ -6779,18 +7579,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const narrow = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
     return uaMobile || (touchHint && narrow) || narrow;
   };
-  const alertContent = { error: [], warning: [], info: [] };
-  const alertPrevCounts = { error: 0, warning: 0, info: 0 };
-  const alertPrevSignatures = { error: '', warning: '', info: '' };
+  const alertContent = { error: [], warning: [], info: [], data: [] };
+  const alertPrevCounts = { error: 0, warning: 0, info: 0, data: 0 };
+  const alertPrevSignatures = { error: '', warning: '', info: '', data: '' };
   const ALERT_COLORS = {
     error: getCssVar('--alert-error', '#d32f2f'),
     warning: getCssVar('--alert-caution', '#c25a00'),
     info: getCssVar('--alert-info', '#0b7fab'),
+    data: getCssVar('--alert-error', '#d32f2f'),
   };
   const alertState = {
     error: new Map(),
     warning: new Map(),
     info: new Map(),
+    data: new Map(),
   };
   const alertId = (msg) => `${msg?.title || ''}::${msg?.html || ''}`;
   const rebuildAlertContent = (type) => {
@@ -6805,6 +7607,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (type === 'error') return errorButton;
     if (type === 'warning') return warningButton;
     if (type === 'info') return infoButton;
+    if (type === 'data') return dataErrorButton;
     return null;
   };
 
@@ -6822,7 +7625,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const renderAlertButton = (type) => {
     const btn = getAlertButton(type);
     if (!btn) return;
-    const labels = { error: 'Error', warning: 'Caution', info: 'Info' };
+    const labels = { error: 'Error', warning: 'Caution', info: 'Info', data: 'Data Error?' };
     const content = alertContent[type] || [];
     const count = content.length;
     const hasUnread = content.some((p) => !p.seen);
@@ -6905,12 +7708,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .join('');
     alertBody.innerHTML = combined;
     alertTitle.textContent =
-      type === 'warning' ? 'Cautions' : type === 'error' ? 'Errors' : payloads[0].title || 'Notice';
+      type === 'warning'
+        ? 'Cautions'
+        : type === 'error'
+          ? 'Errors'
+          : type === 'data'
+            ? 'Data Errors'
+            : payloads[0].title || 'Notice';
     alertTitle.style.display = 'block';
     alertTitle.style.fontWeight = '700';
     if (type === 'warning') {
       alertTitle.style.color = ALERT_COLORS.warning;
-    } else if (type === 'error') {
+    } else if (type === 'error' || type === 'data') {
       alertTitle.style.color = ALERT_COLORS.error;
     } else {
       alertTitle.style.color = ALERT_COLORS.info;
@@ -7000,6 +7809,63 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     } else {
       navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const buildTimetableEmailBody = (firstName) => {
+    const name = firstName || 'student';
+    return `Dear ${name}\n\nThe timetable planned for this coming semester:\n`;
+  };
+
+  const openTimetableEmailDraft = (recipients, body) => {
+    if (!recipients) return;
+    const subject = 'Student Declaration';
+    const mailto = `mailto:${encodeURIComponent(recipients)}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  };
+
+  const sendTimetableEmail = async (target) => {
+    const record = getActiveStudentRecord();
+    if (!record) {
+      window.alert('Select a student record to email.');
+      return;
+    }
+    const primary = String(record.Primary_Email || '').trim();
+    const institute = String(record.Institute_Email || '').trim();
+    const recipientList =
+      target === 'primary'
+        ? primary
+        : target === 'institute'
+          ? institute
+          : [primary, institute].filter(Boolean).join(',');
+    if (!recipientList) {
+      window.alert('No email address available for this student.');
+      return;
+    }
+    const firstName = getStudentFirstName(record);
+    const body = buildTimetableEmailBody(firstName);
+    let imageCopied = false;
+    if (window.ClipboardItem && navigator.clipboard?.write && window.isSecureContext) {
+      const blob = await renderTimetableExportPngBlob();
+      if (blob) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          imageCopied = true;
+        } catch (err) {
+          imageCopied = false;
+        }
+      }
+    }
+    if (!imageCopied) {
+      await downloadTimetableExportImage();
+    }
+    openTimetableEmailDraft(recipientList, body);
+    if (imageCopied) {
+      window.alert('Timetable image copied to clipboard. Paste it into the email.');
+    } else {
+      window.alert('Timetable image downloaded. Attach timetable.png to the email.');
     }
   };
 
@@ -7189,51 +8055,96 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getHistoryRows = () => {
+    const currentEnrolmentIds = new Set([
+      ...workbookCurrent.keys(),
+      ...manualEntryCurrent.keys(),
+    ]);
     const completedCodes = new Set(
       Array.from(subjectState.entries())
         .filter(([, st]) => st?.completed)
         .map(([code]) => code)
     );
-    electivePlaceholderState.forEach((code) => {
-      if (code) completedCodes.add(code);
-    });
-    const allCodes = new Set([
-      ...completedCodes,
-      ...manualEntryMeta.keys(),
-      ...workbookCurrent.keys(),
-      ...manualEntryCurrent.keys(),
-    ]);
-    const historyRows = Array.from(allCodes)
-      .filter((id) => validSubjectCodes.has(id) || validUseCodes.has(id))
-      .map((id) => {
-        const isUse = id.startsWith('USE');
-        const data = isUse ? {} : timetable[id] || {};
-        const dayFull = data.day || '';
-        const dayShort = dayFull.slice(0, 3);
-        const slot = data.slot || '';
-        const cell = isUse ? null : getCellByCode(id);
-        const meta = manualEntryMeta.get(id) || {};
-        const result = formatHistoryResult(meta.result || '');
-        const isFail = isFailGradeToken(result);
-        const displayCode = isUse ? id : null;
-        const displayName = isUse ? 'Unspecified Elective (USE)' : null;
-        const displayStream = isUse ? 'Elective' : null;
-        return {
-          cell,
-          id,
-          data,
-          dayFull,
-          dayShort,
-          slot,
-          result,
-          date: meta.date || '',
-          isFail,
-          displayCode,
-          displayName,
-          displayStream,
-        };
-      })
-      .sort(compareByDaySlotThenCode);
+    const useCodes = electivePlaceholderState.filter(Boolean);
+    const useManualResults =
+      staffFacing && staffWorkbookState.getStudentRecord() && manualEntryResults.length > 0;
+    const passedFromResults = new Set(
+      manualEntryResults
+        .filter((entry) => getGradeStatus(entry.result) === 'pass')
+        .map((entry) => entry.id)
+    );
+
+    let historyRows = [];
+    if (useManualResults) {
+      historyRows = manualEntryResults
+        .filter((entry) => validSubjectCodes.has(entry.id))
+        .filter((entry) => !currentEnrolmentIds.has(entry.id))
+        .map((entry) => {
+          const data = timetable[entry.id] || {};
+          const dayFull = data.day || '';
+          const dayShort = dayFull.slice(0, 3);
+          const slot = data.slot || '';
+          const cell = getCellByCode(entry.id);
+          const meta = manualEntryMeta.get(entry.id) || {};
+          const result = formatHistoryResult(entry.result || '');
+          const isFail = isFailGradeToken(result);
+          const isPassed =
+            !!subjectState.get(entry.id)?.completed || passedFromResults.has(entry.id);
+          const repeatFail = (meta.failCountN || 0) > 1 && !isPassed;
+          return {
+            cell,
+            id: entry.id,
+            data,
+            dayFull,
+            dayShort,
+            slot,
+            result,
+            date: entry.date || '',
+            isFail,
+            repeatFail,
+            displayCode: null,
+            displayName: null,
+            displayStream: null,
+          };
+        });
+    } else {
+      const baseCodes = Array.from(completedCodes);
+      const allCodes = new Set([...baseCodes, ...useCodes]);
+      historyRows = Array.from(allCodes)
+        .filter((id) => validSubjectCodes.has(id) || validUseCodes.has(id))
+        .filter((id) => !currentEnrolmentIds.has(id))
+        .map((id) => {
+          const isUse = id.startsWith('USE');
+          const data = isUse ? {} : timetable[id] || {};
+          const dayFull = data.day || '';
+          const dayShort = dayFull.slice(0, 3);
+          const slot = data.slot || '';
+          const cell = isUse ? null : getCellByCode(id);
+          const meta = manualEntryMeta.get(id) || {};
+          const result = formatHistoryResult(meta.result || '');
+          const isFail = isFailGradeToken(result);
+          const isPassed = !!subjectState.get(id)?.completed || getGradeStatus(result) === 'pass';
+          const repeatFail = (meta.failCountN || 0) > 1 && !isPassed;
+          const displayCode = isUse ? id : null;
+          const displayName = isUse ? 'Unspecified Elective (USE)' : null;
+          const displayStream = isUse ? 'Elective' : null;
+          return {
+            cell,
+            id,
+            data,
+            dayFull,
+            dayShort,
+            slot,
+            result,
+            date: meta.date || '',
+            isFail,
+            repeatFail,
+            displayCode,
+            displayName,
+            displayStream,
+          };
+        });
+    }
+    historyRows.sort(compareByDaySlotThenCode);
     const unknownRows = manualEntryUnknown.map((entry) => ({
       ...entry,
       sortCode: entry.displayCode || '??',
@@ -7265,41 +8176,76 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const renderCurrentEnrolments = () => {
-    if (!currentEnrolmentsSection || !currentEnrolmentsList) return;
-    currentEnrolmentsList.innerHTML = '';
+    if (!currentEnrolmentsSection || !currentEnrolmentsTable) return;
+    const tbody = currentEnrolmentsTable.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
     const rows = [
       ...Array.from(workbookCurrent.entries()),
       ...Array.from(manualEntryCurrent.entries()),
-    ]
-      .reduce((acc, [id, meta]) => {
-        if (!acc.has(id)) acc.set(id, meta);
-        return acc;
-      }, new Map())
-      ;
+    ].reduce((acc, [id, meta]) => {
+      if (!acc.has(id)) acc.set(id, meta);
+      return acc;
+    }, new Map());
     const listRows = Array.from(rows.entries())
       .filter(([id]) => validSubjectCodes.has(id) && !subjectState.get(id)?.completed)
       .map(([id, meta]) => ({ id, date: meta?.date || '' }))
       .sort((a, b) => a.id.localeCompare(b.id));
     if (!listRows.length) {
       currentEnrolmentsSection.hidden = true;
+      if (historyGradedHeading) historyGradedHeading.hidden = true;
       return;
     }
-    listRows.forEach(({ id }) => {
-      const li = document.createElement('li');
+    listRows.forEach(({ id, date }) => {
+      const row = document.createElement('tr');
+      row.dataset.subject = id;
+      applyDisplayTypeClass(row, id);
       const name = getSubjectName(id);
-      const codeLabel = formatHistoryCode(id);
-      li.textContent = `${codeLabel} - ${name}`;
-      currentEnrolmentsList.appendChild(li);
+      const stream = buildStreamLabel(id);
+      const valueMap = {
+        code: formatHistoryCode(id),
+        name,
+        result: '',
+        date,
+        stream,
+      };
+      ['code', 'name', 'result', 'date', 'stream'].forEach((col) => {
+        const td = document.createElement('td');
+        td.textContent = valueMap[col] ?? '';
+        row.appendChild(td);
+      });
+      tbody.appendChild(row);
     });
     currentEnrolmentsSection.hidden = false;
+    if (historyGradedHeading) historyGradedHeading.hidden = false;
+
+    requestAnimationFrame(() => {
+      if (!historyTable || !currentEnrolmentsTable) return;
+      const headerCells = historyTable.querySelectorAll('thead tr:last-child th');
+      const currentRows = currentEnrolmentsTable.querySelectorAll('tbody tr');
+      if (!headerCells.length || !currentRows.length) return;
+      headerCells.forEach((cell, idx) => {
+        const width = Math.ceil(cell.getBoundingClientRect().width);
+        if (!width) return;
+        currentRows.forEach((row) => {
+          const td = row.children[idx];
+          if (td) {
+            td.style.width = `${width}px`;
+            td.style.minWidth = `${width}px`;
+          }
+        });
+      });
+      currentEnrolmentsTable.style.width = '100%';
+    });
   };
 
-  const loadWorkbookFromUrl = async (url) => {
+  async function loadWorkbookFromUrl(url) {
     if (typeof XLSX === 'undefined') return;
     try {
       if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
       const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const lastModified = response.headers.get('last-modified');
       const buffer = await response.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const records = buildStudentRecordsFromWorkbook(workbook);
@@ -7312,16 +8258,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       clearStudentSearchDropdown();
       lastDroppedFileInfo = {
         fileName: url.split('/').pop() || 'Source.xlsx',
-        savedLine: 'Auto-loaded',
+        savedLine: formatHttpDateInfo(lastModified),
       };
-      renderDropZoneStatus([lastDroppedFileInfo.fileName, lastDroppedFileInfo.savedLine, `${records.length} students listed`]);
+      renderDropZoneStatus([
+        lastDroppedFileInfo.fileName,
+        lastDroppedFileInfo.savedLine,
+        `${records.length} students listed`,
+      ]);
       updateStudentPreview();
     } catch (error) {
       // ignore auto-load failures; user can still drop the workbook manually
     } finally {
       if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
     }
-  };
+  }
 
   const getAvailableRows = () => {
     const completedSet = new Set(
@@ -7517,6 +8467,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         copyTimetableToClipboard();
       });
     }
+    if (downloadTimetableImageButton) {
+      downloadTimetableImageButton.addEventListener('click', () => {
+        downloadTimetableExportImage();
+      });
+    }
+    if (emailPrimaryButton) {
+      emailPrimaryButton.addEventListener('click', () => {
+        sendTimetableEmail('primary');
+      });
+    }
+    if (emailInstituteButton) {
+      emailInstituteButton.addEventListener('click', () => {
+        sendTimetableEmail('institute');
+      });
+    }
+    if (emailBothButton) {
+      emailBothButton.addEventListener('click', () => {
+        sendTimetableEmail('both');
+      });
+    }
     if (historyButton) historyButton.addEventListener('click', showHistoryModal);
     if (remainingButton) remainingButton.addEventListener('click', showRemainingModal);
     if (courseMapButton) courseMapButton.addEventListener('click', showCourseMapModal);
@@ -7541,7 +8511,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (copyHistory) {
       copyHistory.addEventListener('click', () => {
         flashCopyButton(copyHistory);
-        copySimpleTableToClipboard(historyTable, historyTitleEl?.textContent || 'History');
+        const tables = [historyTable];
+        const headings = [historyTitleEl?.textContent || 'History'];
+        if (currentEnrolmentsSection && !currentEnrolmentsSection.hidden && currentEnrolmentsTable) {
+          tables.unshift(currentEnrolmentsTable);
+          headings.unshift('Current Enrolments in your student record:');
+        }
+        copySimpleTablesToClipboard(tables, headings);
+      });
+    }
+    if (historyColoursButton) {
+      historyColoursButton.addEventListener('click', () => {
+        historyColoursOn = !historyColoursOn;
+        updateHistoryColoursButton();
+      });
+      updateHistoryColoursButton();
+    }
+    if (historyOnlyPassedButton) {
+      historyOnlyPassedButton.addEventListener('click', () => {
+        historyOnlyPassed = !historyOnlyPassed;
+        renderHistoryModal();
       });
     }
     if (historyModal) {
@@ -7646,6 +8635,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (errorButton) errorButton.addEventListener('click', () => showAlertModal('error'));
   if (warningButton) warningButton.addEventListener('click', () => showAlertModal('warning'));
   if (infoButton) infoButton.addEventListener('click', () => showAlertModal('info'));
+  if (dataErrorButton) dataErrorButton.addEventListener('click', () => showAlertModal('data'));
   if (closeAlert) closeAlert.addEventListener('click', hideAlertModal);
   if (alertModal) {
     alertModal.addEventListener('click', (e) => {
@@ -7818,7 +8808,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!existing) {
           const pill = document.createElement('div');
           pill.className = 'electives-full-pill';
-          pill.textContent = "Can't select. All 4 Elective slots are full";
+          pill.textContent = "Can't select this subject.      All 4 Elective slots are full";
           cell.appendChild(pill);
         }
       } else if (existing) {
@@ -7960,6 +8950,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   renderAlertButton('error');
   renderAlertButton('warning');
   renderAlertButton('info');
+  setAlertMessages('data', []);
+  renderAlertButton('data');
   showMobileNotice();
   Array.from(document.querySelectorAll('.modal')).forEach((modalEl) => enableModalDragResize(modalEl));
   installModalCodeCopyButtons();
