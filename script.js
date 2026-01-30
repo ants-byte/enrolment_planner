@@ -153,7 +153,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const timetable = {
-    BIT106: { day: 'Monday', slot: 'Morning', room: 'PE226', teacher: 'Sarang Hashemi' },
+    BIT106: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi' },
     BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
     BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE226', teacher: 'Russul Al-Anni' },
     BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
@@ -162,11 +162,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye' },
     BIT111: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Uchenna Enwereonye' },
     BIT230: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi' },
-    BIT245: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Antony Di Serio' },
+    BIT245: { day: 'Tuesday', slot: 'Morning', room: 'PA113', teacher: 'Antony Di Serio' },
     BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PF340', teacher: 'Anthony Overmars' },
     BIT112: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Dominic Mammone' },
     BIT244: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
-    BIT233: { day: 'Wednesday', slot: 'Afternoon', room: 'PA114', teacher: 'Yaona Zhao' },
+    BIT233: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Yaona Zhao' },
     BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio' },
     BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone' },
     BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'PE327', teacher: 'Nikki Wan' },
@@ -265,7 +265,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZone = document.getElementById('drop-zone');
   const dropSidebar = document.getElementById('drop-sidebar');
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
-  const dropZoneDefaultText = dropZoneTextEl?.textContent || 'Drop students workbook here\nor click to load Source.xlsx from 1 folder level higher';
+  const dropZoneDefaultText =
+    dropZoneTextEl?.textContent ||
+    'Drop Source.xlsx / Email Scripts.docx here\nor click to pick files';
     const dropZoneSpinner = dropZone
     ? (() => {
         const spinner = document.createElement('div');
@@ -316,6 +318,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const studentIdInput = document.getElementById('student-id-input');
   const studentSearchDropdown = document.getElementById('student-search-dropdown');
   const studentDataPreview = document.getElementById('student-data-preview');
+  const clearStudentButton = document.getElementById('clear-student');
     const STUDENT_COLUMNS = [
     'Student_IDs_Unique',
     'In_AllResults',
@@ -335,6 +338,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'DOB',
     'Nationality',
     'Visa_Type',
+    'Funding_Source',
     'Accepted_Offered',
     'Intake_Start_Date',
     'Application_Status',
@@ -346,6 +350,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'Passed_subjects',
     'Results_List',
     'Failed_Count',
+    'Credit_Points_Earned',
     'CRT_Location',
     'SharePoint_StudentForms',
     'SuppsAndHolds',
@@ -354,7 +359,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'APR_APP_Attended',
       'Student_Flag',
     ];
-    const COURSE_INFO_RANGES = [
+  const COURSE_INFO_RANGES = [
     'Semester_Start_Date',
     'Price_per_CSP_Unit',
     'Price_per_Unit',
@@ -379,10 +384,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (digits.length >= 7) return digits.slice(-7);
       return digits.padStart(7, '0');
     };
-  const normalizeHeader = (value) =>
-    String(value ?? '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '');
+    const normalizeHeader = (value) =>
+      String(value ?? '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+    const isWorkbookFlag = (value) => {
+      const raw = String(value ?? '').trim().toLowerCase();
+      return raw === 'y' || raw === 'yes' || raw === 'true' || raw === '1';
+    };
   const timetableModal = document.getElementById('timetable-modal');
   const closeTimetable = document.getElementById('close-timetable');
   const hideTimetable = document.getElementById('hide-timetable');
@@ -391,6 +400,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
   const timetableFees = document.getElementById('timetable-fees');
+  let timetablePreparedEl = null;
   const downloadTimetableImageButton = document.getElementById('download-timetable-image');
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
@@ -413,6 +423,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const cancelCodeModal = document.getElementById('cancel-code-modal');
   const applyCodeModal = document.getElementById('apply-code-modal');
   const codeInput = document.getElementById('code-input');
+  const presetFmpAssoc = document.getElementById('preset-fmp-assoc');
+  const presetFmpDip = document.getElementById('preset-fmp-dip');
+  const presetMpDip = document.getElementById('preset-mp-dip');
+  const presetMpDipOld = document.getElementById('preset-mp-dip-old');
   const loadModal = document.getElementById('load-modal');
   const closeLoadModal = document.getElementById('close-load-modal');
   const cancelLoadModal = document.getElementById('cancel-load-modal');
@@ -449,6 +463,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const remainingTable = document.getElementById('remaining-table');
   const remainingElectivesSection = document.getElementById('remaining-electives-section');
   const remainingElectivesTable = document.getElementById('remaining-electives-table');
+  const remainingElectivesCount = document.getElementById('remaining-electives-count');
   const remainingColoursButton = document.getElementById('remaining-colours');
   const courseMapModal = document.getElementById('course-map-modal');
   const courseMapContent = document.getElementById('course-map-content');
@@ -456,6 +471,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeCourseMap = document.getElementById('close-course-map');
   const closeCourseMapCta = document.getElementById('close-course-map-cta');
   const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
+  const toggleCourseMapPrereqButton = document.getElementById('toggle-course-map-prereq');
+  const toggleCourseMapPrereqTextButton = document.getElementById('toggle-course-map-prereq-text');
+  const courseMapFontDecreaseButton = document.getElementById('course-map-font-decrease');
+  const courseMapFontIncreaseButton = document.getElementById('course-map-font-increase');
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
   const currentEnrolmentsTable = document.getElementById('current-enrolments-table');
@@ -530,6 +549,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let remainingColoursOn = false;
   let historyOnlyPassed = false;
   let historyColoursOn = false;
+  const manualFeeHidden = { domestic: false, international: false };
+  let lastFullLoadSelected = false;
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
@@ -702,6 +723,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const workbookCurrent = new Map();
   const manualEntryUnknown = [];
   let manualEntryResults = [];
+  let emailScriptsDocxBuffer = null;
+  let emailScriptsFileName = '';
+  let otherLoadedFilesInfo = [];
+  let lastStudentCountLine = '';
     const manualCodeRegex = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/;
   const manualCodeRegexGlobal = /\b(BIT[0-9A-Z]{3}|USE[0-9]{3})\b/g;
   const gradeHeadingRegex = /\b(grade|credit|score|outcome|result)\b/i;
@@ -800,6 +825,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const token = extractGradeToken(raw);
     if (token) return token.replace(/^X/, '');
     return raw.replace(/^X/, '');
+  };
+
+  const medianGradeOrder = ['N', 'PA', 'CR', 'D', 'HD'];
+  const getMedianGradeLabel = (entries = []) => {
+    const bySubject = new Map();
+    entries.forEach((entry) => {
+      if (!entry?.id) return;
+      const token = normalizeGradeToken(entry.result);
+      if (!medianGradeOrder.includes(token)) return;
+      const parsedDate = toDateValue(entry.date || '');
+      const existing = bySubject.get(entry.id);
+      if (!existing) {
+        bySubject.set(entry.id, { token, date: parsedDate });
+        return;
+      }
+      if (parsedDate && (!existing.date || parsedDate > existing.date)) {
+        bySubject.set(entry.id, { token, date: parsedDate });
+        return;
+      }
+      if (!existing.date && !parsedDate) {
+        bySubject.set(entry.id, { token, date: null });
+      }
+    });
+    const grades = Array.from(bySubject.values())
+      .map((entry) => entry.token)
+      .filter(Boolean)
+      .sort((a, b) => medianGradeOrder.indexOf(a) - medianGradeOrder.indexOf(b));
+    if (!grades.length) return 'N/A';
+    const mid = Math.floor((grades.length - 1) / 2);
+    return grades[mid];
   };
   const isFailGradeToken = (value) => {
     const token = normalizeGradeToken(value);
@@ -1222,6 +1277,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let passForEnrolmentsEnabled = false;
   let fullLoadCap = 4;
   let studentType = 'international';
+  let feeStatus = '';
+  let domesticLoad = true;
   let exceptionalLoadApproved = false;
   let remainingConfirmed = false;
     let electiveError = null;
@@ -1229,17 +1286,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let chainDelayError = null;
     let aprAppError = null;
     let acceptedOfferedError = null;
-    let intakeStartError = null;
-    let infoNotes = null;
-    let countryHittingTroubles = null;
+      let intakeStartError = null;
+      let availableNowError = null;
+      let availableLoadError = null;
+      let timetableClashError = null;
+    let censusWarning = null;
+    let censusError = null;
+    let weekTwoWarning = null;
+    let weekTwoError = null;
+    let dateNoticeLines = [];
+      let creditTransferWarning = null;
+      let creditTransferWarningActive = false;
+      let infoNotes = null;
+      let countryHittingTroubles = null;
+      let deferredInfo = null;
     const passForEnrolmentsOverrides = new Set();
     const currentEnrolmentsPlannedOverrides = new Set();
   let loadedStudentSnapshot = null;
   let nextSemWarning = null;
   let finalSemWarning = null;
-  let warningPayloads = [];
-  let showSemCounts = false;
-  let initialLoad = true;
+    let warningPayloads = [];
+    let showSemCounts = false;
+    let initialLoad = true;
+    let courseMapPrereqColoursOn = true;
+    let courseMapPrereqTextOn = true;
+    let courseMapFontScaleEm = 1;
 
   const semTooltip = document.createElement('div');
   semTooltip.className = 'sem-tooltip';
@@ -1930,6 +2001,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (varyLoadButton) {
       varyLoadButton.textContent = 'Change';
+      varyLoadButton.disabled = !domesticLoad;
+      varyLoadButton.classList.toggle('disabled', !domesticLoad);
     }
   };
 
@@ -2120,6 +2193,158 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }).format(date);
   };
 
+  const formatNumericDate = (value) => {
+    const date = toDateValue(value);
+    if (!date) return '';
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
+  const isWithdrawGrade = (value) => {
+    const token = normalizeGradeToken(value);
+    if (!token) return false;
+    return token.startsWith('W') || token.startsWith('WN/');
+  };
+
+  const getLatestDateFromResults = (entries = [], predicate = () => false) => {
+    let latest = null;
+    entries.forEach((entry) => {
+      if (!entry || !predicate(entry)) return;
+      const parsed = toDateValue(entry.date || '');
+      if (!parsed) return;
+      if (!latest || parsed > latest) latest = parsed;
+    });
+    return latest;
+  };
+
+  const getLatestDateFromDates = (dates = []) => {
+    let latest = null;
+    dates.forEach((dateValue) => {
+      const parsed = toDateValue(dateValue || '');
+      if (!parsed) return;
+      if (!latest || parsed > latest) latest = parsed;
+    });
+    return latest;
+  };
+
+  const buildDeferredNoticeText = (info) => {
+    if (!info) return '';
+    const enrolmentText = info.lastEnrolmentText || 'unknown';
+    return `Last result recorded ${enrolmentText}.`;
+  };
+
+  const getStudentFlagText = (record) => String(record?.Student_Flag || '').trim();
+
+  const isSdSubjectCode = (code) => {
+    const classes = subjectMeta[code]?.classes || [];
+    return classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
+  };
+
+  const getSdMajorCautionMessage = () => {
+    if (completedMode) return '';
+    const majorVal = majorDropdown?.dataset?.value || currentMajorValue || 'undecided';
+    if (majorVal !== 'sd') return '';
+    const hasBit111Fail = manualEntryResults.some(
+      (entry) => entry?.id === 'BIT111' && isFailGradeToken(entry.result)
+    );
+    const hasBit111Pass =
+      subjectState.get('BIT111')?.completed ||
+      manualEntryResults.some(
+        (entry) => entry?.id === 'BIT111' && getGradeStatus(entry.result) === 'pass'
+      );
+    if (!hasBit111Fail || !hasBit111Pass) return '';
+    return 'Students who fail BIT111 often have difficulty with the Software Development major. Student needs to be sure that programming is something that interests them';
+  };
+
+  const buildInfoMessages = (record, feeDetails) => {
+    const infoMessages = [];
+    const suppsAndHolds = (record?.SuppsAndHolds || '').toString().trim();
+    if (suppsAndHolds) {
+      const items = suppsAndHolds
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => escapeHtml(entry))
+        .join('<br>');
+      infoMessages.push({
+        title: 'Supps and/or Holds',
+        html: `<p><strong class="alert-inline-title alert-title-info">Supps and/or Holds</strong> <span class="alert-inline-text">${items}</span></p>`,
+      });
+    }
+    const studentFlag = getStudentFlagText(record);
+    if (studentFlag) {
+      infoMessages.push({
+        title: 'Student Flag',
+        html: `<p><strong class="alert-inline-title alert-title-warning">Student Flag</strong> <span class="alert-inline-text">${escapeHtml(
+          studentFlag
+        )}</span></p>`,
+      });
+    }
+    const isFmp = String(record?.FMP || '').trim();
+    const hasHistory = !!(
+      (record?.Passed_subjects || '').toString().trim() ||
+      (record?.Results_List || '').toString().trim()
+    );
+    if (isFmp && !hasHistory) {
+      infoMessages.push({
+        title: 'FMP student',
+        html: `<p><strong class="alert-inline-title alert-title-info">Fuzhou Melbourne Polytechnic (FMP)</strong> <span class="alert-inline-text">Check if the student comes from a Diploma (8 credits) or Advanced Diploma (12 credits). Confirm if their course is C complete or E enrolled, and whether they have passed all subjects. An articulation agreement needs to be applied.</span></p>`,
+      });
+    }
+    if (deferredInfo?.isDeferred) {
+      const deferredMessage = buildDeferredNoticeText(deferredInfo);
+      infoMessages.push({
+        title: 'Returning student',
+        html: `<p><strong class="alert-inline-title alert-title-warning">Returning student.</strong> <span class="alert-inline-text">${escapeHtml(
+          deferredMessage
+        )}</span></p>`,
+      });
+    }
+    if (countryHittingTroubles) {
+      infoMessages.push({
+        title: 'Country Alert',
+        html: `<p><strong class="alert-inline-title alert-title-info">Country Alert</strong> <span class="alert-inline-text">${escapeHtml(
+          countryHittingTroubles
+        )} is nominated by us in BIT as a country facing unusual or heightened struggles or concerns.</span></p>`,
+      });
+    }
+    const visaUpper = String(record?.Visa_Type || '').toUpperCase();
+    const visaNumbers = visaUpper.match(/\b\d{3}\b/g) || [];
+    const isBridgingVisa = visaNumbers.includes('010') || visaNumbers.includes('020');
+    if (isBridgingVisa) {
+      infoMessages.push({
+        title: 'Visa fee guide',
+        html: getVisaGuideModalHtml(),
+      });
+    }
+    const visaDetailHtml = getVisaDetailModalHtml(record?.Visa_Type || '', feeDetails);
+    if (visaDetailHtml) {
+      infoMessages.push({
+        title: 'Visa details',
+        html: visaDetailHtml,
+      });
+    }
+    const domesticCaveatHtml = getDomesticVisaCaveatHtml(visaNumbers);
+    if (domesticCaveatHtml) {
+      infoMessages.push({
+        title: 'Domestic visa caveats',
+        html: domesticCaveatHtml,
+      });
+    }
+    return infoMessages;
+  };
+
+  const formatLongDate = (value) => {
+    const date = toDateValue(value);
+    if (!date) return '';
+    const text = new Intl.DateTimeFormat('en-GB', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+    return text.replace(', ', ' ');
+  };
+
   const formatCurrency = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return '';
@@ -2130,7 +2355,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const parseCreditPoints = (value) => {
     if (value === null || value === undefined) return null;
-    const cleaned = String(value).replace(/[^0-9.-]/g, '');
+    const cleaned = String(value).replace(/[^0-9.-]/g, '').trim();
+    if (!cleaned) return null;
     const num = Number(cleaned);
     return Number.isFinite(num) ? num : null;
   };
@@ -2144,14 +2370,259 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
   };
 
-  const isInternationalStudent = (record) =>
-    !!(
+  const SPECIAL_VISA_TOKENS = ['HV', 'REF', 'PV', 'PPV', 'TPC', 'SHEV'];
+  const INTERNATIONAL_VISA_NUMBERS = new Set(['417', '462', '600', '485', '482', '408']);
+  const INTERNATIONAL_PART_TIME_VISA_NUMBERS = new Set(['417', '462', '600', '485', '482', '408']);
+  const DOMESTIC_VISA_NUMBERS = new Set([
+    '866',
+    '785',
+    '790',
+    '189',
+    '190',
+    '491',
+    '801',
+    '820',
+    '100',
+    '309',
+    '444',
+  ]);
+  const VISA_GUIDE = {
+    international: [
+      '417 = Working Holiday (Temporary Resident, study limited usually to 4 months)',
+      '462 = Work and Holiday (Temporary Resident, study limited usually to 4 months)',
+      '600 = Visitor visa',
+      '485 = Temporary Graduate',
+      '482 = Temporary Skill Shortage',
+      '408 = Temporary Activity',
+    ],
+    domestic: [
+      '866 Permanent Protection (CSP + HECS-HELP eligible)',
+      '785 Temporary Protection Visa (TPV) – usually domestic for school fees; tertiary varies',
+      '790 Safe Haven Enterprise Visa (SHEV) – usually domestic for school fees; tertiary varies',
+      'Offshore refugee visas – domestic on arrival',
+      '189 Skilled Independent (PR)',
+      '190 Skilled Nominated (PR)',
+      '491 (once permanent stage reached)',
+      '801 / 820 Partner visas (once PR granted)',
+      '100 / 309 Offshore partner visas',
+      '444 New Zealand citizen (Special Category Visa – domestic for schooling; tertiary rules vary)',
+      'refugee (word value in Visa_Type)',
+    ],
+    edge: [
+      '010 = BVA Bridging Visa A (inherits previous visa fee status)',
+      '020 = BV2 Bridging Visa 2 (inherits previous visa fee status)',
+    ],
+  };
+  const VISA_DETAIL_MAP = {
+    '417': 'Working Holiday (Temporary Resident, study limited usually to 4 months)',
+    '462': 'Work and Holiday (Temporary Resident, study limited usually to 4 months)',
+    '600': 'Visitor visa',
+    '485': 'Temporary Graduate',
+    '482': 'Temporary Skill Shortage',
+    '408': 'Temporary Activity',
+    '866': 'Permanent Protection (CSP + HECS-HELP eligible)',
+    '785': 'Temporary Protection Visa (TPV) – usually domestic for school fees; tertiary varies',
+    '790': 'Safe Haven Enterprise Visa (SHEV) – usually domestic for school fees; tertiary varies',
+    '189': 'Skilled Independent (PR)',
+    '190': 'Skilled Nominated (PR)',
+    '491': 'Skilled Work Regional (provisional) – CSP/HELP may be restricted',
+    '801': 'Partner visa (permanent)',
+    '820': 'Partner visa (temporary)',
+    '100': 'Offshore partner visa (permanent)',
+    '309': 'Offshore partner visa (temporary)',
+    '444': 'New Zealand Special Category Visa (domestic for schooling; tertiary rules vary)',
+    refugee: 'Refugee (word value in Visa_Type)',
+  };
+  const getVisaShortLabel = (visaType) => {
+    if (!visaType) return '';
+    const upper = String(visaType).toUpperCase();
+    const match = upper.match(/\b(\d{3})\s*([A-Z]{2,3})\b/);
+    if (match) return `${match[1]} ${match[2]}`;
+    const number = upper.match(/\b\d{3}\b/);
+    if (number) return number[0];
+    return String(visaType).trim();
+  };
+  const DOMESTIC_VISA_CAVEATS = {
+    humanitarianTemporary: ['785', '790'],
+    provisional: ['491'],
+    partnerTemporary: ['820', '309'],
+    nzSc: ['444'],
+  };
+  const getDomesticVisaCaveatHtml = (visaNumbers) => {
+    const hits = new Set(visaNumbers || []);
+    const lines = [];
+    if (hits.has('866')) lines.push('866 – Permanent Protection: domestic fees + CSP/HELP eligible.');
+    if (hits.has('785') || hits.has('790')) {
+      lines.push('785/790 – Humanitarian temporary: domestic for school fees; tertiary treatment varies.');
+    }
+    if (hits.has('189') || hits.has('190')) lines.push('189/190 – PR: domestic.');
+    if (hits.has('491')) {
+      lines.push('491 – Provisional: often domestic for schooling, but CSP/HELP may be restricted.');
+    }
+    if (hits.has('801')) lines.push('801 – Partner (permanent): domestic.');
+    if (hits.has('820')) {
+      lines.push('820 – Partner (temporary): often domestic, but HECS/CSP can depend on stage.');
+    }
+    if (hits.has('100')) lines.push('100 – Offshore partner (permanent): domestic.');
+    if (hits.has('309')) {
+      lines.push('309 – Offshore partner (temporary): often domestic, but HECS/CSP can depend on stage.');
+    }
+    if (hits.has('444')) {
+      lines.push('444 – NZ SCV: domestic for schooling; tertiary CSP/HELP depends on residency history.');
+    }
+    if (!lines.length) return '';
+    return `<p><strong class="alert-inline-title alert-title-info">Domestic visa caveats</strong></p><ul class="alert-inline-list">${lines
+      .map((line) => `<li>${escapeHtml(line)}</li>`)
+      .join('')}</ul>`;
+  };
+  const getDomesticVisaCaveatLine = (visaNumbers) => {
+    const hits = new Set(visaNumbers || []);
+    if (hits.has('491')) return 'Domestic visa caveat: 491 provisional – CSP/HELP may be restricted.';
+    if (hits.has('820')) return 'Domestic visa caveat: 820 partner (temporary) – CSP/HELP may depend on stage.';
+    if (hits.has('309')) return 'Domestic visa caveat: 309 offshore partner (temporary) – CSP/HELP may depend on stage.';
+    if (hits.has('785')) return 'Domestic visa caveat: 785 humanitarian temporary – tertiary treatment varies.';
+    if (hits.has('790')) return 'Domestic visa caveat: 790 humanitarian temporary – tertiary treatment varies.';
+    if (hits.has('444')) return 'Domestic visa caveat: 444 NZ SCV – CSP/HELP depends on residency history.';
+    return '';
+  };
+  const getVisaGuideModalHtml = () => {
+    const buildList = (items) => `<ul class="alert-inline-list">${items.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+    return `
+      <p><strong class="alert-inline-title alert-title-info">Visa fee guide (Visa_Type)</strong></p>
+      <p class="alert-inline-text"><strong>International fees</strong></p>
+      ${buildList(VISA_GUIDE.international)}
+      <p class="alert-inline-text"><strong>Domestic-style access</strong></p>
+      ${buildList(VISA_GUIDE.domestic)}
+      <p class="alert-inline-text"><strong>Edge cases</strong></p>
+      ${buildList(VISA_GUIDE.edge)}
+    `;
+  };
+  const getVisaDetailModalHtml = (visaType, feeDetails) => {
+    if (!visaType) return '';
+    const upper = visaType.toUpperCase();
+    const numbers = upper.match(/\b\d{3}\b/g) || [];
+    const non500 = numbers.filter((code) => code !== '500');
+    const isRefugee = upper.includes('REFUGEE');
+    const picked = non500[0] || (isRefugee ? 'refugee' : '');
+    if (!picked) return '';
+    const description = VISA_DETAIL_MAP[picked] || `Visa type ${picked}`;
+    const feeText =
+      feeDetails?.feeLabel ||
+      (feeDetails?.domesticFees ? 'Fee Type: Domestic rates' : 'Fee Type: International student rates');
+    const loadText = feeDetails?.domesticLoad
+      ? 'Study load: part-time may be permitted (domestic or special/part-time visa rules apply).'
+      : 'Study load: full load required (international student rules).';
+    return `<p><strong class="alert-inline-title alert-title-info">Visa details</strong> <span class="alert-inline-text">Visa: ${escapeHtml(
+      visaType
+    )} – ${escapeHtml(description)}.</span></p><p class="alert-inline-text">${escapeHtml(
+      feeText
+    )}</p><p class="alert-inline-text">${escapeHtml(loadText)}</p>`;
+  };
+  const getFeeStatusDetails = (record) => {
+    if (!record) {
+      return {
+        feeStatus: '',
+        domesticFees: true,
+        domesticLoad: true,
+        feeLabel: '',
+        visaType: '',
+        fundingSource: '',
+      };
+    }
+    const visaType = String(record.Visa_Type || '').trim();
+    const visaUpper = visaType.toUpperCase();
+    const visaNumbers = (visaUpper.match(/\b\d{3}\b/g) || []);
+    const hasRefugeeWord = visaUpper.includes('REFUGEE');
+    const fundingSourceRaw = String(record.Funding_Source || '').trim();
+    const fundingSourceUpper = fundingSourceRaw.toUpperCase();
+    const fundingSourcePrefix = fundingSourceUpper.charAt(0);
+    const applicationType = String(record.Application_Type || '').trim();
+    const applicationTypeUpper = applicationType.toUpperCase();
+    const applicationStatus = String(record.Application_Status || '').trim();
+    const applicationStatusUpper = applicationStatus.toUpperCase();
+    const isSpecialVisa =
+      SPECIAL_VISA_TOKENS.some((token) => visaUpper.includes(token)) ||
+      visaUpper.includes('NO LIMITATION') ||
+      visaUpper.includes('REF');
+    const allowsPartTime =
+      visaNumbers.some((code) => INTERNATIONAL_PART_TIME_VISA_NUMBERS.has(code));
+    const isBridgingVisa =
+      visaNumbers.includes('010') ||
+      visaNumbers.includes('020') ||
+      visaUpper.includes('BRA') ||
+      visaUpper.includes('BR2');
+    let status = '';
+    if (hasRefugeeWord || visaNumbers.some((code) => DOMESTIC_VISA_NUMBERS.has(code))) {
+      status = 'international_special';
+    } else if (visaNumbers.some((code) => INTERNATIONAL_VISA_NUMBERS.has(code))) {
+      status = 'international_sv';
+    } else if (isBridgingVisa) {
+      if (fundingSourcePrefix === 'F') {
+        status = 'international_sv';
+      } else if (applicationTypeUpper.includes('OE INTERNATIONAL') || applicationStatusUpper.includes('INTERNATIONAL')) {
+        status = 'international_sv';
+      } else if (fundingSourceUpper === 'SHD') {
+        status = 'domestic_normal';
+      } else if (fundingSourceUpper === 'CSP') {
+        status = 'domestic_csp';
+      } else if (isSpecialVisa) {
+        status = 'international_special';
+      } else {
+        status = 'international_sv';
+      }
+    } else if (isSpecialVisa) {
+      status = 'international_special';
+    } else if (fundingSourceUpper === 'SHD') {
+      status = 'domestic_normal';
+    } else if (fundingSourceUpper === 'CSP') {
+      status = 'domestic_csp';
+    } else if (applicationTypeUpper.includes('OE INTERNATIONAL')) {
+      status = 'international_sv';
+    } else {
+      status = 'international_sv';
+    }
+    const domesticFees =
+      status === 'domestic_normal' ||
+      status === 'domestic_csp' ||
+      status === 'international_special';
+    const domesticLoadAllowed = domesticFees || allowsPartTime;
+    const loadNote = allowsPartTime
+      ? 'Part-time study permitted for this visa (work is the priority). Single units may be allowed and employers may cover fees.'
+      : '';
+    const feeLabel =
+      status === 'domestic_normal'
+        ? 'Fee Type: Domestic rates'
+        : status === 'domestic_csp'
+          ? 'Fee Type: Domestic student paying CSP rates'
+          : status === 'international_special'
+            ? `Fee Type: International student on ${visaType || 'special visa'} paying domestic fees`
+            : 'Fee Type: International student rates';
+    return {
+      feeStatus: status,
+      domesticFees,
+      domesticLoad: domesticLoadAllowed,
+      feeLabel,
+      loadNote,
+      visaType,
+      visaShortLabel: getVisaShortLabel(visaType),
+      isBridgingVisa,
+      fundingSource: fundingSourceRaw,
+      fundingSourcePrefix,
+      applicationType,
+      applicationStatus,
+    };
+  };
+  const isInternationalStudent = (record) => {
+    const details = getFeeStatusDetails(record);
+    if (details.feeStatus) return !details.domesticFees;
+    return !!(
       record &&
       (record.In_AllInternationals ||
         record.In_InternationalsAccepted ||
         record.In_AllInternationals === 'Yes' ||
         record.In_InternationalsAccepted === 'Yes')
     );
+  };
 
   const getStudentDisplayName = (record) => {
     if (!record) return '';
@@ -2174,8 +2645,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const now = new Date();
     const label = getTimetableLabel(now);
     const prepared = formatDate(now);
+    timetablePreparedEl = null;
     if (!staffFacing) {
-      timetableTitleEl.textContent = `Timetable for ${label}. Prepared ${prepared}`;
+      timetableTitleEl.textContent = '';
+      timetableTitleEl.appendChild(document.createTextNode(`Timetable for ${label}. Prepared `));
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'timetable-date';
+      dateSpan.textContent = prepared;
+      timetablePreparedEl = dateSpan;
+      timetableTitleEl.appendChild(dateSpan);
+      applyTimetableDateHighlight();
       return;
     }
     const record = getActiveStudentRecord();
@@ -2183,37 +2662,152 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const name = record ? getStudentDisplayName(record) : '';
     const studentText = [studentId, name].filter(Boolean).join(' ').trim();
     const strongText = `Timetable for ${label}`;
-    const restText = `. Prepared ${prepared}${studentText ? `, for ${studentText}` : ''}`;
     timetableTitleEl.textContent = '';
     const strongEl = document.createElement('span');
     strongEl.className = 'timetable-title-strong';
     strongEl.textContent = strongText;
     timetableTitleEl.appendChild(strongEl);
-    timetableTitleEl.appendChild(document.createTextNode(restText));
+    timetableTitleEl.appendChild(document.createTextNode('. Prepared '));
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'timetable-date';
+    dateSpan.textContent = prepared;
+    timetablePreparedEl = dateSpan;
+    timetableTitleEl.appendChild(dateSpan);
+    if (studentText) {
+      timetableTitleEl.appendChild(document.createTextNode(`, for ${studentText}`));
+    }
+    applyTimetableDateHighlight();
   };
 
   const updateTimetableFees = () => {
     if (!timetableFees) return;
-    const record = getActiveStudentRecord();
-    if (!staffFacing || !record || currentTableMode !== 'selected') {
+    const applyFeesWidth = () => {
+      if (!timetableTable || !timetableFees) return;
+      const rect = timetableTable.getBoundingClientRect();
+      if (!rect.width) return;
+      timetableFees.style.maxWidth = `${Math.ceil(rect.width)}px`;
+      timetableFees.style.width = '100%';
+    };
+    const selectedCount = getSelectedRows().length;
+    const threshold = getLoadThreshold();
+    const fullLoadSelected = selectedCount >= threshold && threshold > 0;
+    if (currentTableMode !== 'selected' || !fullLoadSelected) {
       timetableFees.hidden = true;
       timetableFees.textContent = '';
+      lastFullLoadSelected = false;
       return;
     }
-    const courseInfo = staffWorkbookState.getCourseInfo();
-    const census = formatShortDate(courseInfo?.CensusDate || '');
-    const censusText = census || 'N/A';
-    if (isInternationalStudent(record)) {
-      timetableFees.textContent =
-        `Fee and Cancellation information: Census Date: ${censusText}. ` +
-        'Fees as per international student payment schedule.';
-    } else {
-      const price = formatCurrency(courseInfo?.Price_per_CSP_Unit || courseInfo?.Price_per_Unit || '');
-      const priceText = price ? `${price} per subject` : 'Fees per subject';
-      timetableFees.textContent =
-        `Fee and Cancellation information: Census Date: ${censusText}. ${priceText}`;
+    if (!lastFullLoadSelected && fullLoadSelected) {
+      manualFeeHidden.domestic = false;
+      manualFeeHidden.international = false;
     }
+    const record = getActiveStudentRecord();
+    const courseInfo = staffWorkbookState.getCourseInfo();
+    updateDateAlerts(courseInfo);
+    const census = formatShortDate(courseInfo?.CensusDate || '');
+    const censusText = census || '20/03/26';
+    const censusHtml = `<span class="timetable-date">${escapeHtml(censusText)}</span>`;
+    const semesterStartText =
+      record ? formatLongDate(courseInfo?.Semester_Start_Date || '') : '';
+    const semesterLine =
+      record && semesterStartText
+        ? `<div class="timetable-fee-note">Semester start date: ${escapeHtml(semesterStartText)}</div>`
+        : '';
+    const priceValue = parseCreditPoints(courseInfo?.Price_per_Unit || '');
+    const price =
+      (priceValue && priceValue > 0 ? formatCurrency(priceValue) : '') || '$ 2,360.00';
+    const cspValue = parseCreditPoints(courseInfo?.Price_per_CSP_Unit || '');
+    const cspPrice =
+      (cspValue && cspValue > 0 ? formatCurrency(cspValue) : '') || '$ 2,360.00';
+
+    if (record) {
+      const feeDetails = getFeeStatusDetails(record);
+      const visaLabel = feeDetails.visaShortLabel || feeDetails.visaType || 'visa';
+      if (feeDetails.isBridgingVisa && feeDetails.feeStatus === 'international_sv') {
+        timetableFees.innerHTML =
+          `Fee and Cancellation information: Census Date: ${censusHtml}. ` +
+          `International student on ${escapeHtml(visaLabel)}. International fees.${semesterLine}`;
+      } else if (feeDetails.feeStatus === 'domestic_csp') {
+        timetableFees.innerHTML =
+          `Fee and Cancellation information: Census Date: ${censusHtml}. ` +
+          `Cost remaining per subject after government payment through CSP is ${escapeHtml(cspPrice)}.${semesterLine}`;
+      } else if (feeDetails.feeStatus === 'international_special') {
+        timetableFees.innerHTML =
+          `Fee and Cancellation information: Census Date: ${censusHtml}. ` +
+          `International student on ${escapeHtml(feeDetails.visaType || 'special visa')} entitled to domestic fees.${semesterLine}`;
+      } else if (feeDetails.feeStatus === 'international_sv') {
+        timetableFees.innerHTML =
+          `Fee and Cancellation information: Census Date: ${censusHtml}. ` +
+          `Fees as per international student payment schedule.${semesterLine}`;
+      } else {
+        timetableFees.innerHTML =
+          `Fee and Cancellation information: Census Date: ${censusHtml}. ` +
+          `${escapeHtml(price)} per subject for domestic students${semesterLine}`;
+      }
+      timetableFees.hidden = false;
+      applyFeesWidth();
+      applyTimetableDateHighlight();
+      return;
+    }
+
+    timetableFees.innerHTML = '';
+    const prefix = document.createElement('span');
+    prefix.className = 'timetable-fee-prefix';
+    prefix.innerHTML = `Census Date for cancelling enrolments: ${censusHtml}. `;
+    timetableFees.appendChild(prefix);
+
+    const feeLines = [
+      {
+        type: 'international',
+        text: 'Fees for international students: as per student payment schedule.',
+      },
+      {
+        type: 'domestic',
+        text: `Fees for Domestic students: ${price} per subject for domestic students`,
+      },
+    ];
+    feeLines.forEach(({ type, text }) => {
+      const span = document.createElement('span');
+      span.className = `timetable-fee-line fee-${type}`;
+      span.dataset.feeType = type;
+      span.textContent = text;
+      if (manualFeeHidden[type]) span.classList.add('fee-hidden');
+      span.addEventListener('click', () => {
+        if (span.classList.contains('fee-hidden')) return;
+        manualFeeHidden[type] = true;
+        span.classList.add('fee-flash');
+        setTimeout(() => {
+          span.classList.add('fee-hidden');
+          span.classList.remove('fee-flash');
+        }, 280);
+      });
+      timetableFees.appendChild(span);
+      timetableFees.appendChild(document.createTextNode(' '));
+    });
     timetableFees.hidden = false;
+    lastFullLoadSelected = fullLoadSelected;
+    if (record && semesterLine) {
+      const note = document.createElement('div');
+      note.className = 'timetable-fee-note';
+      note.textContent = `Semester start date: ${semesterStartText}`;
+      timetableFees.appendChild(note);
+    }
+    applyFeesWidth();
+    applyTimetableDateHighlight();
+  };
+
+  const getVisibleTimetableFeesText = () => {
+    if (!timetableFees || timetableFees.hidden) return '';
+    const feeLines = Array.from(timetableFees.querySelectorAll('.timetable-fee-line'))
+      .filter((el) => !el.classList.contains('fee-hidden'))
+      .map((el) => el.textContent.trim())
+      .filter(Boolean);
+    const prefix = timetableFees.querySelector('.timetable-fee-prefix');
+    const prefixText = prefix ? prefix.textContent.trim() : '';
+    if (feeLines.length) {
+      return [prefixText, ...feeLines].filter(Boolean).join(' ');
+    }
+    return timetableFees.textContent.trim();
   };
 
   const updateTimetableEmailButtons = () => {
@@ -2269,6 +2863,48 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getSubjectName = (code) => {
     const metaName = subjectMeta[code]?.name;
     return metaName || code;
+  };
+
+  const getPresetSubjectName = (code) => {
+    if (!code) return '';
+    if (code.startsWith('USE')) return useDisplayNames[code] || 'Unspecified Elective';
+    return getSubjectName(code);
+  };
+
+  const formatPresetLine = (code) => {
+    const name = getPresetSubjectName(code);
+    return name && name !== code ? `${code} ${name}` : code;
+  };
+
+  const codeModalPresets = {
+    fmpAssoc: [
+      'BIT105',
+      'BIT106',
+      'BIT108',
+      'BIT111',
+      'BIT112',
+      'BIT121',
+      'BIT213',
+      'BIT230',
+      'BIT231',
+      'BIT233',
+      'BIT235',
+      'BIT241',
+      'BIT242',
+      'BIT244',
+      'BIT245',
+      'BIT358',
+    ],
+    fmpDip: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'],
+    mpDip: ['BIT105', 'BIT106', 'BIT108', 'BIT111', 'BIT121', 'BIT233', 'BIT213', 'USE101'],
+    mpDipOld: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'],
+  };
+
+  const fillCodeInputWithPreset = (codes = []) => {
+    if (!codeInput) return;
+    const lines = codes.map((code) => formatPresetLine(code)).filter(Boolean).join('\n');
+    codeInput.value = lines;
+    codeInput.focus();
   };
 
   let electiveAssignments = [];
@@ -2388,8 +3024,63 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
       });
     });
+    const sdCaution = getSdMajorCautionMessage();
+    if (sdCaution) {
+      warnings.push({
+        title: 'Software Development caution',
+        html: `<strong class="alert-inline-title alert-title-warning">Software Development caution</strong> <span class="alert-inline-text">${escapeHtml(
+          sdCaution
+        )}</span>`,
+      });
+    }
     warningPayloads = warnings;
     refreshErrorAlerts();
+  };
+
+  const updateCreditTransferWarning = () => {
+    creditTransferWarning = null;
+    creditTransferWarningActive = false;
+    const completedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.completed)
+      .map(([code]) => code);
+    if (!completedCodes.length) return;
+    const attempted = new Set();
+    completedCodes.forEach((code) => attempted.add(code));
+    manualEntryMeta.forEach((_meta, code) => {
+      if (code) attempted.add(code);
+    });
+    manualEntryResults.forEach((entry) => {
+      if (entry?.id) attempted.add(entry.id);
+    });
+    workbookCurrent.forEach((_meta, code) => attempted.add(code));
+    manualEntryCurrent.forEach((_meta, code) => attempted.add(code));
+
+    const issues = [];
+    completedCodes.forEach((code) => {
+      const prereqsList = prerequisites[code] || [];
+      if (!prereqsList.length) return;
+      const missing = prereqsList.filter((pre) => !attempted.has(pre));
+      if (missing.length) issues.push({ code, missing });
+    });
+
+    if (!issues.length) return;
+    creditTransferWarningActive = true;
+    const maxItems = 6;
+    const items = issues.slice(0, maxItems);
+    const extraCount = issues.length - items.length;
+    const listHtml = items
+      .map((item) => {
+        const missingList = item.missing
+          .map((code) => `${code} - ${getSubjectName(code)}`)
+          .join('<br>');
+        return `<li><strong>${item.code}</strong> - ${getSubjectName(item.code)}<div class="tight-lead">Missing enrolments for prerequisite(s):<br>${missingList}</div></li>`;
+      })
+      .join('');
+    const extraHtml = extraCount > 0 ? `<p class="alert-inline-text">Plus ${extraCount} more.</p>` : '';
+    creditTransferWarning = {
+      title: 'Possible missing credit transfers',
+      html: `<p><strong class="alert-inline-title alert-title-warning">Possible missing credit transfers</strong> <span class="alert-inline-text">Some passed subjects have no enrolment history for all prerequisites. This may indicate missing credit transfers.</span></p><ul class="alert-inline-list">${listHtml}</ul>${extraHtml}<p class="alert-inline-text">Please check the CRT form.</p>`,
+    };
   };
 
   const canSelectPlanned = () => {
@@ -2595,7 +3286,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selected = getPlannedCount();
     const remaining = getRemainingSubjectsCount();
     const completedTotal = completed + useCredits;
-    const creditPointsValue = parseCreditPoints(creditPointsEarned);
+    const activeRecord = getActiveStudentRecord();
+    const creditPointsSource = activeRecord?.Credit_Points_Earned ?? creditPointsEarned;
+    const creditPointsValue = parseCreditPoints(creditPointsSource);
     const creditSubjects =
       creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
     const creditMismatch =
@@ -3004,8 +3697,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const buildLoadOptions = (type, exceptional, remaining, confirmRemaining) => {
+    const effectiveType = domesticLoad ? type : 'international';
     const canOfferFive = confirmRemaining || remaining <= 9;
-    if (type === 'international' && !exceptional) {
+    if (effectiveType === 'international' && !exceptional) {
       const opts = [4];
       if (canOfferFive) opts.push(5);
       return opts;
@@ -3139,7 +3833,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : `<div class="pre-block"><span class="inline-strong">Needed for:</span><br>${depsRaw}</div>`;
       const streamHtml =
         id === 'BIT245'
-          ? `<div class="pre-block"><span class="inline-strong">Major/Core:</span> Both Business Analytics & Software Development</div>`
+          ? `<div class="pre-block"><span class="inline-strong">Major/Core:</span> Both Business Analytics | Software Development</div>`
           : streamLabel === 'Elective'
             ? ''
             : `<div class="pre-block">${streamLabel}</div>`;
@@ -3445,6 +4139,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (aprAppError) errorPayloads.push(aprAppError);
     if (acceptedOfferedError) errorPayloads.push(acceptedOfferedError);
     if (intakeStartError) errorPayloads.push(intakeStartError);
+      if (availableNowError) errorPayloads.push(availableNowError);
+      if (availableLoadError) errorPayloads.push(availableLoadError);
+      if (timetableClashError) errorPayloads.push(timetableClashError);
+      if (censusError) errorPayloads.push(censusError);
+      if (weekTwoError) errorPayloads.push(weekTwoError);
     if (chainDelayError) {
       const isWarning = chainDelayError.severity === 'warning';
       (isWarning ? warningList : errorPayloads).push(chainDelayError);
@@ -3458,6 +4157,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (nextSemWarning) warningList.push(nextSemWarning);
     if (finalSemWarning) warningList.push(finalSemWarning);
+    if (censusWarning) warningList.push(censusWarning);
+    if (weekTwoWarning) warningList.push(weekTwoWarning);
+    if (creditTransferWarning) warningList.push(creditTransferWarning);
     setAlertMessages('error', errorPayloads);
     setAlertMessages('warning', warningList);
     renderAlertButton('error');
@@ -3532,9 +4234,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const syncLoadFormState = () => {
     if (!loadModal) return;
+    if (!domesticLoad) {
+      studentType = 'international';
+    }
     const isInternational = studentType === 'international';
     if (loadTypeDomestic) loadTypeDomestic.checked = !isInternational;
     if (loadTypeInternational) loadTypeInternational.checked = isInternational;
+    if (loadTypeDomestic) loadTypeDomestic.disabled = !domesticLoad;
+    if (loadTypeInternational) loadTypeInternational.disabled = false;
     if (loadExceptional) {
       loadExceptional.checked = exceptionalLoadApproved && isInternational;
       loadExceptional.disabled = !isInternational;
@@ -3567,7 +4274,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const applyLoadSettings = () => {
     if (!loadModal) return;
-    const type = loadTypeInternational && loadTypeInternational.checked ? 'international' : 'domestic';
+    const type = !domesticLoad
+      ? 'international'
+      : loadTypeInternational && loadTypeInternational.checked
+        ? 'international'
+        : 'domestic';
     const exceptional = !!(loadExceptional && loadExceptional.checked && type === 'international');
     const remaining = getRemainingSubjectsCount();
     remainingConfirmed = !!(loadRemainingConfirm && loadRemainingConfirm.checked);
@@ -3622,21 +4333,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       dropZone.addEventListener('click', () => {
         if (!window.location.protocol.startsWith('http')) return;
         if (isStudentModeParam) return;
-        if (studentRecords.length) return;
         if (dropSidebar) dropSidebar.classList.add('is-active');
-        loadWorkbookFromUrl('Source.xlsx');
+        openSourceFilePicker();
       });
       dropZone.addEventListener('drop', (e) => {
         if (dropSidebar) dropSidebar.classList.add('is-active');
-        const file = e.dataTransfer?.files?.[0];
-        if (!file) return;
-        lastDroppedFileInfo = {
-          fileName: file.name,
-          savedLine: formatFileDateInfo(file),
-        };
-        renderDropZoneStatus([lastDroppedFileInfo.fileName, lastDroppedFileInfo.savedLine]);
-        if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
-        loadWorkbookFromFile(file);
+        const files = Array.from(e.dataTransfer?.files || []);
+        handleSourceFilesSelection(files);
       });
   };
 
@@ -3893,6 +4596,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
       if (restoreStudentSnapshot(loadedStudentSnapshot)) return;
     }
+    clearAlertState();
     // Reset in-memory state first so all downstream UI refreshes read from the new truth.
     electivePlaceholderState = ['', '', '', ''];
     electiveBitState = ['', '', '', ''];
@@ -4691,6 +5395,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           resolvedUseCodes.push(mapped);
           seenUses.add(mapped);
         }
+        if (normalizedGrade || date) {
+          const existing = metaEntries.get(mapped) || {};
+          metaEntries.set(mapped, {
+            result: normalizedGrade || existing.result || '',
+            date: date || existing.date || '',
+          });
+        }
+        if (normalizedGrade) {
+          resultEntries.push({ id: mapped, result: normalizedGrade, date: date || '' });
+        }
         return;
       }
       if (!validSubjectCodes.has(mapped)) return;
@@ -5121,6 +5835,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeCodeModal) closeCodeModal.addEventListener('click', hideCodeModal);
   if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
   if (applyCodeModal) applyCodeModal.addEventListener('click', applyCodes);
+  if (presetFmpAssoc) {
+    presetFmpAssoc.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.fmpAssoc));
+  }
+  if (presetFmpDip) {
+    presetFmpDip.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.fmpDip));
+  }
+  if (presetMpDip) {
+    presetMpDip.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.mpDip));
+  }
+  if (presetMpDipOld) {
+    presetMpDipOld.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.mpDipOld));
+  }
   if (showCourseTimetableButton) showCourseTimetableButton.addEventListener('click', showCourseTimetableModal);
     if (courseTimetableIconButton) courseTimetableIconButton.addEventListener('click', showCourseTimetableModal);
     if (closeCourseTimetable) closeCourseTimetable.addEventListener('click', hideCourseTimetableModal);
@@ -5137,6 +5863,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateCourseTimetableColoursButton();
     });
     updateCourseTimetableColoursButton();
+  }
+  if (clearStudentButton) {
+    clearStudentButton.addEventListener('click', () => {
+      clearActiveStudentState();
+      if (studentIdInput) studentIdInput.focus();
+    });
   }
   if (remainingColoursButton) {
     remainingColoursButton.addEventListener('click', () => {
@@ -5206,7 +5938,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (has('network')) return 'Network Security';
     if (has('software')) return 'Software Development';
     if (has('ba')) return 'Business Analytics';
-    if (has('dual') || has('dual-split')) return 'Business Analytics & Software Development';
+    if (has('dual') || has('dual-split')) return 'Business Analytics | Software Development';
     if (id && (id.startsWith('ELECTIVE') || id.startsWith('USE'))) return 'Elective';
     if (has('elective')) return 'Elective';
     return 'Other';
@@ -5233,7 +5965,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     tbody.innerHTML = '';
     const rows = rowsOverride || getSelectedRows();
 
-    const toRender = rows.length ? rows : [{ id: 'N/A', data: {}, cell: null, dayShort: '', slot: '', placeholder: true }];
+      const toRender = rows.length ? rows : [{ id: 'N/A', data: {}, cell: null, dayShort: '', slot: '', placeholder: true }];
+      const conflictCounts = new Map();
+      toRender.forEach(({ placeholder, dayShort, data }) => {
+        if (placeholder) return;
+        const dayKey = dayShort || '';
+        const slotKey = data?.slot || '';
+        if (!dayKey || !slotKey || dayKey === 'N/A') return;
+        const key = `${dayKey}|${slotKey}`;
+        conflictCounts.set(key, (conflictCounts.get(key) || 0) + 1);
+      });
+      const loadThreshold = getLoadThreshold();
+      const showConflicts = currentTableMode === 'selected' && rows.length === loadThreshold;
 
     toRender.forEach(({ cell, id, data, dayShort, slot, placeholder, isChosen }) => {
       const row = document.createElement('tr');
@@ -5249,6 +5992,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const room = data.room || 'N/A';
         const teacher = data.teacher || 'N/A';
         const stream = buildStreamLabel(id);
+          const conflictKey = dayShort && data?.slot ? `${dayShort}|${data.slot}` : '';
+          const isConflict = showConflicts && conflictKey && conflictCounts.get(conflictKey) > 1;
         row.dataset.subject = id;
         row.style.cursor = 'pointer';
         applyDisplayTypeClass(row, cell || id);
@@ -5286,16 +6031,47 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (targetCell) targetCell.click();
           refreshTimetableModalState();
         });
-        [id, name, day, time, room, teacher, stream].forEach((val) => {
+        [
+          { val: id },
+          { val: name },
+          { val: day, conflict: isConflict },
+          { val: time, conflict: isConflict },
+          { val: room },
+          { val: teacher },
+          { val: stream },
+        ].forEach(({ val, conflict }) => {
           const td = document.createElement('td');
           td.textContent = val;
+          if (conflict) td.classList.add('timetable-conflict');
           row.appendChild(td);
         });
       }
       tbody.appendChild(row);
     });
-    syncSubjectTableActions(timetableTable);
-  };
+      const conflictKeys = Array.from(conflictCounts.entries())
+        .filter(([, count]) => count > 1)
+        .map(([key]) => key);
+      if (showConflicts && conflictKeys.length) {
+        const conflictLabels = conflictKeys
+          .map((key) => {
+            const [day, slotName] = key.split('|');
+            const timeLabel = slotName ? `${slotName} (${timeSlots[slotName] || slotName})` : slotName;
+            return `${day} ${timeLabel}`.trim();
+          })
+          .filter(Boolean);
+        const listHtml = conflictLabels.length
+          ? `<ul class="alert-inline-list">${conflictLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join('')}</ul>`
+          : '';
+        timetableClashError = {
+          title: 'Timetable clash',
+          html: `<p><strong class="alert-inline-title alert-title-error">Timetable clash</strong> <span class="alert-inline-text">Two or more subjects share the same day and time.</span></p>${listHtml}`,
+        };
+      } else {
+        timetableClashError = null;
+      }
+      refreshErrorAlerts();
+      syncSubjectTableActions(timetableTable);
+    };
 
   const syncSubjectTableActions = (tableEl) => {
     if (!tableEl) return;
@@ -5371,6 +6147,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const toDateValue = (value) => {
     if (value === null || value === undefined || value === '') return null;
     if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+    const raw = String(value).trim();
+    const dmyMatch = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$/);
+    if (dmyMatch) {
+      const day = parseInt(dmyMatch[1], 10);
+      const month = parseInt(dmyMatch[2], 10) - 1;
+      let year = parseInt(dmyMatch[3], 10);
+      if (year < 100) year += 2000;
+      const parsed = new Date(year, month, day);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    const textMatch = raw.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)?[,]?\s*(\d{1,2})\s*([A-Za-z]{3})\s*(\d{2}|\d{4})/i);
+    if (textMatch) {
+      const day = parseInt(textMatch[1], 10);
+      const monthText = textMatch[2].toLowerCase();
+      const monthMap = {
+        jan: 0,
+        feb: 1,
+        mar: 2,
+        apr: 3,
+        may: 4,
+        jun: 5,
+        jul: 6,
+        aug: 7,
+        sep: 8,
+        oct: 9,
+        nov: 10,
+        dec: 11,
+      };
+      const month = monthMap[monthText];
+      if (month !== undefined) {
+        let year = parseInt(textMatch[3], 10);
+        if (year < 100) year += 2000;
+        const parsed = new Date(year, month, day);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+    }
     if (typeof value === 'number' && Number.isFinite(value)) {
       return parseExcelSerialDate(value);
     }
@@ -5390,6 +6202,102 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       month: 'short',
       year: 'numeric',
     }).format(date);
+  };
+
+  const getDateOnly = (date) => {
+    if (!date || !(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
+  const addDays = (date, days) => {
+    const base = getDateOnly(date);
+    if (!base) return null;
+    const next = new Date(base);
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+
+  const updateDateAlerts = (courseInfo) => {
+    censusWarning = null;
+    censusError = null;
+    weekTwoWarning = null;
+    weekTwoError = null;
+    dateNoticeLines = [];
+
+    if (!courseInfo) return;
+    const today = getDateOnly(new Date());
+    if (!today) return;
+
+    const semesterStart = getDateOnly(toDateValue(courseInfo.Semester_Start_Date));
+    const endWeekTwo = getDateOnly(toDateValue(courseInfo.EndOfWeekTwoDate));
+    const censusDate = getDateOnly(toDateValue(courseInfo.CensusDate));
+
+    if (endWeekTwo) {
+      const weekOneEnd = semesterStart ? addDays(semesterStart, 7) : addDays(endWeekTwo, -7);
+      if (weekOneEnd && today > weekOneEnd && today <= endWeekTwo) {
+        weekTwoWarning = {
+          title: 'Week 2 attendance',
+          html: `<p><strong class="alert-inline-title alert-title-warning">Week 2 attendance</strong> <span class="alert-inline-text">We are after week 1 and before week 3 (End of Week 2: ${escapeHtml(
+            formatDisplayDate(endWeekTwo)
+          )}). Students must attend class in weeks 1 or 2 to allow late enrolment. If they miss the week 3 class, they cannot enrol in that subject.</span></p>`,
+        };
+        dateNoticeLines.push(
+          `Week 2 window: attend by ${formatShortDate(endWeekTwo)} to allow late enrolment.`
+        );
+      } else if (today > endWeekTwo) {
+        weekTwoError = {
+          title: 'After week 2',
+          html: `<p><strong class="alert-inline-title alert-title-error">After week 2</strong> <span class="alert-inline-text">End of Week 2 has passed (${escapeHtml(
+            formatDisplayDate(endWeekTwo)
+          )}). If a student missed the week 3 class, they cannot enrol in that subject.</span></p>`,
+        };
+        dateNoticeLines.push(
+          `After week 2 (${formatShortDate(endWeekTwo)}): late enrolment not permitted without week 1–2 attendance.`
+        );
+      }
+    }
+
+    if (censusDate) {
+      const censusWarningStart = addDays(censusDate, -7);
+      if (censusWarningStart && today >= censusWarningStart && today <= censusDate) {
+        censusWarning = {
+          title: 'Census date within 1 week',
+          html: `<p><strong class="alert-inline-title alert-title-warning">Census date within 1 week</strong> <span class="alert-inline-text">Census Date is ${escapeHtml(
+            formatDisplayDate(censusDate)
+          )}. After this date, students cannot get a refund if they withdraw. They also cannot switch classes if they did not attend week 1 or 2 in the new subject.</span></p>`,
+        };
+        dateNoticeLines.push(
+          `Census within 1 week (${formatShortDate(censusDate)}): no refunds after this date.`
+        );
+      } else if (today > censusDate) {
+        censusError = {
+          title: 'Census date passed',
+          html: `<p><strong class="alert-inline-title alert-title-error">Census date passed</strong> <span class="alert-inline-text">Census Date has passed (${escapeHtml(
+            formatDisplayDate(censusDate)
+          )}). Students cannot get a refund if they withdraw.</span></p>`,
+        };
+        dateNoticeLines.push(
+          `Census passed (${formatShortDate(censusDate)}): no refunds if withdrawing.`
+        );
+      }
+    }
+    refreshErrorAlerts();
+    applyTimetableDateHighlight();
+  };
+
+  const applyTimetableDateHighlight = () => {
+    const isError = !!(censusError || weekTwoError);
+    const isWarning = !isError && !!(censusWarning || weekTwoWarning);
+    if (timetablePreparedEl) {
+      timetablePreparedEl.classList.toggle('is-error', isError);
+      timetablePreparedEl.classList.toggle('is-warning', isWarning);
+    }
+    if (timetableFees) {
+      timetableFees.querySelectorAll('.timetable-date').forEach((el) => {
+        el.classList.toggle('is-error', isError);
+        el.classList.toggle('is-warning', isWarning);
+      });
+    }
   };
 
   const parseIntakeMonth = (value) => {
@@ -5417,9 +6325,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const primaryEmail = (record.Primary_Email || '').toString().trim();
     const acceptedOffered = (record.Accepted_Offered || '').toString().trim();
     const notes = (record.International_Office_Notes || '').toString().trim();
+    const fmpValue = (record.FMP || '').toString().trim();
     const intakeStart = (record.Intake_Start_Date || '').toString().trim();
     const nationality = (record.Nationality || '').toString().trim();
     const visaType = (record.Visa_Type || '').toString().trim();
+    const fundingSource = (record.Funding_Source || '').toString().trim();
     const suspended = (record.Suspended || '').toString().trim();
     const suspensionReason = (record.Suspended_Names || '').toString().trim();
     const aprApp = (record.APR_APP || '').toString().trim();
@@ -5431,20 +6341,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const passedSubjects = (record.Passed_subjects || '').toString().trim();
     const resultsList = (record.Results_List || '').toString().trim();
     const failedCount = (record.Failed_Count || '').toString().trim();
-    const creditPointsValue = parseCreditPoints(creditPointsEarned);
+    const creditPointsValue = parseCreditPoints(record.Credit_Points_Earned);
     const formatCountValue = (value) =>
       Number.isInteger(value) ? value.toString() : value.toFixed(1);
-    const creditSubjects =
-      creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
-    const creditSubjectsLabel =
-      creditSubjects === null ? '' : formatCountValue(creditSubjects);
+    const creditPointsDisplay = creditPointsValue === null ? 0 : creditPointsValue;
+    const creditSubjects = parseFloat((creditPointsDisplay / 12).toFixed(2));
+    const creditSubjectsLabel = formatCountValue(creditSubjects);
     const hasHistory = !!(passedSubjects || resultsList);
-    const isInternational = !!(
-      record.In_AllInternationals ||
-      record.In_InternationalsAccepted ||
-      record.In_AllInternationals === 'Yes' ||
-      record.In_InternationalsAccepted === 'Yes'
-    );
+    const feeDetails = getFeeStatusDetails(record);
 
     if (studentId || family || given) {
       const name = [family, given].filter(Boolean).join(', ');
@@ -5453,21 +6357,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         `<div class="student-summary-id" data-copy="${escapeHtml(display)}">${escapeHtml(display)}</div>`
       );
     }
-    if (mpEmail || primaryEmail) {
-      const emailList = [mpEmail, primaryEmail].filter(Boolean);
-      const emailLinks = emailList
-        .map(
-          (email) =>
-            `<a href="#" class="student-email-link" data-email="${escapeHtml(email)}" data-first-name="${escapeHtml(firstName)}">${escapeHtml(email)}</a>`
-        )
-        .join(' ');
-      const allEmails = emailList.join(',');
-      const multiIcon =
-        emailList.length > 1
-          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">@</button>`
-          : '';
-      lines.push(`<div class="student-email-row">${emailLinks}${multiIcon ? ` ${multiIcon}` : ''}</div>`);
-    }
+      if (mpEmail || primaryEmail) {
+        const emailList = [mpEmail, primaryEmail].filter(Boolean);
+        const emailLinks = emailList
+          .map(
+            (email) =>
+              `<a href="#" class="student-email-link" data-email="${escapeHtml(email)}" data-first-name="${escapeHtml(firstName)}">${escapeHtml(email)}</a>`
+          )
+          .join(' ');
+        const allEmails = emailList.join(',');
+        const multiIcon =
+          emailList.length > 1
+            ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">@</button>`
+            : '';
+        lines.push(`<div class="student-email-row">${emailLinks}${multiIcon ? ` ${multiIcon}` : ''}</div>`);
+      }
+      if (deferredInfo?.isDeferred) {
+        const deferredMessage = buildDeferredNoticeText(deferredInfo);
+        lines.push(
+          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Returning student.</strong> <span class="alert-inline-text">${escapeHtml(
+            deferredMessage
+          )}</span></div>`
+        );
+      }
+      const studentFlag = getStudentFlagText(record);
+      if (studentFlag) {
+        lines.push(
+          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Student Flag:</strong> <span class="alert-inline-text">${escapeHtml(
+            studentFlag
+          )}</span></div>`
+        );
+      }
     if (acceptedOffered && !hasHistory) {
       const isOffered = acceptedOffered.toLowerCase() === 'offered';
       const text = isOffered ? `${acceptedOffered} only` : acceptedOffered;
@@ -5477,30 +6397,61 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       lines.push(line);
     }
     if (suppsAndHolds) lines.push('<strong>Hold on subject(s)</strong>');
-    if (notes) lines.push(escapeHtml(notes));
     if (intakeStart && !hasHistory) {
       lines.push(`Intake Start: ${escapeHtml(formatDisplayDate(intakeStart))}`);
     }
-    if (isInternational) {
-      const details = [
-        countryHittingTroubles && nationality ? `Nationality: ${nationality}` : '',
-        visaType ? `Visa: ${visaType}` : '',
-      ]
-        .filter(Boolean)
-        .join(', ');
-      lines.push(escapeHtml(details ? `International - ${details}` : 'International'));
-    } else {
-      lines.push('Domestic');
+    if (dateNoticeLines.length) {
+      dateNoticeLines.forEach((line) => {
+        if (line) lines.push(escapeHtml(line));
+      });
+    }
+    if (feeDetails.feeLabel) {
+      const hasVisa =
+        feeDetails.visaType &&
+        !feeDetails.feeLabel.toUpperCase().includes(feeDetails.visaType.toUpperCase());
+      const visaSuffix = hasVisa
+        ? ` (Visa: <span class="student-visa-strong">${escapeHtml(feeDetails.visaType)}</span>)`
+        : '';
+      const scheduleLink = feeDetails.domesticFees
+        ? ' <a class="fee-schedule-link" href="https://www.melbournepolytechnic.edu.au/study/fees/local-student-fees/fees-for-local-higher-education-students/schedule-of-higher-education-tuition-fees/" target="_blank" rel="noopener">schedule</a>'
+        : '';
+      lines.push(
+        `${escapeHtml(feeDetails.feeLabel)}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
+      );
+      if (feeDetails.loadNote) {
+        lines.push(escapeHtml(feeDetails.loadNote));
+      }
+      const visaNumbers = feeDetails.visaType
+        ? feeDetails.visaType.toUpperCase().match(/\b\d{3}\b/g) || []
+        : [];
+      const caveatLine = getDomesticVisaCaveatLine(visaNumbers);
+      if (caveatLine) {
+        lines.push(escapeHtml(caveatLine));
+      }
+    }
+    if (feeDetails.fundingSource) {
+      lines.push(`Funding Source: ${escapeHtml(feeDetails.fundingSource)}`);
+    }
+    if (feeDetails.fundingSourcePrefix === 'F' && !visaType) {
+      lines.push(
+        'Funding Source begins with F. No visa information found; assuming Student Visa (500).'
+      );
+    }
+    if (notes) {
+      lines.push(`(${escapeHtml(`International Office Notes: ${notes}`)})`);
+    }
+    if (fmpValue) {
+      lines.push('FMP student');
     }
     if (countryHittingTroubles) {
-      lines.push(`<span class="trouble-country">${escapeHtml(countryHittingTroubles)}</span>`);
+      lines.push(`Nationality: <span class="trouble-country">${escapeHtml(countryHittingTroubles)}</span>`);
     }
-    if (suspended) {
+    if (suspended && suspended.toUpperCase() === 'Y') {
       const cleanReason = suspensionReason.replace(/\u2014/g, '\u2013');
-      const reason = cleanReason ? ` \u2013 ${cleanReason}` : '';
-      lines.push(escapeHtml(`Suspended${reason}`));
+      lines.push(escapeHtml(`Suspended: Suspension name: ${cleanReason}`));
     }
     if (aprApp) {
+      const aprToken = /\bAPR\b/i.test(aprApp) ? 'APR' : /\bAPP\b/i.test(aprApp) ? 'APP' : 'APR';
       const condition = aprAppCondition || '';
       const hasExcluded = /excluded/i.test(condition);
       const conditionHtml = hasExcluded
@@ -5517,21 +6468,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const detailParts = [conditionHtml, attendanceLabel].filter(Boolean);
       const detailText = detailParts.join('. ');
-      lines.push(detailText ? `${escapeHtml(aprApp)} - ${detailText}` : escapeHtml(aprApp));
+      const aprLabel = `<span class="apr-app-tag">${aprToken}</span>`;
+      const mainText = detailText ? `${escapeHtml(aprApp)} - ${detailText}` : escapeHtml(aprApp);
+      lines.push(`${aprLabel} ${mainText}`);
     }
     if (failedCount) {
       lines.push(`Failed (N) count: ${escapeHtml(failedCount)}`);
     }
-    if (creditPointsValue !== null && creditSubjects !== null) {
-      const creditPointsLabel = formatCountValue(creditPointsValue);
-      lines.push(
-        `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
-          creditSubjectsLabel
-        )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
-          creditSubjectsLabel
-        )} subjects)</div>`
-      );
-    }
+    const creditPointsLabel = formatCountValue(creditPointsDisplay);
+    lines.push(
+      `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
+        creditSubjectsLabel
+      )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
+        creditSubjectsLabel
+      )} subjects)</div>`
+    );
+    const medianGrade = getMedianGradeLabel(manualEntryResults);
+    lines.push(`<div>Median grade: ${escapeHtml(medianGrade)}</div>`);
     const sharePointInfo = getSharePointParentInfo(sharePoint);
     if (sharePointInfo) {
       lines.push(
@@ -5541,8 +6494,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
     }
     if (crtLocation) {
+      const crtClass = creditTransferWarningActive ? 'crt-form-link crt-form-link-warning' : 'crt-form-link';
       lines.push(
-        `<a href="${escapeHtml(crtLocation)}" target="_blank" rel="noopener noreferrer">CRT form</a>`
+        `<a class="${crtClass}" href="${escapeHtml(crtLocation)}" target="_blank" rel="noopener noreferrer">CRT form</a>`
       );
     }
     return lines.filter(Boolean).map((line) => (line.startsWith('<div') ? line : `<div>${line}</div>`)).join('');
@@ -5568,6 +6522,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     resetStudentSelections();
     staffWorkbookState.setStudentRecord(record);
+    const feeDetails = getFeeStatusDetails(record);
+    feeStatus = feeDetails.feeStatus;
+    domesticLoad = feeDetails.domesticLoad;
+    studentType = domesticLoad ? 'domestic' : 'international';
+    if (studentType !== 'international') {
+      exceptionalLoadApproved = false;
+    }
     const courseInfo = staffWorkbookState.getCourseInfo();
 
     const passedRaw = record.Passed_subjects || '';
@@ -5575,6 +6536,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const passedParsed = parseManualEntriesFromText(passedRaw);
     const resultsParsed = parseManualEntriesFromText(resultsRaw);
     const resultsCurrent = parseCurrentEntriesFromResults(resultsRaw);
+
+    deferredInfo = null;
+    if (isWorkbookFlag(record.In_Deferred)) {
+      const entries = resultsParsed.resultEntries || [];
+      const currentEntries = resultsParsed.currentEntries || new Map();
+      const enrolmentDates = entries.map((entry) => entry?.date).filter(Boolean);
+      currentEntries.forEach((meta) => {
+        if (meta?.date) enrolmentDates.push(meta.date);
+      });
+      const lastEnrolmentDate = getLatestDateFromDates(enrolmentDates);
+      const lastEnrolmentText = lastEnrolmentDate ? formatNumericDate(lastEnrolmentDate) : 'unknown';
+      deferredInfo = {
+        isDeferred: true,
+        lastEnrolmentDate,
+        lastEnrolmentText,
+      };
+    }
 
     resultsParsed.aliasEntries.forEach((aliases, mapped) => {
       aliases.forEach((original) => recordManualAlias(mapped, original));
@@ -5596,8 +6574,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     });
 
-    const resolvedUseCodes = passedParsed.resolvedUseCodes;
-    electivePlaceholderState = electivePlaceholderState.map((_, idx) => resolvedUseCodes[idx] || '');
+    const resolvedUseCodes = [
+      ...passedParsed.resolvedUseCodes,
+      ...resultsParsed.resolvedUseCodes,
+    ];
+    const uniqueUseCodes = resolvedUseCodes.filter(
+      (code, idx, arr) => code && arr.indexOf(code) === idx
+    );
+    electivePlaceholderState = electivePlaceholderState.map((_, idx) => uniqueUseCodes[idx] || '');
 
     passedParsed.resolvedSubjectCodes.forEach((code) => {
       const cell = subjects.find((c) => c.dataset.subject === code);
@@ -5685,35 +6669,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       aprAppError = null;
     }
     infoNotes = notes || null;
-    const infoMessages = [];
-    if (infoNotes) {
-      infoMessages.push({
-        title: 'International Office Notes',
-        html: `<p><strong class="alert-inline-title alert-title-info">International Office Notes</strong> <span class="alert-inline-text">${escapeHtml(
-          infoNotes
-        )}</span></p>`,
-      });
-    }
-    if (suppsAndHolds) {
-      const items = suppsAndHolds
-        .split(',')
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-        .map((entry) => escapeHtml(entry))
-        .join('<br>');
-      infoMessages.push({
-        title: 'Supps and/or Holds',
-        html: `<p><strong class="alert-inline-title alert-title-info">Supps and/or Holds</strong> <span class="alert-inline-text">${items}</span></p>`,
-      });
-    }
-    if (countryHittingTroubles) {
-      infoMessages.push({
-        title: 'Country Alert',
-        html: `<p><strong class="alert-inline-title alert-title-info">Country Alert</strong> <span class="alert-inline-text">Student comes from ${escapeHtml(
-          countryHittingTroubles
-        )} - a country currently facing troubles.</span></p>`,
-      });
-    }
+    const infoMessages = buildInfoMessages(record, feeDetails);
+    updateCreditTransferWarning();
     setAlertMessages('info', infoMessages);
 
     const bestMajor = getBestMajorSelection();
@@ -5729,6 +6686,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setElectiveCredits(assignments, true);
     updateElectiveWarning();
     updateSelectedList();
+    syncLoadFormState();
+    updateVaryLoadLabel();
     loadedStudentSnapshot = captureStudentSnapshot();
   };
 
@@ -5757,6 +6716,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!studentSearchDropdown) return;
     studentSearchDropdown.innerHTML = '';
     studentSearchDropdown.hidden = true;
+  };
+
+  const clearActiveStudentState = ({
+    keepInput = false,
+    keepExtractedId = false,
+    skipPreviewUpdate = false,
+  } = {}) => {
+    loadedStudentSnapshot = null;
+    staffWorkbookState.setStudentRecord(null);
+    activeStudentId = '';
+    feeStatus = '';
+    domesticLoad = true;
+    studentType = 'international';
+    exceptionalLoadApproved = false;
+    clearAlertState();
+    if (!keepExtractedId) extractedStudentId = '';
+    if (studentIdInput) {
+      if (!keepInput) studentIdInput.value = '';
+      studentIdInput.classList.remove('student-match-found');
+    }
+    clearStudentSearchDropdown();
+    resetStudentSelections();
+    syncLoadFormState();
+    updateVaryLoadLabel();
+    if (!skipPreviewUpdate) updateStudentPreview();
   };
 
   const renderStudentSearchDropdown = (records, includeEmail = false) => {
@@ -5804,6 +6788,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const applyStudentSearchSelection = (record) => {
     if (!record) return;
     const id = normalizeStudentId(record.Student_IDs_Unique || '');
+    if (id && activeStudentId && id !== activeStudentId) {
+      clearActiveStudentState({ keepInput: true, keepExtractedId: false, skipPreviewUpdate: true });
+    }
     extractedStudentId = id;
     if (studentIdInput && id) studentIdInput.value = id;
     clearStudentSearchDropdown();
@@ -5812,6 +6799,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   function updateStudentPreview() {
     if (!studentDataPreview) return;
+    updateDateAlerts(staffWorkbookState.getCourseInfo());
     if (!studentRecords.length) {
       renderStudentPreview('');
       setStudentLookupVisible(false);
@@ -5852,9 +6840,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     studentIdInput.classList.remove('student-match-found');
     const rawValue = studentIdInput.value || '';
     const trimmedValue = rawValue.trim();
+    if (!trimmedValue) {
+      clearActiveStudentState();
+      return;
+    }
     const idMatch = studentIdPattern.exec(trimmedValue);
     if (idMatch) {
-      extractedStudentId = idMatch[1];
+      const nextId = idMatch[1];
+      if (activeStudentId && nextId !== activeStudentId) {
+        clearActiveStudentState({ keepInput: true, keepExtractedId: false, skipPreviewUpdate: true });
+      }
+      extractedStudentId = nextId;
       studentIdInput.value = idMatch[1];
       clearStudentSearchDropdown();
       updateStudentPreview();
@@ -6022,56 +7018,55 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const names = workbook.Workbook?.Names || [];
       let columnMap = {};
       names.forEach((nameEntry) => {
-        if (!nameEntry?.Name || !STUDENT_COLUMNS.includes(nameEntry.Name) || !nameEntry.Ref) return;
+        if (!nameEntry?.Name || !nameEntry.Ref) return;
+        const nameKey = resolveNamedRangeKey(nameEntry.Name, STUDENT_COLUMNS);
+        if (!nameKey) return;
         const cleanedRef = stripRangeRef(nameEntry.Ref);
-        if (!cleanedRef.includes(`${sheetName}!`)) return;
-        columnMap[nameEntry.Name] = getRangeValues(sheet, nameEntry.Ref, nameEntry.Name);
+        const refParts = cleanedRef.split('!');
+        const refSheetName = refParts.length > 1 ? refParts[0] : '';
+        if (refSheetName && refSheetName !== sheetName) return;
+        columnMap[nameKey] = getRangeValues(sheet, nameEntry.Ref, nameKey);
       });
       let rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-      if (rowCount <= 1) {
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-        if (rows.length > 1) {
-          const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
-            acc[normalizeHeader(col)] = col;
-            return acc;
-          }, {});
-          let bestHeaderIndex = -1;
-          let bestHeaderMatches = 0;
-          const scanLimit = Math.min(rows.length, 5);
-          for (let i = 0; i < scanLimit; i += 1) {
-            const row = rows[i] || [];
-            let matches = 0;
-            row.forEach((cell) => {
-              if (columnKeyMap[normalizeHeader(cell)]) matches += 1;
-            });
-            if (matches > bestHeaderMatches) {
-              bestHeaderMatches = matches;
-              bestHeaderIndex = i;
-            }
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (rows.length > 1) {
+        const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
+          acc[normalizeHeader(col)] = col;
+          return acc;
+        }, {});
+        let bestHeaderIndex = -1;
+        let bestHeaderMatches = 0;
+        const scanLimit = Math.min(rows.length, 5);
+        for (let i = 0; i < scanLimit; i += 1) {
+          const row = rows[i] || [];
+          let matches = 0;
+          row.forEach((cell) => {
+            if (columnKeyMap[normalizeHeader(cell)]) matches += 1;
+          });
+          if (matches > bestHeaderMatches) {
+            bestHeaderMatches = matches;
+            bestHeaderIndex = i;
           }
-          if (bestHeaderIndex >= 0 && bestHeaderMatches > 0) {
-            const headerRow = rows[bestHeaderIndex] || [];
-            const colIndexMap = {};
-            headerRow.forEach((cell, idx) => {
-              const key = columnKeyMap[normalizeHeader(cell)];
-              if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+        }
+        if (bestHeaderIndex >= 0 && bestHeaderMatches > 0) {
+          const headerRow = rows[bestHeaderIndex] || [];
+          const colIndexMap = {};
+          headerRow.forEach((cell, idx) => {
+            const key = columnKeyMap[normalizeHeader(cell)];
+            if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+          });
+          const rowsToRead = rows.slice(bestHeaderIndex + 1);
+          STUDENT_COLUMNS.forEach((columnName) => {
+            const idx = colIndexMap[columnName];
+            if (idx === undefined) return;
+            const existing = columnMap[columnName] || [];
+            if (existing.length >= rowsToRead.length) return;
+            columnMap[columnName] = rowsToRead.map((row) => {
+              const cellValue = row[idx];
+              return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
             });
-            columnMap = {};
-            STUDENT_COLUMNS.forEach((columnName) => {
-              columnMap[columnName] = [];
-            });
-            for (let rowIndex = bestHeaderIndex + 1; rowIndex < rows.length; rowIndex += 1) {
-              const row = rows[rowIndex] || [];
-              STUDENT_COLUMNS.forEach((columnName) => {
-                const idx = colIndexMap[columnName];
-                const cellValue = idx === undefined ? '' : row[idx];
-                columnMap[columnName].push(
-                  typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? ''
-                );
-              });
-            }
-            rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-          }
+          });
+          rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
         }
       }
       const records = [];
@@ -6091,6 +7086,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return records;
   };
 
+  const getNamedRangeKey = (name) => {
+    if (!name) return '';
+    const raw = String(name);
+    const parts = raw.split('!');
+    return parts[parts.length - 1];
+  };
+  const normalizeNamedRangeKey = (name) =>
+    String(name || '')
+      .replace(/[^a-z0-9]+/gi, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_');
+  const resolveNamedRangeKey = (name, allowed) => {
+    const rawKey = getNamedRangeKey(name);
+    if (allowed.includes(rawKey)) return rawKey;
+    const normalized = normalizeNamedRangeKey(rawKey).toLowerCase();
+    const match = allowed.find((entry) => entry.toLowerCase() === normalized);
+    return match || '';
+  };
+
   function buildCourseInfoFromWorkbook(workbook) {
     if (!workbook) return null;
     const defaultSheetName = 'Info';
@@ -6098,16 +7112,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const names = workbook.Workbook?.Names || [];
     const info = {};
     names.forEach((nameEntry) => {
-      if (!nameEntry?.Name || !COURSE_INFO_RANGES.includes(nameEntry.Name) || !nameEntry.Ref) return;
+      if (!nameEntry?.Name || !nameEntry.Ref) return;
+      const nameKey = resolveNamedRangeKey(nameEntry.Name, COURSE_INFO_RANGES);
+      if (!nameKey) return;
       const cleanedRef = stripRangeRef(nameEntry.Ref);
       const parts = cleanedRef.split('!');
       const refSheetName = parts.length > 1 ? parts[0] : '';
       const refSheet =
         (refSheetName && workbook.Sheets?.[refSheetName]) || defaultSheet;
       if (!refSheet) return;
-      const values = getRangeValues(refSheet, nameEntry.Ref, nameEntry.Name);
+      const values = getRangeValues(refSheet, nameEntry.Ref, nameKey);
       const value = values.find((val) => val !== '') ?? '';
-      info[nameEntry.Name] = value;
+      info[nameKey] = value;
     });
     return info;
   };
@@ -6135,15 +7151,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           staffWorkbookState.setCourseInfo(courseInfo);
           loadedStudentSnapshot = null;
           clearStudentSearchDropdown();
-          const countLine = `${records.length} students listed`;
+          lastStudentCountLine = `${records.length} students listed`;
           if (lastDroppedFileInfo) {
-            renderDropZoneStatus([
-              lastDroppedFileInfo.fileName,
-              lastDroppedFileInfo.savedLine,
-              countLine,
-            ]);
+            renderDropZoneStatus(buildDropZoneStatusLines());
           } else if (dropZoneTextEl) {
-            renderDropZoneStatus([countLine]);
+            renderDropZoneStatus([lastStudentCountLine]);
           }
           updateStudentPreview();
           if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
@@ -6256,13 +7268,156 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateHistoryColoursButton();
   };
 
+  function loadEmailScriptsFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      emailScriptsDocxBuffer = event.target.result;
+      emailScriptsFileName = file.name || 'Email Scripts.docx';
+      otherLoadedFilesInfo = [
+        {
+          fileName: emailScriptsFileName,
+          savedLine: formatFileDateInfo(file),
+        },
+      ];
+      if (lastDroppedFileInfo) {
+        renderDropZoneStatus(buildDropZoneStatusLines());
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  const handleSourceFilesSelection = (files = []) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
+    const workbookFile = list.find((f) => /\.xlsx$/i.test(f.name));
+    if (!workbookFile) {
+      renderDropZoneStatus(['Source.xlsx not found in selected folder.']);
+      return;
+    }
+    const scriptsFile = list.find((f) => /\.docx$/i.test(f.name) && /email\s*scripts/i.test(f.name));
+    lastDroppedFileInfo = {
+      fileName: workbookFile.name,
+      savedLine: formatFileDateInfo(workbookFile),
+    };
+    otherLoadedFilesInfo = [];
+    if (scriptsFile) {
+      otherLoadedFilesInfo.push({
+        fileName: scriptsFile.name,
+        savedLine: formatFileDateInfo(scriptsFile),
+      });
+    } else {
+      otherLoadedFilesInfo.push({
+        fileName: 'Email Scripts.docx (not found - drag & drop to load)',
+        savedLine: '',
+      });
+    }
+    renderDropZoneStatus(buildDropZoneStatusLines());
+    if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
+    loadWorkbookFromFile(workbookFile);
+    if (scriptsFile) loadEmailScriptsFromFile(scriptsFile);
+  };
+
+  const openSourceFilePicker = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.docx';
+    input.multiple = true;
+    input.addEventListener('change', () => {
+      handleSourceFilesSelection(input.files || []);
+    });
+    input.click();
+  };
+
+  const openSourceFolderPicker = async () => {
+    if (!window.showDirectoryPicker) {
+      openSourceFilePicker();
+      return;
+    }
+    try {
+      const dir = await window.showDirectoryPicker();
+      const files = [];
+      for await (const entry of dir.values()) {
+        if (entry.kind !== 'file') continue;
+        const file = await entry.getFile();
+        files.push(file);
+      }
+      handleSourceFilesSelection(files);
+    } catch (error) {
+      // user cancelled; no action needed
+    }
+  };
+
+  async function loadEmailScriptsFromUrl(urls) {
+    const candidates = Array.isArray(urls) ? urls : [urls];
+    try {
+      let response = null;
+      let usedUrl = '';
+      for (const candidate of candidates) {
+        const cacheBustedUrl = (() => {
+          const nonce =
+            (typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID()) ||
+            `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+          try {
+            const resolved = new URL(candidate, window.location.href);
+            resolved.searchParams.set('t', nonce);
+            return resolved.toString();
+          } catch {
+            const sep = candidate.includes('?') ? '&' : '?';
+            return `${candidate}${sep}t=${nonce}`;
+          }
+        })();
+        const attempt = await fetch(cacheBustedUrl, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            Pragma: 'no-cache',
+          },
+        });
+        if (attempt.ok) {
+          response = attempt;
+          usedUrl = candidate;
+          break;
+        }
+      }
+      if (!response) throw new Error('Email scripts not found');
+      const lastModified = response.headers.get('last-modified');
+      const buffer = await response.arrayBuffer();
+      emailScriptsDocxBuffer = buffer;
+      emailScriptsFileName = usedUrl.split('?')[0].split('/').pop() || 'Email Scripts.docx';
+      otherLoadedFilesInfo = [
+        {
+          fileName: emailScriptsFileName,
+          savedLine: formatHttpDateInfo(lastModified),
+        },
+      ];
+      if (lastDroppedFileInfo) {
+        renderDropZoneStatus(buildDropZoneStatusLines());
+      }
+    } catch (error) {
+      otherLoadedFilesInfo = [
+        {
+          fileName: 'Email Scripts.docx (not found - drag & drop to load)',
+          savedLine: '',
+        },
+      ];
+      if (lastDroppedFileInfo) {
+        renderDropZoneStatus(buildDropZoneStatusLines());
+      }
+    }
+  }
+
   const renderRemainingModal = () => {
     const rows = getRemainingRows();
     renderSubjectTable(remainingTable, rows, 'No remaining core or major subjects to show.');
     if (remainingSummary) {
       const majorName = getMajorDisplayName();
+      const coreMajorCount = rows.length;
       const remainingElectives = getRemainingElectiveCount();
-      remainingSummary.innerHTML = `<p>These are the Core and ${majorName} Major subjects that you have not yet completed.</p><p>You also have ${remainingElectives} Elective${remainingElectives === 1 ? '' : 's'} to complete.</p>`;
+      remainingSummary.innerHTML = `<p><strong>You have <span class="remaining-count">${coreMajorCount}</span> Core and ${majorName} subjects remaining</strong></p>`;
+      if (remainingElectivesCount) {
+        remainingElectivesCount.innerHTML = `<strong>You have <span class="remaining-count">${remainingElectives}</span> Elective${remainingElectives === 1 ? '' : 's'} to complete</strong>`;
+      }
     }
     if (remainingElectivesSection && remainingElectivesTable) {
       const electiveRows = getRemainingElectiveRows();
@@ -6284,6 +7439,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapSharedPlaceholders = [];
   const courseMapMajorPlaceholders = [];
   const courseMapElectivePlaceholders = [];
+  let courseMapSharedEl = null;
+  let courseMapStreamsBlockEl = null;
+  let courseMapBaSectionEl = null;
+  let courseMapSdSectionEl = null;
 
   const createCourseMapCell = ({ code, label, placeholder, empty }) => {
     const cell = document.createElement('div');
@@ -6300,6 +7459,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       nameEl.textContent = getSubjectName(code);
       cell.appendChild(codeEl);
       cell.appendChild(nameEl);
+        const prereqs = prerequisites[code] || [];
+        const coreqs = corequisites?.[code] || [];
+        const prereqEl = document.createElement('div');
+        prereqEl.className = 'course-map-prereqs';
+        if (code === 'BIT371') {
+          prereqEl.textContent = 'Pre: BIT242 & 5 majors';
+          cell.appendChild(prereqEl);
+        } else if (prereqs.length || coreqs.length) {
+          const parts = [];
+          if (prereqs.length) parts.push(`Pre:: ${prereqs.join(', ')}`);
+          if (coreqs.length) parts.push(`Co-requ: ${coreqs.join(', ')}`);
+          prereqEl.textContent = parts.join(' ');
+          cell.appendChild(prereqEl);
+        }
       courseMapCells.set(code, cell);
     } else if (label) {
       const labelEl = document.createElement('div');
@@ -6358,21 +7531,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildCourseMapKey = () => {
     if (!courseMapKey) return;
     courseMapKey.innerHTML = '';
-    const items = [
-      { label: '(White background) Available to you this semseter', color: '#ffffff' },
-      { label: 'Completed - passed or credit', color: '#cfe8ff' },
-      { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #0b3d91, #9ecbff)', textColor: '#fff' },
-      { label: 'Selected here today', color: '#0b3d91', textColor: '#fff' },
-      { label: 'You can tick-off prerequisite requirements this semesterand study it next semester', color: '#cfcfcf' },
-      { label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' },
-    ];
+      const items = [
+        { label: '(White background) Available to you this semseter', color: '#ffffff' },
+        { label: 'Completed - passed or credit', color: '#cfe8ff' },
+        { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #0b3d91, #9ecbff)', textColor: '#fff' },
+        { label: 'Selected here today', color: '#0b3d91', textColor: '#fff' },
+        { label: 'You can tick-off prerequisite requirements this semesterand study it next semester', color: '#cfcfcf' },
+        { label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' },
+        { label: 'Pre:: means the subjects that need to be completed before the subject becomes available.', color: 'transparent' },
+      ];
     items.forEach((item) => {
       const keyItem = document.createElement('div');
       keyItem.className = 'course-map-key-item';
-      const swatch = document.createElement('span');
-      swatch.className = 'course-map-key-swatch';
-      swatch.style.background = item.color;
-      if (item.textColor) swatch.style.borderColor = '#666';
+        const swatch = document.createElement('span');
+        swatch.className = 'course-map-key-swatch';
+        swatch.style.background = item.color;
+        if (item.textColor) swatch.style.borderColor = '#666';
+        if (item.color === 'transparent') swatch.style.borderColor = 'transparent';
       const label = document.createElement('span');
       label.textContent = item.label;
       keyItem.appendChild(swatch);
@@ -6409,6 +7584,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const streamsBlock = document.createElement('div');
     streamsBlock.className = 'course-map-streams-block';
+    courseMapStreamsBlockEl = streamsBlock;
 
     const nsSection = document.createElement('div');
     nsSection.className = 'course-map-stream ns';
@@ -6431,6 +7607,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     baSection.appendChild(baLabel);
     baSection.appendChild(buildCourseMapGrid(baRows, 3, 'course-map-stream-grid'));
     streamsBlock.appendChild(baSection);
+    courseMapBaSectionEl = baSection;
 
     const shared = document.createElement('div');
     shared.className = 'course-map-shared';
@@ -6443,6 +7620,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       "BIT245 belongs to both the Business Analtyics (BA) and Software Development (SD) streams.\n  - If your major is Network Security, BIT245 is treated as a single elective.\n  - If your major is BA or SD, it's treated as a single major subject.";
     shared.appendChild(sharedCell);
     streamsBlock.appendChild(shared);
+    courseMapSharedEl = shared;
 
     const sdSection = document.createElement('div');
     sdSection.className = 'course-map-stream sd';
@@ -6454,6 +7632,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     sdSection.appendChild(sdLabel);
     sdSection.appendChild(buildCourseMapGrid(sdRows, 3, 'course-map-stream-grid'));
     streamsBlock.appendChild(sdSection);
+    courseMapSdSectionEl = sdSection;
 
     courseMapContent.appendChild(streamsBlock);
 
@@ -6461,7 +7640,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const positionCourseMapArrows = () => {
-    // Arrows are now positioned via CSS within the BIT245 cell.
+    if (!courseMapSharedEl || !courseMapStreamsBlockEl || !courseMapBaSectionEl || !courseMapSdSectionEl) return;
+    const baTop = courseMapBaSectionEl.offsetTop;
+    const baHeight = courseMapBaSectionEl.offsetHeight;
+    const sdTop = courseMapSdSectionEl.offsetTop;
+    if (!baHeight || !sdTop) return;
+    const gapCenter =
+      sdTop > baTop + baHeight ? (baTop + baHeight + sdTop) / 2 : baTop + baHeight;
+    courseMapSharedEl.style.top = `${gapCenter}px`;
+    courseMapSharedEl.style.transform = 'translateY(-50%)';
   };
 
   const updateCourseMapStreamLabels = () => {
@@ -6472,12 +7659,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       sd: 'Software Development',
     };
     const majorName = majorNameMap[majorKey] || 'Network Security';
+    const hasProgress =
+      Array.from(subjectState.values()).some((st) => st?.completed || st?.toggled) ||
+      electivePlaceholderState.some((code) => !!code) ||
+      electiveBitState.some((code) => !!code);
     const labels = courseMapContent
       ? Array.from(courseMapContent.querySelectorAll('.course-map-stream-label'))
       : [];
     labels.forEach((label) => {
       const stream = label.dataset.stream || '';
-      const isMajor = stream === majorKey;
+      const isMajor = hasProgress && stream === majorKey;
       label.classList.toggle('is-major', isMajor);
       const tooltipText = isMajor
         ? 'This stream is treated as your major.'
@@ -6659,10 +7850,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapBuilt = true;
     }
     updateCourseMapStatuses();
+    positionCourseMapArrows();
   };
 
   const getCourseMapCaptureTarget = () =>
-    courseMapModal ? courseMapModal.querySelector('.modal-body') : null;
+    courseMapModal ? courseMapModal.querySelector('.course-map-modal') : null;
 
   const collectInlineStyles = () => {
     const chunks = [];
@@ -6746,9 +7938,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
 
     const bit245Cell = element.querySelector('.course-map-cell[data-subject="BIT245"]');
+    const arrowOffsetX = 50;
     if (bit245Cell) {
       const rect = relativeRect(bit245Cell);
-      const baseX = rect.x + rect.width;
+      const baseX = rect.x + rect.width + arrowOffsetX;
       const lineLength = 96;
       const arrowPad = 14;
       const angles = [-20, 20];
@@ -6888,7 +8081,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     if (bit245Cell) {
       const rect = relativeRect(bit245Cell);
-      const baseX = rect.x + rect.width;
+      const baseX = rect.x + rect.width + arrowOffsetX;
       const angles = [-20, 20];
       const offsets = [0.35, 0.65];
       const lineLength = 96;
@@ -6935,10 +8128,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const padTop = toNumber(style.paddingTop);
       const codeEl = cell.querySelector('.course-map-code');
       const nameEl = cell.querySelector('.course-map-name');
+      const prereqEl = cell.querySelector('.course-map-prereqs');
       if (codeEl) {
         const codeStyle = window.getComputedStyle(codeEl);
         const fontSize = toNumber(codeStyle.fontSize);
         const lineHeight = toNumber(codeStyle.lineHeight) || fontSize * 1.2;
+        let nameLines = [];
+        let nameLineHeight = 0;
         addText(
           codeEl.textContent.trim(),
           rect.x + padLeft,
@@ -6947,12 +8143,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         );
         if (nameEl) {
           const nameStyle = window.getComputedStyle(nameEl);
-          const nameLineHeight = toNumber(nameStyle.lineHeight) || toNumber(nameStyle.fontSize) * 1.2;
+          nameLineHeight = toNumber(nameStyle.lineHeight) || toNumber(nameStyle.fontSize) * 1.2;
           const availableHeight = Math.max(0, rect.height - padTop - lineHeight);
           const maxLines = Math.max(2, Math.floor(availableHeight / nameLineHeight));
           const maxWidth = Math.max(0, rect.width - padLeft * 2);
-          const lines = wrapText(nameEl.textContent.trim(), maxWidth, nameStyle, maxLines);
-          lines.forEach((line, idx) => {
+          nameLines = wrapText(nameEl.textContent.trim(), maxWidth, nameStyle, maxLines);
+          nameLines.forEach((line, idx) => {
             addText(
               line,
               rect.x + padLeft,
@@ -6960,6 +8156,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               nameStyle
             );
           });
+        }
+        if (prereqEl) {
+          const prereqStyle = window.getComputedStyle(prereqEl);
+          const isHidden =
+            prereqStyle.display === 'none' ||
+            prereqStyle.visibility === 'hidden' ||
+            parseFloat(prereqStyle.opacity || '1') === 0;
+          if (!isHidden) {
+            const prereqLineHeight =
+              toNumber(prereqStyle.lineHeight) || toNumber(prereqStyle.fontSize) * 1.2;
+            const prereqMarginTop = toNumber(prereqStyle.marginTop);
+            const maxWidth = Math.max(0, rect.width - padLeft * 2);
+            const usedHeight =
+              padTop +
+              lineHeight +
+              (nameLineHeight ? nameLineHeight * nameLines.length : 0);
+            const availableHeight = Math.max(0, rect.height - usedHeight - prereqMarginTop);
+            const maxLines = Math.max(1, Math.floor(availableHeight / prereqLineHeight));
+            const prereqLines = wrapText(prereqEl.textContent.trim(), maxWidth, prereqStyle, maxLines);
+            prereqLines.forEach((line, idx) => {
+              addText(
+                line,
+                rect.x + padLeft,
+                rect.y + usedHeight + prereqMarginTop + prereqLineHeight * idx,
+                prereqStyle
+              );
+            });
+          }
         }
       } else if (nameEl) {
         const nameStyle = window.getComputedStyle(nameEl);
@@ -7418,6 +8642,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showTimetableModal = () => {
     if (!timetableModal) return;
+    manualFeeHidden.domestic = false;
+    manualFeeHidden.international = false;
+    lastFullLoadSelected = false;
     currentTableMode = 'selected';
     setTimetableModalMode(currentTableMode);
     setTimetableHeading(currentTableMode);
@@ -7433,6 +8660,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showAvailableModal = () => {
     if (!timetableModal) return;
+    manualFeeHidden.domestic = false;
+    manualFeeHidden.international = false;
+    lastFullLoadSelected = false;
     const selectedCount = getSelectedRows().length;
     const threshold = getLoadThreshold();
     if (availableHeading) {
@@ -7495,6 +8725,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderCourseMapModal();
     courseMapModal.classList.add('show');
     courseMapModal.setAttribute('aria-hidden', 'false');
+    updateCourseMapPrereqToggle();
+    updateCourseMapPrereqTextToggle();
+    updateCourseMapFontScale();
     if (closeCourseMapCta) closeCourseMapCta.focus();
     if (!courseMapResizeObserver) {
       courseMapResizeObserver = observeCourseMapResize();
@@ -7525,6 +8758,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   let courseMapResizeObserver = observeCourseMapResize();
+
+  const updateCourseMapPrereqToggle = () => {
+    if (courseMapModal) {
+      courseMapModal.classList.toggle('course-map-prereq-off', !courseMapPrereqColoursOn);
+    }
+    if (toggleCourseMapPrereqButton) {
+      toggleCourseMapPrereqButton.textContent = courseMapPrereqColoursOn
+        ? 'Prereq colours on'
+        : 'Prereq colours off';
+      toggleCourseMapPrereqButton.setAttribute('aria-pressed', courseMapPrereqColoursOn ? 'true' : 'false');
+    }
+  };
+
+  const updateCourseMapPrereqTextToggle = () => {
+    if (courseMapModal) {
+      courseMapModal.classList.toggle('course-map-prereq-text-off', !courseMapPrereqTextOn);
+    }
+    if (toggleCourseMapPrereqTextButton) {
+      toggleCourseMapPrereqTextButton.textContent = courseMapPrereqTextOn
+        ? 'Prereq text on'
+        : 'Prereq text off';
+      toggleCourseMapPrereqTextButton.setAttribute('aria-pressed', courseMapPrereqTextOn ? 'true' : 'false');
+    }
+  };
+
+  const updateCourseMapFontScale = () => {
+    const target = courseMapModal?.querySelector('.course-map-modal') || courseMapModal;
+    if (target) {
+      target.style.setProperty('--course-map-font-scale', `${courseMapFontScaleEm}em`);
+    }
+  };
 
   const showNextSemesterModal = () => {
     if (!nextSemesterModal) return;
@@ -7566,6 +8830,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     unlockModalPosition();
     timetableModal.classList.remove('show');
     timetableModal.setAttribute('aria-hidden', 'true');
+    lastFullLoadSelected = false;
   };
 
   const getCssVar = (name, fallback = '') => {
@@ -7781,7 +9046,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           .join('\t')
       )
       .join('\n');
-    const text = includeHeading ? `${heading}\n${textBody}` : textBody;
+    const feesText = getVisibleTimetableFeesText();
+    const text = includeHeading
+      ? `${heading}\n${textBody}${feesText ? `\n${feesText}` : ''}`
+      : `${textBody}${feesText ? `\n${feesText}` : ''}`;
 
     const htmlRows = rows
       .map((row) => {
@@ -7796,8 +9064,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const headingHtml = includeHeading ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${heading}</div>` : '';
-    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>`;
+    const headingHtml = includeHeading
+      ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${heading}</div>`
+      : '';
+    const feesHtml = feesText
+      ? `<div style="margin-top:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${feesText}</div>`
+      : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml}`;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -8076,20 +9349,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let historyRows = [];
     if (useManualResults) {
       historyRows = manualEntryResults
-        .filter((entry) => validSubjectCodes.has(entry.id))
+        .filter((entry) => validSubjectCodes.has(entry.id) || validUseCodes.has(entry.id))
         .filter((entry) => !currentEnrolmentIds.has(entry.id))
         .map((entry) => {
-          const data = timetable[entry.id] || {};
+          const isUse = entry.id.startsWith('USE');
+          const data = isUse ? {} : timetable[entry.id] || {};
           const dayFull = data.day || '';
           const dayShort = dayFull.slice(0, 3);
           const slot = data.slot || '';
-          const cell = getCellByCode(entry.id);
+          const cell = isUse ? null : getCellByCode(entry.id);
           const meta = manualEntryMeta.get(entry.id) || {};
           const result = formatHistoryResult(entry.result || '');
           const isFail = isFailGradeToken(result);
           const isPassed =
             !!subjectState.get(entry.id)?.completed || passedFromResults.has(entry.id);
           const repeatFail = (meta.failCountN || 0) > 1 && !isPassed;
+          const displayCode = isUse ? entry.id : null;
+          const displayName = isUse ? 'Unspecified Elective (USE)' : null;
+          const displayStream = isUse ? 'Elective' : null;
           return {
             cell,
             id: entry.id,
@@ -8101,9 +9378,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             date: entry.date || '',
             isFail,
             repeatFail,
-            displayCode: null,
-            displayName: null,
-            displayStream: null,
+            displayCode,
+            displayName,
+            displayStream,
           };
         });
     } else {
@@ -8239,12 +9516,53 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  async function loadWorkbookFromUrl(url) {
+  const buildDropZoneStatusLines = () => {
+    if (!lastDroppedFileInfo) return [];
+    const lines = [lastDroppedFileInfo.fileName, lastDroppedFileInfo.savedLine].filter(Boolean);
+    otherLoadedFilesInfo.forEach((info) => {
+      if (!info) return;
+      if (info.fileName) lines.push(info.fileName);
+      if (info.savedLine) lines.push(info.savedLine);
+    });
+    if (lastStudentCountLine) lines.push(lastStudentCountLine);
+    return lines;
+  };
+
+  async function loadWorkbookFromUrl(urls) {
     if (typeof XLSX === 'undefined') return;
     try {
       if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(true);
-      const response = await fetch(url, { cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const candidates = Array.isArray(urls) ? urls : [urls];
+      let response = null;
+      let usedUrl = '';
+      for (const candidate of candidates) {
+        const cacheBustedUrl = (() => {
+          const nonce =
+            (typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID()) ||
+            `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+          try {
+            const resolved = new URL(candidate, window.location.href);
+            resolved.searchParams.set('t', nonce);
+            return resolved.toString();
+          } catch {
+            const sep = candidate.includes('?') ? '&' : '?';
+            return `${candidate}${sep}t=${nonce}`;
+          }
+        })();
+        const attempt = await fetch(cacheBustedUrl, {
+          cache: 'reload',
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            Pragma: 'no-cache',
+          },
+        });
+        if (attempt.ok) {
+          response = attempt;
+          usedUrl = candidate;
+          break;
+        }
+      }
+      if (!response) throw new Error('Workbook not found');
       const lastModified = response.headers.get('last-modified');
       const buffer = await response.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
@@ -8257,14 +9575,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       loadedStudentSnapshot = null;
       clearStudentSearchDropdown();
       lastDroppedFileInfo = {
-        fileName: url.split('/').pop() || 'Source.xlsx',
+        fileName: usedUrl.split('?')[0].split('/').pop() || 'Source.xlsx',
         savedLine: formatHttpDateInfo(lastModified),
       };
-      renderDropZoneStatus([
-        lastDroppedFileInfo.fileName,
-        lastDroppedFileInfo.savedLine,
-        `${records.length} students listed`,
-      ]);
+      lastStudentCountLine = `${records.length} students listed`;
+      renderDropZoneStatus(buildDropZoneStatusLines());
       updateStudentPreview();
     } catch (error) {
       // ignore auto-load failures; user can still drop the workbook manually
@@ -8383,6 +9698,53 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateSelectedList = () => {
     if (!selectedListSection || !selectedListEl) return;
     const available = getAvailableRows();
+    const plannedCount = getPlannedCount();
+    const completedCount = getCompletedCount();
+    const useCredits = getUseCreditsCount();
+    const completedTotal = completedCount + useCredits;
+    const totalSubjects = getTotalSubjectsCount();
+    const remainingCount = getRemainingSubjectsCount();
+    const loadThreshold = getLoadThreshold();
+    const workbookCurrentCount = Array.from(workbookCurrent.keys()).filter(
+      (code) => validSubjectCodes.has(code) && !subjectState.get(code)?.completed
+    ).length;
+    const hasWorkbookCurrent = workbookCurrentCount > 0;
+    const hasManualSelections = plannedCount > 0;
+    const isFullyGraduated = remainingCount === 0 && plannedCount === 0 && completedTotal >= totalSubjects;
+    const graduatingWithCurrent =
+      !isFullyGraduated &&
+      !available.length &&
+      hasWorkbookCurrent &&
+      !hasManualSelections &&
+      completedTotal + workbookCurrentCount >= totalSubjects;
+    if (document?.body) {
+      document.body.classList.toggle(
+        'graduate-highlight',
+        isFullyGraduated || graduatingWithCurrent
+      );
+    }
+    const hasInsufficientLoad =
+      available.length > 0 &&
+      (remainingCount <= 5
+        ? available.length < remainingCount
+        : available.length < loadThreshold);
+    if (selectedListEl) {
+      selectedListEl.classList.toggle('available-list-warning', hasInsufficientLoad);
+    }
+    if (hasInsufficientLoad) {
+      const remainingLabel = remainingCount === 1 ? 'subject' : 'subjects';
+      const loadLabel = loadThreshold === 1 ? 'subject' : 'subjects';
+      availableLoadError = {
+        title: 'Not enough subjects available',
+        html: `<p><strong class="alert-inline-title alert-title-error">Not enough subjects available</strong> <span class="alert-inline-text">${
+          remainingCount <= 5
+            ? `Only ${available.length} subject${available.length === 1 ? '' : 's'} are available, but ${remainingCount} ${remainingLabel} remain to graduate.`
+            : `Only ${available.length} subject${available.length === 1 ? '' : 's'} are available for selection, which is below the full load of ${loadThreshold} ${loadLabel}.`
+        }</span></p>`,
+      };
+    } else {
+      availableLoadError = null;
+    }
     if (sidebarSectionDescriptor) {
       const count = available.length;
       const subjectLabel = count === 1 ? 'subject' : 'subjects';
@@ -8395,9 +9757,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const li = document.createElement('div');
       li.className = 'available-item';
       li.setAttribute('role', 'listitem');
-      li.textContent = 'No subjects are available to select right now.';
+      if (isFullyGraduated) {
+        li.classList.add('available-item-success');
+        li.textContent = 'Graduated. All subjects passed.';
+        availableNowError = null;
+      } else if (graduatingWithCurrent) {
+        li.classList.add('available-item-success');
+        li.textContent = 'Graduating this semester when current enrolments complete';
+        availableNowError = null;
+      } else {
+        li.classList.add('available-item-error');
+        li.textContent = 'No subjects are available to select';
+        availableNowError = {
+          title: 'No subjects available',
+          html: `<p><strong class="alert-inline-title alert-title-error">No subjects available</strong> <span class="alert-inline-text">No subjects are available to select right now. Prerequisites or subjects running in alternate semesters may be preventing enrolment.</span></p>`,
+        };
+      }
       selectedListEl.appendChild(li);
     } else {
+      availableNowError = null;
       available.forEach((item) => {
         const li = document.createElement('div');
         li.className = 'available-item';
@@ -8446,6 +9824,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     selectedListSection.style.display = '';
     updateSubjectCounts();
+    refreshErrorAlerts();
+  };
+
+  const clearAlertState = () => {
+    electiveError = null;
+    prereqError = null;
+    chainDelayError = null;
+    aprAppError = null;
+    acceptedOfferedError = null;
+    intakeStartError = null;
+    availableNowError = null;
+    availableLoadError = null;
+    censusWarning = null;
+    censusError = null;
+    weekTwoWarning = null;
+    weekTwoError = null;
+    infoNotes = null;
+    countryHittingTroubles = null;
+    deferredInfo = null;
+    dateNoticeLines = [];
+    creditTransferWarning = null;
+    creditTransferWarningActive = false;
+    warningPayloads = [];
+    nextSemWarning = null;
+    finalSemWarning = null;
+    refreshErrorAlerts();
+    setAlertMessages('info', []);
+    setAlertMessages('data', []);
+    renderAlertButton('error');
+    renderAlertButton('warning');
+    renderAlertButton('info');
+    renderAlertButton('data');
   };
 
   if (showTimetableButton) showTimetableButton.addEventListener('click', showTimetableModal);
@@ -8543,13 +9953,71 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (copyRemaining) {
       copyRemaining.addEventListener('click', () => {
         flashCopyButton(copyRemaining);
-        const tables = [remainingTable];
-        const headings = [remainingTitleEl?.textContent || 'Remaining'];
-        if (remainingElectivesSection && !remainingElectivesSection.hidden && remainingElectivesTable) {
-          tables.push(remainingElectivesTable);
-          headings.push('Elective options');
+        const hasElectivesTable =
+          remainingElectivesSection && !remainingElectivesSection.hidden && remainingElectivesTable;
+        const coreMajorCount = getRemainingRows().length;
+        const majorName = getMajorDisplayName();
+        const remainingElectives = getRemainingElectiveCount();
+
+        const titleText = remainingTitleEl?.textContent?.trim() || '';
+        const summaryText = `You have ${coreMajorCount} Core and ${majorName} subjects remaining`;
+        const electiveHeadingText = 'Elective Options. Our course has 4 Electives';
+        const electiveCountText = `You have ${remainingElectives} Elective${remainingElectives === 1 ? '' : 's'} to complete`;
+
+        const corePart = buildSimpleTableCopyData(remainingTable, '');
+        const electivePart = hasElectivesTable ? buildSimpleTableCopyData(remainingElectivesTable, '') : null;
+        if (!corePart.text && !titleText && !summaryText) return;
+
+        const textLines = [];
+        if (titleText) textLines.push(titleText);
+        if (summaryText) textLines.push('', summaryText);
+        if (corePart.text) textLines.push(corePart.text);
+        if (hasElectivesTable) textLines.push('', electiveHeadingText, '', electiveCountText);
+        if (electivePart?.text) textLines.push(electivePart.text);
+        const text = textLines.join('\n').trim();
+
+        const fontBase = 'font-family: Calibri, sans-serif;';
+        const blue = 'style="color:#1f6fd6;"';
+        const lineHtml = (line, size = 11, marginBottomPt = 0) =>
+          `<p style="${fontBase}font-weight:700;font-size:${size}pt;margin:0 0 ${marginBottomPt}pt 0;">${line}</p>`;
+        const summaryHtml = `<p style="${fontBase}font-weight:700;font-size:11pt;margin:0;">You have <span ${blue}>${coreMajorCount}</span> Core and ${escapeHtml(
+          majorName
+        )} subjects remaining</p>`;
+        const electiveCountHtml = `<p style="${fontBase}font-weight:700;font-size:11pt;margin:0;">You have <span ${blue}>${remainingElectives}</span> Elective${remainingElectives === 1 ? '' : 's'} to complete</p>`;
+        const topHtml = [
+          titleText ? lineHtml(escapeHtml(titleText), 12, 12) : '',
+          summaryText ? summaryHtml : '',
+        ]
+          .filter(Boolean)
+          .join('');
+        const spacerPara = `<p style="${fontBase}font-size:11pt;margin:0 0 12pt 0;">&nbsp;</p>`;
+        const midHtml = hasElectivesTable
+          ? [
+              spacerPara,
+              lineHtml(escapeHtml(electiveHeadingText), 11, 0),
+              electiveCountHtml,
+            ].join('')
+          : '';
+
+        const htmlParts = [
+          topHtml,
+          corePart.html ? corePart.html : '',
+          midHtml,
+          electivePart?.html || '',
+        ].filter(Boolean);
+        const html = htmlParts.join('');
+
+        if (window.ClipboardItem) {
+          const blobInput = {
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+          };
+          navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+            navigator.clipboard.writeText(text).catch(() => { });
+          });
+        } else {
+          navigator.clipboard.writeText(text).catch(() => { });
         }
-        copySimpleTablesToClipboard(tables, headings);
       });
     }
     if (remainingModal) {
@@ -8564,12 +10032,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (e.target === courseMapModal) hideCourseMapModal();
       });
     }
-    if (copyCourseMapImageButton) {
-      copyCourseMapImageButton.addEventListener('click', () => {
-        flashCopyButton(copyCourseMapImageButton);
-        copyCourseMapImage();
-      });
-    }
+  if (copyCourseMapImageButton) {
+    copyCourseMapImageButton.addEventListener('click', () => {
+      flashCopyButton(copyCourseMapImageButton);
+      copyCourseMapImage();
+    });
+  }
+  if (toggleCourseMapPrereqButton) {
+    toggleCourseMapPrereqButton.addEventListener('click', () => {
+      courseMapPrereqColoursOn = !courseMapPrereqColoursOn;
+      updateCourseMapPrereqToggle();
+    });
+    updateCourseMapPrereqToggle();
+  }
+  if (toggleCourseMapPrereqTextButton) {
+    toggleCourseMapPrereqTextButton.addEventListener('click', () => {
+      courseMapPrereqTextOn = !courseMapPrereqTextOn;
+      updateCourseMapPrereqTextToggle();
+    });
+    updateCourseMapPrereqTextToggle();
+  }
+  if (courseMapFontDecreaseButton) {
+    courseMapFontDecreaseButton.addEventListener('click', () => {
+      courseMapFontScaleEm = Math.max(0.5, Math.round((courseMapFontScaleEm - 0.05) * 100) / 100);
+      updateCourseMapFontScale();
+    });
+  }
+  if (courseMapFontIncreaseButton) {
+    courseMapFontIncreaseButton.addEventListener('click', () => {
+      courseMapFontScaleEm = Math.min(3, Math.round((courseMapFontScaleEm + 0.05) * 100) / 100);
+      updateCourseMapFontScale();
+    });
+  }
     if (downloadCourseMapImageButton) {
       downloadCourseMapImageButton.addEventListener('click', () => {
         flashCopyButton(downloadCourseMapImageButton);
@@ -8700,6 +10194,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     applyMajorConfig(val);
     updateElectivesLabel(val);
+    updateWarnings();
+    const record = staffWorkbookState.getStudentRecord();
+    if (record) {
+      renderStudentPreviewHtml(formatStudentSummary(record));
+      const feeDetails = getFeeStatusDetails(record);
+      setAlertMessages('info', buildInfoMessages(record, feeDetails));
+      renderAlertButton('info');
+    }
   };
 
   let electiveWarningEl = null;

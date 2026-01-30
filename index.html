@@ -43,6 +43,10 @@ Created: December 30, 2025
         <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
         <div id="student-search-dropdown" class="student-search-dropdown" hidden></div>
         <div id="student-data-preview" class="student-data-preview" aria-live="polite"></div>
+        <div class="student-clear-row">
+          <button id="clear-student" class="clear-button secondary" type="button"
+            data-tooltip="Clear the student search and remove loaded student history.">Clear</button>
+        </div>
       </div>
     </aside>
     <aside class="sidebar">
@@ -87,7 +91,7 @@ Created: December 30, 2025
           <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the subjects below or in grid to right, or use this 'Available now' popup.</span>
           </div>
         <div id="selected-list-section">
-          <button class="available-heading" id="available-heading" type="button"
+          <button class="clear-button available-heading" id="available-heading" type="button"
             aria-label="Show available subjects" data-tooltip="Open a popup that list the subjects you can take right now and click in there to make your selections for this semester">Available now</button>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
@@ -507,10 +511,24 @@ Created: December 30, 2025
         <p>Paste block of text and subject codes will be extracted. Or type them in.</p>
         <textarea id="code-input" rows="10"></textarea>
       </div>
-      <div class="modal-actions">
-        <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
-        <button id="apply-code-modal" class="clear-button">Go</button>
-      </div>
+        <div class="modal-actions">
+          <div class="code-modal-presets">
+            <div class="code-modal-presets-buttons" role="group" aria-label="Preset subject lists">
+              <button id="preset-fmp-assoc" class="clear-button secondary" type="button">FMP Assoc Deg</button>
+              <button id="preset-fmp-dip" class="clear-button secondary" type="button">FMP Dip</button>
+              <button id="preset-mp-dip" class="clear-button secondary" type="button">MP Dip</button>
+              <button id="preset-mp-dip-old" class="clear-button secondary" type="button">MP Dip old</button>
+            </div>
+            <div class="code-modal-presets-caption">
+              <div>Articulation agreements</div>
+              <div>(Credit Transfers)</div>
+            </div>
+          </div>
+          <div class="code-modal-actions-right">
+            <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
+            <button id="apply-code-modal" class="clear-button">Go</button>
+          </div>
+        </div>
     </div>
   </div>
   <div id="alert-modal" class="modal-overlay" aria-hidden="true">
@@ -626,7 +644,8 @@ Created: December 30, 2025
           </table>
         </div>
         <div id="remaining-electives-section" class="remaining-electives-section" hidden>
-          <div class="semester-timetable-subtitle">Elective options (maximum of 4 electives)</div>
+          <div class="semester-timetable-subtitle">Elective Options. Our course has 4 Electives</div>
+          <div id="remaining-electives-count" class="remaining-electives-count"></div>
           <div class="timetable-table-wrapper">
             <table id="remaining-electives-table" class="subject-table">
               <thead>
@@ -681,22 +700,30 @@ Created: December 30, 2025
         <div id="course-map-key" class="course-map-key"></div>
         <div id="course-map-content" class="course-map-content"></div>
       </div>
-      <div class="modal-actions">
-        <button id="copy-course-map-image" class="clear-button secondary" type="button"
-          data-tooltip="Copy the course map image to the clipboard.">
+        <div class="modal-actions">
+          <button id="copy-course-map-image" class="clear-button secondary" type="button"
+            data-tooltip="Copy the course map image to the clipboard.">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
               <path
                 d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
                 fill="currentColor" />
             </svg>
-          </span>
-          Copy image
-        </button>
-        <button id="download-course-map-image" class="clear-button secondary" type="button"
-          data-tooltip="Download the course map as an image.">Download image</button>
-        <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
-      </div>
+            </span>
+            Copy image
+          </button>
+          <button id="toggle-course-map-prereq" class="clear-button secondary" type="button"
+            aria-pressed="true">Prereq colours on</button>
+          <button id="toggle-course-map-prereq-text" class="clear-button secondary" type="button"
+            aria-pressed="true">Prereq text on</button>
+          <button id="course-map-font-decrease" class="clear-button secondary" type="button"
+            aria-label="Decrease course map font size">-</button>
+          <button id="course-map-font-increase" class="clear-button secondary" type="button"
+            aria-label="Increase course map font size">+</button>
+          <button id="download-course-map-image" class="clear-button secondary" type="button"
+            data-tooltip="Download the course map as an image.">Download image</button>
+          <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
+        </div>
     </div>
   </div>
   <div id="next-semester-modal" class="modal-overlay" aria-hidden="true">
