@@ -35,12 +35,19 @@ Created: December 30, 2025
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="page">
     <aside id="drop-sidebar" class="drop-sidebar" aria-label="Student workbook drop zone">
-      <div id="drop-zone" class="drop-zone" aria-hidden="true">
-        <div class="drop-zone-text">Drop students workbook here.<br><br>Or click to load Source.xlsx from one folder level higher</div>
+      <div id="folder-shortcuts-panel" class="folder-shortcuts-panel hidden-initial" aria-label="Folder shortcuts">
+        <button id="folder-shortcut-semester" class="folder-shortcut-btn hidden-initial" type="button"></button>
+        <button id="folder-shortcut-student-forms" class="folder-shortcut-btn hidden-initial" type="button"></button>
+        <button id="folder-shortcut-teacher" class="folder-shortcut-btn hidden-initial" type="button"></button>
+        <button id="folder-shortcut-help" class="folder-shortcut-btn folder-shortcut-help hidden-initial" type="button" aria-label="Folder helper setup">?</button>
+      </div>
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-text">Drop students workbook here (plus Email Scripts and Triage if you wish).<br><br>Or click to auto-load by providing your local Enrolments folder.</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
         <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
+        <div id="student-search-empty" class="student-search-empty" aria-live="polite"></div>
         <div id="student-search-dropdown" class="student-search-dropdown" hidden></div>
         <div id="student-data-preview" class="student-data-preview" aria-live="polite"></div>
         <div class="student-clear-row">
@@ -52,14 +59,16 @@ Created: December 30, 2025
     <aside class="sidebar">
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
-          aria-controls="instructions-modal" aria-expanded="false" data-tooltip="Open a quick guide to using the planner.">Instructions</button>
+          aria-controls="instructions-modal" aria-expanded="false" data-tooltip="Open a quick guide to using this Subject Planner web site.">Instructions</button>
       </div>
       <div class="sidebar-section reset-section" id="reset-section">
         <button id="clear-selections" class="clear-button" data-tooltip="Clear your current selections and start fresh.">Reset</button>
       </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
-            class="sidebar-section-descriptor"><b>Major.</b> Select what's likely.</span></div>
+            class="sidebar-section-descriptor" data-tooltip-html="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
+            By <b>2nd semester or 2nd year</b><br> - You should have decided what your major will be.  You'll need to start completing those subjects, being careful not to study too many Electives (which will be subjects from the other 2 streams) and preparing yourself for Capstone
+            <br>What is <b>Capstone</b>? <br>Capstone is BIT371 and BIT372.<br>It is a 1 year project focused on your major. You must have 3 major subjects completed before you can start BIT371 and 5 completed for BIT372'<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><b>Major.</b> Select what's likely.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
             <span id="major-current-label">Unsure (using Network Security)</span>
@@ -76,30 +85,40 @@ Created: December 30, 2025
       <div class="sidebar-section ">
         <div class="sidebar-heading-with-text dim-when-complete">
           <span class="sidebar-heading">2.</span>
-          <span class="sidebar-section-descriptor"><b>History.</b> Enter your passes & credits</span>
+          <span class="sidebar-section-descriptor" data-tooltip-html="Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><span class="inline-strong" >History.</span> Enter your passes & credits</span>
         </div>
         <div class="buttons">
-          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false" data-tooltip="Click to go into 'history mode' where you can click on
-           subjects to mark your completed subjects and/or credit transfers as 'completed'">Clicking mode</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false" data-tooltip="Click to open a window that you can 
-          enter your history into.  You can paste in result tables, or type in codes only.">Typing mode</button>
+          <button id="toggle-completed-mode" class="clear-button" aria-pressed="false" data-tooltip-html="Go into '<b>History mode</b>'.
+            <br>Then you'll be able to add subjects to your history by clicking on subject cards in the main grid to the right.<br>
+            Then click on this button again to go back to normal mode.">Clicking mode</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false" data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">Typing mode</button>
         </div>
       </div>
 
       <div class="sidebar-section timetable-panel dim-when-complete">
-        <div class="sidebar-heading-with-text"><span class="sidebar-heading">3.</span>
+        <div class="sidebar-heading-with-text" data-tooltip-html="You have 3 Options for selecting your subjects.
+        1. Click on the subjects in this sidebar.
+        2. Click on subjects in the main grid to the right.
+        3. Click the 'Available Now' button and select subjects in the window that opens up.
+        <br>After you select your full load of subjects, you will see a '<b>Your Semester Plan</b>' button appear" ><span class="sidebar-heading">3.</span>
           <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the subjects below or in grid to right, or use this 'Available now' popup.</span>
           </div>
         <div id="selected-list-section">
           <button class="clear-button available-heading" id="available-heading" type="button"
-            aria-label="Show available subjects" data-tooltip="Open a popup that list the subjects you can take right now and click in there to make your selections for this semester">Available now</button>
+            aria-label="Show available subjects" data-tooltip-html="Open a window that shows you the subjects you can study this sememster
+	  <br>You can click on them to make your selections for this semester.
+	  <br>When you have chosen your full load of subjects, the window will switch to showing your final timetable">Available now</button>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
           <div class="toggle-row load-row">
-            <span id="load-label">Your load = 4 subjects</span>
+            <span id="load-label" data-tooltip-html="A <b>full load</b> is <b>4</b> subjects.  
+              A Student Visa condition is that students must study a full load where possible.<br>
+              <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
+              <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
+              This website uses this count to determine when you've selected your full complement of subjects">Will study 4 subjects</span>
             <button id="vary-load" class="clear-button secondary load-button" type="button" data-tooltip="Will you be studying a full load of 4 subjects, or something else?">Change</button>
           </div>
-            <div class="toggle-row" data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisites.">
+            <div class="toggle-row" data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
               <label class="switch">
                 <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
                 <span class="slider"></span>
@@ -111,7 +130,7 @@ Created: December 30, 2025
                 <input type="checkbox" id="pass-for-enrolments" aria-label="Pass for enrolments">
                 <span class="slider"></span>
               </label>
-              <span class="switch-label">Pass current enrolments</span>
+              <span class="switch-label">Pass the current enrolments</span>
             </div>
             <div class="toggle-row hidden-initial" id="live-prereq-row">
               <label class="switch">
@@ -120,17 +139,21 @@ Created: December 30, 2025
               </label>
             <span class="switch-label">Live prerequisite updates</span>
           </div>
-          <div class="toggle-row" data-tooltip="Show with numbers on each subject the minimum amount of semesters each will take to complete.">
+          <div class="toggle-row" data-tooltip-html="Eable if you want to see how many semesters it is going to take, at minimum, to complete each subject. 
+          <br> Each subject will get a little semester count in the bottom left corner.">
             <label class="switch">
-              <input type="checkbox" id="toggle-sem-counts" aria-label="Show semesters remaining">
+              <input type="checkbox" id="toggle-sem-counts" aria-label="Show # semesters remaining">
               <span class="slider"></span>
             </label>
-            <span class="switch-label">Show semesters remaining</span>
+            <span class="switch-label">Show # semesters remaining</span>
           </div>
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
             <button id="open-remaining" class="clear-button secondary" type="button" data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining subjects</button>
-            <button id="open-course-map" class="clear-button secondary" type="button">Course Map</button>
+            <button id="open-course-map" class="clear-button secondary" type="button" data-tooltip-html="Open the course map.
+            <br>It shows all the subjects in our course (that is, all the subjects you can see to the right), but organised differently.
+            <br>It's not interactive.
+            <br>It may give you a clearer understanding of what's needed and where your history fits in.">Course Map</button>
             <button id="open-next-semester" class="clear-button secondary" type="button">Next semester options</button>
           </div>
         </div>
@@ -159,6 +182,7 @@ Created: December 30, 2025
           </div>
           <div class="title-right">
             <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false">Data Error?</button>
+            <button id="btn-codes" class="title-btn btn-codes hidden" aria-expanded="false">Codes</button>
             <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
           </div>
         </div>
@@ -399,10 +423,12 @@ Created: December 30, 2025
             </div>
             <div class="footnote">
               <div class="sas-inline"></div>
-              SAS enabled subjects. Complete any 4 to obtain the SAS Academic Specialisation in IT Analytics.
-              Or you can complete BIT106, BIT231, BIT112 and BIT358 to obtain the SAS Academic Specialisation in
-              Software Development Analytics.
-            </div>
+              SAS enabled subjects. Two certificates available<br>
+              <ul class="sas-notes-list">
+              <li>SAS Academic Specialisation in IT Analytics for completion of core subjects (BIT106, BIT231, BIT112) and 1 of the BA subjects BIT355 or BIT356.<br></li>
+              <li> Academic Specialisation in Software Development Analytics for completion of core subjects (BIT106, BIT231, BIT112) and the SD subject BIT358.</li>
+              </ul>
+          </div>
           </div>
         </div>
       </div>
@@ -415,39 +441,35 @@ Created: December 30, 2025
         <button class="modal-close" id="close-instructions-modal" aria-label="Close instructions">X</button>
       </div>
       <div class="modal-body">
-        <p>Use this planner to record your completed subjects (passes and credits), see which subjects you can choose
-          from for the coming semester,
-          and develop your own timetable.</p>
+        <p><strong>Quick guide:</strong> Use this web site to record completed subjects (your passes and credit transfers if you have any), see a list of subjects that you can study this semester, and then build your timetable.</p>
         <ol class="instructions-list">
           <li>
-            <p><strong>Step 1:</strong> Choose your major from the dropdown at the top of the sidebar.</p>
-            <p>By your 2nd semester you should decide which of the Network Security,
-              Business Analysis, and Software Development streams will be your major.
-              If you make a switch beyond then, your graduation might be delayed.</p>
-            <p>If you are in your first semester, you can leave it as
-              &quot;Undecided&quot;. It will show Network Security as the major and you can make a different decision
-              next semester.</p>
+            <p><strong>Step 1:</strong> Pick your major from the dropdown at the top of the sidebar.</p>
+            <p>By <strong>second semester</strong>, choose a stream:
+              <strong>Network Security</strong>, <strong>Business Analytics</strong>, or <strong>Software
+                Development</strong> and give some focus to completing subjects in that stream. Changing stream after that may delay graduation.</p>
+            <p>In <strong>first semester</strong>, it’s okay to leave this as <strong>Undecided</strong>. The planner
+              uses Network Security as a placeholder only - you can switch next semester.</p>
           </li>
           <li>
-            <p><strong>Step 2:</strong> Enter your pass and credit history.</p>
-            <p>When you do, they will be marked darker in the grid, and the subjects available to you now (because of
-              satisfied prerequisites) will change.</p>
-            <p>Two buttons are available for this:</p>
+            <p><strong>Step 2:</strong> Enter your passes and credits.</p>
+            <p>There are two easy ways:</p>
             <ul class="instructions-sublist">
-              <li><strong>By clicking</strong> to mark completed subjects by clicking in the grid.</li>
-              <li><strong>By typing</strong> to type or paste subject codes (e.g. BIT111 or USE101). Spaces, commas,
-                subject names, and extra text do not matter; the subject codes will be pulled out.</li>
+              <li><strong>Clicking mode:</strong> Click subjects in the grid to mark them completed.</li>
+              <li><strong>Typing mode:</strong> Paste or type subject codes (e.g. BIT111, USE101). Extra text, spaces, or
+                subject names don’t matter—the codes are pulled out automatically.</li>
             </ul>
+                        <p>Completed subjects will darken in the grid, and your <strong>available subjects</strong> will update
+                          based on prerequisites.</p>
           </li>
           <li>
-            <p><strong>Step 3:</strong> Select your timetable by clicking subjects. Three ways to do this:</p>
+            <p><strong>Step 3:</strong> Choose your timetable by selecting subjects. Three ways:</p>
             <ol class="instructions-sublist">
-              <li>Clicking in the main grid.</li>
-              <li>Clicking on a subject in the sidebar below "Available now".</li>
-              <li>Open the panel via the "Available Now" button and click subjects there.</li>
+              <li>Click subjects in the main grid.</li>
+              <li>Click a subject in the sidebar under <strong>Available now</strong>.</li>
+              <li>Open the <strong>Available Now</strong> panel and click subjects there.</li>
             </ol>
-            <p>You are expected to choose 4 subjects, which is a "full load". You can vary your load by pressing the
-              <em>Change</em> button.</p>
+            <p><br>
 
       </div>
       <div class="modal-actions">
@@ -526,7 +548,7 @@ Created: December 30, 2025
           </div>
           <div class="code-modal-actions-right">
             <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
-            <button id="apply-code-modal" class="clear-button">Go</button>
+            <button id="apply-code-modal" class="clear-button">Apply subjects</button>
           </div>
         </div>
     </div>
@@ -697,8 +719,8 @@ Created: December 30, 2025
         <button class="modal-close" id="close-course-map" aria-label="Close course map">X</button>
       </div>
       <div class="modal-body">
-        <div id="course-map-key" class="course-map-key"></div>
         <div id="course-map-content" class="course-map-content"></div>
+        <div id="course-map-key" class="course-map-key"></div>
       </div>
         <div class="modal-actions">
           <button id="copy-course-map-image" class="clear-button secondary" type="button"
@@ -716,6 +738,8 @@ Created: December 30, 2025
             aria-pressed="true">Prereq colours on</button>
           <button id="toggle-course-map-prereq-text" class="clear-button secondary" type="button"
             aria-pressed="true">Prereq text on</button>
+          <button id="toggle-course-map-indicators" class="clear-button secondary" type="button"
+            aria-pressed="true">Stream indicators on</button>
           <button id="course-map-font-decrease" class="clear-button secondary" type="button"
             aria-label="Decrease course map font size">-</button>
           <button id="course-map-font-increase" class="clear-button secondary" type="button"
@@ -828,6 +852,9 @@ Created: December 30, 2025
               </span>
               Image
             </button>
+            <button id="copy-student-declaration" class="clear-button secondary" type="button">
+              StudDec
+            </button>
             <div class="timetable-email-actions">
               <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
@@ -861,6 +888,60 @@ Created: December 30, 2025
       </div>
     </div>
     </main>
+  </div>
+  <div id="email-scripts-access-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal email-scripts-access-modal" role="dialog" aria-modal="true" aria-labelledby="email-scripts-access-title">
+      <div class="modal-header">
+        <div class="modal-title" id="email-scripts-access-title">Email Scripts - Clipboard and Email</div>
+        <button class="modal-close" id="close-email-scripts-access" aria-label="Close Email Scripts access modal">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="email-scripts-access-list" role="list">
+          <div class="email-scripts-access-row" role="listitem">
+            <div class="email-scripts-access-text">Student Declaration for ongoing students</div>
+            <button id="email-scripts-copy-student-declaration" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Copy Student Declaration to clipboard">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+            <button id="email-scripts-open-email-docx" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Open Email Scripts document">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div class="email-scripts-access-row" role="listitem">
+            <div class="email-scripts-access-text">Supports (at risk) - Counselling etc.</div>
+            <button id="email-scripts-copy-supports-at-risk" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Copy Supports at risk text to clipboard">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+            <button id="email-scripts-email-supports-at-risk" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Email Supports at risk text">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div id="email-scripts-extra-rows"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="close-email-scripts-access-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
   </div>
   <div id="load-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
@@ -902,8 +983,9 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="script.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/mammoth.browser.min.js"></script>
+  <script src="script.js?v=20260208-17"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 12 Jan 2026</div>
