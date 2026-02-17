@@ -29,6 +29,7 @@ Created: December 30, 2025
   --alert-caution: #c25a00;
   --alert-info: #0b7fab;
   --bright-green: #19d966;
+  --bright-blue: #92ddff;
   --core: #f5f0c6;
   --network: rgb(220, 240, 225);
   --network-text: #0d7a3d;
@@ -73,8 +74,8 @@ Created: December 30, 2025
   --completed-elective-bg: #42424229;
   --completed-elective-text: #2b2b2b;
   --card-band-height: 4px;
-  --card-min-height: 100px;
-  --card-max-height: 100px;
+  --card-min-height: 74px;
+  --card-max-height: 74px;
   --card-radius: 8px;
   --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
   --card-hover-shadow: 0 14px 24px rgba(0, 0, 0, 0.28);
@@ -92,6 +93,10 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
   font-size: 0.9rem;
+}
+
+button {
+  padding: 4px 2px;
 }
 
 .skip-link {
@@ -192,29 +197,48 @@ td,
 .prerequsites-note,
 .modal,
 .modal * {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .page {
-  padding: 16px;
+  /* Full-width layout: sidebars left, main content flexes to the right and tracks the viewport. */
+  width: 100%;
+  max-width: 100vw;
+  padding: 6px 26px 6px 6px;
   display: flex;
-  justify-content: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   gap: 12px;
   align-items: flex-start;
   overflow: visible;
 }
 
 .main-content {
-  flex: 0 1 auto;
+  /* Fill remaining space beside sidebars and allow grid to resize with viewport. */
+  order: 3;
+  /* Allow main area to truly shrink within remaining viewport width. */
+  flex: 1 1 0%;
   min-width: 0;
-  max-width: 1150px;
+  max-width: none;
   background: var(--sidebar-bg);
   padding: 6px 12px;
   border-radius: 8px;
-  display: flex;
-  justify-content: center;
+  display: block;
   border: 1px solid rgb(108, 107, 107);
   overflow: visible;
+  position: relative;
+}
+
+.drop-sidebar {
+  /* Staff: additional sidebar sits between main content and the primary sidebar on the far right. */
+  order: 1;
+  flex: 0 1 auto;
+}
+
+.sidebar {
+  order: 2;
+  /* Shrink/grow before the left sidebar on viewport resize. */
+  flex: 0 2 auto;
 }
 
 .hidden-initial {
@@ -289,14 +313,29 @@ td,
 }
 
 .folder-shortcuts-panel {
-  margin: 0 0 6px;
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
+  padding-bottom: 2px;
   border-radius: 6px;
   border: 1px solid #585858;
+  text-align: center;
+}
+
+.folder-shortcuts-row {
+  width: 100%;
+  gap: 4px;
+  padding: 4px;
+  padding-top: 2px;
+  border: 1px solid #7a7a7a;
+}
+
+.folder-shortcuts-row-credit {
+  border: 1px solid #7a7a7a;
+  border-radius: 4px;
+  padding: 4px;
+  position: relative;
+  top: -1px
 }
 
 .folder-shortcut-btn {
@@ -313,7 +352,18 @@ td,
 
 .folder-shortcut-btn:hover {
   background: linear-gradient(to bottom, #c7a955, #8d773c);
-    color: #000;
+  color: #000;
+}
+
+.folder-shortcut-btn-credit {
+  border-color: #22527f;
+  background: linear-gradient(to bottom, #2d7fd0, #205d99);
+  color: #eef6ff;
+}
+
+.folder-shortcut-btn-credit:hover {
+  background: linear-gradient(to bottom, #3992e0, #2a6fb4);
+  color: #fff;
 }
 
 .folder-shortcut-btn:active {
@@ -453,7 +503,7 @@ td,
 .drop-zone-action {
   position: absolute;
   top: 50%;
-  margin-right:-12px;
+  margin-right: -12px;
   transform: translateY(-50%);
   min-width: 22px;
   height: 20px;
@@ -656,7 +706,8 @@ td,
 
 .sheet {
   background: transparent;
-  width: min(1100px, 96vw);
+  width: 100%;
+  max-width: none;
   position: relative;
   --elective-swish-a: var(--ba-body);
   --elective-swish-b: var(--software-body);
@@ -679,7 +730,9 @@ td,
 }
 
 .sidebar {
-  width: 300px;
+  width: 280px;
+  max-width: 300px;
+  min-width: 150px;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
   border: 2px solid var(--sidebar-border);
@@ -688,7 +741,7 @@ td,
   --sidebar-pressed-end: #f6faff;
   box-shadow: 0 0 0 6px #000;
   padding: 8px 8px;
-  position: static;
+  position: relative;
   top: auto;
   z-index: auto;
   overflow: visible;
@@ -715,7 +768,7 @@ td,
 .student-data-preview a:hover,
 .student-data-preview a:focus-visible {
   text-decoration: none;
-  color: #7ad0ff;
+  color: var(--bright-blue);
 }
 
 .sidebar b,
@@ -738,7 +791,7 @@ td,
 }
 
 .drop-sidebar {
-  position: static;
+  position: relative;
   top: auto;
   z-index: auto;
   display: flex;
@@ -753,13 +806,95 @@ td,
 }
 
 .drop-sidebar.is-active {
-  width: 320px;
+  width: 266px;
+  max-width: 280px;
+  min-width: 140px;
+  /* Left sidebar shrinks after the (middle) sidebar, but before the main content. */
+  flex: 0 1 auto;
   padding: 8px 8px;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
   border: 2px solid var(--sidebar-border);
   box-shadow: 0 0 0 6px #000;
   align-items: stretch;
+}
+
+/* Panel resize handles (sidebars + main content). Mirrors modal resize affordances. */
+.panel-resize-handle {
+  position: absolute;
+  z-index: 6;
+  background: transparent;
+  touch-action: none;
+}
+
+.panel-resize-n,
+.panel-resize-s {
+  left: 10px;
+  right: 10px;
+  height: 10px;
+}
+
+.panel-resize-n {
+  top: -6px;
+  cursor: n-resize;
+}
+
+.panel-resize-s {
+  bottom: -6px;
+  cursor: s-resize;
+}
+
+.panel-resize-e,
+.panel-resize-w {
+  top: 10px;
+  bottom: 10px;
+  width: 10px;
+}
+
+.panel-resize-e {
+  right: -6px;
+  cursor: e-resize;
+}
+
+.panel-resize-w {
+  left: -6px;
+  cursor: w-resize;
+}
+
+.panel-resize-ne,
+.panel-resize-nw,
+.panel-resize-se,
+.panel-resize-sw {
+  width: 14px;
+  height: 14px;
+}
+
+.panel-resize-ne {
+  top: -6px;
+  right: -6px;
+  cursor: ne-resize;
+}
+
+.panel-resize-nw {
+  top: -6px;
+  left: -6px;
+  cursor: nw-resize;
+}
+
+.panel-resize-se {
+  bottom: -6px;
+  right: -6px;
+  cursor: se-resize;
+}
+
+.panel-resize-sw {
+  bottom: -6px;
+  left: -6px;
+  cursor: sw-resize;
+}
+
+.panel-resizable.is-resizing {
+  user-select: none;
 }
 
 .drop-sidebar.is-active .drop-zone {
@@ -846,12 +981,12 @@ td,
 .buttons .clear-button {
   flex: 1 1 0;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 4px 2px;
 }
 
 .sidebar-section {
-  margin-bottom: 6px;
-  padding: 4px 4px;
+  margin-bottom: 1px;
+  padding: 2px 4px;
   border: 1px solid var(--sidebar-border);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
@@ -915,9 +1050,11 @@ td,
   0% {
     box-shadow: 0 0 0 0 rgba(70, 150, 255, 0.7);
   }
+
   70% {
     box-shadow: 0 0 0 14px rgba(70, 150, 255, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(70, 150, 255, 0);
   }
@@ -925,7 +1062,7 @@ td,
 
 .major-toggle {
   width: 100%;
-  padding: 5px 10px;
+  padding: 5x 6px 5px 0px;
   border-radius: 4px;
   border: 1px solid #444;
   background: #1c1c1c;
@@ -1139,7 +1276,7 @@ td,
 }
 
 .available-list .available-item.available-item-success {
-  color: var(--bright-green);
+  color: var(--bright-blue);
   font-weight: 700;
   cursor: default;
   background-color: black;
@@ -1211,7 +1348,7 @@ td,
     inset 0 0 0 1px rgba(10, 70, 140, 0.35);
   font-weight: 400;
   left: 8px;
-  width:calc(100% - 8px);
+  width: calc(100% - 8px);
 }
 
 .available-item:hover {
@@ -1430,7 +1567,7 @@ td,
 
 .clear-button {
   width: 100%;
-  padding: 6px 12px;
+  padding: 3px 12px;
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #f7f9ff;
   border: 1px solid var(--btn-primary-border);
@@ -1542,16 +1679,23 @@ td,
 .triage-in-strata-add {
   appearance: none;
   border: 1px solid var(--btn-primary-border);
+
   background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
-  color: #f7f9ff;
+  color: #fff;
   font: inherit;
-  font-weight: 400;
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   margin-left: 4px;
+}
+
+.triage-in-strata-add:before {
+  content: "Add: ";
+  display: inline-block;
+  margin-right: 4px;
 }
 
 .triage-in-strata-code {
@@ -1580,7 +1724,7 @@ td,
 
 .triage-sharepoint-link:hover,
 .triage-sharepoint-link:focus-visible {
-  color: #7ad0ff;
+  color: var(--bright-blue);
   text-decoration: none;
 }
 
@@ -1629,7 +1773,7 @@ td,
   max-height: 300px;
 }
 
-.triage-comment-line + .triage-comment-line {
+.triage-comment-line+.triage-comment-line {
   margin-top: 6px;
 }
 
@@ -1667,7 +1811,7 @@ td,
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 10px 0;
+  margin: 4px 0;
 }
 
 .load-extra-row {
@@ -1699,8 +1843,8 @@ td,
 .switch {
   position: relative;
   display: inline-block;
-  width: 56px;
-  height: 28px;
+  width: 34px;
+  height: 20px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -1728,8 +1872,8 @@ td,
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 12px;
+  width: 12px;
   left: 4px;
   bottom: 3px;
   background-color: #1d6fd1;
@@ -1754,7 +1898,7 @@ input:disabled+.slider:before {
 }
 
 input:checked+.slider:before {
-  transform: translateX(26px);
+  transform: translateX(14px);
   background: #f7f9ff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
@@ -1793,6 +1937,7 @@ input:checked+.slider:before {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
+  position: relative;
   background: transparent;
   color: #fff;
   font-size: 26px;
@@ -1834,9 +1979,24 @@ input:checked+.slider:before {
   text-align: left;
   min-width: 0;
   font-size: 28px;
+  line-height: 1.2;
   margin: 0;
   padding: 0;
   background: transparent;
+}
+
+#main-content h1.title-h1-compact {
+  font-size: 1rem;
+}
+
+#main-content h1.title-h1-bottom-docked {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .title-text {
@@ -1865,7 +2025,8 @@ input:checked+.slider:before {
 
 .subject-counts {
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  line-height: .85rem;
   font-weight: 400;
   text-align: right;
   display: none;
@@ -1891,6 +2052,13 @@ input:checked+.slider:before {
 
 .subject-counts-item {
   cursor: default;
+}
+
+.subject-counts.all-complete,
+.subject-counts.all-complete .subject-counts-line,
+.subject-counts.all-complete .subject-counts-item {
+  color: var(--bright-blue) !important;
+  font-weight: 700 !important;
 }
 
 .counts-mismatch {
@@ -2121,13 +2289,30 @@ input:checked+.slider:before {
 #container {
   padding: 12px 18px 18px;
   width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   box-sizing: border-box;
   border-radius: 12px !important;
   background: #fff;
   border: 1px solid white;
 
+}
+
+#container.is-graduated-24 {
+  /* Targetable state: exactly fully graduated (24 completed, no remaining, no selected). */
+}
+
+body.graduate-highlight #container {
+  background: #353535;
+}
+
+body.graduate-highlight .electives-label,
+body.graduate-highlight .info-card {
+  visibility: hidden;
+}
+
+body.graduate-highlight .key {
+  display: none;
 }
 
 .main-grid {
@@ -2136,11 +2321,71 @@ input:checked+.slider:before {
   gap: 8px;
   margin-bottom: 18px;
   width: 100%;
-  align-items: stretch;
+  /* Let cards be content-height instead of row-stretching to the tallest item. */
+  align-items: start;
 }
 
-body.graduate-highlight .main-grid .subject-card {
-  border: 2px solid var(--bright-green);
+body.graduate-highlight .main-grid .subject-card,
+body.graduate-highlight .main-grid .completed,
+body.graduate-highlight .subject-card.completed.elective-stream,
+body.graduate-highlight .subject-card.completed.elective,
+body.graduate-highlight .main-grid .completed:not(.locked) {
+  filter: brightness(1) opacity(1);
+
+}
+
+body.graduate-highlight .locked:not(.placeholder-card) {
+  display: none;
+}
+
+/* Graduated: show specified electives in their normal (not-completed) colours */
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.network:not(.placeholder-card) {
+  background: var(--network-body) !important;
+  border-color: var(--network-band) !important;
+}
+
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.ba:not(.placeholder-card) {
+  background: var(--ba-body) !important;
+  border-color: var(--ba-band) !important;
+}
+
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.software:not(.placeholder-card),
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.sd-elective:not(.placeholder-card) {
+  background: var(--software-body) !important;
+  border-color: var(--software-band) !important;
+}
+
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.dual:not(.placeholder-card),
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.dual-split:not(.placeholder-card) {
+  background: var(--dual-body) !important;
+  border-color: var(--dual-band) !important;
+}
+
+/* Keep BIT245 dual-split visual when graduated (override flat dual body). */
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream.dual-split[data-subject="BIT245"]:not(.placeholder-card) {
+  background:
+    linear-gradient(165deg,
+      var(--ba-band) 0%,
+      var(--ba-band) 50%,
+      var(--software-band) 50%,
+      var(--software-band) 100%) 0 0 / 100% var(--card-band-height) no-repeat,
+    linear-gradient(165deg,
+      var(--ba-body) 0%,
+      var(--ba-body) calc(50% - 10px),
+      var(--software-body) calc(50% + 10px),
+      var(--software-body) 100%) !important;
+  border-color: var(--dual-band) !important;
+}
+
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:not(.placeholder-card) .subject-code,
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:not(.placeholder-card) .subject-note,
+body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:not(.placeholder-card) .prerequsites-note {
+  color: #222 !important;
+}
+
+.subject-card.completed.locked:not(.elective-placeholder):not(.electives-full) {
+  filter: brightness(0.9) opacity(0.6);
+  background-color: rgb(245, 213, 165) !important;
 }
 
 .electives-grid {
@@ -2148,6 +2393,7 @@ body.graduate-highlight .main-grid .subject-card {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
+  align-items: start;
 }
 
 .elective-spacer {
@@ -2174,13 +2420,15 @@ body.graduate-highlight .main-grid .subject-card {
 
 .subject-card {
   position: relative;
-  padding: 12px 12px 14px;
+  padding: 6px 4px 0px 4px;
+  min-width: 0;
   border-radius: var(--card-radius);
   border: 1px rgb(237, 235, 235) solid;
   box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
+  line-height: 1.15em;
   justify-content: flex-start;
   align-items: flex-start;
   text-align: left;
@@ -2190,8 +2438,7 @@ body.graduate-highlight .main-grid .subject-card {
       #f9f9f9 var(--card-band-height),
       #f9f9f9 100%);
   transition: transform 0.2s ease, box-shadow 0.24s ease, filter 0.18s ease;
-  min-height: var(--card-min-height);
-  max-height: var(--card-max-height);
+
 }
 
 .subject-card.core {
@@ -2489,6 +2736,7 @@ body.graduate-highlight .main-grid .subject-card {
   font-weight: 700;
   font-size: 1.1em;
   display: block;
+  margin-bottom: 0px;
 }
 
 .completed .subject-code {
@@ -2533,14 +2781,22 @@ body.graduate-highlight .main-grid .subject-card {
 .subject-note {
   font-weight: 400;
   display: block;
-  margin-bottom: 2px;
+  margin: 0px;
+  line-height: 1.15em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 
 .prerequsites-note {
   font-size: 0.85em !important;
   font-style: italic;
-
+  line-height: 1.05em;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .prerequsites-note.reqs-met {
@@ -2594,9 +2850,11 @@ body.graduate-highlight .main-grid .subject-card {
 }
 
 .info-card {
+
   cursor: default;
-  padding-left: 14px;
-  line-height: 1.3em;
+  padding-left: 10px;
+  padding-top: 2px;
+  line-height: 1.1em;
   padding-top: 4px;
   box-shadow: none;
   border: 1px dashed #9b9898;
@@ -2650,22 +2908,34 @@ body.graduate-highlight .main-grid .subject-card {
   border: 1px solid #bababa;
   margin-top: 12px;
   padding: 4px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0px 12px;
+  align-items: start;
+}
+
+.key>div:first-child {
+  grid-column: 1 / -1;
 }
 
 .key-row {
+  grid-column: 1;
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 3px;
+  flex-wrap: nowrap;
   margin-top: 3px;
+  border: 1px solid #dadada;
+  padding: 6px;
 }
 
 .key-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid #dadada;
-  padding: 3px 3px;
-  min-width: 160px;
+  border: none;
+  padding: 2px 0;
+  min-width: 0;
 }
 
 .swatch {
@@ -2722,8 +2992,34 @@ body.graduate-highlight .main-grid .subject-card {
   position: relative;
 }
 
-#available-heading {
-  width: 100%;
+.available-heading-row {
+  display: flex;
+  gap: 8px;
+  margin: 0 2px;
+}
+
+.available-heading-row .available-heading {
+  width: auto;
+  margin: 0;
+  flex: 1 1 0;
+}
+
+#select-by-typing-modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#select-by-typing-modal .modal-actions .clear-button {
+  width: auto;
+  flex: 0 0 auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Extra safety: never show staff-only quick-entry button in student mode. */
+body.student-mode #select-by-typing-button {
+  display: none !important;
 }
 
 #show-timetable {
@@ -2767,7 +3063,8 @@ body.graduate-highlight .main-grid .subject-card {
 }
 
 .footnote {
-  margin-top: 10px;
+  grid-column: 2;
+  margin-top: 3px;
   color: #111;
   line-height: 1.4;
   border: 1px solid #dddbdb;
@@ -2792,11 +3089,11 @@ body.graduate-highlight .main-grid .subject-card {
   position: relative;
   overflow: hidden;
   transform: translateY(2px);
-box-shadow:
+  box-shadow:
     inset 4px 0 4px rgba(0, 0, 0, 0.25),
     inset -4px 0 4px rgba(0, 0, 0, 0.25),
     inset 0 -4px 8px rgba(0, 0, 0, 0.32);
-} 
+}
 
 .toggled.show-tooltip,
 .toggled.hover-active {
@@ -2835,6 +3132,32 @@ box-shadow:
 
 .toggled.current-enrolment::before {
   content: "In student record";
+}
+
+.completed.current-enrolment::before {
+  content: "In student record";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  transform: none;
+  bottom: 4px;
+  background: #1d6fd1;
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border-top: 1px solid #0d3b74;
+  border-bottom: 1.5px solid #011753;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+  width: auto;
+  background: linear-gradient(to right,
+      #0c4080 0%,
+      #1b75e4 10%,
+      #1b75e4 90%,
+      #0c4080 100%);
 }
 
 .current-enrolment-withdrawn::before {
@@ -3044,8 +3367,15 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
     width: 95%;
   }
 
+  /* Small devices: allow horizontal scrolling instead of forced wrapping/crushing. */
+  .page {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
   .main-content {
     overflow: visible;
+    min-width: 0;
   }
 }
 
@@ -3056,14 +3386,14 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 
 .alternate-semester-label {
   position: absolute;
-  right: 33px;
+  right: 20px;
   left: auto;
   top: var(--card-band-height);
   transform: none;
-  background: rgba(182, 181, 181, 0.25);
+  background: rgba(255, 255, 255, 0.65);
   color: #000;
   font-size: .8em;
-  padding: 1px 4px !important;
+  padding: 1px 4px 2px 4px!important;
   pointer-events: none;
   z-index: 3;
   border: 1px solid #b9b8b8;
@@ -3071,11 +3401,19 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   border-radius: 0 0 4px 4px;
   width: 72px;
   text-align: center;
-  line-height: 1.2em;
+  line-height: .95em;
 }
 
 .alternate-semester-label .alt-sem-line {
   display: block;
+}
+
+body.main-grid-narrow-751 .main-grid .alternate-semester-label {
+  top: auto;
+  bottom: 0;
+  border-top: 1px solid #b9b8b8;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
 }
 
 .not-this-sem .subject-note {
@@ -3131,7 +3469,10 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   opacity: 1 !important;
 }
 
-.completed.not-this-sem .alternate-semester-label,
+.completed.not-this-sem .alternate-semester-label {
+  display: block !important;
+}
+
 .completed.not-this-sem .not-running-tooltip {
   display: none !important;
 }
@@ -3247,11 +3588,15 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 /* Allow elective placeholders to show guidance tooltips in completed (credits) mode */
 .completed-mode .elective-placeholder .hover-zone,
 .completed-mode .elective-placeholder .subject-tooltip {
-  pointer-events: auto;
   display: block;
 }
 
+.completed-mode .elective-placeholder .hover-zone {
+  pointer-events: auto;
+}
+
 .completed-mode .elective-placeholder .subject-tooltip {
+  pointer-events: none;
   top: 88%;
   transform: translateY(-12%);
   border: 1px solid #bdbdbd;
@@ -3274,33 +3619,33 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   border-radius: 4px;
 }
 
+/* Keep staff + student behaviour consistent: table is content-sized, modal clamps to viewport. */
 #timetable-modal .modal {
   display: inline-block;
-  width: max-content;
+  width: auto;
   max-width: 98vw;
   min-width: 360px;
   overflow: visible;
 }
 
-#timetable-modal .timetable-table-wrapper {
-  width: max-content;
-  max-width: none;
-  overflow-x: visible;
+#timetable-modal .modal-body {
+  overflow: visible;
+  width: auto;
+  max-width: 98vw;
 }
 
-#timetable-table {
+#timetable-modal .timetable-table-wrapper {
+  width: auto;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#timetable-modal #timetable-table {
   width: max-content;
   max-width: none;
   border-collapse: collapse;
   font-size: 13px;
   table-layout: auto;
-  white-space: normal;
-}
-
-#timetable-modal .modal-body {
-  overflow: visible;
-  width: max-content;
-  max-width: 98vw;
 }
 
 #timetable-modal .modal-header {
@@ -3310,8 +3655,8 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 
 #timetable-table th,
 #timetable-table td {
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
+  word-break: normal;
   box-sizing: border-box;
 }
 
@@ -3396,11 +3741,12 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 }
 
 .current-enrolments {
-  margin-top: 10px;
-  padding: 8px;
-  border: 1px solid #cfcfcf;
-  border-radius: 6px;
-  background: #f8f8f8;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .current-enrolments-title {
@@ -3422,7 +3768,7 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 }
 
 .remaining-summary {
-  margin: 0 0 8px;
+  margin: 8px 0 4px;
   color: #111;
   line-height: 1.35;
 }
@@ -3436,12 +3782,12 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 }
 
 .remaining-count {
-  color: #1f6fd6;
+  color: #2400a7;
+  font-weight: 900;
 }
 
 .remaining-electives-count {
   margin: 0 0 6px;
-  font-weight: 700;
 }
 
 .remaining-electives-section {
@@ -3583,7 +3929,7 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 
 #remaining-modal .subject-table-actions {
   position: sticky;
-  bottom: 0;
+  bottom: -8px;
   background: #fff;
   padding-top: 8px;
   z-index: 2;
@@ -3688,8 +4034,14 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   padding: 4px 12px;
 }
 
+.timetable-fee-paragraph.census strong,
+.timetable-fee-paragraph strong {
+  font-size: 1..05em;
+  font-weight: 800;
+}
+
 .timetable-fees {
-  margin: 8px 0 6px;
+  margin: 8px auto 6px;
   padding: 6px 8px;
   border: 1px solid #cfcfcf;
   border-left: 6px solid #6aa84f;
@@ -3697,10 +4049,47 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   font-size: 0.9rem;
   line-height: 1.35;
   width: 100%;
-  max-width: 100%;
+  /* Keep paragraphs readable and ensure they never drive modal width. */
+  max-width: 980px;
   box-sizing: border-box;
   white-space: normal;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Ensure fee lines/paragraphs wrap even if some other rule introduces nowrap. */
+#timetable-fees .timetable-fee-line,
+#timetable-fees .timetable-fee-paragraph,
+#timetable-fees .timetable-fee-note {
+  white-space: normal !important;
+}
+
+#timetable-fees .timetable-fee-paragraph {
+  margin-bottom: 8px;
+}
+
+#timetable-fees .timetable-fee-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.timetable-fee-spacer {
+  height: 18px;
+}
+
+.timetable-fee-label-underline {
+  text-decoration: underline;
+  text-decoration-color: #1a73e8;
+  text-underline-offset: 2px;
+}
+
+.timetable-fee-link {
+  color: #1a73e8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.timetable-fee-link:visited {
+  color: #1a73e8;
 }
 
 .timetable-fee-note {
@@ -3713,6 +4102,14 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 }
 
 .timetable-fee-line.fee-hidden {
+  display: none;
+}
+
+.timetable-fee-hideable {
+  cursor: pointer;
+}
+
+.timetable-fee-hideable.fee-hidden {
   display: none;
 }
 
@@ -3787,11 +4184,11 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   padding: 4px 0;
 }
 
-.email-scripts-access-row > button:nth-of-type(1) {
+.email-scripts-access-row>button:nth-of-type(1) {
   grid-column: 1;
 }
 
-.email-scripts-access-row > button:nth-of-type(2) {
+.email-scripts-access-row>button:nth-of-type(2) {
   grid-column: 2;
 }
 
@@ -3806,9 +4203,12 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 
 .email-scripts-access-row>* {
   grid-row: 1;
-}.email-scripts-access-row .clear-button{
-  box-shadow:none;
 }
+
+.email-scripts-access-row .clear-button {
+  box-shadow: none;
+}
+
 .email-scripts-access-icon {
   width: 22px;
   padding-top: 1px;
@@ -3843,6 +4243,24 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   align-items: center;
   gap: 0;
   width: 100%;
+}
+
+/* Scroll hint: show a subtle fade just above sticky action rows when more content exists below. */
+.subject-table-actions::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -22px;
+  height: 22px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.modal-body.scroll-more-below .subject-table-actions::before {
+  opacity: 1;
 }
 
 .subject-table-actions .modal-copy-codes {
@@ -3958,7 +4376,7 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   padding-left: 18px;
 }
 
-.changed-codes-list li + li {
+.changed-codes-list li+li {
   margin-top: 6px;
 }
 
@@ -4035,17 +4453,28 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 .completed {
   position: relative;
   cursor: default;
-  filter:  brightness(.85) grayscale(0.0) opacity(0.79);
-  outline: 1px solid #000 !important;
+  filter: brightness(1.1) opacity(.8) grayscale(0.0);
+  filter: brightness(.7) opacity(0.89) grayscale(0.0);
+
   transform: translateY(2px);
-  box-shadow: none;;
+  box-shadow: none;
+  ;
 }
-.completed span {font-weight:400!important;}
 
-.subject-card.completed {
-border-color: color-mix(in srgb, var(--completed-bg, #333) 70%, #000 30%) !important;
-
+/* Keep completed elective placeholders visually consistent with other completed cards (non-graduated). */
+body:not(.graduate-highlight) .subject-card.completed.electives-full {
+  --completed-bg: var(--completed-elective-bg);
+  --completed-text: var(--completed-elective-text);
+  background: var(--completed-bg) !important;
+  background-color: var(--completed-bg) !important;
+  border-color: color-mix(in srgb, var(--completed-bg) 70%, #000 30%) !important;
+  filter: brightness(.7) opacity(0.89) grayscale(0.0);
 }
+
+.completed span {
+  font-weight: 400 !important;
+}
+
 
 .subject-card.completed>.subject-code::after {
   color: var(--completed-text, #cfcfcf);
@@ -4117,9 +4546,15 @@ border-color: color-mix(in srgb, var(--completed-bg, #333) 70%, #000 30%) !impor
   --completed-text: var(--completed-dual-text);
 }
 
-.subject-card.completed.elective-stream {
-  background: var(--completed-bg) !important;
-  border-color: color-mix(in srgb, var(--completed-bg) 70%, #000 30%) !important;
+body:not(.graduate-highlight) .subject-card.completed.elective-stream {
+  /* Match completed specified electives to completed USE cards (top band + neutral body). */
+  background: linear-gradient(to bottom,
+      var(--elective-band) 0%,
+      var(--elective-band) var(--card-band-height),
+      var(--elective-body) var(--card-band-height),
+      var(--elective-body) 100%) !important;
+  border-color: color-mix(in srgb, var(--elective-band) 70%, #000 30%) !important;
+  --completed-text: var(--completed-elective-text);
   color: var(--completed-text, #cfcfcf);
 }
 
@@ -4195,28 +4630,9 @@ border-color: color-mix(in srgb, var(--completed-bg, #333) 70%, #000 30%) !impor
 }
 
 .completed::after {
-  /*
-  content: "Completed";
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  transform: translateX(-50%);
-  width: 100%;
-  background: #818181;
-  color: #080808;
-  font-size: 11px;
-  padding: 2px 2px;
-  border-top: 1px solid #686767;
-  border-bottom: 1px solid #3a3a3a;
-  text-align: center;
-  box-sizing: border-box;
-  z-index: 5;
-  background: linear-gradient(to right,
-      #818181 0%,
-      #a5a4a4 10%,
-      #b3b2b2 90%,
-      #818181 100%);
-      */
+  /* Legacy completed badge removed globally. */
+  content: none !important;
+  display: none !important;
 }
 
 .completed.completed-pending::after {
@@ -4252,6 +4668,12 @@ body.completed-mode .completed:hover::after {
   content: none;
 }
 
+/* Do not show legacy "Completed" badge on elective placeholder cards (USE credits). */
+.subject-card.elective.placeholder-card.completed::after,
+.subject-card.elective.filled-elective.completed::after {
+  content: none !important;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -4265,6 +4687,54 @@ body.completed-mode .completed:hover::after {
 
 .modal-overlay.show {
   display: flex;
+}
+
+#container-popout-modal {
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3vh 3vw;
+}
+
+#container-popout-modal .container-popout-modal-box {
+  width: 94vw;
+  max-width: 94vw;
+  height: 94vh;
+  max-height: 94vh;
+  min-width: min(640px, 94vw);
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+#container-popout-modal .container-popout-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+}
+
+#container-popout-modal .container-popout-modal-body {
+  overflow: auto;
+  min-height: 0;
+  padding: 10px;
+}
+
+#container-popout-modal .container-popout-rail {
+  border-left: 1px solid #c8c8c8;
+  background: #f2f2f2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px;
+  overflow-y: auto;
+}
+
+#container-popout-modal .container-popout-modal-body #container {
+  width: 100%;
+  max-width: none;
 }
 
 .modal {
@@ -4292,12 +4762,15 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-modal {
-  width: min(1582px, 96vw);
-  max-width: none;
-  max-height: none;
-  overflow: auto;
-  resize: both;
-  min-width: 888px;
+  /* Default to ~90% of viewport width on open. */
+  width: 90vw;
+  max-width: 96vw;
+  /* Fill the viewport height, respecting the overlay padding (16px top/bottom). */
+  height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
+  /* Keep scrollbars on the inner `.modal-body` only. */
+  overflow: hidden;
+  min-width: min(888px, 90vw);
   min-height: 360px;
   display: flex;
   flex-direction: column;
@@ -4305,8 +4778,9 @@ body.completed-mode .completed:hover::after {
 
 .course-map-modal .modal-body {
   flex: 1 1 auto;
-  overflow: auto;
-  font-size: 1.2em;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: .9rem;
   display: flex;
   flex-direction: column;
 }
@@ -4334,27 +4808,29 @@ body.completed-mode .completed:hover::after {
   right: 0;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 24px;
+  padding-top: 16px;
 }
 
 .course-map-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   position: relative;
   flex: 1 1 auto;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .course-map-core-block,
 .course-map-streams-block {
   border-radius: 6px;
-  padding: 8px;
+  padding: 4px;
 }
 
 .course-map-streams-block {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
   background: transparent;
   position: relative;
   --course-map-col-width: calc((100% - 140px) / 7);
@@ -4363,7 +4839,7 @@ body.completed-mode .completed:hover::after {
 .course-map-core-block {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  gap: 2px;
   border: none;
   background: transparent;
   padding: 0;
@@ -4373,26 +4849,44 @@ body.completed-mode .completed:hover::after {
 .course-map-grid {
   display: grid;
   grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
-  gap: 4px;
+  gap: 2px;
 }
 
 .course-map-cell {
   border: 1px solid #cfcfcf;
   background: #fff;
-  padding: 6px;
-  min-height: 62px;
+  padding: 3px;
+  min-height: 48px;
+  /* Font scaling is driven via JS by setting `--course-map-cell-font-size` on the course map modal. */
+  font-size: var(--course-map-cell-font-size, 1em);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   color: #000;
 }
 
+.course-map-cell[data-subject="BIT245"] {
+  /* Make BIT245 stand out (shared/dual stream) with a visible shadow on all sides. */
+  position: relative;
+  z-index: 6;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    0 -2px 4px rgba(0, 0, 0, 0.12);
+  border: .5px solid #cfcfcf;
+  margin-left: 2px;
+}
+
 .course-map-cell .course-map-code {
   font-weight: 600;
+  /* Force code/name to scale with the cell font size (some rules elsewhere use fixed units). */
+  font-size: 1em !important;
+  line-height: 1.1;
 }
 
 .course-map-cell .course-map-name {
   font-weight: 400;
+  font-size: 1em !important;
+  line-height: 1.1;
 }
 
 .course-map-placeholder {
@@ -4452,6 +4946,16 @@ body.completed-mode .completed:hover::after {
   transform: translate(-50%, -50%);
 }
 
+#course-map-modal.course-map-major-ba .course-map-placeholder[data-placeholder="bit245-ba"]::after,
+#course-map-modal.course-map-major-sd .course-map-placeholder[data-placeholder="bit245-ba"]::after {
+  top: calc(50% - 3px);
+}
+
+#course-map-modal.course-map-major-ba .course-map-placeholder[data-placeholder="bit245-sd"]::after,
+#course-map-modal.course-map-major-sd .course-map-placeholder[data-placeholder="bit245-sd"]::after {
+  top: calc(50% + 3px);
+}
+
 #course-map-modal.course-map-major-sd .course-map-placeholder[data-placeholder="bit245-ba"],
 #course-map-modal.course-map-major-ba .course-map-placeholder[data-placeholder="bit245-sd"] {
   border-color: transparent;
@@ -4508,11 +5012,23 @@ body.completed-mode .completed:hover::after {
   background: #fff !important;
 }
 
+#course-map-modal.course-map-prereq-off .course-map-placeholder:not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected) {
+  background: #fff !important;
+}
+
 #course-map-modal.course-map-prereq-off .course-map-cell,
 #course-map-modal.course-map-prereq-off .course-map-cell .course-map-code,
 #course-map-modal.course-map-prereq-off .course-map-cell .course-map-name,
 #course-map-modal.course-map-prereq-off .course-map-prereqs {
   color: #000 !important;
+}
+
+/* Exception: keep selected subjects white-on-blue even when prereq colours are off. */
+#course-map-modal.course-map-prereq-off .course-map-status-selected,
+#course-map-modal.course-map-prereq-off .course-map-status-selected .course-map-code,
+#course-map-modal.course-map-prereq-off .course-map-status-selected .course-map-name,
+#course-map-modal.course-map-prereq-off .course-map-status-selected .course-map-prereqs {
+  color: #fff !important;
 }
 
 #course-map-modal.course-map-prereq-text-off .course-map-prereqs {
@@ -4521,28 +5037,19 @@ body.completed-mode .completed:hover::after {
 
 .course-map-prereqs {
   margin-top: 4px;
-  font-size: 0.95em;
+  font-size: 0.8em !important;
   color: #1f1f1f;
-}
-
-.course-map-modal {
-  font-size: var(--course-map-font-scale, 1em);
-}
-
-.course-map-modal * {
-  font-size: inherit;
 }
 
 .course-map-key,
 .course-map-key-item {
-  font-size: 1..05em;
+  font-size: 1.05em;
 }
 
 #course-map-font-decrease,
 #course-map-font-increase {
   min-width: 0;
-  padding: 0 4px;
-  font-size: 1.2em;
+  font-size: 1em;
 }
 
 .course-map-status-later .course-map-prereqs {
@@ -4553,7 +5060,7 @@ body.completed-mode .completed:hover::after {
   display: grid;
   grid-template-columns: 140px repeat(7, minmax(0, 1fr));
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   border: none;
   padding: 0;
   pointer-events: auto;
@@ -4599,7 +5106,8 @@ body.completed-mode .completed:hover::after {
 .course-map-stream-label .stream-name {
   display: block;
   font-size: 1.1em;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .course-map-stream-label .stream-descriptor {
@@ -4652,7 +5160,8 @@ body.completed-mode .completed:hover::after {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 4;
+  /* Above cell borders/box-shadows so connectors don't look "cut off". */
+  z-index: 8;
 }
 
 .course-map-core-connector .connector-h,
@@ -4738,7 +5247,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-major-ns .course-map-shared-cell:not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected) {
-  border: 0.5px solid #AcAcAc;
+  border: 0.5px solid #444;
 }
 
 .course-map-shared-cell.bit245-overlay {
@@ -4809,10 +5318,10 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-notes {
-  width: 280px;
-  max-width: 280px;
-  background: #effaff;
-  border: 2px solid #DDD;
+  width: 308px;
+  max-width: 308px;
+  background: #ffffff;
+  border: 2px solid #9a9a9a;
   border-radius: 26px;
   padding: 16px 18px;
   color: #0b3d91;
@@ -4823,8 +5332,7 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-notes.course-map-notes-overlap {
-  max-width: 230px;
-  top: 300px;
+  max-width: 253px;
 }
 
 
@@ -4894,9 +5402,86 @@ body.completed-mode .completed:hover::after {
   z-index: 3;
 }
 
+#course-map-modal .modal-actions .course-map-left-actions {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+#course-map-modal .modal-actions .course-map-image-actions {
+  display: flex;
+  gap: 8px;
+}
+
+#close-course-map-key {
+  font-weight: 800;
+}
+
+#course-map-modal .course-map-key-open #open-course-map-key {
+  /* Key panel opens over the action row; hide the opener while open. */
+  visibility: hidden;
+}
+
+#course-map-modal .course-map-key-panel {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: min(390px, calc(100% - 16px));
+  max-height: min(60vh, 520px);
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px 12px;
+  z-index: 8;
+  display: none;
+}
+
+#course-map-modal .course-map-key-panel.show {
+  display: block;
+}
+
+#course-map-modal .course-map-key-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#course-map-modal .course-map-key-panel-title {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #111;
+  flex: 1 1 auto;
+}
+
+#course-map-modal .course-map-key-panel-body {
+  overflow: auto;
+  max-height: calc(60vh - 60px);
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+#course-map-modal .course-map-key-panel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 3px 0;
+  white-space: normal;
+}
+
+#course-map-modal .course-map-key-panel-swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #7c7c7c;
+  background: #fff;
+  flex: 0 0 auto;
+  margin-top: 0px;
+}
+
 #course-map-modal .modal-actions .clear-button {
   width: auto;
-  min-width: 120px;
+  min-width: 0;
   padding: 0 16px;
 }
 
@@ -4938,7 +5523,6 @@ body.completed-mode .completed:hover::after {
   flex-direction: column;
   padding: 14.4px;
   overflow: hidden;
-  resize: both;
   min-width: 520px;
   min-height: 360px;
 }
@@ -5254,8 +5838,7 @@ body.completed-mode .completed:hover::after {
 
 .semester-timetable-subtitle {
   font-weight: 700;
-  margin-top: 2px;
-  margin-bottom: 8px
+  margin-top: 12px;
 }
 
 .semester-timetable-subtitle-note {
@@ -5263,19 +5846,19 @@ body.completed-mode .completed:hover::after {
 }
 
 .semester-timetable-not-running {
-  margin-top: 12px;
-  padding: 4.5px;
+  margin-top: 2px;
   border: 0.5px solid rgba(120, 120, 120, 0.5);
   border-radius: 6px;
   background: #f2f2f2;
+  padding-left: 20px;
 }
 
 .semester-timetable-not-running-list {
   list-style: none;
-  padding: 0;
-  margin: 1.8px 0 0;
+  padding: 6px;
+  margin: 1.8px 0 0 0px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: stretch;
   gap: 4px;
 }
@@ -5284,7 +5867,6 @@ body.completed-mode .completed:hover::after {
   background: transparent;
   border: 0;
   border-radius: 0;
-  padding: 0;
   display: block;
 }
 
@@ -5300,8 +5882,9 @@ body.completed-mode .completed:hover::after {
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
-  flex: 0 0 calc(40% - 2px);
-  margin-left: 10px;
+  width: 369px;
+  flex: 0 0 auto;
+  margin-left: 28px;
 }
 
 .semester-timetable-not-running-item .semester-timetable-code {
@@ -5397,6 +5980,84 @@ body.completed-mode .completed:hover::after {
   z-index: 5;
 }
 
+#semester-timetable-modal .modal-resizer,
+#course-map-modal .modal-resizer {
+  display: none;
+}
+
+.modal-resize-handle {
+  position: absolute;
+  z-index: 6;
+  background: transparent;
+  touch-action: none;
+}
+
+.modal-resize-n,
+.modal-resize-s {
+  left: 10px;
+  right: 10px;
+  height: 10px;
+}
+
+.modal-resize-n {
+  top: -6px;
+  cursor: n-resize;
+}
+
+.modal-resize-s {
+  bottom: -6px;
+  cursor: s-resize;
+}
+
+.modal-resize-e,
+.modal-resize-w {
+  top: 10px;
+  bottom: 10px;
+  width: 10px;
+}
+
+.modal-resize-e {
+  right: -6px;
+  cursor: e-resize;
+}
+
+.modal-resize-w {
+  left: -6px;
+  cursor: w-resize;
+}
+
+.modal-resize-ne,
+.modal-resize-nw,
+.modal-resize-se,
+.modal-resize-sw {
+  width: 14px;
+  height: 14px;
+}
+
+.modal-resize-ne {
+  top: -6px;
+  right: -6px;
+  cursor: ne-resize;
+}
+
+.modal-resize-nw {
+  top: -6px;
+  left: -6px;
+  cursor: nw-resize;
+}
+
+.modal-resize-se {
+  bottom: -6px;
+  right: -6px;
+  cursor: se-resize;
+}
+
+.modal-resize-sw {
+  bottom: -6px;
+  left: -6px;
+  cursor: sw-resize;
+}
+
 #semester-timetable-modal .modal-resizer {
   right: -10px;
   bottom: -10px;
@@ -5445,6 +6106,12 @@ body.completed-mode .completed:hover::after {
   line-height: 1.2;
 }
 
+#timetable-title .timetable-date,
+#timetable-title .timetable-title-strong {
+  /* Override `.modal * { font-size: ... }` so inline spans match the title size. */
+  font-size: inherit;
+}
+
 #alert-modal .modal {
   padding-top: 10px;
   width: 90%;
@@ -5486,6 +6153,7 @@ body.completed-mode .completed:hover::after {
   bottom: 0;
   z-index: 2;
 }
+
 #code-modal .modal-actions .code-modal-presets {
   display: flex;
   flex-direction: column;
@@ -5731,7 +6399,7 @@ body.completed-mode .completed:hover::after {
 }
 
 .load-row .load-button {
-  padding: 7px 10px;
+  padding: 3px 6px;
   width: 80px;
 }
 
@@ -5766,17 +6434,21 @@ body.completed-mode .completed:hover::after {
     font-size: 0.78rem;
   }
 
+  .modal-title {
+    font-size: 1.2rem !important;
+  }
+
   .page {
-    padding: 10px;
+    padding: 6px 26px 6px 6px;
     gap: 8px;
   }
 
   .sheet {
-    width: min(920px, 92vw);
+    width: 100%;
   }
 
   .sidebar {
-    width: 230px;
+    width: 280px;
     padding: 10px;
   }
 
@@ -5814,18 +6486,22 @@ body.completed-mode .completed:hover::after {
     font-size: 0.82rem;
   }
 
+  .modal-title {
+    font-size: 1.1rem !important;
+  }
+
   .page {
-    padding: 12px;
+    padding: 6px 26px 6px 6px;
     gap: 10px;
   }
 
 
   .sheet {
-    width: min(960px, 94vw);
+    width: 100%;
   }
 
   .sidebar {
-    width: 240px;
+    width: 280px;
     padding: 12px;
   }
 }
@@ -5862,10 +6538,10 @@ body.completed-mode .completed:hover::after {
 
 
   .sheet {
-    width: min(880px, 92vw);
+    width: 100%;
   }
 
   .sidebar {
-    width: 260px;
+    width: 280px;
   }
 }

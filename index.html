@@ -36,13 +36,30 @@ Created: December 30, 2025
   <div class="page">
     <aside id="drop-sidebar" class="drop-sidebar" aria-label="Student workbook drop zone">
       <div id="folder-shortcuts-panel" class="folder-shortcuts-panel hidden-initial" aria-label="Folder shortcuts">
-        <button id="folder-shortcut-semester" class="folder-shortcut-btn hidden-initial" type="button"></button>
-        <button id="folder-shortcut-student-forms" class="folder-shortcut-btn hidden-initial" type="button"></button>
-        <button id="folder-shortcut-teacher" class="folder-shortcut-btn hidden-initial" type="button"></button>
-        <button id="folder-shortcut-help" class="folder-shortcut-btn folder-shortcut-help hidden-initial" type="button" aria-label="Folder helper setup">?</button>
+        <div class="folder-shortcuts-row">
+          <button id="folder-shortcut-semester" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-student-forms" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-teacher" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-help" class="folder-shortcut-btn folder-shortcut-help hidden-initial"
+            type="button" aria-label="Folder helper setup">?</button>
+        </div>
+        <div class="folder-shortcuts-row folder-shortcuts-row-credit">
+          <button id="folder-shortcut-credit-sp" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-credit-local" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-credit-sugg" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-credit-strat"
+            class="folder-shortcut-btn folder-shortcut-btn-credit hidden-initial" type="button"></button>
+          <button id="folder-shortcut-credit-crt" class="folder-shortcut-btn folder-shortcut-btn-credit hidden-initial"
+            type="button"></button>
+          <button id="folder-shortcut-credit-mp" class="folder-shortcut-btn folder-shortcut-btn-credit hidden-initial"
+            type="button"></button>
+          <button id="folder-shortcut-credit-fmp" class="folder-shortcut-btn folder-shortcut-btn-credit hidden-initial"
+            type="button"></button>
+        </div>
       </div>
       <div id="drop-zone" class="drop-zone">
-        <div class="drop-zone-text">Drop students workbook here (plus Email Scripts and Triage if you wish).<br><br>Or click to auto-load by providing your local Enrolments folder.</div>
+        <div class="drop-zone-text">Drop students workbook here (plus Email Scripts and Triage if you wish).<br><br>Or
+          click to auto-load by providing your local Enrolments folder.</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
@@ -59,16 +76,20 @@ Created: December 30, 2025
     <aside class="sidebar">
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
-          aria-controls="instructions-modal" aria-expanded="false" data-tooltip="Open a quick guide to using this Subject Planner web site.">Instructions</button>
+          aria-controls="instructions-modal" aria-expanded="false"
+          data-tooltip="Open a quick guide to using this Subject Planner web site.">Instructions</button>
       </div>
       <div class="sidebar-section reset-section" id="reset-section">
-        <button id="clear-selections" class="clear-button" data-tooltip="Clear your current selections and start fresh.">Reset</button>
+        <button id="clear-selections" class="clear-button"
+          data-tooltip="Clear your current selections and start fresh.">Reset</button>
       </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
-            class="sidebar-section-descriptor" data-tooltip-html="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
+            id="major-section-descriptor" class="sidebar-section-descriptor"
+            data-tooltip-html="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
             By <b>2nd semester or 2nd year</b><br> - You should have decided what your major will be.  You'll need to start completing those subjects, being careful not to study too many Electives (which will be subjects from the other 2 streams) and preparing yourself for Capstone
-            <br>What is <b>Capstone</b>? <br>Capstone is BIT371 and BIT372.<br>It is a 1 year project focused on your major. You must have 3 major subjects completed before you can start BIT371 and 5 completed for BIT372'<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><b>Major.</b> Select what's likely.</span></div>
+            <br>What is <b>Capstone</b>? <br>Capstone is BIT371 and BIT372.<br>It is a 1 year project focused on your major. You must have 3 major subjects completed before you can start BIT371 and 5 completed for BIT372'<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><b>Major.</b>
+            Select what's likely for you.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
             <span id="major-current-label">Unsure (using Network Security)</span>
@@ -85,13 +106,17 @@ Created: December 30, 2025
       <div class="sidebar-section ">
         <div class="sidebar-heading-with-text dim-when-complete">
           <span class="sidebar-heading">2.</span>
-          <span class="sidebar-section-descriptor" data-tooltip-html="Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><span class="inline-strong" >History.</span> Enter your passes & credits</span>
+          <span class="sidebar-section-descriptor" id="history-section-descriptor"
+            data-tooltip-html="Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><span
+              class="inline-strong">History.</span> Enter your passes & credits</span>
         </div>
         <div class="buttons">
           <button id="toggle-completed-mode" class="clear-button" aria-pressed="false" data-tooltip-html="Go into '<b>History mode</b>'.
             <br>Then you'll be able to add subjects to your history by clicking on subject cards in the main grid to the right.<br>
             Then click on this button again to go back to normal mode.">Clicking mode</button>
-          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false" data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">Typing mode</button>
+          <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false"
+            data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">By
+            typing</button>
         </div>
       </div>
 
@@ -99,15 +124,24 @@ Created: December 30, 2025
         <div class="sidebar-heading-with-text" data-tooltip-html="You have 3 Options for selecting your subjects.
         1. Click on the subjects in this sidebar.
         2. Click on subjects in the main grid to the right.
-        3. Click the 'Available Now' button and select subjects in the window that opens up.
-        <br>After you select your full load of subjects, you will see a '<b>Your Semester Plan</b>' button appear" ><span class="sidebar-heading">3.</span>
-          <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the subjects below or in grid to right, or use this 'Available now' popup.</span>
-          </div>
+        3. Click the 'Select' button and select subjects in the window that opens up.
+        <br>After you select your full load of subjects, you will see a '<b>Your Semester Plan</b>' button appear">
+          <span class="sidebar-heading">3.</span>
+          <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the
+            subjects below or in grid to right, or use this 'Select' popup.</span>
+        </div>
         <div id="selected-list-section">
-          <button class="clear-button available-heading" id="available-heading" type="button"
-            aria-label="Show available subjects" data-tooltip-html="Open a window that shows you the subjects you can study this sememster
-	  <br>You can click on them to make your selections for this semester.
-	  <br>When you have chosen your full load of subjects, the window will switch to showing your final timetable">Available now</button>
+          <div class="available-heading-row">
+            <button class="clear-button available-heading" id="available-heading" type="button"
+              aria-label="Show available subjects"
+              data-tooltip-html="Open a window that shows you the subjects you can study this sememster
+	    <br>You can click on them to make your selections for this semester.
+	    <br>When you have chosen your full load of subjects, the window will switch to showing your final timetable">Select</button>
+            <button class="clear-button available-heading secondary" id="select-by-typing-button" type="button" hidden
+              aria-label="Select subjects by typing"
+              data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">By
+              typing</button>
+          </div>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
           <div class="toggle-row load-row">
@@ -115,28 +149,32 @@ Created: December 30, 2025
               A Student Visa condition is that students must study a full load where possible.<br>
               <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
               <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
-              This website uses this count to determine when you've selected your full complement of subjects">Will study 4 subjects</span>
-            <button id="vary-load" class="clear-button secondary load-button" type="button" data-tooltip="Will you be studying a full load of 4 subjects, or something else?">Change</button>
+              This website uses this count to determine when you've selected your full complement of subjects">Will
+              study 4 subjects</span>
+            <button id="vary-load" class="clear-button secondary load-button" type="button"
+              data-tooltip="Will you be studying a full load of 4 subjects, or something else?">Change</button>
           </div>
-            <div class="toggle-row" data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
-              <label class="switch">
-                <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label dim-when-complete">Override prerequisites</span>
-            </div>
-            <div class="toggle-row pass-enrolments-tooltip" data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;">
-              <label class="switch">
-                <input type="checkbox" id="pass-for-enrolments" aria-label="Pass for enrolments">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label">Pass the current enrolments</span>
-            </div>
-            <div class="toggle-row hidden-initial" id="live-prereq-row">
-              <label class="switch">
-                <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
-                <span class="slider"></span>
-              </label>
+          <div class="toggle-row"
+            data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
+            <label class="switch">
+              <input type="checkbox" id="override-toggle" aria-label="Override prerequisites">
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label dim-when-complete">Override prerequisites</span>
+          </div>
+          <div class="toggle-row pass-enrolments-tooltip"
+            data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;">
+            <label class="switch">
+              <input type="checkbox" id="pass-for-enrolments" aria-label="Pass for enrolments">
+              <span class="slider"></span>
+            </label>
+            <span class="switch-label">Pass the current enrolments</span>
+          </div>
+          <div class="toggle-row hidden-initial" id="live-prereq-row">
+            <label class="switch">
+              <input type="checkbox" id="live-prereq-toggle" aria-label="Live prerequisite updates">
+              <span class="slider"></span>
+            </label>
             <span class="switch-label">Live prerequisite updates</span>
           </div>
           <div class="toggle-row" data-tooltip-html="Eable if you want to see how many semesters it is going to take, at minimum, to complete each subject. 
@@ -149,18 +187,22 @@ Created: December 30, 2025
           </div>
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
-            <button id="open-remaining" class="clear-button secondary" type="button" data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining subjects</button>
+            <button id="open-remaining" class="clear-button secondary" type="button"
+              data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining
+              subjects</button>
             <button id="open-course-map" class="clear-button secondary" type="button" data-tooltip-html="Open the course map.
             <br>It shows all the subjects in our course (that is, all the subjects you can see to the right), but organised differently.
             <br>It's not interactive.
-            <br>It may give you a clearer understanding of what's needed and where your history fits in.">Course Map</button>
+            <br>It may give you a clearer understanding of what's needed and where your history fits in.">Course
+              Map</button>
             <button id="open-next-semester" class="clear-button secondary" type="button">Next semester options</button>
           </div>
         </div>
 
       </div>
       <div class="sidebar-section semester-timetable-section dim-when-complete">
-        <button id="show-semester-timetable" class="clear-button secondary" type="button" data-tooltip="See the complete semester offering from our school.">Full Semester Timetable</button>
+        <button id="show-semester-timetable" class="clear-button secondary" type="button"
+          data-tooltip="See the complete semester offering from our school.">Full Semester Timetable</button>
       </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
@@ -168,7 +210,7 @@ Created: December 30, 2025
         <div class="title">
           <div id="title-alerts" class="title-alerts">
             <div class="title-buttons">
-              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Error</button>
+              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Alert</button>
               <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
               <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
             </div>
@@ -176,8 +218,9 @@ Created: December 30, 2025
           <div class="title-text">
             <div class="title-heading">
               <button id="open-semester-timetable-icon" class="title-icon" type="button"
-                aria-label="Show full Bachelor of IT timetable" data-tooltip="Show full Bachelor of IT timetable"></button>
-              <h1>Your subject planner</h1>
+                aria-label="Show full Bachelor of IT timetable"
+                data-tooltip="Show full Bachelor of IT timetable"></button>
+              <h1>Timetable Planner</h1>
             </div>
           </div>
           <div class="title-right">
@@ -425,10 +468,12 @@ Created: December 30, 2025
               <div class="sas-inline"></div>
               SAS enabled subjects. Two certificates available<br>
               <ul class="sas-notes-list">
-              <li>SAS Academic Specialisation in IT Analytics for completion of core subjects (BIT106, BIT231, BIT112) and 1 of the BA subjects BIT355 or BIT356.<br></li>
-              <li> Academic Specialisation in Software Development Analytics for completion of core subjects (BIT106, BIT231, BIT112) and the SD subject BIT358.</li>
+                <li>SAS Academic Specialisation in IT Analytics for completion of core subjects (BIT106, BIT231, BIT112)
+                  and 1 of the BA subjects BIT355 or BIT356.<br></li>
+                <li> Academic Specialisation in Software Development Analytics for completion of core subjects (BIT106,
+                  BIT231, BIT112) and the SD subject BIT358.</li>
               </ul>
-          </div>
+            </div>
           </div>
         </div>
       </div>
@@ -441,13 +486,17 @@ Created: December 30, 2025
         <button class="modal-close" id="close-instructions-modal" aria-label="Close instructions">X</button>
       </div>
       <div class="modal-body">
-        <p><strong>Quick guide:</strong> Use this web site to record completed subjects (your passes and credit transfers if you have any), see a list of subjects that you can study this semester, and then build your timetable.</p>
+        <p><strong>Quick guide:</strong> Use this web site to record completed subjects (your passes and credit
+          transfers if you have any), see a list of subjects that you can study this semester, and then build your
+          timetable.</p>
         <ol class="instructions-list">
           <li>
             <p><strong>Step 1:</strong> Pick your major from the dropdown at the top of the sidebar.</p>
             <p>By <strong>second semester</strong>, choose a stream:
               <strong>Network Security</strong>, <strong>Business Analytics</strong>, or <strong>Software
-                Development</strong> and give some focus to completing subjects in that stream. Changing stream after that may delay graduation.</p>
+                Development</strong> and give some focus to completing subjects in that stream. Changing stream after
+              that may delay graduation.
+            </p>
             <p>In <strong>first semester</strong>, it’s okay to leave this as <strong>Undecided</strong>. The planner
               uses Network Security as a placeholder only - you can switch next semester.</p>
           </li>
@@ -456,18 +505,19 @@ Created: December 30, 2025
             <p>There are two easy ways:</p>
             <ul class="instructions-sublist">
               <li><strong>Clicking mode:</strong> Click subjects in the grid to mark them completed.</li>
-              <li><strong>Typing mode:</strong> Paste or type subject codes (e.g. BIT111, USE101). Extra text, spaces, or
+              <li><strong>Typing mode:</strong> Paste or type subject codes (e.g. BIT111, USE101). Extra text, spaces,
+                or
                 subject names don’t matter—the codes are pulled out automatically.</li>
             </ul>
-                        <p>Completed subjects will darken in the grid, and your <strong>available subjects</strong> will update
-                          based on prerequisites.</p>
+            <p>Completed subjects will darken in the grid, and your <strong>available subjects</strong> will update
+              based on prerequisites.</p>
           </li>
           <li>
             <p><strong>Step 3:</strong> Choose your timetable by selecting subjects. Three ways:</p>
             <ol class="instructions-sublist">
               <li>Click subjects in the main grid.</li>
-              <li>Click a subject in the sidebar under <strong>Available now</strong>.</li>
-              <li>Open the <strong>Available Now</strong> panel and click subjects there.</li>
+              <li>Click a subject in the sidebar under <strong>Select</strong>.</li>
+              <li>Open the <strong>Select</strong> panel and click subjects there.</li>
             </ol>
             <p><br>
 
@@ -478,7 +528,8 @@ Created: December 30, 2025
     </div>
   </div>
   <div id="semester-timetable-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal semester-timetable-modal" role="dialog" aria-modal="true" aria-labelledby="semester-timetable-title">
+    <div class="modal semester-timetable-modal" role="dialog" aria-modal="true"
+      aria-labelledby="semester-timetable-title">
       <div class="modal-header">
         <div class="modal-title" id="semester-timetable-title">The full Bachelor of IT semester timetable</div>
         <button class="modal-close" id="close-semester-timetable" aria-label="Close Semester timetable">X</button>
@@ -533,24 +584,41 @@ Created: December 30, 2025
         <p>Paste block of text and subject codes will be extracted. Or type them in.</p>
         <textarea id="code-input" rows="10"></textarea>
       </div>
-        <div class="modal-actions">
-          <div class="code-modal-presets">
-            <div class="code-modal-presets-buttons" role="group" aria-label="Preset subject lists">
-              <button id="preset-fmp-assoc" class="clear-button secondary" type="button">FMP Assoc Deg</button>
-              <button id="preset-fmp-dip" class="clear-button secondary" type="button">FMP Dip</button>
-              <button id="preset-mp-dip" class="clear-button secondary" type="button">MP Dip</button>
-              <button id="preset-mp-dip-old" class="clear-button secondary" type="button">MP Dip old</button>
-            </div>
-            <div class="code-modal-presets-caption">
-              <div>Articulation agreements</div>
-              <div>(Credit Transfers)</div>
-            </div>
+      <div class="modal-actions">
+        <div class="code-modal-presets">
+          <div class="code-modal-presets-buttons" role="group" aria-label="Preset subject lists">
+            <button id="preset-fmp-assoc" class="clear-button secondary" type="button">FMP Assoc Deg</button>
+            <button id="preset-fmp-dip" class="clear-button secondary" type="button">FMP Dip</button>
+            <button id="preset-mp-dip" class="clear-button secondary" type="button">MP Dip</button>
+            <button id="preset-mp-dip-old" class="clear-button secondary" type="button">MP Dip old</button>
           </div>
-          <div class="code-modal-actions-right">
-            <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
-            <button id="apply-code-modal" class="clear-button">Apply subjects</button>
+          <div class="code-modal-presets-caption">
+            <div>Articulation agreements</div>
+            <div>(Credit Transfers)</div>
           </div>
         </div>
+        <div class="code-modal-actions-right">
+          <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
+          <button id="apply-code-modal" class="clear-button">Apply subjects</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="select-by-typing-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="select-by-typing-title">
+      <div class="modal-header">
+        <div class="modal-title" id="select-by-typing-title">Enter subject selections for this semester</div>
+        <button class="modal-close" id="close-select-by-typing-modal" aria-label="Close modal">X</button>
+      </div>
+      <div class="modal-body">
+        <p>Paste or type your subject selections.<br>Subject codes are expected, such as BIT121 or 121. Subject names
+          will be ignored.<br>Entries can be on one line or (with shift-enter) over multiple lines</p>
+        <textarea id="select-by-typing-input" rows="4"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="apply-select-by-typing-modal" class="clear-button" type="button">Go</button>
+        <button id="cancel-select-by-typing-modal" class="clear-button secondary" type="button">Cancel</button>
+      </div>
     </div>
   </div>
   <div id="alert-modal" class="modal-overlay" aria-hidden="true">
@@ -573,6 +641,15 @@ Created: December 30, 2025
           <p class="current-enrolments-title">Current Enrolments in your student record:</p>
           <div class="timetable-table-wrapper">
             <table id="current-enrolments-table" class="subject-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Result</th>
+                  <th>Date</th>
+                  <th>Core/Stream</th>
+                </tr>
+              </thead>
               <tbody></tbody>
             </table>
           </div>
@@ -614,13 +691,13 @@ Created: December 30, 2025
         <div class="timetable-actions subject-table-actions">
           <button id="copy-history-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
+            <span class="clipboard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path
+                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                  fill="currentColor" />
+              </svg>
+            </span>
           </button>
           <div class="modal-action-group">
             <button id="copy-history" class="clear-button secondary" type="button">
@@ -641,9 +718,9 @@ Created: December 30, 2025
             <button id="close-history-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
-        </div>
       </div>
     </div>
+  </div>
   </div>
   <div id="remaining-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal subject-list-modal" role="dialog" aria-modal="true" aria-labelledby="remaining-title">
@@ -666,7 +743,7 @@ Created: December 30, 2025
           </table>
         </div>
         <div id="remaining-electives-section" class="remaining-electives-section" hidden>
-          <div class="semester-timetable-subtitle">Elective Options. Our course has 4 Electives</div>
+          <div class="semester-timetable-subtitle">All students must complete 4 Elecitives.</div>
           <div id="remaining-electives-count" class="remaining-electives-count"></div>
           <div class="timetable-table-wrapper">
             <table id="remaining-electives-table" class="subject-table">
@@ -684,13 +761,13 @@ Created: December 30, 2025
         <div class="timetable-actions subject-table-actions">
           <button id="copy-remaining-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
+            <span class="clipboard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path
+                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                  fill="currentColor" />
+              </svg>
+            </span>
           </button>
           <div class="modal-action-group">
             <button id="copy-remaining" class="clear-button secondary" type="button">
@@ -708,9 +785,9 @@ Created: December 30, 2025
             <button id="close-remaining-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
-        </div>
       </div>
     </div>
+  </div>
   </div>
   <div id="course-map-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal course-map-modal" role="dialog" aria-modal="true" aria-labelledby="course-map-title">
@@ -720,34 +797,37 @@ Created: December 30, 2025
       </div>
       <div class="modal-body">
         <div id="course-map-content" class="course-map-content"></div>
-        <div id="course-map-key" class="course-map-key"></div>
       </div>
-        <div class="modal-actions">
+      <div class="modal-actions">
+        <div class="course-map-left-actions">
+          <button id="open-course-map-key" class="clear-button secondary" type="button">Show Colour Key</button>
+        </div>
+        <button id="toggle-course-map-prereq" class="clear-button secondary" type="button" aria-pressed="true">Prereq
+          colours on</button>
+        <button id="toggle-course-map-prereq-text" class="clear-button secondary" type="button"
+          aria-pressed="true">Prereq text on</button>
+        <button id="toggle-course-map-indicators" class="clear-button secondary" type="button"
+          aria-pressed="true">Stream indicators on</button>
+        <button id="course-map-font-decrease" class="clear-button secondary" type="button"
+          aria-label="Decrease course map font size">Font -</button>
+        <button id="course-map-font-increase" class="clear-button secondary" type="button"
+          aria-label="Increase course map font size">Font +</button>
+        <div class="course-map-image-actions">
           <button id="copy-course-map-image" class="clear-button secondary" type="button"
-            data-tooltip="Copy the course map image to the clipboard.">
-          <span class="clipboard-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="img" focusable="false">
-              <path
-                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                fill="currentColor" />
-            </svg>
-            </span>
-            Copy image
-          </button>
-          <button id="toggle-course-map-prereq" class="clear-button secondary" type="button"
-            aria-pressed="true">Prereq colours on</button>
-          <button id="toggle-course-map-prereq-text" class="clear-button secondary" type="button"
-            aria-pressed="true">Prereq text on</button>
-          <button id="toggle-course-map-indicators" class="clear-button secondary" type="button"
-            aria-pressed="true">Stream indicators on</button>
-          <button id="course-map-font-decrease" class="clear-button secondary" type="button"
-            aria-label="Decrease course map font size">-</button>
-          <button id="course-map-font-increase" class="clear-button secondary" type="button"
-            aria-label="Increase course map font size">+</button>
+            data-tooltip="Copy the course map to your clipboard as an image.">Copy image</button>
           <button id="download-course-map-image" class="clear-button secondary" type="button"
             data-tooltip="Download the course map as an image.">Download image</button>
-          <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
         </div>
+        <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+      <div id="course-map-key-modal" class="course-map-key-panel" role="dialog" aria-modal="false"
+        aria-labelledby="course-map-key-title" aria-hidden="true">
+        <div class="course-map-key-panel-header">
+          <div class="course-map-key-panel-title" id="course-map-key-title">Colour Key</div>
+          <button class="modal-close" id="close-course-map-key" aria-label="Close colour key">X</button>
+        </div>
+        <div class="course-map-key-panel-body" id="course-map-key-modal-body"></div>
+      </div>
     </div>
   </div>
   <div id="next-semester-modal" class="modal-overlay" aria-hidden="true">
@@ -772,13 +852,13 @@ Created: December 30, 2025
         <div class="timetable-actions subject-table-actions">
           <button id="copy-next-semester-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
+            <span class="clipboard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path
+                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                  fill="currentColor" />
+              </svg>
+            </span>
           </button>
           <div class="modal-action-group">
             <button id="copy-next-semester" class="clear-button secondary" type="button">
@@ -794,9 +874,9 @@ Created: December 30, 2025
             <button id="close-next-semester-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
-        </div>
       </div>
     </div>
+  </div>
   </div>
   <div id="timetable-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
@@ -825,13 +905,13 @@ Created: December 30, 2025
         <div class="timetable-actions subject-table-actions">
           <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
             aria-label="Copy subject codes" title="Copy subject codes">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
+            <span class="clipboard-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path
+                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                  fill="currentColor" />
+              </svg>
+            </span>
           </button>
           <div class="modal-action-group">
             <button id="copy-timetable" class="clear-button secondary" type="button">
@@ -844,14 +924,6 @@ Created: December 30, 2025
               </span>
               Copy
             </button>
-            <button id="download-timetable-image" class="clear-button secondary" type="button">
-              <span class="email-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-4l-2 2h-4l-2-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm8 4a4 4 0 1 0 0 8a4 4 0 0 0 0-8zm0 2.1a1.9 1.9 0 1 1 0 3.8a1.9 1.9 0 0 1 0-3.8z" fill="currentColor" />
-                </svg>
-              </span>
-              Image
-            </button>
             <button id="copy-student-declaration" class="clear-button secondary" type="button">
               StudDec
             </button>
@@ -859,7 +931,9 @@ Created: December 30, 2025
               <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                    <path
+                      d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                      fill="currentColor" />
                   </svg>
                 </span>
                 Primary
@@ -867,7 +941,9 @@ Created: December 30, 2025
               <button id="email-institute" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                    <path
+                      d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                      fill="currentColor" />
                   </svg>
                 </span>
                 Institute
@@ -875,7 +951,9 @@ Created: December 30, 2025
               <button id="email-both" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                    <path
+                      d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                      fill="currentColor" />
                   </svg>
                 </span>
                 Both
@@ -884,22 +962,25 @@ Created: December 30, 2025
             <button id="hide-timetable" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
-        </div>
       </div>
     </div>
-    </main>
+  </div>
+  </main>
   </div>
   <div id="email-scripts-access-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal email-scripts-access-modal" role="dialog" aria-modal="true" aria-labelledby="email-scripts-access-title">
+    <div class="modal email-scripts-access-modal" role="dialog" aria-modal="true"
+      aria-labelledby="email-scripts-access-title">
       <div class="modal-header">
         <div class="modal-title" id="email-scripts-access-title">Email Scripts - Clipboard and Email</div>
-        <button class="modal-close" id="close-email-scripts-access" aria-label="Close Email Scripts access modal">X</button>
+        <button class="modal-close" id="close-email-scripts-access"
+          aria-label="Close Email Scripts access modal">X</button>
       </div>
       <div class="modal-body">
         <div class="email-scripts-access-list" role="list">
           <div class="email-scripts-access-row" role="listitem">
             <div class="email-scripts-access-text">Student Declaration for ongoing students</div>
-            <button id="email-scripts-copy-student-declaration" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Copy Student Declaration to clipboard">
+            <button id="email-scripts-copy-student-declaration" class="clear-button secondary email-scripts-access-icon"
+              type="button" aria-label="Copy Student Declaration to clipboard">
               <span class="clipboard-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
                   <path
@@ -908,17 +989,22 @@ Created: December 30, 2025
                 </svg>
               </span>
             </button>
-            <button id="email-scripts-open-email-docx" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Open Email Scripts document">
+            <button id="email-scripts-open-email-docx" class="clear-button secondary email-scripts-access-icon"
+              type="button" aria-label="Open Email Scripts document">
               <span class="email-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                  <path
+                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                    fill="currentColor" />
                 </svg>
               </span>
             </button>
           </div>
           <div class="email-scripts-access-row" role="listitem">
-            <div class="email-scripts-access-text">Supports (at risk) - Counselling etc.</div>
-            <button id="email-scripts-copy-supports-at-risk" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Copy Supports at risk text to clipboard">
+            <div class="email-scripts-access-text">Student Dec returned</div>
+            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-copy" type="button"
+              data-section-key="student-dec-returned" data-section-label="Student Dec returned"
+              aria-label="Copy Student Dec returned text to clipboard">
               <span class="clipboard-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
                   <path
@@ -927,10 +1013,89 @@ Created: December 30, 2025
                 </svg>
               </span>
             </button>
-            <button id="email-scripts-email-supports-at-risk" class="clear-button secondary email-scripts-access-icon" type="button" aria-label="Email Supports at risk text">
+            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-email" type="button"
+              data-section-key="student-dec-returned" data-section-label="Student Dec returned"
+              aria-label="Email Student Dec returned text">
               <span class="email-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" />
+                  <path
+                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div class="email-scripts-access-row" role="listitem">
+            <div class="email-scripts-access-text">Link to Start Application</div>
+            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-copy" type="button"
+              data-section-key="link-to-start-application" data-section-label="Link to Start Application"
+              aria-label="Copy Link to Start Application text to clipboard">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-email" type="button"
+              data-section-key="link-to-start-application" data-section-label="Link to Start Application"
+              aria-label="Email Link to Start Application text">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div class="email-scripts-access-row" role="listitem">
+            <div class="email-scripts-access-text">Online progression - classes entered</div>
+            <button id="email-scripts-copy-online-progression-classes-entered"
+              class="clear-button secondary email-scripts-access-icon" type="button"
+              aria-label="Copy Online progression classes entered text to clipboard">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+            <button id="email-scripts-email-online-progression-classes-entered"
+              class="clear-button secondary email-scripts-access-icon" type="button"
+              aria-label="Email Online progression classes entered text">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <div class="email-scripts-access-row" role="listitem">
+            <div class="email-scripts-access-text">Online progress - selections look good. classes entered</div>
+            <button id="email-scripts-copy-online-progress-selections-look-good-classes-entered"
+              class="clear-button secondary email-scripts-access-icon" type="button"
+              aria-label="Copy Online progress selections look good classes entered text to clipboard">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+            <button id="email-scripts-email-online-progress-selections-look-good-classes-entered"
+              class="clear-button secondary email-scripts-access-icon" type="button"
+              aria-label="Email Online progress selections look good classes entered text">
+              <span class="email-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                    fill="currentColor" />
                 </svg>
               </span>
             </button>
@@ -983,9 +1148,20 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
+  <div id="container-popout-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal container-popout-modal-box" role="dialog" aria-modal="true" aria-label="Planner Grid popout">
+      <div class="container-popout-shell">
+        <div class="modal-body container-popout-modal-body" id="container-popout-modal-body"></div>
+        <aside class="container-popout-rail" aria-label="Popout controls">
+          <button class="modal-close" id="close-container-popout-top" aria-label="Close grid popout">X</button>
+          <button id="close-container-popout-bottom" class="clear-button secondary" type="button">Close</button>
+        </aside>
+      </div>
+    </div>
+  </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260208-17"></script>
+  <script src="script.js?v=20260208-20"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 12 Jan 2026</div>
@@ -993,6 +1169,3 @@ Created: December 30, 2025
 </body>
 
 </html>
-
-
-

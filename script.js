@@ -43,6 +43,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const mainGrid = document.querySelector('.main-grid');
   const electivesGrid = document.querySelector('.electives-grid');
+  const MAIN_GRID_NARROW_CLASS = 'main-grid-narrow-751';
+  const MAIN_GRID_NARROW_BREAKPOINT = 751;
+  const updateMainGridNarrowClass = () => {
+    if (!mainGrid) return;
+    const width = mainGrid.getBoundingClientRect().width;
+    document.body.classList.toggle(MAIN_GRID_NARROW_CLASS, width < MAIN_GRID_NARROW_BREAKPOINT);
+  };
   const isElectivesGridCell = (cell) => !!(cell && electivesGrid && electivesGrid.contains(cell));
   const mainGridCells = normalizeSlotCells(mainGrid);
   const mainGridSlots = new Map(mainGridCells.map((cell) => [cell.dataset.slot, cell]));
@@ -248,6 +255,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const codesButton = document.getElementById('btn-codes');
   const subjectCountsEl = document.getElementById('subject-counts');
   const titleAlerts = document.getElementById('title-alerts');
+  const mainTitleBar = document.querySelector('.title');
+  const mainTitleHeading = document.querySelector('.title-heading h1');
 
   const updateAlertBoxVisibility = () => {
     if (!titleAlerts) return;
@@ -255,6 +264,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       (btn) => btn && !btn.classList.contains('hidden')
     );
     titleAlerts.classList.toggle('is-collapsed', !hasVisible);
+    queueMainTitleWrapStateUpdate();
   };
 
   const hideAllAlertButtons = () => {
@@ -263,16 +273,69 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     updateAlertBoxVisibility();
   };
+  const getElementLineHeight = (el) => {
+    if (!el) return 0;
+    const styles = window.getComputedStyle(el);
+    const lineHeightRaw = styles.lineHeight;
+    if (lineHeightRaw && lineHeightRaw !== 'normal') {
+      const parsed = parseFloat(lineHeightRaw);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    const fontSize = parseFloat(styles.fontSize || '0');
+    if (Number.isFinite(fontSize) && fontSize > 0) return fontSize * 1.2;
+    return 0;
+  };
+  const isElementTextWrapping = (el) => {
+    if (!el) return false;
+    const lineHeight = getElementLineHeight(el);
+    if (!lineHeight) return false;
+    const renderedHeight = Math.max(el.scrollHeight, el.getBoundingClientRect().height);
+    return renderedHeight > lineHeight * 1.3;
+  };
+  const updateMainTitleWrapState = () => {
+    if (!mainTitleHeading || !mainTitleBar) return;
+    mainTitleHeading.classList.remove('title-h1-compact', 'title-h1-bottom-docked');
+    mainTitleBar.classList.remove('title-h1-bottom-docked');
+
+    if (!isElementTextWrapping(mainTitleHeading)) return;
+    mainTitleHeading.classList.add('title-h1-compact');
+    if (!isElementTextWrapping(mainTitleHeading)) return;
+    mainTitleHeading.classList.add('title-h1-bottom-docked');
+    mainTitleBar.classList.add('title-h1-bottom-docked');
+  };
+  let mainTitleWrapRaf = 0;
+  const queueMainTitleWrapStateUpdate = () => {
+    if (mainTitleWrapRaf) cancelAnimationFrame(mainTitleWrapRaf);
+    mainTitleWrapRaf = requestAnimationFrame(() => {
+      mainTitleWrapRaf = 0;
+      updateMainTitleWrapState();
+    });
+  };
   hideAllAlertButtons();
+  queueMainTitleWrapStateUpdate();
   const dropZone = document.getElementById('drop-zone');
   const dropSidebar = document.getElementById('drop-sidebar');
   const folderShortcutsPanel = document.getElementById('folder-shortcuts-panel');
   const folderShortcutSemesterButton = document.getElementById('folder-shortcut-semester');
   const folderShortcutStudentFormsButton = document.getElementById('folder-shortcut-student-forms');
   const folderShortcutTeacherButton = document.getElementById('folder-shortcut-teacher');
+  const folderShortcutCreditSharePointButton = document.getElementById('folder-shortcut-credit-sp');
+  const folderShortcutCreditLocalButton = document.getElementById('folder-shortcut-credit-local');
+  const folderShortcutCreditSuggestionsButton = document.getElementById('folder-shortcut-credit-sugg');
+  const folderShortcutCreditStrategyButton = document.getElementById('folder-shortcut-credit-strat');
+  const folderShortcutCreditFormButton = document.getElementById('folder-shortcut-credit-crt');
+  const folderShortcutCreditMpArticulationButton = document.getElementById('folder-shortcut-credit-mp');
+  const folderShortcutCreditFmpArticulationButton = document.getElementById('folder-shortcut-credit-fmp');
   const folderShortcutHelpButton = document.getElementById('folder-shortcut-help');
+  const CREDIT_TRANSFERS_SHAREPOINT_URL = 'https://melbournepolytechnic.sharepoint.com/sites/BachelorofInformationTechnologyOperations/Shared%20Documents/Forms/AllItems.aspx?FolderCTID=0x012000792227319628994C8FDC6DDDE436E67C&isAscending=true&id=%2Fsites%2FBachelorofInformationTechnologyOperations%2FShared%20Documents%2FGeneral%2Fcredit%20transfers&sortField=LinkFilename&viewid=e570e16a-6813-4ed0-91af-90efd90079bf';
+  const CREDIT_TRANSFERS_LOCAL_FALLBACK = 'C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\credit transfers';
+  const CREDIT_TRANSFERS_SUGGESTIONS_FALLBACK = 'C:\\Users\\{PROFILE}\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\{INTAKE}\\Supporting Documents\\Credits Transfers\\Suggestions';
+  const CREDIT_TRANSFERS_DOCS_ROOT_FALLBACK = 'C:\\Users\\{PROFILE}\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\{INTAKE}\\Supporting Documents\\Credits Transfers';
   const ENROL_PROTOCOL_INSTALL_COMMAND = 'powershell -NoProfile -ExecutionPolicy Bypass -File .\\install-enrol-protocol.ps1';
   const ENROL_PROTOCOL_ENABLED_KEY = 'subjectPlannerEnrolProtocolEnabled';
+  const TEACHER_FOLDER_FALLBACK_BY_PROFILE = {
+    addve: 'Antony',
+  };
   const isEnrolProtocolEnabled = () => {
     try {
       return window.localStorage?.getItem(ENROL_PROTOCOL_ENABLED_KEY) === '1';
@@ -296,8 +359,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let folderHelpPopupOverlay = null;
   let folderHelpPopupStatus = null;
   let folderHelpPopupCopyButton = null;
-  let folderHelpPopupEnableButton = null;
-  let folderHelpPopupFallbackButton = null;
+  let folderHelpPopupToggleButton = null;
   let folderHelpPopupCloseButton = null;
   const hideFolderShortcutHelpPopup = () => {
     if (!folderHelpPopupOverlay) return;
@@ -322,8 +384,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
       const body = document.createElement('div');
       body.className = 'folder-help-body';
-      body.textContent = 'Windows users: Open a Command window at the folder that holds this web site.  Then run this code:';
-
+      body.textContent = 'Windows users: To make it possible to open folders by clicking on the buttons, you need to first run this code in a Command window:';
       const cmdRow = document.createElement('div');
       cmdRow.className = 'folder-help-command-row';
 
@@ -347,21 +408,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const actions = document.createElement('div');
       actions.className = 'folder-help-actions';
 
-      const fallbackBtn = document.createElement('button');
-      fallbackBtn.type = 'button';
-      fallbackBtn.className = 'clear-button secondary folder-help-fallback';
-
-      const enableBtn = document.createElement('button');
-      enableBtn.type = 'button';
-      enableBtn.className = 'clear-button folder-help-enable';
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'clear-button folder-help-enable';
 
       const closeBtn = document.createElement('button');
       closeBtn.type = 'button';
       closeBtn.className = 'clear-button secondary folder-help-close';
       closeBtn.textContent = 'Close';
 
-      actions.appendChild(fallbackBtn);
-      actions.appendChild(enableBtn);
+      actions.appendChild(toggleBtn);
       actions.appendChild(closeBtn);
 
       popup.appendChild(title);
@@ -375,8 +431,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       folderHelpPopupOverlay = overlay;
       folderHelpPopupStatus = status;
       folderHelpPopupCopyButton = copyBtn;
-      folderHelpPopupEnableButton = enableBtn;
-      folderHelpPopupFallbackButton = fallbackBtn;
+      folderHelpPopupToggleButton = toggleBtn;
       folderHelpPopupCloseButton = closeBtn;
 
       overlay.addEventListener('click', (event) => {
@@ -388,13 +443,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         hideFolderShortcutHelpPopup();
       });
       closeBtn.addEventListener('click', () => hideFolderShortcutHelpPopup());
-      fallbackBtn.addEventListener('click', () => {
-        setEnrolProtocolEnabled(false);
-        hideFolderShortcutHelpPopup();
-        scheduleFolderShortcutPanelRefresh();
-      });
-      enableBtn.addEventListener('click', () => {
-        setEnrolProtocolEnabled(true);
+      toggleBtn.addEventListener('click', () => {
+        const currentlyEnabled = isEnrolProtocolEnabled();
+        setEnrolProtocolEnabled(!currentlyEnabled);
         hideFolderShortcutHelpPopup();
         scheduleFolderShortcutPanelRefresh();
       });
@@ -414,16 +465,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? 'Helper currently enabled.'
         : 'Helper currently disabled (browser fallback mode).';
     }
-    if (folderHelpPopupEnableButton) {
-      folderHelpPopupEnableButton.textContent = enabled ? 'Keep enabled' : 'Enable helper';
-    }
-    if (folderHelpPopupFallbackButton) {
-      folderHelpPopupFallbackButton.textContent = enabled ? 'Disable helper' : 'Use fallback';
+    if (folderHelpPopupToggleButton) {
+      folderHelpPopupToggleButton.textContent = enabled ? 'Disable helper' : 'Enable helper';
     }
     folderHelpPopupOverlay.classList.remove('hidden-initial');
     folderHelpPopupOverlay.setAttribute('aria-hidden', 'false');
   };
-  let scheduleFolderShortcutPanelRefresh = () => {};
+  let scheduleFolderShortcutPanelRefresh = () => { };
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
@@ -549,7 +597,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         span.appendChild(btn);
       });
       if (payload.tooltip) {
-        span.dataset.tooltip = payload.tooltip;
+        span.dataset.dropTooltip = payload.tooltip;
       }
       if (payload.debugBox) {
         const debug = document.createElement('div');
@@ -799,9 +847,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
   const hostName = window.location.hostname || '';
-  const isStaffHost = hostName === 'localhost' || hostName === '127.0.0.1' || hostName.includes('sharepoint');
-  const isStaffMode = window.location.protocol === 'file:' || isStaffHost;
-  const isStudentMode = ['http:', 'https:'].includes(window.location.protocol) && !isStaffMode;
+  const getQueryParamLower = (key) => {
+    const search = String(window.location.search || '');
+    if (typeof URLSearchParams !== 'undefined') {
+      try {
+        const raw = new URLSearchParams(search).get(key);
+        if (raw !== null && raw !== undefined) return String(raw).trim().toLowerCase();
+      } catch {
+        // fall through to manual parsing
+      }
+    }
+    const pattern = new RegExp(`[?&]${key}=([^&]+)`, 'i');
+    const match = pattern.exec(search);
+    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')).trim().toLowerCase() : '';
+  };
+  const modeParam = getQueryParamLower('mode');
+  const isStaffModeParam = modeParam === 'staff';
+  const isStudentModeParam = modeParam === 'student';
+  const isStaffHost =
+    hostName === 'localhost' ||
+    hostName === '127.0.0.1' ||
+    hostName === '[::1]' ||
+    hostName.includes('sharepoint');
+  const isStaffMode =
+    isStaffModeParam || (!isStudentModeParam && (window.location.protocol === 'file:' || isStaffHost));
+  const isStudentMode =
+    isStudentModeParam || (['http:', 'https:'].includes(window.location.protocol) && !isStaffMode);
   const isWorkbookFlag = (value) => {
     const raw = String(value ?? '').trim().toLowerCase();
     return raw === 'y' || raw === 'yes' || raw === 'true' || raw === '1';
@@ -815,7 +886,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const timetableTable = document.getElementById('timetable-table');
   const timetableFees = document.getElementById('timetable-fees');
   let timetablePreparedEl = null;
-  const downloadTimetableImageButton = document.getElementById('download-timetable-image');
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
   const emailBothButton = document.getElementById('email-both');
@@ -825,8 +895,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeEmailScriptsAccessCta = document.getElementById('close-email-scripts-access-cta');
   const emailScriptsRowCopyButton = document.getElementById('email-scripts-copy-student-declaration');
   const emailScriptsRowOpenButton = document.getElementById('email-scripts-open-email-docx');
-  const emailScriptsSupportsCopyButton = document.getElementById('email-scripts-copy-supports-at-risk');
-  const emailScriptsSupportsEmailButton = document.getElementById('email-scripts-email-supports-at-risk');
+  const emailScriptsOnlineProgressionCopyButton = document.getElementById(
+    'email-scripts-copy-online-progression-classes-entered'
+  );
+  const emailScriptsOnlineProgressionEmailButton = document.getElementById(
+    'email-scripts-email-online-progression-classes-entered'
+  );
+  const emailScriptsOnlineProgressSelectionsCopyButton = document.getElementById(
+    'email-scripts-copy-online-progress-selections-look-good-classes-entered'
+  );
+  const emailScriptsOnlineProgressSelectionsEmailButton = document.getElementById(
+    'email-scripts-email-online-progress-selections-look-good-classes-entered'
+  );
   const emailScriptsExtraRowsHost = document.getElementById('email-scripts-extra-rows');
   const courseTimetableModal = document.getElementById('semester-timetable-modal');
   const closeCourseTimetable = document.getElementById('close-semester-timetable');
@@ -865,6 +945,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const alertBody = document.getElementById('alert-body');
   const alertTitle = document.getElementById('alert-title');
   const closeAlert = document.getElementById('close-alert');
+  const selectByTypingButton = document.getElementById('select-by-typing-button');
+  const selectByTypingModal = document.getElementById('select-by-typing-modal');
+  const closeSelectByTypingModal = document.getElementById('close-select-by-typing-modal');
+  const cancelSelectByTypingModal = document.getElementById('cancel-select-by-typing-modal');
+  const applySelectByTypingModal = document.getElementById('apply-select-by-typing-modal');
+  const selectByTypingInput = document.getElementById('select-by-typing-input');
+  const majorSectionDescriptor = document.getElementById('major-section-descriptor');
+  const historySectionDescriptor = document.getElementById('history-section-descriptor');
   const selectedListSection = document.getElementById('selected-list-section');
   const selectedListEl = document.getElementById('selected-list');
   const availableHeading = document.getElementById('available-heading');
@@ -875,6 +963,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const remainingButton = document.getElementById('open-remaining');
   const courseMapButton = document.getElementById('open-course-map');
   const nextSemesterButton = document.getElementById('open-next-semester');
+  const plannerContainer = document.getElementById('container');
+  const containerPopoutModal = document.getElementById('container-popout-modal');
+  const containerPopoutModalBody = document.getElementById('container-popout-modal-body');
+  const closeContainerPopoutTop = document.getElementById('close-container-popout-top');
+  const closeContainerPopoutBottom = document.getElementById('close-container-popout-bottom');
   const historyModal = document.getElementById('history-modal');
   const historyTitleEl = document.getElementById('history-title');
   const historyTable = document.getElementById('history-table');
@@ -890,16 +983,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const remainingColoursButton = document.getElementById('remaining-colours');
   const courseMapModal = document.getElementById('course-map-modal');
   const courseMapContent = document.getElementById('course-map-content');
-  const courseMapKey = document.getElementById('course-map-key');
+  const courseMapKeyModal = document.getElementById('course-map-key-modal');
+  const courseMapKeyModalBody = document.getElementById('course-map-key-modal-body');
+  const openCourseMapKeyButton = document.getElementById('open-course-map-key');
+  const closeCourseMapKey = document.getElementById('close-course-map-key');
+  // Colour key modal can only be closed via the top-right X.
   let courseMapNotesEl = null;
   const closeCourseMap = document.getElementById('close-course-map');
   const closeCourseMapCta = document.getElementById('close-course-map-cta');
-  const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
   const toggleCourseMapPrereqButton = document.getElementById('toggle-course-map-prereq');
   const toggleCourseMapPrereqTextButton = document.getElementById('toggle-course-map-prereq-text');
   const toggleCourseMapIndicatorsButton = document.getElementById('toggle-course-map-indicators');
   const courseMapFontDecreaseButton = document.getElementById('course-map-font-decrease');
   const courseMapFontIncreaseButton = document.getElementById('course-map-font-increase');
+  const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
   const currentEnrolmentsTable = document.getElementById('current-enrolments-table');
@@ -992,6 +1089,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   let modalLocked = false;
   let modalPrevStyle = null;
+  let containerPopoutPlaceholder = null;
   let suppressOutsideClickUntil = 0;
   let courseTimetableView = 'grid';
   let courseTimetableColoursOn = false;
@@ -1191,6 +1289,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let triageWorkbookFileObject = null;
   let fileLocationsProfileOverride = '';
   let fileLocationsIntakeOverride = '';
+  let settingsSignOffDefaults = null;
+  let settingsSignOffProfiles = new Map();
   let triageWorkbookBuffer = null;
   let triageWorkbookFileName = '';
   let fileLocationsCache = null;
@@ -1553,29 +1653,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapTooltip.style.display = 'none';
   };
   const isFileProtocol = location.protocol === 'file:';
-  const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-  const isLocalEnv = isFileProtocol || isLocalHost;
-  const isSharePointHost = /sharepoint/i.test(location.hostname);
-  const getQueryParam = (key) => {
-    const search = location.search || '';
-    if (typeof URLSearchParams !== 'undefined') {
-      try {
-        return new URLSearchParams(search).get(key);
-      } catch (error) {
-        // fall through to manual parsing if URLSearchParams is unavailable
-      }
+  const hasDriveLetterPath = (() => {
+    try {
+      const pathname = String(location.pathname || '');
+      const decoded = decodeURIComponent(pathname);
+      const normalized = decoded.replace(/^\/+/, '');
+      return /^[A-Za-z]:[\\/]/.test(normalized) || /^[A-Za-z]:$/.test(normalized);
+    } catch {
+      const pathname = String(location.pathname || '').replace(/^\/+/, '');
+      return /^[A-Za-z]:[\\/]/.test(pathname) || /^[A-Za-z]:$/.test(pathname);
     }
-    const pattern = new RegExp(`[?&]${key}=([^&]+)`, 'i');
-    const match = pattern.exec(search);
-    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
-  };
-  const staffModeParam = (getQueryParam('mode') || '').trim().toLowerCase();
-  const isStaffModeParam = staffModeParam === 'staff';
-  const isStudentModeParam = staffModeParam === 'student';
-  const staffFacing = isLocalHost || isSharePointHost || isFileProtocol || isStaffModeParam;
-  const shouldShowTeacherCopy = isSharePointHost || isStaffModeParam;
-  const dropZoneEnabled = isLocalEnv || isSharePointHost || isStaffModeParam;
+  })();
+  const isLikelyLocalFile = isFileProtocol || (location.origin === 'null' && hasDriveLetterPath);
+  const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  const isLocalEnv = isLikelyLocalFile || isLocalHost;
+  const isSharePointHost = /sharepoint/i.test(location.hostname);
+  const staffFacing =
+    !isStudentModeParam && (isLocalHost || isSharePointHost || isLikelyLocalFile || isStaffModeParam);
+  const shouldShowTeacherCopy = !isStudentModeParam && (isSharePointHost || isStaffModeParam);
+  const dropZoneEnabled = !isStudentModeParam && (isLocalEnv || isSharePointHost || isStaffModeParam);
   if (timetableModal && staffFacing) timetableModal.classList.add('staff-mode');
+  if (document?.body) document.body.classList.toggle('student-mode', isStudentModeParam);
+  if (document?.body) document.body.classList.toggle('staff-mode', !!staffFacing);
+  if (selectByTypingButton) selectByTypingButton.hidden = !staffFacing;
+  if (staffFacing) {
+    if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
+    if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter History';
+  }
 
   const lockModalPosition = () => {
     if (modalLocked || !timetableModal) return;
@@ -1613,15 +1717,223 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalPrevStyle = null;
   };
   const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
+  const getComputedMinPx = (value, fallback) => {
+    const parsed = parseFloat(String(value || '').replace('px', ''));
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+  const getComputedMaxPx = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw || raw === 'none') return null;
+    const parsed = parseFloat(raw.replace('px', ''));
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
+
+  const enablePanelResize = (panelEl, opts = {}) => {
+    if (!panelEl || panelEl.dataset.panelResize === 'true') return;
+    panelEl.dataset.panelResize = 'true';
+    panelEl.classList.add('panel-resizable');
+
+    const { key = panelEl.id || panelEl.className || 'panel', fixFlexOnResize = false, persist = true } = opts;
+    const storageKey = `panel-size:${key}`;
+
+    const handles = [
+      { dir: 'n' },
+      { dir: 's' },
+      { dir: 'e' },
+      { dir: 'w' },
+      { dir: 'ne' },
+      { dir: 'nw' },
+      { dir: 'se' },
+      { dir: 'sw' },
+    ].map(({ dir }) => {
+      const el = document.createElement('div');
+      el.className = `panel-resize-handle panel-resize-${dir}`;
+      el.dataset.resizeDir = dir;
+      panelEl.appendChild(el);
+      return el;
+    });
+
+    const applyStoredSize = () => {
+      if (!persist) return;
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+        if (Number.isFinite(parsed.w)) panelEl.style.width = `${parsed.w}px`;
+        if (Number.isFinite(parsed.h)) panelEl.style.height = `${parsed.h}px`;
+        if (fixFlexOnResize && parsed.fixedFlex) panelEl.style.flex = '0 0 auto';
+      } catch { }
+    };
+
+    const persistSize = (w, h, fixedFlex) => {
+      if (!persist) return;
+      try {
+        const payload = { w, h, fixedFlex: !!fixedFlex };
+        localStorage.setItem(storageKey, JSON.stringify(payload));
+      } catch { }
+    };
+
+    const startResize = (event, dir) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+
+      const rect = panelEl.getBoundingClientRect();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startWidth = rect.width;
+      const startHeight = rect.height;
+      const computed = window.getComputedStyle(panelEl);
+      const minWidth = getComputedMinPx(computed.minWidth, 200);
+      const minHeight = getComputedMinPx(computed.minHeight, 120);
+      const maxWidth = getComputedMaxPx(computed.maxWidth) ?? Math.max(minWidth, window.innerWidth - 16);
+      const maxHeight = getComputedMaxPx(computed.maxHeight) ?? Math.max(minHeight, window.innerHeight - 16);
+
+      const wantsN = dir.includes('n');
+      const wantsS = dir.includes('s');
+      const wantsE = dir.includes('e');
+      const wantsW = dir.includes('w');
+      const adjustW = wantsE || wantsW;
+      const adjustH = wantsN || wantsS;
+
+      if (fixFlexOnResize) {
+        // Keep the panel at the user-set size instead of re-expanding via flex.
+        panelEl.style.flex = '0 0 auto';
+      }
+
+      panelEl.classList.add('is-resizing');
+
+      const onMove = (e) => {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        let nextWidth = startWidth;
+        let nextHeight = startHeight;
+        if (wantsE) nextWidth = startWidth + dx;
+        if (wantsW) nextWidth = startWidth - dx;
+        if (wantsS) nextHeight = startHeight + dy;
+        if (wantsN) nextHeight = startHeight - dy;
+
+        if (adjustW) {
+          nextWidth = clampValue(nextWidth, minWidth, maxWidth);
+          panelEl.style.width = `${Math.round(nextWidth)}px`;
+        }
+        if (adjustH) {
+          nextHeight = clampValue(nextHeight, minHeight, maxHeight);
+          // Height is optional; most panels naturally size to content unless the user resizes vertically.
+          panelEl.style.height = `${Math.round(nextHeight)}px`;
+        }
+      };
+
+      const onUp = () => {
+        panelEl.classList.remove('is-resizing');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        const finalRect = panelEl.getBoundingClientRect();
+        const finalW = adjustW ? Math.round(finalRect.width) : null;
+        const finalH = adjustH ? Math.round(finalRect.height) : null;
+        // Only persist dimensions the user actually resized.
+        persistSize(finalW, finalH, fixFlexOnResize);
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    handles.forEach((h) => {
+      h.addEventListener('mousedown', (e) => startResize(e, h.dataset.resizeDir || 'se'));
+    });
+
+    applyStoredSize();
+  };
+
+  const enableUniformSubjectCardHeights = () => {
+    const selector = '.main-grid .subject-card, .electives-grid .subject-card';
+    let rafId = 0;
+    let timer = null;
+
+    const getCards = () =>
+      Array.from(document.querySelectorAll(selector)).filter(
+        (el) =>
+          el &&
+          !el.classList.contains('elective-spacer') &&
+          !el.classList.contains('empty')
+      );
+
+    const sync = () => {
+      rafId = 0;
+      const cards = getCards();
+      if (!cards.length) return;
+
+      // Reset to natural height first so the measurement reflects current wrapping.
+      cards.forEach((el) => {
+        el.style.height = 'auto';
+      });
+
+      let maxH = 0;
+      cards.forEach((el) => {
+        const h = el.getBoundingClientRect().height;
+        if (h > maxH) maxH = h;
+      });
+      if (!maxH) return;
+      const px = Math.max(1, Math.ceil(maxH) - 3);
+      cards.forEach((el) => {
+        el.style.height = `${px}px`;
+      });
+    };
+
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(sync);
+      }, 40);
+    };
+
+    window.addEventListener('resize', schedule, { passive: true });
+
+    try {
+      const container = document.getElementById('container') || document.body;
+      const obs = new MutationObserver((records) => {
+        for (const r of records) {
+          const t = r.target;
+          if (t && t.nodeType === 1) {
+            const el = /** @type {Element} */ (t);
+            if (el.matches?.('.subject-card, .main-grid, .electives-grid') || el.closest?.('.subject-card')) {
+              schedule();
+              return;
+            }
+          }
+        }
+        schedule();
+      });
+      obs.observe(container, { subtree: true, childList: true, characterData: true, attributes: true });
+    } catch { }
+
+    schedule();
+  };
   const enableModalDragResize = (modalEl) => {
     if (!modalEl || modalEl.dataset.dragResize === 'true') return;
     modalEl.dataset.dragResize = 'true';
     modalEl.classList.add('is-draggable');
 
     const header = modalEl.querySelector('.modal-header');
-    const resizer = document.createElement('div');
-    resizer.className = 'modal-resizer';
-    modalEl.appendChild(resizer);
+    const handles = [
+      { dir: 'n' },
+      { dir: 's' },
+      { dir: 'e' },
+      { dir: 'w' },
+      { dir: 'ne' },
+      { dir: 'nw' },
+      { dir: 'se' },
+      { dir: 'sw' },
+    ].map(({ dir }) => {
+      const el = document.createElement('div');
+      el.className = `modal-resize-handle modal-resize-${dir}`;
+      el.dataset.resizeDir = dir;
+      modalEl.appendChild(el);
+      return el;
+    });
 
     const ensureFixed = () => {
       const rect = modalEl.getBoundingClientRect();
@@ -1670,7 +1982,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       document.addEventListener('mouseup', onUp);
     };
 
-    const startResize = (event) => {
+    const startResize = (event, dir) => {
       if (event.button !== 0) return;
       event.preventDefault();
       const rect = ensureFixed();
@@ -1678,22 +1990,49 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const startY = event.clientY;
       const startWidth = rect.width;
       const startHeight = rect.height;
-      const minWidth = 280;
-      const minHeight = 180;
+      const startLeft = rect.left;
+      const startTop = rect.top;
+      const startRight = rect.right;
+      const startBottom = rect.bottom;
+      const computed = window.getComputedStyle(modalEl);
+      const minWidth = getComputedMinPx(computed.minWidth, 280);
+      const minHeight = getComputedMinPx(computed.minHeight, 180);
       const margin = 8;
 
       modalEl.classList.add('is-resizing');
 
       const onMove = (e) => {
-        const nextWidth = clampValue(startWidth + (e.clientX - startX), minWidth, window.innerWidth - margin * 2);
-        const nextHeight = clampValue(startHeight + (e.clientY - startY), minHeight, window.innerHeight - margin * 2);
-        modalEl.style.width = `${nextWidth}px`;
-        modalEl.style.height = `${nextHeight}px`;
-        const rectNow = modalEl.getBoundingClientRect();
-        const nextLeft = clampValue(rectNow.left, margin, window.innerWidth - rectNow.width - margin);
-        const nextTop = clampValue(rectNow.top, margin, window.innerHeight - rectNow.height - margin);
-        modalEl.style.left = `${nextLeft}px`;
-        modalEl.style.top = `${nextTop}px`;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const wantsN = dir.includes('n');
+        const wantsS = dir.includes('s');
+        const wantsE = dir.includes('e');
+        const wantsW = dir.includes('w');
+
+        let nextWidth = startWidth;
+        let nextHeight = startHeight;
+        if (wantsE) nextWidth = startWidth + dx;
+        if (wantsW) nextWidth = startWidth - dx;
+        if (wantsS) nextHeight = startHeight + dy;
+        if (wantsN) nextHeight = startHeight - dy;
+
+        const maxWidth = Math.max(minWidth, window.innerWidth - margin * 2);
+        const maxHeight = Math.max(minHeight, window.innerHeight - margin * 2);
+        nextWidth = clampValue(nextWidth, minWidth, maxWidth);
+        nextHeight = clampValue(nextHeight, minHeight, maxHeight);
+
+        let nextLeft = startLeft;
+        let nextTop = startTop;
+        if (wantsW) nextLeft = startRight - nextWidth;
+        if (wantsN) nextTop = startBottom - nextHeight;
+
+        nextLeft = clampValue(nextLeft, margin, window.innerWidth - nextWidth - margin);
+        nextTop = clampValue(nextTop, margin, window.innerHeight - nextHeight - margin);
+
+        modalEl.style.left = `${Math.round(nextLeft)}px`;
+        modalEl.style.top = `${Math.round(nextTop)}px`;
+        modalEl.style.width = `${Math.round(nextWidth)}px`;
+        modalEl.style.height = `${Math.round(nextHeight)}px`;
       };
 
       const onUp = () => {
@@ -1710,7 +2049,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
 
     if (header) header.addEventListener('mousedown', startDrag);
-    resizer.addEventListener('mousedown', startResize);
+    handles.forEach((handle) => {
+      handle.addEventListener('mousedown', (e) => startResize(e, handle.dataset.resizeDir || 'se'));
+    });
   };
   const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const slotOrder = { Morning: 0, Afternoon: 1 };
@@ -2578,6 +2919,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const id = cell.dataset.subject;
       if (!id || isPlaceholder(cell)) return;
       const st = subjectState.get(id);
+      const isCurrentInRecord = currentEnrolmentStudentRecord.has(id);
+      const isPassOverride = passForEnrolmentsOverrides.has(id);
       cell.classList.remove('completed', 'toggled', 'completed-pending', 'current-enrolment', 'current-enrolment-withdrawn');
       cell.setAttribute('aria-pressed', 'false');
       if (st?.completed) {
@@ -2590,14 +2933,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       if (!st?.completed && withdrawnCurrentEnrolments.has(id)) {
         cell.classList.add('current-enrolment-withdrawn');
-      } else if (!st?.completed && st?.toggled && currentEnrolmentStudentRecord.has(id)) {
+      } else if (isCurrentInRecord && (st?.toggled || isPassOverride)) {
         cell.classList.add('current-enrolment');
       }
+      const isNotThisSem = !isRunningThisSemester(id);
+      if (isNotThisSem && !st?.completed) {
+        ensureNotThisSemUI(cell);
+      } else {
+        cell.classList.remove('not-this-sem');
+        const tip = cell.querySelector('.not-running-tooltip');
+        if (tip) tip.remove();
+      }
     });
-    passForEnrolmentsOverrides.forEach((code) => {
-      const cell = getCellByCode(code);
-      if (cell && cell.classList.contains('completed')) {
-        cell.classList.add('completed-pending');
+    subjects.forEach((cell) => {
+      const id = cell.dataset.subject || '';
+      if (!id || isPlaceholder(cell)) return;
+      if (isSemesterRestricted(id)) {
+        ensureSemesterBadgeUI(cell);
+      } else {
+        const label = cell.querySelector('.alternate-semester-label');
+        if (label) label.remove();
       }
     });
   };
@@ -3376,10 +3731,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!timetableFees) return;
     const applyFeesWidth = () => {
       if (!timetableTable || !timetableFees) return;
-      const rect = timetableTable.getBoundingClientRect();
-      if (!rect.width) return;
-      timetableFees.style.maxWidth = `${Math.ceil(rect.width)}px`;
+      // Keep fees responsive and wrapping. Modal width is handled elsewhere (table-driven).
       timetableFees.style.width = '100%';
+      timetableFees.style.maxWidth = '';
     };
     const bodySample =
       timetableTable?.querySelector('tbody td') || timetableTable?.querySelector('td,th');
@@ -3463,51 +3817,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
 
-    timetableFees.innerHTML = '';
-    const prefix = document.createElement('div');
-    prefix.className = 'timetable-fee-prefix';
-    const prefixLabel = document.createElement('span');
-    prefixLabel.style.fontWeight = '700';
-    prefixLabel.textContent = 'Cancellation Date';
-    prefix.appendChild(prefixLabel);
-    prefix.appendChild(document.createTextNode(' Census Date is '));
-    const censusWrap = document.createElement('span');
-    censusWrap.innerHTML = censusHtml;
-    prefix.appendChild(censusWrap);
-    prefix.appendChild(document.createTextNode(''));
-    timetableFees.appendChild(prefix);
+    const bachelorUrl = 'https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/';
+    const bachelorLink = `<a class="timetable-fee-link" href="${bachelorUrl}" target="_blank" rel="noopener">Bachelor of IT</a>`;
 
-    const feeLines = [
-      {
-        type: 'international',
-        text: 'Fees: International student on visa. International fees.',
-      },
-      {
-        type: 'domestic',
-        text: `Fees: Domestic student. ${price} per subject for domestic students.`,
-      },
-    ];
-    feeLines.forEach(({ type, text }) => {
-      const span = document.createElement('div');
-      span.className = `timetable-fee-line fee-${type}`;
-      span.dataset.feeType = type;
-      const feeLabel = document.createElement('span');
-      feeLabel.style.fontWeight = '800';
-      feeLabel.textContent = 'Fees';
-      span.appendChild(feeLabel);
-      const remainder = text.replace(/^Fees\b\s*/i, '');
-      span.appendChild(document.createTextNode(` ${remainder}`));
-      if (manualFeeHidden[type]) span.classList.add('fee-hidden');
-      span.addEventListener('click', () => {
-        if (span.classList.contains('fee-hidden')) return;
-        manualFeeHidden[type] = true;
-        span.classList.add('fee-flash');
-        setTimeout(() => {
-          span.classList.add('fee-hidden');
-          span.classList.remove('fee-flash');
-        }, 280);
+    timetableFees.innerHTML = [
+      `<p class="timetable-fee-paragraph census"><strong>Census Date:</strong> ${escapeHtml(
+        censusText
+      )}. Subjects withdrawn before this day receive a grade of W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>Domestic students fees: </strong> See the ${bachelorLink} web site. Switch to "LOCAL STUDENT" at top of page.</p>`,
+    ].join('');
+
+    // Allow dismissing the fee guidance paragraphs (but keep links clickable).
+    timetableFees.querySelectorAll('.timetable-fee-hideable').forEach((el) => {
+      el.addEventListener('click', (event) => {
+        if (event.target?.closest?.('a')) return;
+        el.classList.add('fee-hidden');
       });
-      timetableFees.appendChild(span);
     });
     timetableFees.hidden = false;
     lastFullLoadSelected = fullLoadSelected;
@@ -3928,20 +4254,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCreditTransferWarning = () => {
     creditTransferWarning = null;
     creditTransferWarningActive = false;
-    const completedCodes = Array.from(subjectState.entries())
-      .filter(([, st]) => st?.completed)
-      .map(([code]) => code);
+    // Only show this warning when completions come from a Staff-mode triage student record.
+    // Manual history entry (typing/clicking) is not reliable for detecting missing prerequisite history.
+    if (!staffFacing) return;
+    const record = staffWorkbookState.getStudentRecord();
+    if (!record) return;
+    const passedRaw = record.Passed_subjects || '';
+    const resultsRaw = record.Results_List || '';
+    if (!passedRaw && !resultsRaw) return;
+
+    const passedParsed = parseManualEntriesFromText(passedRaw);
+    const resultsParsed = parseManualEntriesFromText(resultsRaw);
+    const completedCodeSet = new Set();
+    passedParsed.resolvedSubjectCodes.forEach((code) => {
+      if (validSubjectCodes.has(code)) completedCodeSet.add(code);
+    });
+    (resultsParsed.resultEntries || []).forEach((entry) => {
+      if (!entry?.id) return;
+      if (!validSubjectCodes.has(entry.id)) return;
+      if (getGradeStatus(entry.result) === 'pass') completedCodeSet.add(entry.id);
+    });
+    const completedCodes = Array.from(completedCodeSet);
     if (!completedCodes.length) return;
     const attempted = new Set();
     completedCodes.forEach((code) => attempted.add(code));
-    manualEntryMeta.forEach((_meta, code) => {
-      if (code) attempted.add(code);
-    });
-    manualEntryResults.forEach((entry) => {
-      if (entry?.id) attempted.add(entry.id);
-    });
+    passedParsed.resolvedSubjectCodes.forEach((code) => attempted.add(code));
+    resultsParsed.resolvedSubjectCodes.forEach((code) => attempted.add(code));
     workbookCurrent.forEach((_meta, code) => attempted.add(code));
-    manualEntryCurrent.forEach((_meta, code) => attempted.add(code));
 
     const issues = [];
     completedCodes.forEach((code) => {
@@ -4149,7 +4488,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const shouldShow = idx < availableElectiveSubjects.length && !isFilled;
       cell.classList.toggle('satisfied', shouldShow);
       cell.classList.toggle('can-select-now', false);
-      cell.classList.toggle('locked', !shouldShow);
+      cell.classList.toggle('locked', !shouldShow && !isFilled);
     });
 
     updateElectivesFullUI();
@@ -4189,7 +4528,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const remaining = getRemainingSubjectsCount();
     const completedTotal = completed + useCredits;
     const activeRecord = getActiveStudentRecord();
-    const creditPointsSource = activeRecord?.Credit_Points_Earned ?? creditPointsEarned;
+    // Only use student-record Credit Points Earned for mismatch checks.
+    // `creditPointsEarned` is sourced from course info and can be present even when no student record is loaded.
+    const creditPointsSource = activeRecord?.Credit_Points_Earned;
     const creditPointsValue = parseCreditPoints(creditPointsSource);
     const creditSubjects =
       creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
@@ -4202,7 +4543,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasAny = completedTotal > 0 || selected > 0;
     if (!hasAny) {
       subjectCountsEl.innerHTML = '';
-      subjectCountsEl.classList.remove('is-visible');
+      subjectCountsEl.classList.remove('is-visible', 'all-complete');
       document.querySelectorAll('.student-summary-credit').forEach((el) => {
         el.classList.remove('counts-mismatch');
       });
@@ -4284,6 +4625,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjectCountsEl.appendChild(lineOne);
     subjectCountsEl.appendChild(lineTwo);
     subjectCountsEl.classList.add('is-visible');
+    subjectCountsEl.classList.toggle('all-complete', completedTotal >= programRequirements.total);
     initTooltips();
     updateMajorStreamInsights();
     document.querySelectorAll('.student-summary-credit').forEach((el) => {
@@ -4493,6 +4835,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSubjectCounts();
     updatePrereqErrors();
     updateNextSemWarning();
+    syncCourseMapKeyAvailability();
   };
 
   let completedModeStickyTop = null;
@@ -4804,8 +5147,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         `${timeHtml}${roomHtml}${lecturerHtml}<div class="tooltip-gap"></div>${id === 'BIT245'
           ? `${streamHtml}`
           : `<div class="pre-block"><span class="inline-strong">Major/Core:</span> ${majorCoreText}</div>`
-        }<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}${id === 'BIT245' ? '' : streamHtml
-        }`
+        }<div class="tooltip-gap"></div>${prereqHtml}<div class="tooltip-gap"></div>${neededHtml}`
       );
       if (previousCodeByNew[id]) {
         tooltip.insertAdjacentHTML(
@@ -4937,6 +5279,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   function renderElectivePlaceholder(cell, code) {
     if (!cell) return;
+    clearNotThisSemUI(cell);
     cell.dataset.subject = code;
     cell.className = 'subject-card elective placeholder-card clickable';
     cell.tabIndex = 0;
@@ -5334,7 +5677,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       })
     );
     dropZone.addEventListener('click', async () => {
-      if (!window.location.protocol.startsWith('http') && !isFileProtocol) return;
+      if (!dropZoneEnabled) return;
       if (isStudentModeParam) return;
       if (dropSidebar) dropSidebar.classList.add('is-active');
       if (staffFacing) {
@@ -5354,13 +5697,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             if (loaded) return;
           }
         }
-        loadFileLocationsFromSite({ sourceOnly: false });
+        const loadedFromSite = await loadFileLocationsFromSite({ sourceOnly: false });
+        if (!loadedFromSite) {
+          openSourceFilePicker();
+        }
       } else {
         openSourceFilePicker();
       }
     });
     dropZone.addEventListener('dblclick', async () => {
-      if (!window.location.protocol.startsWith('http') && !isFileProtocol) return;
+      if (!dropZoneEnabled) return;
       if (isStudentModeParam || !staffFacing) return;
       if (dropSidebar) dropSidebar.classList.add('is-active');
       if (hasDirectoryPicker()) {
@@ -5369,7 +5715,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const prompted = await promptForDirectoryHandle({ sourceOnly: true });
         if (prompted) return;
       }
-      loadFileLocationsFromSite({ sourceOnly: true });
+      const loadedFromSite = await loadFileLocationsFromSite({ sourceOnly: true });
+      if (!loadedFromSite) {
+        openSourceFilePicker();
+      }
     });
     dropZone.addEventListener('drop', (e) => {
       if (dropSidebar) dropSidebar.classList.add('is-active');
@@ -5400,9 +5749,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     dropZone.addEventListener('mouseover', (e) => {
       const target = e.target?.closest?.('.drop-zone-line');
-      if (!target || !target.dataset.tooltip) return;
+      if (!target || !target.dataset.dropTooltip) return;
       dropZoneTooltipTarget = target;
-      dropZoneTooltip.textContent = target.dataset.tooltip;
+      dropZoneTooltip.textContent = target.dataset.dropTooltip;
       dropZoneTooltip.style.display = 'block';
     });
     dropZone.addEventListener('mouseout', (e) => {
@@ -5737,6 +6086,77 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (openCodeModal) openCodeModal.setAttribute('aria-expanded', 'false');
   };
 
+  const isContainerWhitespaceTarget = (target) => {
+    if (!plannerContainer || !target || !(target instanceof Element)) return false;
+    if (!plannerContainer.contains(target)) return false;
+    if (target.closest(
+      '.subject-card, .info-card, .subject-tooltip, .course-tooltip, button, a, input, select, textarea, label, [role="button"]'
+    )) {
+      return false;
+    }
+    return true;
+  };
+
+  const showContainerPopoutModal = () => {
+    if (!containerPopoutModal || !containerPopoutModalBody || !plannerContainer) return;
+    if (containerPopoutModal.classList.contains('show')) return;
+    if (!containerPopoutPlaceholder && plannerContainer.parentNode) {
+      containerPopoutPlaceholder = document.createComment('container-popout-placeholder');
+      plannerContainer.parentNode.insertBefore(containerPopoutPlaceholder, plannerContainer);
+    }
+    containerPopoutModalBody.appendChild(plannerContainer);
+    containerPopoutModal.classList.add('show');
+    containerPopoutModal.setAttribute('aria-hidden', 'false');
+    if (closeContainerPopoutTop) closeContainerPopoutTop.focus();
+  };
+
+  const hideContainerPopoutModal = () => {
+    if (!containerPopoutModal || !plannerContainer) return;
+    if (containerPopoutPlaceholder && containerPopoutPlaceholder.parentNode) {
+      containerPopoutPlaceholder.parentNode.insertBefore(plannerContainer, containerPopoutPlaceholder);
+      containerPopoutPlaceholder.parentNode.removeChild(containerPopoutPlaceholder);
+      containerPopoutPlaceholder = null;
+    }
+    containerPopoutModal.classList.remove('show');
+    containerPopoutModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showOneOffAlertModal = (title, html) => {
+    if (!alertModal || !alertBody || !alertTitle) return;
+    alertTitle.textContent = title || 'Notice';
+    alertTitle.style.display = 'block';
+    alertTitle.style.fontWeight = '700';
+    alertTitle.style.color = ALERT_COLORS.info;
+    alertBody.innerHTML = `<div class="alert-item alert-info"><div class="alert-headline"><div class="alert-body">${html}</div></div></div>`;
+    const modalEl = alertModal.querySelector('.modal');
+    if (modalEl) {
+      modalEl.style.width = 'min(400px, 90vw)';
+      modalEl.style.maxWidth = '400px';
+    }
+    alertModal.dataset.type = 'oneoff';
+    alertModal.classList.add('show');
+    alertModal.setAttribute('aria-hidden', 'false');
+  };
+
+  const showSelectByTypingModal = () => {
+    if (!selectByTypingModal) return;
+    selectByTypingModal.classList.add('show');
+    selectByTypingModal.setAttribute('aria-hidden', 'false');
+    if (selectByTypingInput) {
+      selectByTypingInput.value = '';
+      selectByTypingInput.focus();
+    } else if (closeSelectByTypingModal) {
+      closeSelectByTypingModal.focus();
+    }
+  };
+
+  const hideSelectByTypingModal = () => {
+    if (!selectByTypingModal) return;
+    selectByTypingModal.classList.remove('show');
+    selectByTypingModal.setAttribute('aria-hidden', 'true');
+    if (selectByTypingButton) selectByTypingButton.focus();
+  };
+
   const showEmailScriptsAccessModal = () => {
     if (!emailScriptsAccessModal) return;
     emailScriptsAccessModal.classList.add('show');
@@ -5751,12 +6171,67 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     emailScriptsAccessModal.setAttribute('aria-hidden', 'true');
   };
 
+  const showCourseMapKeyModal = () => {
+    if (!courseMapKeyModal) return;
+    // Always rebuild so the key reflects current mode/toggles.
+    buildCourseMapKey();
+    courseMapKeyModal.classList.add('show');
+    courseMapKeyModal.setAttribute('aria-hidden', 'false');
+    if (closeCourseMapKey) closeCourseMapKey.focus();
+    const modalBox = courseMapModal?.querySelector('.course-map-modal');
+    if (modalBox) modalBox.classList.add('course-map-key-open');
+  };
+
+  const hideCourseMapKeyModal = () => {
+    if (!courseMapKeyModal) return;
+    courseMapKeyModal.classList.remove('show');
+    courseMapKeyModal.setAttribute('aria-hidden', 'true');
+    if (openCourseMapKeyButton) openCourseMapKeyButton.focus();
+    const modalBox = courseMapModal?.querySelector('.course-map-modal');
+    if (modalBox) modalBox.classList.remove('course-map-key-open');
+  };
+
+  const getCourseMapBlueKeyVisibility = () => {
+    const completedTotal = getCompletedCount() + getUseCreditsCount();
+    const selectedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code);
+    // "Current enrolment in your student record" should only be driven by staff triage data,
+    // not manual "current" entries typed into the history box.
+    const currentRecordCodes = new Set(
+      Array.from(workbookCurrent.keys()).filter((code) => !withdrawnCurrentEnrolments.has(code))
+    );
+    const selectedNonCurrentCount = selectedCodes.filter((code) => !currentRecordCodes.has(code)).length;
+    return {
+      showCompleted: completedTotal > 0,
+      // Show "Selected here today" whenever there are selected subjects visible as dark-blue cards.
+      // Exclude current-enrolment-in-record items which render using the separate gradient style.
+      showSelected: selectedNonCurrentCount > 0,
+      showCurrent: currentRecordCodes.size > 0,
+    };
+  };
+
+  const hasAnyCourseMapBlueKeyItems = () => {
+    const { showCompleted, showSelected, showCurrent } = getCourseMapBlueKeyVisibility();
+    return showCompleted || showSelected || showCurrent;
+  };
+
+  const syncCourseMapKeyAvailability = () => {
+    if (!openCourseMapKeyButton || !courseMapKeyModal) return;
+    openCourseMapKeyButton.style.display = '';
+    // If the panel is open, keep it in sync with the current state.
+    if (courseMapKeyModal.classList.contains('show')) {
+      buildCourseMapKey();
+    }
+  };
+
   const EMAIL_SCRIPTS_EXTRA_ROWS = [
     { key: 'credit-transfer-sign-return', label: 'Credit Transfer - Please sign and return' },
     { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
     { key: 'suspended-students', label: 'Suspended students', dividerAfter: true },
     { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers' },
     { key: 'mp-outlook-email', label: 'MP outlook email' },
+    { key: 'supports-at-risk', label: 'Supports (at risk) - Counselling etc.' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
     { key: 'transcript-mid-course-student-request', label: 'Transcript - mid course. Student request' },
     { key: 'personal-details-change-your-details', label: 'Personal Details - change your details', dividerAfter: true },
@@ -5774,10 +6249,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   ];
 
   const EMAIL_SCRIPTS_SECTION_HEADINGS = {
+    'student-dec-returned': [
+      'Student Dec returned',
+      'Student Dec Returned',
+    ],
+    'link-to-start-application': [
+      'Link to Start Application',
+      'Link to start application',
+    ],
     'supports-at-risk': [
       'Supports (at risk)',
       'Supports (at risk) - Counselling etc.',
       'Supports(at risk)',
+    ],
+    'online-progression-classes-entered': [
+      'Online progression - classes entered',
+      'Online progression – classes entered',
+    ],
+    'online-progress-selections-look-good-classes-entered': [
+      'Online progress - selections look good. classes entered',
+      'Online progress – selections look good. classes entered',
     ],
     'credit-transfer-sign-return': ['Credit Transfer - Please sign and return'],
     'credit-transfers-returned': ['Credit Transfers Returned'],
@@ -6254,6 +6745,85 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const buildCourseTimetableNotRunningClipboardSection = () => {
+    const list = courseTimetableNotRunningList || document.getElementById('semester-timetable-not-running-list');
+    const items = [];
+
+    if (list) {
+      Array.from(list.children || []).forEach((li) => {
+        const code = li?.querySelector?.('.semester-timetable-code')?.textContent?.trim() || '';
+        const name = li?.querySelector?.('.semester-timetable-name')?.textContent?.trim() || '';
+        const raw = (li?.textContent || '').trim();
+
+        if (!code && raw) {
+          items.push({ code: '', name: raw });
+          return;
+        }
+
+        if (code) items.push({ code, name });
+      });
+    }
+
+    // Fallback when the list isn't in the DOM for some reason.
+    if (!items.length) items.push({ code: '', name: 'None' });
+
+    const headingText = 'Not running this semester (these subjects will run next semester):';
+    const textLines = ['', headingText];
+    items.forEach(({ code, name }) => {
+      if (!code) {
+        textLines.push(name || 'None');
+      } else if (name) {
+        textLines.push(`- ${code} - ${name}`);
+      } else {
+        textLines.push(`- ${code}`);
+      }
+    });
+
+    const block = document.createElement('div');
+    block.style.marginTop = '12px';
+    block.style.fontFamily = 'Calibri, Arial, sans-serif';
+    block.style.fontSize = '11pt';
+
+    const title = document.createElement('div');
+    title.textContent = headingText;
+    title.style.fontWeight = '700';
+    title.style.marginBottom = '6px';
+    block.appendChild(title);
+
+    const hasOnlyNone = items.length === 1 && !items[0].code && (items[0].name || '').toLowerCase() === 'none';
+    if (hasOnlyNone) {
+      const none = document.createElement('div');
+      none.textContent = 'None';
+      block.appendChild(none);
+    } else {
+      const ul = document.createElement('ul');
+      ul.style.margin = '0 0 0 18px';
+      ul.style.padding = '0';
+      items.forEach(({ code, name }) => {
+        if (!code) return;
+        const li = document.createElement('li');
+        const codeEl = document.createElement('strong');
+        codeEl.textContent = code;
+        li.appendChild(codeEl);
+        if (name) {
+          const nameEl = document.createElement('span');
+          nameEl.textContent = ` - ${name}`;
+          li.appendChild(nameEl);
+        }
+        ul.appendChild(li);
+      });
+      // If the DOM list contained only raw "None" text but was not detected by hasOnlyNone, keep something visible.
+      if (!ul.children.length) {
+        const li = document.createElement('li');
+        li.textContent = 'None';
+        ul.appendChild(li);
+      }
+      block.appendChild(ul);
+    }
+
+    return { text: textLines.join('\n'), html: block.outerHTML };
+  };
+
   const copyCourseTimetableToClipboard = () => {
     if (!clipboardAvailable) return;
     const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
@@ -6277,7 +6847,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       textRows.push(rowCells.join('\t'));
     });
-    const text = textRows.join('\n');
+    const notRunning = buildCourseTimetableNotRunningClipboardSection();
+    const text = `${textRows.join('\n')}${notRunning.text}`;
 
     const table = document.createElement('table');
     table.style.fontFamily = 'Calibri, Arial, sans-serif';
@@ -6353,7 +6924,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
-    const html = table.outerHTML;
+
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(table);
+    if (notRunning.html) {
+      const container = document.createElement('div');
+      container.innerHTML = notRunning.html;
+      if (container.firstElementChild) wrapper.appendChild(container.firstElementChild);
+    }
+    const html = wrapper.innerHTML;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -6393,7 +6972,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         textRows.push('');
       });
     });
-    const text = textRows.join('\n').trim();
+    const notRunning = buildCourseTimetableNotRunningClipboardSection();
+    const text = `${textRows.join('\n').trim()}${notRunning.text}`;
 
     const wrapper = document.createElement('div');
     wrapper.style.fontFamily = 'Calibri, Arial, sans-serif';
@@ -6422,6 +7002,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       wrapper.appendChild(block);
     });
+    if (notRunning.html) {
+      const container = document.createElement('div');
+      container.innerHTML = notRunning.html;
+      if (container.firstElementChild) wrapper.appendChild(container.firstElementChild);
+    }
     const html = wrapper.innerHTML;
 
     if (window.ClipboardItem) {
@@ -6550,11 +7135,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!useTranscriptParsing) {
       const hasAnyGradeToken = lines.some((line) => !!getGradeStatus(line));
       extractedEntries = lines.flatMap((line) => {
-        const codes = (line.toUpperCase().match(manualCodeRegexGlobal) || []);
-        if (!codes.length) return [];
-        const lineStatus = getGradeStatus(line);
-        const status = hasAnyGradeToken && !lineStatus ? 'current' : (lineStatus || 'pass');
-        return codes.map((code) => ({ rawCode: code, grade: '', date: '', status }));
+        const upper = line.toUpperCase();
+        const tokens = upper.match(/[A-Z0-9/]+/g) || [];
+        const codeTokens = [];
+        tokens.forEach((token, tokenIdx) => {
+          if (!manualCodeRegex.test(token)) return;
+          codeTokens.push({ code: token, tokenIdx });
+        });
+        if (!codeTokens.length) return [];
+        if (!hasAnyGradeToken) {
+          return codeTokens.map(({ code }) => ({ rawCode: code, grade: '', date: '', status: 'pass' }));
+        }
+        return codeTokens.map(({ code, tokenIdx }) => {
+          let gradeToken = '';
+          for (let i = tokenIdx + 1; i < tokens.length; i += 1) {
+            const token = tokens[i];
+            if (manualCodeRegex.test(token)) break;
+            const normalized = normalizeGradeToken(token);
+            if (!normalized) continue;
+            if (passGrades.has(normalized) || failGrades.has(normalized) || normalized.startsWith('WN/')) {
+              gradeToken = normalized;
+              break;
+            }
+          }
+          if (!gradeToken) return { rawCode: code, grade: '', date: '', status: 'current' };
+          const status = passGrades.has(gradeToken) ? 'pass' : 'fail';
+          return { rawCode: code, grade: gradeToken, date: '', status };
+        });
       });
     }
 
@@ -6793,6 +7400,139 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSelectedList();
   };
 
+  const parseSemesterSelectionCodesFromText = (raw) => {
+    const text = String(raw || '').toUpperCase();
+    const tokens = text.split(/[^A-Z0-9]+/).map((t) => t.trim()).filter(Boolean);
+    const seen = new Set();
+    const out = [];
+    const ignoredUse = new Set();
+
+    tokens.forEach((token) => {
+      if (!token) return;
+      if (/^USE\d{3}$/.test(token)) {
+        ignoredUse.add(token);
+        return;
+      }
+      let candidate = '';
+      if (/^BIT\d{3}$/.test(token)) {
+        candidate = token;
+      } else if (/^\d{3}$/.test(token)) {
+        // Avoid accidental USE entries (e.g. 101 -> USE101) by refusing known USE digits.
+        const useGuess = `USE${token}`;
+        if (electiveCodeOrder.includes(useGuess)) {
+          ignoredUse.add(useGuess);
+          return;
+        }
+        candidate = `BIT${token}`;
+      } else {
+        return;
+      }
+      if (!validSubjectCodes.has(candidate)) return;
+      if (seen.has(candidate)) return;
+      seen.add(candidate);
+      out.push(candidate);
+    });
+
+    return { codes: out, ignoredUseCodes: Array.from(ignoredUse) };
+  };
+
+  const applyTypedSemesterSelections = () => {
+    if (!selectByTypingInput) return;
+    if (completedMode) {
+      selectByTypingInput.value = '';
+      hideSelectByTypingModal();
+      showOneOffAlertModal(
+        'Typed selections',
+        '<p>Switch out of <strong>Clicking mode</strong> (History mode) to select subjects for this semester.</p>'
+      );
+      return;
+    }
+    const raw = selectByTypingInput.value || '';
+    const parsed = parseSemesterSelectionCodesFromText(raw);
+    const codes = parsed.codes || [];
+    const ignored = {
+      completed: [],
+      selected: [],
+      current: [],
+      notThisSem: [],
+      notSelectable: [],
+      invalid: [],
+      use: parsed.ignoredUseCodes || [],
+    };
+    const added = [];
+
+    codes.forEach((code) => {
+      const st = subjectState.get(code);
+      if (st?.completed) {
+        ignored.completed.push(code);
+        return;
+      }
+      if (st?.toggled) {
+        ignored.selected.push(code);
+        return;
+      }
+      if (currentEnrolmentStudentRecord.has(code)) {
+        ignored.current.push(code);
+        return;
+      }
+      const cell = subjects.find((c) => c.dataset.subject === code);
+      if (!cell) {
+        ignored.invalid.push(code);
+        return;
+      }
+      if (!isRunningThisSemester(code)) {
+        ignored.notThisSem.push(code);
+        return;
+      }
+      handleToggle(cell);
+      if (subjectState.get(code)?.toggled) {
+        added.push(code);
+      } else {
+        ignored.notSelectable.push(code);
+      }
+    });
+
+    selectByTypingInput.value = '';
+    hideSelectByTypingModal();
+
+    const anyIgnored =
+      ignored.completed.length ||
+      ignored.selected.length ||
+      ignored.current.length ||
+      ignored.notThisSem.length ||
+      ignored.notSelectable.length ||
+      ignored.invalid.length ||
+      ignored.use.length ||
+      (!codes.length && raw.trim().length > 0);
+
+    if (!anyIgnored) return;
+
+    const codesHtml = (arr) =>
+      arr.map((code) => `<code>${escapeHtml(code)}</code>`).join(', ');
+
+    const parts = [];
+    if (!codes.length && raw.trim().length > 0) {
+      if (ignored.use.length) {
+        parts.push('<p>No selectable BIT subject codes found. USE elective credits are not valid selections.</p>');
+      } else {
+        parts.push('<p>No BIT subject codes found. Use BIT### or ###.</p>');
+      }
+    }
+    if (added.length) parts.push(`<p><strong>Selected:</strong> ${codesHtml(added)}</p>`);
+    if (ignored.completed.length) parts.push(`<p><strong>Ignored (already completed):</strong> ${codesHtml(ignored.completed)}</p>`);
+    if (ignored.selected.length) parts.push(`<p><strong>Ignored (already selected):</strong> ${codesHtml(ignored.selected)}</p>`);
+    if (ignored.current.length) parts.push(`<p><strong>Ignored (current enrolment):</strong> ${codesHtml(ignored.current)}</p>`);
+    if (ignored.use.length) parts.push(`<p><strong>Ignored (USE elective credit):</strong> ${codesHtml(ignored.use)}</p>`);
+    if (ignored.notThisSem.length) parts.push(`<p><strong>Ignored (not running this semester):</strong> ${codesHtml(ignored.notThisSem)}</p>`);
+    if (ignored.notSelectable.length) {
+      parts.push(`<p><strong>Ignored (not selectable right now):</strong> ${codesHtml(ignored.notSelectable)}</p>`);
+      parts.push('<p>Tip: turn on <strong>Override prerequisites</strong> if you need to force a selection.</p>');
+    }
+    if (ignored.invalid.length) parts.push(`<p><strong>Ignored (not recognised):</strong> ${codesHtml(ignored.invalid)}</p>`);
+
+    showOneOffAlertModal('Typed selections', parts.join(''));
+  };
+
   const handleToggle = (cell) => {
     const id = cell.dataset.subject;
     if (!id) return;
@@ -6927,12 +7667,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const already = !!st.toggled;
       if (!already) {
-      if (!overrideMode) {
-        const completed = new Set(
-          Array.from(subjectState.entries())
-            .filter(([, s]) => s?.completed)
-            .map(([code]) => code)
-        );
+        if (!overrideMode) {
+          const completed = new Set(
+            Array.from(subjectState.entries())
+              .filter(([, s]) => s?.completed)
+              .map(([code]) => code)
+          );
           const plannedSet = new Set(
             Array.from(subjectState.entries())
               .filter(([code, s]) => s?.toggled && code !== id)
@@ -7104,6 +7844,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }).catch(() => { });
     });
     studentDataPreview.addEventListener('click', (event) => {
+      const idCopyTarget = event.target?.closest?.('.student-summary-id-value');
+      if (idCopyTarget) {
+        event.preventDefault();
+        const idText = (idCopyTarget.getAttribute('data-copy-id') || idCopyTarget.textContent || '').trim();
+        if (!idText) return;
+        void copyPlainText(idText).then((copied) => {
+          if (!copied) return;
+          const flashTarget = idCopyTarget.closest('.student-summary-id') || idCopyTarget;
+          triggerFlash(flashTarget);
+        });
+        return;
+      }
+      const idRowTarget = event.target?.closest?.('.student-summary-id');
+      if (idRowTarget) {
+        event.preventDefault();
+        const fullText = (idRowTarget.getAttribute('data-copy') || idRowTarget.textContent || '').trim();
+        if (!fullText) return;
+        void copyPlainText(fullText).then((copied) => {
+          if (!copied) return;
+          triggerFlash(idRowTarget);
+        });
+        return;
+      }
       const strataAdd = event.target?.closest?.('.triage-in-strata-add');
       if (strataAdd) {
         event.preventDefault();
@@ -7176,7 +7939,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     showCodeModal();
   });
   if (closeCodeModal) closeCodeModal.addEventListener('click', hideCodeModal);
+  if (closeContainerPopoutTop) closeContainerPopoutTop.addEventListener('click', hideContainerPopoutModal);
+  if (closeContainerPopoutBottom) closeContainerPopoutBottom.addEventListener('click', hideContainerPopoutModal);
+  if (plannerContainer) {
+    plannerContainer.addEventListener('dblclick', (event) => {
+      if (!isContainerWhitespaceTarget(event.target)) return;
+      event.preventDefault();
+      if (containerPopoutModal?.classList.contains('show')) {
+        hideContainerPopoutModal();
+      } else {
+        showContainerPopoutModal();
+      }
+    });
+  }
+  if (containerPopoutModalBody) {
+    containerPopoutModalBody.addEventListener('dblclick', (event) => {
+      if (event.target !== containerPopoutModalBody) return;
+      hideContainerPopoutModal();
+    });
+  }
   if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
+  if (selectByTypingButton) {
+    selectByTypingButton.addEventListener('click', () => {
+      if (selectByTypingButton.disabled || selectByTypingButton.hidden) return;
+      showSelectByTypingModal();
+    });
+  }
+  if (closeSelectByTypingModal) closeSelectByTypingModal.addEventListener('click', hideSelectByTypingModal);
+  if (cancelSelectByTypingModal) cancelSelectByTypingModal.addEventListener('click', hideSelectByTypingModal);
+  if (applySelectByTypingModal) applySelectByTypingModal.addEventListener('click', applyTypedSemesterSelections);
   if (closeEmailScriptsAccessModal) closeEmailScriptsAccessModal.addEventListener('click', hideEmailScriptsAccessModal);
   if (closeEmailScriptsAccessCta) closeEmailScriptsAccessCta.addEventListener('click', hideEmailScriptsAccessModal);
   if (applyCodeModal) applyCodeModal.addEventListener('click', applyCodes);
@@ -7943,8 +8734,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (studentId || family || given) {
       const name = [family, given].filter(Boolean).join(', ');
       const display = [studentId, name].filter(Boolean).join(' ');
+      const idHtml = studentId
+        ? `<span class="student-summary-id-value" data-copy-id="${escapeHtml(studentId)}">${escapeHtml(studentId)}</span>`
+        : '';
+      const nameHtml = name ? escapeHtml(name) : '';
+      const displayHtml =
+        idHtml && nameHtml ? `${idHtml} ${nameHtml}` : idHtml || nameHtml;
       lines.push(
-        `<div class="student-summary-id" data-copy="${escapeHtml(display)}">${escapeHtml(display)}</div>`
+        `<div class="student-summary-id" data-copy="${escapeHtml(display)}">${displayHtml}</div>`
       );
     }
     if (mpEmail || primaryEmail) {
@@ -8081,8 +8878,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             const strataText = strataCodes.map((code) => escapeHtml(code)).join(', ');
             const strataHtml = missingCodes.length
               ? `<button type="button" class="triage-in-strata-add triage-in-strata-add-block" data-subject-codes="${escapeHtml(
-                  missingCodes.join(',')
-                )}" data-tooltip-html="${TRIAGE_STRATA_ADD_TOOLTIP_HTML}" aria-label="Add all In Strata subjects to current enrolments">${strataText}</button>`
+                missingCodes.join(',')
+              )}" data-tooltip-html="${TRIAGE_STRATA_ADD_TOOLTIP_HTML}" aria-label="Add all In Strata subjects to current enrolments">${strataText}</button>`
               : `<span class="triage-in-strata-code">${strataText}</span>`;
             triageLines.push(`<div><strong>In Strata:</strong> ${strataHtml}</div>`);
           } else {
@@ -8217,16 +9014,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (failedCount) {
       lines.push(`Failed (N) count: ${escapeHtml(failedCount)}`);
     }
-    const creditPointsLabel = formatCountValue(creditPointsDisplay);
-    lines.push(
-      `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
-        creditSubjectsLabel
-      )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
-        creditSubjectsLabel
-      )} subjects)</div>`
-    );
-    const medianGrade = getMedianGradeLabel(manualEntryResults);
-    lines.push(`<div>Median grade: ${escapeHtml(medianGrade)}</div>`);
+    if (hasHistory) {
+      const creditPointsLabel = formatCountValue(creditPointsDisplay);
+      lines.push(
+        `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
+          creditSubjectsLabel
+        )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
+          creditSubjectsLabel
+        )} subjects)</div>`
+      );
+      const medianGrade = getMedianGradeLabel(manualEntryResults);
+      lines.push(`<div>Median grade: ${escapeHtml(medianGrade)}</div>`);
+    }
     const remainingCount = getRemainingSubjectsCount();
     if (shouldShowRemainingNotice(remainingCount)) {
       const medianGradePastYear = getMedianGradeLabelPastYear(manualEntryResults);
@@ -8280,9 +9079,115 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (!raw && emailScriptsSourcePath) raw = String(emailScriptsSourcePath);
     if (!raw) raw = window.location.pathname || '';
-    const match = raw.match(/[/\\\\]Users[/\\\\]([^/\\\\]+)/i);
+    let match = raw.match(/[/\\\\]Users[/\\\\]([^/\\\\]+)/i);
+    if ((!match || !match[1]) && window.location.pathname) {
+      // Some cached sources are relative paths (e.g. directory-handle paths).
+      // Fall back to the current page path to recover the Windows profile name.
+      match = String(window.location.pathname).match(/[/\\\\]Users[/\\\\]([^/\\\\]+)/i);
+    }
     if (match && match[1]) return match[1].toLowerCase();
     return '';
+  };
+
+  const createEmptySignOffPrefs = () => ({
+    salutation: '',
+    signOffPhrase: '',
+    signOffName: '',
+  });
+
+  const normalizeSettingsProfileKey = (value = '') =>
+    String(value || '')
+      .trim()
+      .replace(/^['"]|['"]$/g, '')
+      .trim()
+      .toLowerCase();
+
+  const normalizeSignOffSettingsKey = (key = '') => {
+    const normalized = normalizeHeader(String(key || ''));
+    if (!normalized) return '';
+    if (normalized === 'salutation') return 'salutation';
+    if (normalized === 'signoffphrase' || normalized === 'signoff') return 'signOffPhrase';
+    if (normalized === 'signoffname') return 'signOffName';
+    return '';
+  };
+
+  const cleanSignOffValue = (value = '') =>
+    String(value || '')
+      .trim()
+      .replace(/^['"]|['"]$/g, '')
+      .trim();
+
+  const hasAnySignOffPref = (pref) =>
+    !!(
+      pref &&
+      (cleanSignOffValue(pref.salutation) ||
+        cleanSignOffValue(pref.signOffPhrase) ||
+        cleanSignOffValue(pref.signOffName))
+    );
+
+  const findSettingsSignOffForProfile = (profileValue = '') => {
+    const profileKey = normalizeSettingsProfileKey(profileValue);
+    if (!profileKey || !(settingsSignOffProfiles instanceof Map) || !settingsSignOffProfiles.size) {
+      return null;
+    }
+    if (settingsSignOffProfiles.has(profileKey)) return settingsSignOffProfiles.get(profileKey) || null;
+    for (const [candidateKey, pref] of settingsSignOffProfiles.entries()) {
+      if (!candidateKey) continue;
+      if (profileKey.includes(candidateKey) || candidateKey.includes(profileKey)) {
+        return pref || null;
+      }
+    }
+    return null;
+  };
+
+  const getSettingsSignOffPrefs = () => {
+    const defaults = settingsSignOffDefaults || null;
+    let profilePref = null;
+    const profileHint = getProfileNameHint();
+    if (profileHint) {
+      profilePref = findSettingsSignOffForProfile(profileHint);
+    }
+    if (!profilePref && window.localStorage) {
+      try {
+        const storedProfile = window.localStorage.getItem('subjectPlannerProfile') || '';
+        if (storedProfile) profilePref = findSettingsSignOffForProfile(storedProfile);
+      } catch {
+        // ignore storage issues
+      }
+    }
+    const merged = createEmptySignOffPrefs();
+    if (defaults) {
+      merged.salutation = cleanSignOffValue(defaults.salutation);
+      merged.signOffPhrase = cleanSignOffValue(defaults.signOffPhrase);
+      merged.signOffName = cleanSignOffValue(defaults.signOffName);
+    }
+    if (profilePref) {
+      const nextSalutation = cleanSignOffValue(profilePref.salutation);
+      const nextPhrase = cleanSignOffValue(profilePref.signOffPhrase);
+      const nextName = cleanSignOffValue(profilePref.signOffName);
+      if (nextSalutation) merged.salutation = nextSalutation;
+      if (nextPhrase) merged.signOffPhrase = nextPhrase;
+      if (nextName) merged.signOffName = nextName;
+    }
+    return hasAnySignOffPref(merged) ? merged : null;
+  };
+
+  const mergeSignOffPrefs = (emailScriptsPref = null, settingsPref = null) => {
+    const merged = createEmptySignOffPrefs();
+    if (emailScriptsPref) {
+      merged.salutation = cleanSignOffValue(emailScriptsPref.salutation);
+      merged.signOffPhrase = cleanSignOffValue(emailScriptsPref.signOffPhrase);
+      merged.signOffName = cleanSignOffValue(emailScriptsPref.signOffName);
+    }
+    if (settingsPref) {
+      const nextSalutation = cleanSignOffValue(settingsPref.salutation);
+      const nextPhrase = cleanSignOffValue(settingsPref.signOffPhrase);
+      const nextName = cleanSignOffValue(settingsPref.signOffName);
+      if (nextSalutation) merged.salutation = nextSalutation;
+      if (nextPhrase) merged.signOffPhrase = nextPhrase;
+      if (nextName) merged.signOffName = nextName;
+    }
+    return hasAnySignOffPref(merged) ? merged : null;
   };
 
   const getIntakeNameHint = () => {
@@ -8773,7 +9678,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const readWorkbookAsync = (buffer) =>
     new Promise((resolve) => {
       const run = () => {
-      try {
+        try {
           const workbook = XLSX.read(buffer, {
             type: 'array',
             cellStyles: false,
@@ -9043,6 +9948,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       let declarationText = '';
       let declarationHtml = '';
       let preferencesMatch = null;
+      const settingsSignOffPref = getSettingsSignOffPrefs();
       const declarationHeading = 'Student Declaration';
       const preferencesHeading = 'Your preference for subject planner';
 
@@ -9154,7 +10060,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             if (!preferencesMatch && preferences.length === 1) {
               preferencesMatch = preferences[0];
             }
-            if (!preferencesMatch && !profileHintLower && preferences.length > 1 && window.localStorage) {
+            if (
+              !preferencesMatch &&
+              !settingsSignOffPref &&
+              !profileHintLower &&
+              preferences.length > 1 &&
+              window.localStorage
+            ) {
               if (!window.__profilePrompted) {
                 window.__profilePrompted = true;
                 const choice = window.prompt(
@@ -9258,7 +10170,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       emailScriptsCache = {
         declarationText,
         declarationHtml,
-        preferences: preferencesMatch,
+        preferences: mergeSignOffPrefs(preferencesMatch, settingsSignOffPref),
       };
       return emailScriptsCache;
     } catch {
@@ -9364,6 +10276,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     workbookCurrent.clear();
     resultsCurrent.forEach((meta, mapped) => workbookCurrent.set(mapped, meta));
     refreshCurrentEnrolmentStudentRecord();
+    if (workbookCurrent.size > 0 && currentEnrolmentStudentRecord.size > 0 && !passForEnrolmentsEnabled) {
+      passForEnrolmentsEnabled = true;
+      updatePassForEnrolmentsAvailability();
+    }
     resultsParsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
     manualEntryResults = resultsParsed.resultEntries ? [...resultsParsed.resultEntries] : [];
     resultsParsed.metaEntries.forEach((meta, mapped) => {
@@ -9626,7 +10542,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   function updateStudentPreview() {
     if (!studentDataPreview) return;
     updateDateAlerts(staffWorkbookState.getCourseInfo());
-    const hasSourceLoaded = !!lastDroppedFileInfo?.fileName;
+    const hasSourceLoaded = !!(
+      lastDroppedFileInfo?.fileName ||
+      sourceWorkbookFileObject ||
+      (Array.isArray(studentRecords) && studentRecords.length)
+    );
     if (!hasSourceLoaded) {
       renderStudentPreview('');
       setStudentLookupVisible(false);
@@ -9950,10 +10870,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
     collectSharePointByStudentId();
     let rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-    if (rowCount === 0) {
+    const buildColumnMapFromRows = () => {
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (rows.length <= 1) {
-        return [];
+        return { columnMapFromRows: null, rowCountFromRows: 0 };
       }
       const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
         acc[normalizeHeader(col)] = col;
@@ -9998,28 +10918,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           headerIndex = bestHeaderIndex;
         }
       }
-      if (headerIndex >= 0) {
-        const headerRow = rows[headerIndex] || [];
-        const colIndexMap = {};
-        headerRow.forEach((cell, idx) => {
-          const key = columnKeyMap[normalizeHeader(cell)];
-          if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+      if (headerIndex < 0) return { columnMapFromRows: null, rowCountFromRows: 0 };
+      const headerRow = rows[headerIndex] || [];
+      const colIndexMap = {};
+      headerRow.forEach((cell, idx) => {
+        const key = columnKeyMap[normalizeHeader(cell)];
+        if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+      });
+      const rowsToRead = rows.slice(headerIndex + 1);
+      const hasStudentId = colIndexMap.Student_IDs_Unique !== undefined;
+      if (!hasStudentId) return { columnMapFromRows: null, rowCountFromRows: 0 };
+      const columnMapFromRows = {};
+      STUDENT_COLUMNS.forEach((columnName) => {
+        const idx = colIndexMap[columnName];
+        if (idx === undefined) return;
+        columnMapFromRows[columnName] = rowsToRead.map((row) => {
+          const cellValue = row[idx];
+          return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
         });
-        const rowsToRead = rows.slice(headerIndex + 1);
-        const hasStudentId = colIndexMap.Student_IDs_Unique !== undefined;
-        if (hasStudentId) {
-          columnMap = {};
-          STUDENT_COLUMNS.forEach((columnName) => {
-            const idx = colIndexMap[columnName];
-            if (idx === undefined) return;
-            columnMap[columnName] = rowsToRead.map((row) => {
-              const cellValue = row[idx];
-              return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
-            });
-          });
-          rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-        }
-      }
+      });
+      const rowCountFromRows = Math.max(
+        0,
+        ...Object.values(columnMapFromRows).map((values) => values.length),
+        0
+      );
+      return { columnMapFromRows, rowCountFromRows };
+    };
+    const rowMapResult = buildColumnMapFromRows();
+    if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > rowCount) {
+      columnMap = rowMapResult.columnMapFromRows;
+      rowCount = rowMapResult.rowCountFromRows;
     }
     const records = [];
     for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
@@ -10089,6 +11017,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
     sourceWorkbookFileObject = file;
+    if (!lastDroppedFileInfo || !lastDroppedFileInfo.fileName) {
+      lastDroppedFileInfo = {
+        fileName: String(file.name || 'Source.xlsx'),
+        modifiedMs: Number.isFinite(file.lastModified) ? file.lastModified : null,
+        path: '',
+      };
+    }
     if (typeof XLSX === 'undefined') {
       renderStudentPreview('Workbook library is not available in this environment.');
       if (setDropZoneSpinnerVisible) setDropZoneSpinnerVisible(false);
@@ -10271,7 +11206,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         modifiedMs: Number.isFinite(file.lastModified) ? file.lastModified : null,
         path: prevPath,
       };
-      parseEmailScripts().catch(() => {});
+      parseEmailScripts().catch(() => { });
       scheduleFolderShortcutPanelRefresh();
       if (lastDroppedFileInfo) {
         renderDropZoneStatus(buildDropZoneStatusLines());
@@ -10285,12 +11220,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
 
   const fileLocationNames = [
+    'settings.txt',
+    'settings.text',
+    // Backward compatibility with older file names.
     'file_locations.txt',
     'file locations.txt',
     'file_locations.text',
     'file locations.text',
   ];
-  const logFilePathDebug = () => {};
+  const logFilePathDebug = () => { };
 
   const isFileLocationsName = (name = '') => {
     const cleaned = name
@@ -10300,7 +11238,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .replace(/[^a-z0-9_.-]/g, '');
     if (!cleaned) return false;
     if (fileLocationNames.includes(cleaned)) return true;
-    return /file[_-]?locations\.(txt|text)$/i.test(cleaned);
+    return /(settings|file[_-]?locations)\.(txt|text)$/i.test(cleaned);
   };
 
   const parseFileLocationsText = (text = '') => {
@@ -10310,17 +11248,87 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(Boolean);
     fileLocationsProfileOverride = '';
     fileLocationsIntakeOverride = '';
+    settingsSignOffDefaults = null;
+    settingsSignOffProfiles = new Map();
+    const valueLines = [];
+    const isRootPathSettingsKey = (key = '') => {
+      const normalized = normalizeHeader(String(key || ''));
+      if (!normalized) return false;
+      return (
+        normalized === 'thissemestersfolderpath' ||
+        normalized === 'thissemesterfolderpath' ||
+        normalized === 'semestersfolderpath' ||
+        normalized === 'semesterfolderpath'
+      );
+    };
+    const normalizeSettingValue = (value = '') =>
+      String(value || '')
+        .trim()
+        .replace(/^['"]|['"]$/g, '')
+        .trim();
+    let currentSection = '';
+    const readSection = (line = '') => {
+      const match = String(line || '').match(/^\[([^\]]+)\]$/);
+      if (!match || !match[1]) return '';
+      const sectionRaw = match[1].trim();
+      const sectionNormalized = normalizeHeadingText(sectionRaw);
+      if (sectionNormalized === 'defaults' || sectionNormalized === 'default') {
+        return 'defaults';
+      }
+      if (sectionNormalized.startsWith('profile:')) {
+        const profileRaw = sectionRaw.slice(sectionRaw.indexOf(':') + 1);
+        const profileKey = normalizeSettingsProfileKey(profileRaw);
+        return profileKey ? `profile:${profileKey}` : '';
+      }
+      return '';
+    };
     rawLines.forEach((line) => {
-      const match = line.match(/^#\s*profile\s*=\s*([A-Za-z0-9._-]+)\s*$/i);
-      if (match && match[1]) {
-        fileLocationsProfileOverride = match[1].trim();
+      if (line.startsWith('#')) return;
+      const normalized = line.trim();
+      const sectionKey = readSection(normalized);
+      if (sectionKey) {
+        currentSection = sectionKey;
+        return;
       }
-      const intakeMatch = line.match(/^#\s*intake\s*=\s*(.+?)\s*$/i);
+      const profileMatch = normalized.match(/^profile\s*=\s*(.+?)\s*$/i);
+      if (profileMatch && profileMatch[1]) {
+        const profileValue = normalizeSettingValue(profileMatch[1]);
+        if (profileValue) fileLocationsProfileOverride = profileValue;
+        return;
+      }
+      const intakeMatch = normalized.match(/^intake\s*=\s*(.+?)\s*$/i);
       if (intakeMatch && intakeMatch[1]) {
-        fileLocationsIntakeOverride = intakeMatch[1].trim();
+        const intakeValue = normalizeSettingValue(intakeMatch[1]);
+        if (intakeValue) fileLocationsIntakeOverride = intakeValue;
+        return;
       }
+      const keyValueMatch = normalized.match(/^([A-Za-z0-9_.-]+)\s*=\s*(.*?)\s*$/);
+      if (keyValueMatch && keyValueMatch[1]) {
+        const keyName = keyValueMatch[1];
+        const keyValue = normalizeSettingValue(keyValueMatch[2]);
+        if (isRootPathSettingsKey(keyName)) {
+          if (keyValue) valueLines.push(keyValue);
+          return;
+        }
+        const prefField = normalizeSignOffSettingsKey(keyValueMatch[1]);
+        if (prefField) {
+          const prefValue = keyValue;
+          if (currentSection === 'defaults' || !currentSection) {
+            settingsSignOffDefaults = settingsSignOffDefaults || createEmptySignOffPrefs();
+            settingsSignOffDefaults[prefField] = prefValue;
+          } else if (currentSection.startsWith('profile:')) {
+            const profileKey = currentSection.slice('profile:'.length);
+            if (profileKey) {
+              const existing = settingsSignOffProfiles.get(profileKey) || createEmptySignOffPrefs();
+              existing[prefField] = prefValue;
+              settingsSignOffProfiles.set(profileKey, existing);
+            }
+          }
+        }
+        return;
+      }
+      valueLines.push(line);
     });
-    const valueLines = rawLines.filter((line) => !line.startsWith('#'));
     const parts = valueLines.flatMap((line) => line.split(','));
     const profileHint = getProfileNameHint();
     const intakeHint = getIntakeNameHint();
@@ -10345,6 +11353,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       profileHint,
       intakeHint,
       profileOverride: fileLocationsProfileOverride || '',
+      intakeOverride: fileLocationsIntakeOverride || '',
+      settingsSignOffDefaults,
+      settingsSignOffProfiles: Array.from(settingsSignOffProfiles.entries()),
       rawLines,
       parsed,
     });
@@ -10459,8 +11470,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     pushCandidate(emailScriptsInfo?.path, 142);
     pushCandidate(triageFileInfo?.path, 141);
     pushCandidate(emailScriptsSourcePath, 138);
+    pushCandidate(window.location.href, 132);
+    pushCandidate(document.baseURI, 131);
     if (window.location.protocol === 'file:') {
-      pushCandidate(window.location.href, 130);
       pushCandidate(window.location.pathname, 129);
     }
     pushCandidate(window.location.pathname, 40);
@@ -10474,7 +11486,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const semesterPath = extractSemesterFolderPath(value, os);
       if (!semesterPath) return;
       let weight = score;
-      if (isAbsoluteFsPath(semesterPath)) weight += 20;
+      // Strongly prefer absolute filesystem paths so shortcut buttons stay usable.
+      if (isAbsoluteFsPath(semesterPath)) weight += 120;
       if (/enrolment system/i.test(String(value))) weight += 10;
       if (/^enrol\s*\d/i.test(getPathBasename(semesterPath))) weight += 8;
       if (weight > bestScore) {
@@ -10634,8 +11647,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const cleanPath = String(folderPath || '').trim();
     if (!cleanPath) return false;
     const os = getClientOs();
-    const href = toFolderHref(cleanPath);
-    if (os === 'windows' && isAbsoluteFsPath(cleanPath) && isEnrolProtocolEnabled()) {
+    const baseName = getPathBasename(cleanPath).toLowerCase();
+    const hasFileExtension = /\.[a-z0-9]{2,8}$/i.test(baseName);
+    const fileHref = toFolderHref(cleanPath);
+    const officeProtocolHref = (() => {
+      if (!hasFileExtension) return '';
+      if (!/^file:\/\//i.test(String(fileHref || ''))) return '';
+      if (/\.docx$/i.test(baseName)) return `ms-word:ofe|u|${fileHref}`;
+      if (/\.xlsx$/i.test(baseName)) return `ms-excel:ofe|u|${fileHref}`;
+      return '';
+    })();
+    if (
+      os === 'windows' &&
+      !/^(https?|file):\/\//i.test(cleanPath) &&
+      !isAbsoluteFsPath(cleanPath)
+    ) {
+      const copied = await copyPlainText(cleanPath);
+      if (copied) {
+        window.alert(
+          `${label} path is relative, so browser cannot open it directly. Check settings.txt for an absolute folder path.`
+        );
+      } else {
+        window.alert(
+          `${label} path is relative, so browser cannot open it directly. Check settings.txt for an absolute folder path.`
+        );
+      }
+      return false;
+    }
+    const href = fileHref;
+    if (officeProtocolHref) {
+      const launched = openOfficeProtocol(officeProtocolHref);
+      if (launched) {
+        const protocolHandled = await waitForExternalLaunchSignal(450);
+        if (protocolHandled) return true;
+      }
+    }
+    if (os === 'windows' && isAbsoluteFsPath(cleanPath) && !hasFileExtension && isEnrolProtocolEnabled()) {
       const launched = launchEnrolProtocol(cleanPath);
       if (launched) {
         const protocolHandled = await waitForExternalLaunchSignal(450);
@@ -10644,9 +11691,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (/^https?:\/\//i.test(href) && openHrefInNewTab(href)) return true;
     if (os === 'windows' && isAbsoluteFsPath(cleanPath)) {
-      if (href && /^file:\/\//i.test(href)) {
+      const canTryDirectFileHref = window.location.protocol === 'file:';
+      if (hasFileExtension && canTryDirectFileHref && href && /^file:\/\//i.test(href)) {
         const openedDirect = await openHrefWithVerification(href, 220);
         if (openedDirect) return true;
+      }
+      if (hasFileExtension) {
+        if (href && /^file:\/\//i.test(href)) {
+          const openedInTab = openHrefInNewTab(href);
+          if (openedInTab) return true;
+          try {
+            window.location.href = href;
+            return true;
+          } catch {
+            // fall back to copy
+          }
+        }
+        const copiedFilePath = await copyPlainText(cleanPath);
+        if (copiedFilePath) {
+          window.alert(`Could not open ${label} directly from browser. Path copied to clipboard.`);
+        } else {
+          window.alert(`Could not open ${label}. Path: ${cleanPath}`);
+        }
+        return false;
       }
       const searchHref = toWindowsExplorerSearchHref(cleanPath, label);
       if (searchHref) {
@@ -10716,61 +11783,175 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return getIntakeNameHint() || 'Enrol';
   };
 
-  const setFolderShortcutButton = (button, label, folderPath, fallbackLabel = 'Folder') => {
+  const hasLoadedPlannerFiles = () =>
+    !!(
+      sourceWorkbookFileObject ||
+      emailScriptsFileObject ||
+      triageWorkbookFileObject ||
+      lastDroppedFileInfo?.fileName ||
+      emailScriptsInfo?.fileName ||
+      triageFileInfo?.fileName
+    );
+
+  const setFolderShortcutButton = (
+    button,
+    label,
+    folderPath,
+    fallbackLabel = 'Folder',
+    tooltipOverride = ''
+  ) => {
     if (!button) return;
     const cleanLabel = String(label || '').trim() || String(fallbackLabel || 'Folder').trim();
     const cleanPath = String(folderPath || '').trim();
     button.classList.remove('hidden-initial');
     button.textContent = cleanLabel;
     button.disabled = false;
-    if (!cleanPath) {
+    const hasUsablePath =
+      !!cleanPath &&
+      (/^https?:\/\//i.test(cleanPath) || /^file:\/\//i.test(cleanPath) || isAbsoluteFsPath(cleanPath));
+    if (!hasUsablePath) {
       button.classList.add('is-unavailable');
       button.removeAttribute('data-path');
-      button.setAttribute('title', `${cleanLabel} (path unavailable)`);
+      button.setAttribute('title', `${cleanLabel} (absolute path unavailable; check settings.txt)`);
       return;
     }
     button.classList.remove('is-unavailable');
     button.setAttribute('data-path', cleanPath);
-    button.setAttribute('title', cleanPath);
+    button.setAttribute('title', String(tooltipOverride || cleanPath));
   };
 
   const renderFolderShortcutPanel = async () => {
     if (!folderShortcutsPanel) return;
-    const showPanel = !!staffFacing;
+    const showPanel = !!dropZoneEnabled && !isStudentModeParam;
     folderShortcutsPanel.classList.toggle('hidden-initial', !showPanel);
     if (!showPanel) return;
     await ensureFileLocationsCacheLoaded().catch(() => false);
+    await ensureSettingsSignOffPrefsLoaded().catch(() => false);
     const os = getClientOs();
+    const filesLoaded = hasLoadedPlannerFiles();
     const semesterPath = getSemesterFolderPath();
-    const semesterLabel = getSemesterFolderNameHint();
+    const semesterLabelRaw = getSemesterFolderNameHint();
+    const semesterLabel = (() => {
+      const raw = String(semesterLabelRaw || '').trim();
+      // Example: "Enrol 26_S1" -> "26_01"
+      const m = raw.match(/enrol\s*(\d{2})\s*[_-]?\s*s([12])/i);
+      if (m) return `${m[1]}_0${m[2]}`;
+      return raw;
+    })();
     const studentFormsPath = semesterPath ? joinPath(semesterPath, 'Student Forms') : '';
-    let teacherName = String(emailScriptsCache?.preferences?.signOffName || '').trim();
-    if (!teacherName && (emailScriptsDocxBuffer || emailScriptsHtmlSource)) {
-      const scripts = await parseEmailScripts().catch(() => null);
-      teacherName = String(scripts?.preferences?.signOffName || '').trim();
+    const semesterPathClean = String(semesterPath || '').replace(/[\\/]+$/, '');
+    const semesterParentPath = semesterPathClean
+      ? String(getPathDirname(semesterPathClean) || '').replace(/[\\/]+$/, '')
+      : '';
+    const creditTransfersLocalPath = semesterParentPath
+      ? joinPath(semesterParentPath, 'credit transfers')
+      : applyPathPlaceholders(CREDIT_TRANSFERS_LOCAL_FALLBACK);
+    const creditTransfersSuggestionsPath = semesterPath
+      ? joinPath(semesterPath, 'Supporting Documents\\Credits Transfers\\Suggestions')
+      : applyPathPlaceholders(CREDIT_TRANSFERS_SUGGESTIONS_FALLBACK);
+    const creditTransfersDocsRootPath = semesterPath
+      ? joinPath(semesterPath, 'Supporting Documents\\Credits Transfers')
+      : applyPathPlaceholders(CREDIT_TRANSFERS_DOCS_ROOT_FALLBACK);
+    const creditStrategyDocPath = joinPath(creditTransfersDocsRootPath, 'IT Enrolment Strategy.docx');
+    const creditFormDocPath = joinPath(creditTransfersDocsRootPath, 'Credit (HE) Form.docx');
+    const creditMpArticulationDocPath = joinPath(
+      creditTransfersDocsRootPath,
+      'Credit (HE) Form - Articulation for MP Diploma of IT.docx'
+    );
+    const creditFmpArticulationDocPath = joinPath(
+      creditTransfersDocsRootPath,
+      'Credit (HE) Form - Articulation for FMP Associate Degree.docx'
+    );
+    let teacherName = '';
+    if (filesLoaded) {
+      teacherName = String(emailScriptsCache?.preferences?.signOffName || '').trim();
+      if (!teacherName) {
+        teacherName = String(getSettingsSignOffPrefs()?.signOffName || '').trim();
+      }
+      if (!teacherName && (emailScriptsDocxBuffer || emailScriptsHtmlSource)) {
+        const scripts = await parseEmailScripts().catch(() => null);
+        teacherName = String(scripts?.preferences?.signOffName || '').trim();
+      }
     }
-    const teacherLabel = 'My temp';
+    {
+      const profileHint = String(getProfileNameHint() || '').trim().toLowerCase();
+      // Profile alias wins so "My temp" targets the known folder name even if sign-off uses a full name.
+      if (profileHint && TEACHER_FOLDER_FALLBACK_BY_PROFILE[profileHint]) {
+        teacherName = TEACHER_FOLDER_FALLBACK_BY_PROFILE[profileHint];
+      }
+    }
+    const teacherLabel = 'Temp';
+    const teacherFolderRoot = semesterPath
+      ? joinPath(semesterPath, 'Our temp and working files')
+      : '';
+    const teacherNameSegment = sanitizeFolderSegment(teacherName, os);
     const teacherFolderPath =
-      semesterPath
-        ? joinPath(
-            joinPath(semesterPath, 'Our temp and working files'),
-            sanitizeFolderSegment(teacherName, os)
-          )
-        : '';
-    const teacherFallbackPath =
-      semesterPath ? joinPath(semesterPath, 'Our temp and working files') : '';
+      filesLoaded
+        ? teacherFolderRoot && teacherNameSegment
+          ? joinPath(teacherFolderRoot, teacherNameSegment)
+          : teacherFolderRoot
+        : teacherFolderRoot;
     setFolderShortcutButton(
       folderShortcutSemesterButton,
       semesterLabel,
       semesterPath,
       semesterLabel
     );
-    setFolderShortcutButton(folderShortcutStudentFormsButton, 'Stud. Forms', studentFormsPath, 'Stud. Forms');
+    setFolderShortcutButton(folderShortcutStudentFormsButton, 'Forms', studentFormsPath, 'Forms');
     setFolderShortcutButton(
       folderShortcutTeacherButton,
       teacherLabel,
-      teacherFolderPath || teacherFallbackPath,
+      teacherFolderPath,
       teacherLabel
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditSharePointButton,
+      's',
+      CREDIT_TRANSFERS_SHAREPOINT_URL,
+      's',
+      'Credit transfers folder  - to SharePoint in a new tab'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditLocalButton,
+      'ct',
+      creditTransfersLocalPath,
+      'ct',
+      'Credit Transfers folder - via File Explorer and OneDrive'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditSuggestionsButton,
+      'sg',
+      creditTransfersSuggestionsPath,
+      'sg',
+      'Credit transfer suggestions.  Suggestions folder'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditStrategyButton,
+      'es',
+      creditStrategyDocPath,
+      'es',
+      'Open IT Enrolment Strategy document.'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditFormButton,
+      'c',
+      creditFormDocPath,
+      'c',
+      'Open the standard Credit (HE) Form.'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditMpArticulationButton,
+      'dip',
+      creditMpArticulationDocPath,
+      'dip',
+      'Open the MP Diploma of IT articulation credit form.'
+    );
+    setFolderShortcutButton(
+      folderShortcutCreditFmpArticulationButton,
+      'fmp',
+      creditFmpArticulationDocPath,
+      'fmp',
+      'Open the FMP Associate Degree articulation credit form.'
     );
     if (folderShortcutHelpButton) {
       folderShortcutHelpButton.classList.remove('hidden-initial');
@@ -10812,7 +11993,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         path = String(target.getAttribute('data-path') || '').trim();
       }
       if (!path) {
-        window.alert(`Could not resolve ${label} path yet. Check file_locations.txt.`);
+        window.alert(`Could not resolve ${label} path yet. Check settings.txt.`);
         return;
       }
       const copiedPath = await copyPlainText(path);
@@ -10994,6 +12175,58 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return matches[0] || null;
   };
 
+  const getPreferredTriageNames = () => {
+    const intakeRaw = String(getIntakeNameHint() || '').trim();
+    // Expected intake form like "Enrol 26_S1" -> triage targets "Triage_2026_S1.xlsx" / "Triage_26_S1.xlsx".
+    const m = intakeRaw.match(/enrol\s*(\d{2,4})\s*[_-]?\s*s([12])/i);
+    if (!m) return [];
+    const yyOrYear = String(m[1] || '');
+    const sem = `S${m[2]}`;
+    const year4 = yyOrYear.length === 2 ? `20${yyOrYear}` : yyOrYear;
+    const year2 = yyOrYear.length >= 2 ? yyOrYear.slice(-2) : yyOrYear;
+    const names = new Set([
+      `triage_${year4}_${sem}.xlsx`,
+      `triage_${year2}_${sem}.xlsx`,
+    ]);
+    return Array.from(names);
+  };
+
+  const isCopyVariantName = (name = '') => {
+    const lower = String(name || '').toLowerCase();
+    return /\bcopy\b/.test(lower) || /~\$/.test(lower);
+  };
+
+  const pickPreferredTriageName = (names = []) => {
+    const preferred = getPreferredTriageNames();
+    const normalized = names.map((n) => String(n || '').toLowerCase());
+    for (const candidate of preferred) {
+      const idx = normalized.indexOf(candidate.toLowerCase());
+      if (idx >= 0) return names[idx];
+    }
+    // Fallback: prefer non-copy triage files.
+    const nonCopy = names.find((name) => !isCopyVariantName(name));
+    return nonCopy || names[0] || '';
+  };
+
+  const pickBestTriageEntryByPreference = (entries = []) => {
+    const matches = entries.filter((entry) => /^triage.*\.xlsx$/i.test(entry?.handle?.name || ''));
+    if (!matches.length) return null;
+    const preferredNames = new Set(getPreferredTriageNames().map((n) => String(n || '').toLowerCase()));
+    const sorted = [...matches].sort((a, b) => {
+      const aName = String(a?.handle?.name || '');
+      const bName = String(b?.handle?.name || '');
+      const aPreferred = preferredNames.has(aName.toLowerCase()) ? 1 : 0;
+      const bPreferred = preferredNames.has(bName.toLowerCase()) ? 1 : 0;
+      if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+      const aCopy = isCopyVariantName(aName) ? 1 : 0;
+      const bCopy = isCopyVariantName(bName) ? 1 : 0;
+      if (aCopy !== bCopy) return aCopy - bCopy;
+      if ((a?.depth || 0) !== (b?.depth || 0)) return (a?.depth || 0) - (b?.depth || 0);
+      return aName.localeCompare(bName);
+    });
+    return sorted[0] || null;
+  };
+
   const formatHandlePath = (entryPath = '') => {
     const root = staffFolderHandle?.name ? `${staffFolderHandle.name}/` : '';
     return `${root}${entryPath || ''}`;
@@ -11014,7 +12247,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       (name) => sourceExact(name) || sourceStarts(name),
       (name) => sourceExact(name)
     );
-    const bestTriage = pickBestFileByDepth(fileEntries, (name) => triageStarts(name));
+    const bestTriage = pickBestTriageEntryByPreference(fileEntries);
     const bestEmail = pickBestFileByDepth(fileEntries, (name) => emailExact(name), (name) =>
       /\.(html|htm)$/i.test(String(name || ''))
     );
@@ -11034,6 +12267,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (sourceOnly) {
       const sourceOnlyFiles = files.filter((file) => /^source.*\.xlsx$/i.test(file?.name || ''));
       handleSourceFilesSelection(sourceOnlyFiles);
+      // Preserve folder context for shortcut resolution when loading source-only via double-click.
+      if (bestSource && lastDroppedFileInfo) {
+        lastDroppedFileInfo.path = formatHandlePath(bestSource.path || '');
+      }
+      ensureFileLocationsCacheLoaded()
+        .then((loaded) => {
+          if (!loaded) return;
+          if (lastDroppedFileInfo) {
+            renderDropZoneStatus(buildDropZoneStatusLines());
+          }
+        })
+        .catch(() => { });
       return true;
     }
     handleSourceFilesSelection(files);
@@ -11056,7 +12301,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (lastDroppedFileInfo || emailScriptsInfo || triageFileInfo) {
         renderDropZoneStatus(buildDropZoneStatusLines());
       }
-    }).catch(() => {});
+    }).catch(() => { });
     return true;
   };
 
@@ -11278,15 +12523,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     logFilePathDebug('loadFilesFromLocations cache', fileLocationsCache);
 
     if (!source && !triage && !email && !root) {
-      renderDropZoneStatus(['No Source/Triage/Email Scripts locations found in file_locations.']);
-      return;
+      renderDropZoneStatus(['No Source/Triage/Email Scripts locations found in settings.txt.']);
+      return false;
     }
     if (isFileProtocol) {
       renderDropZoneStatus([
-        'file_locations read OK, but browser blocks loading local files by path.',
+        'settings read OK, but browser blocks loading local files by path.',
         'Drop Source.xlsx, Email Scripts (docx/html), and Triage*.xlsx directly onto the drop zone.',
       ]);
-      return;
+      return false;
     }
 
     if (source) {
@@ -11307,7 +12552,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
 
-    if (sourceOnly) return;
+    if (sourceOnly) return true;
 
     if (email) {
       const emailBlob = await fetchFileBlob(email);
@@ -11349,21 +12594,52 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateStudentPreview();
       }
     }
+    return true;
   };
 
   const loadFileLocationsFromText = async (text, options = {}) => {
     const locations = parseFileLocationsText(text);
     logFilePathDebug('loadFileLocationsFromText locations', locations);
     if (!locations.length) {
-      renderDropZoneStatus(['file_locations had no readable paths.']);
-      return;
+      renderDropZoneStatus(['settings had no readable paths.']);
+      return false;
     }
-    await loadFilesFromLocations(locations, options);
+    return loadFilesFromLocations(locations, options);
   };
 
   async function readFileLocationsSiteText() {
     const primaryName = fileLocationNames[0];
     let content = null;
+    const readViaXhr = (name) =>
+      new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', name, true);
+        xhr.overrideMimeType('text/plain');
+        xhr.onload = () => {
+          const text = typeof xhr.responseText === 'string' ? xhr.responseText : '';
+          const hasText = text.trim().length > 0;
+          const okStatus =
+            (xhr.status >= 200 && xhr.status < 300) ||
+            // file:// loads commonly report status 0 even on success.
+            (xhr.status === 0 && hasText);
+          resolve(okStatus ? text : null);
+        };
+        xhr.onerror = () => resolve(null);
+        xhr.send();
+      });
+
+    // Avoid fetch() on file:// to prevent noisy CORS console errors.
+    if (isFileProtocol) {
+      content = await readViaXhr(primaryName);
+      if (!content) {
+        for (const name of fileLocationNames.slice(1)) {
+          content = await readViaXhr(name);
+          if (content) break;
+        }
+      }
+      return content;
+    }
+
     try {
       const primaryRes = await fetch(primaryName, { cache: 'no-store' });
       if (primaryRes.ok) content = await primaryRes.text();
@@ -11383,32 +12659,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
       }
     }
-    if (!content && isFileProtocol) {
-      const readViaXhr = (name) =>
-        new Promise((resolve) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', name, true);
-          xhr.overrideMimeType('text/plain');
-          xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300 ? xhr.responseText : null);
-          xhr.onerror = () => resolve(null);
-          xhr.send();
-        });
-      content = await readViaXhr(primaryName);
-      if (!content) {
-        for (const name of fileLocationNames.slice(1)) {
-          content = await readViaXhr(name);
-          if (content) break;
-        }
-      }
-    }
     return content;
   }
 
   async function ensureFileLocationsCacheLoaded() {
     if (fileLocationsCache?.updatedAt) return true;
+    if (isFileProtocol) return false;
     const content = await readFileLocationsSiteText();
     if (!content) {
-      logFilePathDebug('ensureFileLocationsCacheLoaded: file_locations not found');
+      logFilePathDebug('ensureFileLocationsCacheLoaded: settings not found');
       return false;
     }
     const locations = parseFileLocationsText(content);
@@ -11422,20 +12681,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return true;
   }
 
+  const ensureSettingsSignOffPrefsLoaded = async () => {
+    if (isFileProtocol) return false;
+    const existing = getSettingsSignOffPrefs();
+    if (existing && cleanSignOffValue(existing.signOffName)) return true;
+    const content = await readFileLocationsSiteText();
+    if (!content) return false;
+    parseFileLocationsText(content);
+    const refreshed = getSettingsSignOffPrefs();
+    return !!(refreshed && cleanSignOffValue(refreshed.signOffName));
+  };
+
   const loadFileLocationsFromSite = async (options = {}) => {
     const content = await readFileLocationsSiteText();
     if (!content) {
-      renderDropZoneStatus(['file_locations not found in this folder.']);
-      return;
+      renderDropZoneStatus(['settings.txt not found in this folder.']);
+      return false;
     }
-    await loadFileLocationsFromText(content, options);
+    return loadFileLocationsFromText(content, options);
   };
 
   const handleSourceFilesSelection = (files = []) => {
     const list = Array.from(files || []);
     if (!list.length) return;
     const sourceWorkbook = list.find((f) => /^source.*\.xlsx$/i.test(f.name || ''));
-    const triageWorkbook = list.find((f) => /^triage.*\.xlsx$/i.test(f.name || ''));
+    const triageCandidates = list.filter((f) => /^triage.*\.xlsx$/i.test(f.name || ''));
+    const triagePreferredName = pickPreferredTriageName(triageCandidates.map((f) => String(f?.name || '')));
+    const triageWorkbook =
+      triageCandidates.find((f) => String(f?.name || '').toLowerCase() === triagePreferredName.toLowerCase()) ||
+      triageCandidates[0];
     const workbookFile = sourceWorkbook || list.find((f) => /\.xlsx$/i.test(f.name));
     const scriptsCandidates = list.filter(
       (f) =>
@@ -11475,11 +12749,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (triageWorkbook) {
       triageWorkbookFileObject = triageWorkbook;
       triageWorkbookFileName = triageWorkbook.name;
-        triageFileInfo = {
-          fileName: triageWorkbook.name,
-          modifiedMs: Number.isFinite(triageWorkbook.lastModified) ? triageWorkbook.lastModified : null,
-          path: getPathDirname(triageWorkbook.webkitRelativePath || ''),
-        };
+      triageFileInfo = {
+        fileName: triageWorkbook.name,
+        modifiedMs: Number.isFinite(triageWorkbook.lastModified) ? triageWorkbook.lastModified : null,
+        path: getPathDirname(triageWorkbook.webkitRelativePath || ''),
+      };
       const triageReader = new FileReader();
       triageReader.onload = (event) => {
         triageWorkbookBuffer = event.target.result;
@@ -11523,7 +12797,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       handleSourceFilesSelection(files);
     } catch (error) {
-      // user cancelled; no action needed
+      // Browser denied/blocked directory picker (or user cancelled): fall back to regular file picker.
+      openSourceFilePicker();
     }
   };
 
@@ -11589,7 +12864,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         fileName: emailScriptsFileName,
         modifiedMs: Number.isFinite(modifiedMs) ? modifiedMs : null,
       };
-      parseEmailScripts().catch(() => {});
+      parseEmailScripts().catch(() => { });
       scheduleFolderShortcutPanelRefresh();
       if (lastDroppedFileInfo) {
         renderDropZoneStatus(buildDropZoneStatusLines());
@@ -11613,9 +12888,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const majorName = getMajorDisplayName();
       const coreMajorCount = rows.length;
       const remainingElectives = getRemainingElectiveCount();
-      remainingSummary.innerHTML = `<p><strong>You have <span class="remaining-count">${coreMajorCount}</span> Core and ${majorName} subjects remaining</strong></p>`;
+      remainingSummary.innerHTML = `<p>You have <strong><span class="remaining-count">${coreMajorCount}</span> Core </strong>and <strong>${majorName}</strong> subjects remaining. Complete all of these:</p>`;
       if (remainingElectivesCount) {
-        remainingElectivesCount.innerHTML = `<strong>You have <span class="remaining-count">${remainingElectives}</span> Elective${remainingElectives === 1 ? '' : 's'} to complete</strong>`;
+        remainingElectivesCount.innerHTML = `You have <strong><span class="remaining-count">${remainingElectives}</span> Elective${remainingElectives === 1 ? '' : 's'}</strong> remaining.  Complete any ${remainingElectives} from this list:`;
       }
     }
     if (remainingElectivesSection && remainingElectivesTable) {
@@ -11730,26 +13005,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const buildCourseMapKey = () => {
-    if (!courseMapKey) return;
-    courseMapKey.innerHTML = '';
-    const heading = document.createElement('div');
-    heading.className = 'course-map-key-title';
-    heading.textContent = 'Colour Key';
-    courseMapKey.appendChild(heading);
-    const items = [
-      { label: '(White background) Available to you this semseter', color: '#ffffff' },
-      { label: 'Completed - passed or credit', color: '#cfe8ff' },
-      { label: 'Current enrolment in your student record', color: 'linear-gradient(135deg, #0b3d91, #9ecbff)', textColor: '#fff' },
-      { label: 'Selected here today', color: '#0b3d91', textColor: '#fff' },
-      { label: 'You can tick off prerequisite requirements for this subject this semester and study it next semester', color: '#cfcfcf' },
-      { label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' },
-      { label: 'Pre: means the subjects that need to be completed before the subject becomes available.', color: 'transparent' },
-    ];
+    if (!courseMapKeyModalBody) return;
+    courseMapKeyModalBody.innerHTML = '';
+    const { showCompleted, showSelected, showCurrent } = getCourseMapBlueKeyVisibility();
+    const showBlue = showCompleted || showSelected || showCurrent;
+    const showOther = !!courseMapPrereqColoursOn;
+    const items = [];
+    if (showOther) {
+      items.push({ label: '(White background) Available to you this semseter', color: '#ffffff' });
+    }
+    if (showCompleted) {
+      items.push({ label: 'Completed - passed or credit', color: '#cfe8ff' });
+    }
+    if (showCurrent) {
+      items.push({
+        label: 'Current enrolment in your student record',
+        color: 'linear-gradient(135deg, #0b3d91, #9ecbff)',
+        textColor: '#fff',
+      });
+    }
+    if (showSelected) {
+      items.push({ label: 'Selected here today', color: '#0b3d91', textColor: '#fff' });
+    }
+    if (showOther) {
+      items.push({ label: 'You can tick off prerequisite requirements for this subject this semester and study it next semester', color: '#cfcfcf' });
+      items.push({ label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' });
+    }
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'course-map-key-panel-item';
+      empty.textContent = 'No colour codes to show.';
+      courseMapKeyModalBody.appendChild(empty);
+      return;
+    }
     items.forEach((item) => {
       const keyItem = document.createElement('div');
-      keyItem.className = 'course-map-key-item';
+      keyItem.className = 'course-map-key-panel-item';
       const swatch = document.createElement('span');
-      swatch.className = 'course-map-key-swatch';
+      swatch.className = 'course-map-key-panel-swatch';
       swatch.style.background = item.color;
       if (item.textColor) swatch.style.borderColor = '#666';
       if (item.color === 'transparent') swatch.style.borderColor = 'transparent';
@@ -11757,7 +13050,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       label.textContent = item.label;
       keyItem.appendChild(swatch);
       keyItem.appendChild(label);
-      courseMapKey.appendChild(keyItem);
+      courseMapKeyModalBody.appendChild(keyItem);
     });
   };
 
@@ -11934,7 +13227,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const anchorRect = anchorCell.getBoundingClientRect();
       const isNsMajor = majorKey === 'ns';
       const left = isNsMajor ? anchorRect.left - containerRect.left + 3 : anchorRect.left - containerRect.left;
-      const width = isNsMajor ? Math.max(0, anchorRect.width - 6) : anchorRect.width;
+      const widthBase = isNsMajor ? Math.max(0, anchorRect.width - 6) : anchorRect.width;
+      // Make the floating BIT245 card slightly narrower than its anchor cell.
+      const width = Math.max(0, widthBase * 0.99);
       const height = anchorRect.height;
       const adjustedHeight = isNsMajor ? height * 1.1 : height;
       const top =
@@ -11963,7 +13258,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     labels.forEach((label) => {
       const stream = label.dataset.stream || '';
       const isMajor = stream === majorKey && courseMapIndicatorsOn;
+      const isElective = courseMapIndicatorsOn && !isMajor;
       label.classList.toggle('is-major', isMajor);
+      label.classList.toggle('is-elective', isElective);
       const streamNames = {
         ns: 'Network Security',
         ba: 'Business Analytics',
@@ -12001,9 +13298,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const grid = section?.querySelector('.course-map-stream-grid');
           if (!grid) return;
           const gridRect = grid.getBoundingClientRect();
-          const left = gridRect.left - containerRect.left - label.offsetWidth - 6;
+          const isElective = label.classList.contains('is-elective');
+          if (isElective) {
+            // Nudge elective labels: 20px narrower and 20px closer to the grid.
+            label.style.width = '';
+            const naturalWidth = label.getBoundingClientRect().width;
+            const targetWidth = Math.max(120, Math.round(naturalWidth - 20));
+            label.style.width = `${targetWidth}px`;
+          } else {
+            label.style.width = '';
+          }
+          // Keep labels fully to the left of the subject blocks (no overlap into the grid).
+          // For elective labels, reduce the gap slightly so they sit closer without crossing into cards.
+          const gap = isElective ? 2 : 6;
+          const left = gridRect.left - containerRect.left - label.offsetWidth - gap;
           const labelHeight = label.offsetHeight || 0;
-          const top = gridRect.top - containerRect.top + Math.max(0, (gridRect.height - labelHeight) / 2);
+          // Center when possible; otherwise anchor to the grid top to avoid drifting upward into other blocks.
+          const baseTop = gridRect.top - containerRect.top;
+          const top =
+            labelHeight > gridRect.height
+              ? baseTop
+              : baseTop + (gridRect.height - labelHeight) / 2;
           label.style.position = 'absolute';
           label.style.left = `${Math.round(left)}px`;
           label.style.top = `${Math.round(top)}px`;
@@ -12020,6 +13335,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapNotesOverlapRaf) cancelAnimationFrame(courseMapNotesOverlapRaf);
     courseMapNotesOverlapRaf = requestAnimationFrame(() => {
       if (!courseMapNotesEl || !courseMapContent) return;
+      // Anchor notes below BIT121 for consistent layout.
+      const bit121 = courseMapContent.querySelector('.course-map-cell[data-subject="BIT121"]');
+      if (bit121) {
+        const contentRect = courseMapContent.getBoundingClientRect();
+        const bitRect = bit121.getBoundingClientRect();
+        const desiredTop = Math.max(0, Math.round(bitRect.bottom - contentRect.top + 36));
+        courseMapNotesEl.style.top = `${desiredTop}px`;
+      }
       const notesRect = courseMapNotesEl.getBoundingClientRect();
       const labels = Array.from(courseMapContent.querySelectorAll('.course-map-stream-label'));
       const overlaps = labels.some((label) => {
@@ -12269,12 +13592,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const coreBlockEl = element.querySelector('.course-map-core-block');
     const streamsBlockEl = element.querySelector('.course-map-streams-block');
     const notesEl = element.querySelector('.course-map-notes');
-    const keyEl = element.querySelector('.course-map-key');
+    const keyPanelEl = element.querySelector('.course-map-key-panel');
+    const keyPanelVisible = !!(
+      keyPanelEl &&
+      keyPanelEl.classList.contains('show') &&
+      isVisible(keyPanelEl)
+    );
     const bounds = getBoundsFromElements([
       coreBlockEl,
       streamsBlockEl,
       notesEl,
-      prereqColoursOff ? null : keyEl,
+      keyPanelVisible ? keyPanelEl : null,
     ]);
     const fallbackRect = element.getBoundingClientRect();
     const containerRect = bounds || fallbackRect;
@@ -12942,9 +14270,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const xCorner = bit108Rect.x + bit108BorderLeft / 2;
       const yCenter = bit105Rect.y + bit105Rect.height - bit105BorderBottom / 2;
       const yDownEnd = majorRect.y + 4;
-      const elbowX = xCorner - sepWidth / 2;
-      const elbowY = yCenter - sepWidth / 2 - 1;
-      addRect({ x: xStart, y: elbowY, width: Math.max(0, elbowX - xStart), height: sepWidth }, { fill: sepColor });
+      const elbowNudge = 1;
+      const elbowTopNudge = 1.25;
+      const elbowX = xCorner - sepWidth / 2 - elbowNudge;
+      const elbowY = yCenter - sepWidth / 2 - elbowNudge - elbowTopNudge;
+      const horizExtraLeft = 1;
+      const xStartH = xStart - horizExtraLeft;
+      addRect({ x: xStartH, y: elbowY, width: Math.max(0, elbowX - xStartH), height: sepWidth }, { fill: sepColor });
       addRect({ x: elbowX, y: yCenter, width: sepWidth, height: Math.max(0, yDownEnd - yCenter) }, { fill: sepColor });
       addRect({ x: elbowX, y: elbowY, width: sepWidth, height: sepWidth }, { fill: sepColor });
 
@@ -12952,7 +14284,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const bit105BorderBottom2 = toNumber(bit105Style.borderBottomWidth);
         const bit121Style = window.getComputedStyle(bit121);
         const bit121BorderBottom = toNumber(bit121Style.borderBottomWidth);
-      const yBottom =
+        const yBottom =
           bit121Rect.y + bit121Rect.height - Math.max(bit121BorderBottom, bit105BorderBottom2) / 2 - 2;
         const bit105BorderLeft = toNumber(bit105Style.borderLeftWidth);
         const xStartLine = bit121Rect.x + bit121Rect.width;
@@ -12985,9 +14317,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (ms5 && ms6 && esLeft) {
         const ms5Rect = relativeRect(ms5);
         const ms6Rect = relativeRect(ms6);
-        const esRect = relativeRect(esLeft);
-        const gapCenter = (ms5Rect.x + ms5Rect.width + esRect.x) / 2;
-        const xGap = gapCenter - sepWidth / 2;
+        const esRect = relativeRect(es1 || esLeft);
+        // Anchor to the top-left of "Elective Subject 1" (nudge slightly left) for stability.
+        const xGap = esRect.x - 2;
         addRect(
           { x: xGap, y: ms5Rect.y + ms5Rect.height, width: sepWidth, height: Math.max(0, ms6Rect.y - (ms5Rect.y + ms5Rect.height)) },
           { fill: sepColor }
@@ -13002,38 +14334,67 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     drawCoreConnectors();
 
-    if (!prereqColoursOff) {
-      const keyTitle = element.querySelector('.course-map-key-title');
-      if (keyTitle) {
-        const titleRect = relativeRect(keyTitle);
-        const titleStyle = window.getComputedStyle(keyTitle);
-        addText(
-          keyTitle.textContent.trim(),
-          titleRect.x,
-          titleRect.y,
-          titleStyle
-        );
+    // Include the colour key panel in exports only when it is visible.
+    if (keyPanelVisible && keyPanelEl) {
+      const panelRect = relativeRect(keyPanelEl);
+      const panelStyle = window.getComputedStyle(keyPanelEl);
+      const radius = toNumber(panelStyle.borderRadius);
+      addRect(panelRect, {
+        fill: panelStyle.backgroundColor || '#fff',
+        stroke: panelStyle.borderColor || '#222',
+        strokeWidth: toNumber(panelStyle.borderWidth) || 2,
+        rx: radius,
+        ry: radius,
+      });
+
+      const titleEl = keyPanelEl.querySelector('.course-map-key-panel-title');
+      if (titleEl) {
+        const titleRect = relativeRect(titleEl);
+        const titleStyle = window.getComputedStyle(titleEl);
+        addText(titleEl.textContent.trim(), titleRect.x, titleRect.y, titleStyle);
       }
-      element.querySelectorAll('.course-map-key-item').forEach((item) => {
+
+      const getLineHeightPx = (style) => {
+        const lh = style.lineHeight || '';
+        if (lh && lh !== 'normal') return toNumber(lh) || 16;
+        const fs = toNumber(style.fontSize) || 12;
+        return Math.round(fs * 1.25);
+      };
+
+      keyPanelEl.querySelectorAll('.course-map-key-panel-item').forEach((item) => {
         const itemRect = relativeRect(item);
         const style = window.getComputedStyle(item);
-        const swatch = item.querySelector('.course-map-key-swatch');
+        const swatch = item.querySelector('.course-map-key-panel-swatch');
+        const labelSpan = item.querySelector('span:not(.course-map-key-panel-swatch)');
+        const labelText = (labelSpan?.textContent || item.textContent || '').trim();
+
         if (swatch) {
           const swatchRect = relativeRect(swatch);
           const swatchStyle = window.getComputedStyle(swatch);
+          const inlineBg = swatch.style.background || '';
+          const fill =
+            inlineBg.includes('gradient') ? '#0b3d91' : (swatchStyle.backgroundColor || '#fff');
           addRect(swatchRect, {
-            fill: swatchStyle.backgroundColor,
+            fill,
             stroke: swatchStyle.borderColor,
             strokeWidth: toNumber(swatchStyle.borderWidth),
           });
-          addTextWithKeywordEmphasis(
-            item.textContent.trim(),
-            swatchRect.x + swatchRect.width + 6,
-            itemRect.y + 2,
-            style
-          );
+
+          const textX = swatchRect.x + swatchRect.width + 8;
+          const textY = itemRect.y + 2;
+          const maxWidth = Math.max(0, panelRect.x + panelRect.width - textX - 12);
+          const lines = wrapText(labelText, maxWidth, style, 999);
+          const lineHeight = getLineHeightPx(style);
+          lines.forEach((line, idx) => {
+            addTextWithKeywordEmphasis(line, textX, textY + idx * lineHeight, style);
+          });
         } else {
-          addTextWithKeywordEmphasis(item.textContent.trim(), itemRect.x, itemRect.y + 2, style);
+          const maxWidth = Math.max(0, panelRect.width - 24);
+          const lines = wrapText(labelText, maxWidth, style, 999);
+          const lineHeight = getLineHeightPx(style);
+          lines.forEach((line, idx) => {
+            addTextWithKeywordEmphasis(line, itemRect.x, itemRect.y + 2 + idx * lineHeight, style);
+          });
         }
       });
     }
@@ -13545,8 +14906,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const preservePosition = (fn) => {
       if (!modalEl || !overlay || !overlay.classList.contains('show')) {
-        fn();
-        return;
+        return fn();
       }
       const rect = modalEl.getBoundingClientRect();
       const prev = {
@@ -13563,7 +14923,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       modalEl.style.transform = 'none';
       modalEl.style.width = `${rect.width}px`;
       modalEl.style.maxWidth = `${rect.width}px`;
-      fn();
+      const result = fn();
       requestAnimationFrame(() => {
         modalEl.style.position = prev.position;
         modalEl.style.left = prev.left;
@@ -13572,6 +14932,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         modalEl.style.width = prev.width;
         modalEl.style.maxWidth = prev.maxWidth;
       });
+      return result;
     };
 
     const measureNaturalWidths = () => {
@@ -13600,7 +14961,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return widths;
     };
 
-    preservePosition(() => {
+    return preservePosition(() => {
       // Reset any inline sizing
       rows.forEach((row) =>
         Array.from(row.children).forEach((cell) => {
@@ -13610,9 +14971,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
 
       const widths = measureNaturalWidths();
+      const targets = widths.map((w) => Math.max(0, Math.ceil(w)));
 
-      widths.forEach((w, idx) => {
-        const target = Math.max(0, Math.ceil(w));
+      targets.forEach((target, idx) => {
         rows.forEach((row) => {
           const cell = row.children[idx];
           if (cell) {
@@ -13621,38 +14982,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
         });
       });
+
+      return targets;
     });
   };
 
   const adjustTimetableSizing = () => {
     if (!timetableTable || !timetableModal) return;
-    adjustTableColumnWidths();
+    const targets = adjustTableColumnWidths();
     const modalEl = timetableModal.querySelector('.modal');
     if (!modalEl) return;
-    const measureNaturalTableWidth = () => {
-      const clone = timetableTable.cloneNode(true);
-      clone.style.visibility = 'hidden';
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '-9999px';
-      clone.style.width = 'auto';
-      clone.style.maxWidth = 'none';
-      document.body.appendChild(clone);
-      const width = Math.ceil(Math.max(clone.scrollWidth || 0, clone.getBoundingClientRect().width || 0));
-      document.body.removeChild(clone);
-      return width;
-    };
     const tableRect = timetableTable.getBoundingClientRect();
-    const wrapper = timetableTable.closest('.timetable-table-wrapper');
-    const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : null;
-    const naturalWidth = measureNaturalTableWidth();
     const tableWidth = Math.ceil(
       Math.max(
-        tableRect.width,
+        Array.isArray(targets) && targets.length ? targets.reduce((sum, w) => sum + w, 0) : 0,
         timetableTable.scrollWidth || 0,
-        wrapperRect?.width || 0,
-        wrapper?.scrollWidth || 0,
-        naturalWidth
+        tableRect.width || 0
       )
     );
     const modalStyle = window.getComputedStyle(modalEl);
@@ -13666,11 +15011,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalEl.style.width = `${targetWidth}px`;
     modalEl.style.maxWidth = `${targetWidth}px`;
     modalEl.style.minWidth = `${targetWidth}px`;
-    if (wrapper) {
-      wrapper.style.width = `${tableWidth}px`;
-      wrapper.style.maxWidth = `${tableWidth}px`;
-      wrapper.style.minWidth = `${tableWidth}px`;
-    }
     timetableTable.style.width = `${tableWidth}px`;
     timetableTable.style.maxWidth = `${tableWidth}px`;
     timetableTable.style.minWidth = `${tableWidth}px`;
@@ -13678,8 +15018,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const modalRect = modalEl.getBoundingClientRect();
       console.info('[Timetable modal sizing]', {
         tableRect: { w: tableRect.width, sw: timetableTable.scrollWidth },
-        wrapperRect: wrapperRect ? { w: wrapperRect.width, sw: wrapper?.scrollWidth || 0 } : null,
-        naturalWidth,
+        targetsSum: Array.isArray(targets) ? targets.reduce((sum, w) => sum + w, 0) : null,
         chrome,
         targetWidth,
         modalRect: { w: modalRect.width },
@@ -13786,15 +15125,49 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const showCourseMapModal = () => {
     if (!courseMapModal) return;
     const doc = document.documentElement;
-    const top = window.scrollY || doc.scrollTop || 0;
-    courseMapModal.style.top = `${top}px`;
-    courseMapModal.style.height = `${doc.scrollHeight - top}px`;
+    // Always open from a consistent viewport position so the top of the course map is visible.
+    // Use multiple scroll APIs because some browsers/contexts ignore `window.scrollTo` when focus shifts.
+    try {
+      window.scrollTo(0, 0);
+    } catch { }
+    try {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    } catch { }
+    try {
+      document.body.scrollTop = 0;
+      document.body.scrollLeft = 0;
+    } catch { }
+    courseMapModal.style.top = `0px`;
+    courseMapModal.style.height = `${doc.scrollHeight}px`;
     renderCourseMapModal();
     courseMapModal.classList.add('show');
     courseMapModal.setAttribute('aria-hidden', 'false');
     updateCourseMapPrereqToggle();
     updateCourseMapPrereqTextToggle();
     updateCourseMapFontScale();
+    syncCourseMapKeyAvailability();
+    // Always show the colour key when the Course Map opens.
+    showCourseMapKeyModal();
+    const resetScrollPositions = () => {
+      try {
+        window.scrollTo(0, 0);
+      } catch { }
+      // Reset any internal scrolling within the resizable modal.
+      const modalBox = courseMapModal.querySelector('.course-map-modal');
+      const modalBody = courseMapModal.querySelector('.modal-body');
+      if (modalBox) {
+        modalBox.scrollTop = 0;
+        modalBox.scrollLeft = 0;
+      }
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+        modalBody.scrollLeft = 0;
+      }
+    };
+    // Run after layout and after content render settles.
+    requestAnimationFrame(resetScrollPositions);
+    setTimeout(resetScrollPositions, 60);
     if (closeCourseMapCta) closeCourseMapCta.focus();
     if (!courseMapResizeObserver) {
       courseMapResizeObserver = observeCourseMapResize();
@@ -13803,6 +15176,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const hideCourseMapModal = () => {
     if (!courseMapModal) return;
+    hideCourseMapKeyModal();
     courseMapModal.classList.remove('show');
     courseMapModal.setAttribute('aria-hidden', 'true');
     courseMapModal.style.top = '';
@@ -13848,6 +15222,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   let courseMapResizeObserver = observeCourseMapResize();
 
+  const scheduleCourseMapRelayout = () => {
+    // Some UI toggles change the internal layout without resizing the modal.
+    // Use a double-rAF to ensure layout has settled before measuring.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        positionCourseMapArrows();
+        positionCourseMapCoreConnector();
+        updateCourseMapStreamLabels();
+        updateCourseMapNotesOverlap();
+      });
+    });
+  };
+
   const updateCourseMapPrereqToggle = () => {
     if (courseMapModal) {
       courseMapModal.classList.toggle('course-map-prereq-off', !courseMapPrereqColoursOn);
@@ -13859,6 +15246,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       toggleCourseMapPrereqButton.setAttribute('aria-pressed', courseMapPrereqColoursOn ? 'true' : 'false');
     }
     updateCourseMapStreamLabels();
+    syncCourseMapKeyAvailability();
   };
 
   const getCourseMapCoreConnector = () => {
@@ -13921,11 +15309,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorElectiveVert = connector.querySelector('.connector-v-major-elective');
     if (!horiz || !vert || !bit121Horiz || !bit372Vert || !msVert || !majorElectiveVert) return;
     const fmt = (value) => `${value.toFixed(2)}px`;
-    const elbowX = xCorner - sepWidth / 2;
-    const elbowY = yCenter - sepWidth / 2 - 1;
-    horiz.style.left = fmt(xStart);
+    // Small nudges so the elbow aligns crisply with the separator stroke and meets borders cleanly.
+    const elbowNudge = 1;
+    const elbowTopNudge = 1.25;
+    const elbowX = xCorner - sepWidth / 2 - elbowNudge;
+    const elbowY = yCenter - sepWidth / 2 - elbowNudge - elbowTopNudge;
+    const horizExtraLeft = 1;
+    const xStartH = xStart - horizExtraLeft;
+    horiz.style.left = fmt(xStartH);
     horiz.style.top = fmt(elbowY);
-    horiz.style.width = fmt(Math.max(0, elbowX - xStart));
+    horiz.style.width = fmt(Math.max(0, elbowX - xStartH));
     vert.style.left = fmt(elbowX);
     vert.style.top = fmt(yCenter);
     vert.style.height = fmt(Math.max(0, yDownEnd - yCenter));
@@ -13978,9 +15371,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (ms5Cell && ms6Cell && esLeftCell) {
       const ms5Rect = ms5Cell.getBoundingClientRect();
       const ms6Rect = ms6Cell.getBoundingClientRect();
-      const esRect = esLeftCell.getBoundingClientRect();
-      const gapCenter = (ms5Rect.right + esRect.left) / 2;
-      const xGap = gapCenter - containerRect.left - (sepWidth / 2);
+      const esRect = (es1Cell || esLeftCell).getBoundingClientRect();
+      // Anchor the divider to the top-left of "Elective Subject 1" (nudge slightly left).
+      const xGap = esRect.left - containerRect.left - 2;
       const yStart = ms5Rect.bottom - containerRect.top;
       const yEnd = ms6Rect.top - containerRect.top;
       msVert.style.left = `${Math.round(xGap)}px`;
@@ -14010,7 +15403,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       toggleCourseMapPrereqTextButton.setAttribute('aria-pressed', courseMapPrereqTextOn ? 'true' : 'false');
     }
     updateCourseMapStreamLabels();
-    positionCourseMapArrows();
+    // Hiding prereq text changes cell heights; recompute connector positions too.
+    scheduleCourseMapRelayout();
   };
 
   const updateCourseMapIndicatorsToggle = () => {
@@ -14024,10 +15418,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const updateCourseMapFontScale = () => {
-    const target = courseMapModal?.querySelector('.course-map-modal') || courseMapModal;
-    if (target) {
-      target.style.setProperty('--course-map-font-scale', `${courseMapFontScaleEm}em`);
+    // Apply the CSS vars on multiple ancestors to avoid any DOM/layout edge cases.
+    // Only `.course-map-cell` consumes these vars, so Notes/Colour Key/buttons remain unaffected.
+    const targets = [
+      courseMapContent,
+      courseMapModal?.querySelector('.course-map-modal'),
+      courseMapModal,
+    ].filter(Boolean);
+    targets.forEach((target) => {
+      target.style.setProperty('--course-map-cell-font-size', `${courseMapFontScaleEm}em`);
+      // Back-compat for any older CSS still referencing this var.
+      target.style.setProperty('--course-map-cell-scale', String(courseMapFontScaleEm));
+    });
+    // Apply inline font-size to course-map cells as the most reliable mechanism.
+    // This guarantees scaling works even if CSS var resolution is affected by browser quirks/caching.
+    if (courseMapContent) {
+      courseMapContent.querySelectorAll('.course-map-cell').forEach((cell) => {
+        cell.style.fontSize = `${courseMapFontScaleEm}em`;
+      });
     }
+    // Non-invasive feedback to confirm the handler is firing.
+    const scaleLabel = `${Math.round(courseMapFontScaleEm * 100)}%`;
+    if (courseMapFontDecreaseButton) courseMapFontDecreaseButton.title = `Course map font: ${scaleLabel}`;
+    if (courseMapFontIncreaseButton) courseMapFontIncreaseButton.title = `Course map font: ${scaleLabel}`;
+    requestAnimationFrame(() => {
+      positionCourseMapArrows();
+      positionCourseMapCoreConnector();
+      updateCourseMapStreamLabels();
+      updateCourseMapNotesOverlap();
+    });
   };
 
   const showNextSemesterModal = () => {
@@ -14133,7 +15552,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const renderAlertButton = (type) => {
     const btn = getAlertButton(type);
     if (!btn) return;
-    const labels = { error: 'Error', warning: 'Caution', info: 'Info', data: 'Data Error?', codes: 'Codes' };
+    const labels = { error: 'Alert', warning: 'Caution', info: 'Info', data: 'Data Error?', codes: 'Codes' };
     const content = alertContent[type] || [];
     const count = content.length;
     const hasUnread = content.some((p) => !p.seen);
@@ -14225,7 +15644,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       type === 'warning'
         ? 'Cautions'
         : type === 'error'
-          ? 'Errors'
+          ? 'Alerts'
           : type === 'data'
             ? 'Data Errors'
             : payloads[0].title || 'Notice';
@@ -14341,7 +15760,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const headingHtml = includeHeading
       ? `<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${heading}</p>`
       : '';
-      const formatFeeLineHtml = (line) => {
+    const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
       if (/^Cancellation Date\b/i.test(line)) {
         return safe.replace(
@@ -14419,7 +15838,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildTimetableEmailBody = async (firstName) => {
     const name = firstName || 'student';
     const scripts = await parseEmailScripts();
-    const pref = scripts?.preferences || null;
+    const pref = scripts?.preferences || getSettingsSignOffPrefs() || null;
     const salutationBase = pref?.salutation ? pref.salutation.trim() : 'Hello';
     const salutation = `${salutationBase} ${name}`.trim();
     const signOffPhrase = pref?.signOffPhrase ? pref.signOffPhrase.trim() : 'Kind regards';
@@ -14431,7 +15850,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildTimetableEmailBodySync = (firstName) => {
     const name = firstName || 'student';
     const scripts = emailScriptsCache;
-    const pref = scripts?.preferences || null;
+    const pref = scripts?.preferences || getSettingsSignOffPrefs() || null;
     const salutationBase = pref?.salutation ? pref.salutation.trim() : 'Hello';
     const salutation = `${salutationBase} ${name}`.trim();
     const signOffPhrase = pref?.signOffPhrase ? pref.signOffPhrase.trim() : 'Kind regards';
@@ -14510,7 +15929,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyEmailScriptsToClipboard = async () => {
     const scripts = emailScriptsCache;
     if (!scripts) {
-      parseEmailScripts().catch(() => {});
+      parseEmailScripts().catch(() => { });
       return false;
     }
     const plain = scripts.declarationText || htmlToPlainText(scripts.declarationHtml || '');
@@ -14634,10 +16053,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const html = section?.html || '';
     if (!plain) return false;
     return copyHtmlPlainToClipboard(html, plain);
-  };
-
-  const copySupportsAtRiskSection = async () => {
-    return copyEmailScriptsSectionByKey('supports-at-risk');
   };
 
   const copyStudentDeclaration = async () => {
@@ -14805,7 +16220,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const openTimetableEmailDraft = (recipients, body) => {
     if (!recipients) return;
-    const subject = 'Student Declaration';
+    const subject = 'Bachelor of IT enrolment';
     const mailto = `mailto:${encodeURIComponent(recipients)}?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
@@ -14814,7 +16229,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const openTimetableEmailDraftSafe = (recipients, body, fallbackBody) => {
     if (!recipients) return false;
-    const subject = 'Student Declaration';
+    const subject = 'Bachelor of IT enrolment';
     const encodedBody = encodeURIComponent(body || '');
     const maxMailtoBodyLength = 1800;
     if (encodedBody.length > maxMailtoBodyLength) {
@@ -15260,34 +16675,49 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     currentEnrolmentsSection.hidden = false;
     if (historyGradedHeading) historyGradedHeading.hidden = false;
 
-    requestAnimationFrame(() => {
-      if (!historyTable || !currentEnrolmentsTable) return;
-      const headerCells = historyTable.querySelectorAll('thead tr:last-child th');
-      const currentRows = currentEnrolmentsTable.querySelectorAll('tbody tr');
-      if (!headerCells.length || !currentRows.length) return;
-      headerCells.forEach((cell, idx) => {
-        const width = Math.ceil(cell.getBoundingClientRect().width);
-        if (!width) return;
-        currentRows.forEach((row) => {
-          const td = row.children[idx];
-          if (td) {
-            td.style.width = `${width}px`;
-            td.style.minWidth = `${width}px`;
-          }
-        });
+    requestAnimationFrame(syncCurrentEnrolmentColumnWidths);
+    return true;
+  };
+
+  const syncCurrentEnrolmentColumnWidths = () => {
+    if (!historyTable || !currentEnrolmentsTable || !currentEnrolmentsSection || currentEnrolmentsSection.hidden) {
+      return;
+    }
+    const headerCells = historyTable.querySelectorAll('thead tr:last-child th');
+    const currentHeaderCells = currentEnrolmentsTable.querySelectorAll('thead tr:last-child th');
+    const currentRows = currentEnrolmentsTable.querySelectorAll('tbody tr');
+    if (!headerCells.length) return;
+    headerCells.forEach((cell, idx) => {
+      const width = Math.ceil(cell.getBoundingClientRect().width);
+      if (!width) return;
+      const currentHeader = currentHeaderCells[idx];
+      if (currentHeader) {
+        currentHeader.style.width = `${width}px`;
+        currentHeader.style.minWidth = `${width}px`;
+      }
+      currentRows.forEach((row) => {
+        const td = row.children[idx];
+        if (td) {
+          td.style.width = `${width}px`;
+          td.style.minWidth = `${width}px`;
+        }
       });
-      currentEnrolmentsTable.style.width = '100%';
     });
+    const historyWidth = Math.ceil(historyTable.getBoundingClientRect().width);
+    if (historyWidth > 0) {
+      currentEnrolmentsTable.style.width = `${historyWidth}px`;
+      currentEnrolmentsTable.style.maxWidth = `${historyWidth}px`;
+    }
   };
 
   const buildModifiedLine = (name, modifiedMs) => {
     if (!name) return null;
     if (!Number.isFinite(modifiedMs)) {
-      return `${name}. Modified date unknown.`;
+      return `${name}\nLast saved: Unknown`;
     }
     const daysAgo = Math.max(0, Math.floor((Date.now() - modifiedMs) / (1000 * 60 * 60 * 24)));
     const label = `${daysAgo} day${daysAgo === 1 ? '' : 's'} ago`;
-    return `${name}. ${label}.`;
+    return `${name}\nLast saved: ${label}`;
   };
   const getBestKnownActionPath = (type, fallbackPath = '') => {
     const fromLocations =
@@ -15325,9 +16755,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const lines = [];
     const sourceLine = buildModifiedLine(lastDroppedFileInfo.fileName, lastDroppedFileInfo.modifiedMs);
+    const sourceRowsText = lastStudentCountLine
+      ? lastStudentCountLine.replace(/\s+students\s+listed\.?$/i, ' rows.')
+      : '';
     if (sourceLine) {
       lines.push({
-        text: sourceLine,
+        text: sourceRowsText
+          ? `${lastDroppedFileInfo.fileName} - ${sourceRowsText}`
+          : String(lastDroppedFileInfo.fileName || ''),
+        tooltip: sourceLine,
         actions: [
           {
             key: 'source',
@@ -15338,16 +16774,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ],
       });
     }
-    if (lastStudentCountLine) {
-      const countText = lastStudentCountLine.replace(/\s+students\s+listed\.?$/i, ' rows.');
-      lines.push({ text: countText, bold: true });
-    }
     if (emailScriptsInfo?.fileName) {
       lines.push({ blank: true });
       const emailLine = buildModifiedLine(emailScriptsInfo.fileName, emailScriptsInfo.modifiedMs);
       if (emailLine) {
         lines.push({
-          text: emailLine,
+          text: String(emailScriptsInfo.fileName || ''),
+          tooltip: emailLine,
           actions: [
             {
               key: 'email',
@@ -15369,9 +16802,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (triageFileInfo?.fileName) {
       lines.push({ blank: true });
       const triageLine = buildModifiedLine(triageFileInfo.fileName, triageFileInfo.modifiedMs);
+      const triageRowCountRaw =
+        Number.isFinite(Number(triageParseInfo?.total)) && Number(triageParseInfo?.total) >= 0
+          ? Number(triageParseInfo.total)
+          : triageRecords.size;
+      const triageRowsText =
+        Number.isFinite(triageRowCountRaw) && triageRowCountRaw >= 0
+          ? `${triageRowCountRaw} rows.`
+          : '';
       if (triageLine) {
         lines.push({
-          text: triageLine,
+          text: triageRowsText
+            ? `${String(triageFileInfo.fileName || '')} - ${triageRowsText}`
+            : String(triageFileInfo.fileName || ''),
+          tooltip: triageLine,
           actions: [
             {
               key: 'triage',
@@ -15381,9 +16825,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             },
           ],
         });
-        if (triageParseInfo?.status === 'ok') {
-          lines.push({ text: `${triageRecords.size} students.`, bold: true });
-        }
       }
     }
     return lines;
@@ -15640,6 +17081,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         isFullyGraduated || graduatingWithCurrent
       );
     }
+    if (plannerContainer) {
+      plannerContainer.classList.toggle('is-graduated-24', isFullyGraduated);
+    }
     const hasInsufficientLoad =
       available.length > 0 &&
       (remainingCount <= 5
@@ -15664,8 +17108,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (sidebarSectionDescriptor) {
       const count = available.length;
       const subjectLabel = count === 1 ? 'subject' : 'subjects';
-      sidebarSectionDescriptor.innerHTML =
-        `<span class="inline-strong">Choose your subjects</span> by clicking among the ${count} ${subjectLabel} below, or in main grid to right. Or click 'Available now' to select from there.`;
+      if (staffFacing) {
+        sidebarSectionDescriptor.textContent = 'Choose Subjects';
+      } else {
+        sidebarSectionDescriptor.innerHTML =
+          `<span class="inline-strong">Choose your subjects</span> using one or all of these techniques: 
+          <br>1. Clicking among the subjects below 
+          <br>2. Clicking in the main grid
+          <br>3. Clicking 'Select' to see full detail`;
+      }
     }
     selectedListEl.innerHTML = '';
     selectedListEl.setAttribute('role', 'list');
@@ -15889,11 +17340,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyTimetableToClipboard();
     });
   }
-  if (downloadTimetableImageButton) {
-    downloadTimetableImageButton.addEventListener('click', async () => {
-      await copyTimetableExportImageToClipboard();
-    });
-  }
+  // Image export button removed from UI; keep export helpers for internal use.
   if (emailPrimaryButton) {
     emailPrimaryButton.addEventListener('click', () => {
       sendTimetableEmail('primary');
@@ -15945,29 +17392,64 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await sendDeclarationEmail('both');
     });
   }
-  if (emailScriptsSupportsCopyButton) {
-    emailScriptsSupportsCopyButton.addEventListener('click', async () => {
-      flashCopyButton(emailScriptsSupportsCopyButton);
+  if (emailScriptsOnlineProgressionCopyButton) {
+    emailScriptsOnlineProgressionCopyButton.addEventListener('click', async () => {
+      flashCopyButton(emailScriptsOnlineProgressionCopyButton);
       if (!emailScriptsDocxBuffer && !emailScriptsHtmlSource) {
         window.alert('Load Email Scripts (html/htm/docx) first, then click copy again.');
         return;
       }
-      const ok = await copySupportsAtRiskSection();
+      const ok = await copyEmailScriptsSectionByKey('online-progression-classes-entered');
       if (!ok) {
-        window.alert('Could not copy Supports (at risk) text. Check the heading in Email Scripts and try again.');
+        window.alert(
+          'Could not copy "Online progression - classes entered" text. Check the matching heading in Email Scripts and try again.'
+        );
       }
     });
   }
-  if (emailScriptsSupportsEmailButton) {
-    emailScriptsSupportsEmailButton.addEventListener('click', async () => {
-      flashCopyButton(emailScriptsSupportsEmailButton);
+  if (emailScriptsOnlineProgressionEmailButton) {
+    emailScriptsOnlineProgressionEmailButton.addEventListener('click', async () => {
+      flashCopyButton(emailScriptsOnlineProgressionEmailButton);
       if (!emailScriptsDocxBuffer && !emailScriptsHtmlSource) {
         window.alert('Load Email Scripts (html/htm/docx) first, then click email again.');
         return;
       }
       await sendDeclarationEmail('both', {
-        copyFn: copySupportsAtRiskSection,
-        copyFailMessage: 'Could not copy Supports (at risk) text. Check the heading in Email Scripts and try again.',
+        copyFn: () => copyEmailScriptsSectionByKey('online-progression-classes-entered'),
+        copyFailMessage:
+          'Could not copy "Online progression - classes entered" text. Check the matching heading in Email Scripts and try again.',
+      });
+    });
+  }
+  if (emailScriptsOnlineProgressSelectionsCopyButton) {
+    emailScriptsOnlineProgressSelectionsCopyButton.addEventListener('click', async () => {
+      flashCopyButton(emailScriptsOnlineProgressSelectionsCopyButton);
+      if (!emailScriptsDocxBuffer && !emailScriptsHtmlSource) {
+        window.alert('Load Email Scripts (html/htm/docx) first, then click copy again.');
+        return;
+      }
+      const ok = await copyEmailScriptsSectionByKey(
+        'online-progress-selections-look-good-classes-entered'
+      );
+      if (!ok) {
+        window.alert(
+          'Could not copy "Online progress - selections look good. classes entered" text. Check the matching heading in Email Scripts and try again.'
+        );
+      }
+    });
+  }
+  if (emailScriptsOnlineProgressSelectionsEmailButton) {
+    emailScriptsOnlineProgressSelectionsEmailButton.addEventListener('click', async () => {
+      flashCopyButton(emailScriptsOnlineProgressSelectionsEmailButton);
+      if (!emailScriptsDocxBuffer && !emailScriptsHtmlSource) {
+        window.alert('Load Email Scripts (html/htm/docx) first, then click email again.');
+        return;
+      }
+      await sendDeclarationEmail('both', {
+        copyFn: () =>
+          copyEmailScriptsSectionByKey('online-progress-selections-look-good-classes-entered'),
+        copyFailMessage:
+          'Could not copy "Online progress - selections look good. classes entered" text. Check the matching heading in Email Scripts and try again.',
       });
     });
   }
@@ -16075,7 +17557,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
       const titleText = remainingTitleEl?.textContent?.trim() || '';
       const summaryText = `You have ${coreMajorCount} Core and ${majorName} subjects remaining`;
-      const electiveHeadingText = 'Elective Options. Our course has 4 Electives';
+      const electiveHeadingText = 'All students must complete 4 Electives.';
       const electiveCountText = `You have ${remainingElectives} Elective${remainingElectives === 1 ? '' : 's'} to complete`;
 
       const corePart = buildSimpleTableCopyData(remainingTable, '');
@@ -16146,12 +17628,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (e.target === courseMapModal) hideCourseMapModal();
     });
   }
-  if (copyCourseMapImageButton) {
-    copyCourseMapImageButton.addEventListener('click', () => {
-      flashCopyButton(copyCourseMapImageButton);
-      copyCourseMapImage();
-    });
-  }
+  if (openCourseMapKeyButton) openCourseMapKeyButton.addEventListener('click', showCourseMapKeyModal);
+  if (closeCourseMapKey) closeCourseMapKey.addEventListener('click', hideCourseMapKeyModal);
+  // Do not close the colour key modal on backdrop click; only via X.
   if (toggleCourseMapPrereqButton) {
     toggleCourseMapPrereqButton.addEventListener('click', () => {
       courseMapPrereqColoursOn = !courseMapPrereqColoursOn;
@@ -16183,6 +17662,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapFontIncreaseButton.addEventListener('click', () => {
       courseMapFontScaleEm = Math.min(3, Math.round((courseMapFontScaleEm + 0.05) * 100) / 100);
       updateCourseMapFontScale();
+    });
+  }
+  if (copyCourseMapImageButton) {
+    copyCourseMapImageButton.addEventListener('click', () => {
+      flashCopyButton(copyCourseMapImageButton);
+      copyCourseMapImage();
     });
   }
   if (downloadCourseMapImageButton) {
@@ -16240,6 +17725,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   window.addEventListener('resize', () => {
     completedModeStickyTop = null;
     updateCompletedModeSticky();
+    queueMainTitleWrapStateUpdate();
+    requestAnimationFrame(syncCurrentEnrolmentColumnWidths);
   });
   if (nextSemesterModal) {
     nextSemesterModal.addEventListener('click', (e) => {
@@ -16279,8 +17766,46 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const installModalScrollScrim = (modalEl) => {
+    const body = modalEl?.querySelector?.('.modal-body');
+    if (!body) return;
+    // Only apply to modals with the "sidebar" action row layout inside the scrolling body.
+    if (!body.querySelector('.subject-table-actions')) return;
+    if (body.dataset.scrimBound === 'true') return;
+    body.dataset.scrimBound = 'true';
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const footer = body.querySelector('.subject-table-actions');
+      const footerH = footer ? footer.getBoundingClientRect().height : 0;
+      const threshold = 4;
+      const visibleBottom = body.scrollTop + body.clientHeight - footerH;
+      const contentBottom = body.scrollHeight - footerH;
+      const moreBelow = contentBottom - visibleBottom > threshold;
+      body.classList.toggle('scroll-more-below', moreBelow);
+    };
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    body.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(schedule);
+      ro.observe(body);
+      const footer = body.querySelector('.subject-table-actions');
+      if (footer) ro.observe(footer);
+    }
+    // Initial state after layout settles.
+    requestAnimationFrame(schedule);
+    setTimeout(schedule, 60);
+  };
+
   enableOutsideClickClose(instructionsModal, hideInstructionsModal);
   enableOutsideClickClose(codeModal, hideCodeModal);
+  enableOutsideClickClose(selectByTypingModal, hideSelectByTypingModal);
   enableOutsideClickClose(emailScriptsAccessModal, hideEmailScriptsAccessModal);
   enableOutsideClickClose(loadModal, hideLoadModal);
   enableOutsideClickClose(timetableModal, hideTimetableModal);
@@ -16288,8 +17813,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(historyModal, hideHistoryModal);
   enableOutsideClickClose(remainingModal, hideRemainingModal);
   enableOutsideClickClose(courseMapModal, hideCourseMapModal);
+  enableOutsideClickClose(containerPopoutModal, hideContainerPopoutModal);
+  // No outside-click close for the colour key modal.
   enableOutsideClickClose(nextSemesterModal, hideNextSemesterModal);
   enableOutsideClickClose(alertModal, hideAlertModal);
+
+  [timetableModal, historyModal, remainingModal, nextSemesterModal].forEach(installModalScrollScrim);
 
   const getElectiveStreams = (majorKey) => {
     const key = majorKey === 'network' || majorKey === 'undecided' || majorKey === 'ns' ? 'network' : majorKey;
@@ -16317,7 +17846,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const streamText = streams
       .map((s) => `<span class="stream-label ${s.className}"><strong>${s.label}</strong></span>`)
       .join(' and ');
-    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill the Elective boxes above with subjects from these ${streamText} streams`;
+    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill the 4 Elective boxes these ${streamText} subjects`;
   };
   const updateMajor = () => {
     const sheet = document.querySelector('.sheet');
@@ -16494,6 +18023,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const sheet = document.querySelector('.sheet');
       const firstRect = placeholders[0].getBoundingClientRect();
       const lastRect = placeholders[placeholders.length - 1].getBoundingClientRect();
+      const rowBottom = Math.max(
+        firstRect.bottom,
+        lastRect.bottom,
+        ...placeholders.map((cell) => cell.getBoundingClientRect().bottom)
+      );
       const sheetRect = sheet.getBoundingClientRect();
       el.style.display = 'block';
       const left = firstRect.left - sheetRect.left + 4;
@@ -16502,8 +18036,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       el.style.width = `${width}px`;
       el.style.maxWidth = `${width}px`;
       requestAnimationFrame(() => {
-        const top = firstRect.top - sheetRect.top + 6;
-        el.style.top = `${top}px`;
+        const elHeight = el.getBoundingClientRect().height || 0;
+        // Anchor the warning within the elective placeholder row: 8px above the bottom edge.
+        const top = rowBottom - sheetRect.top - elHeight - 8;
+        el.style.top = `${Math.max(0, Math.round(top))}px`;
       });
       const details = uniqueCodes.map((code) => {
         const isUse = code.startsWith('USE');
@@ -16618,6 +18154,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   renderAlertButton('data');
   showMobileNotice();
   Array.from(document.querySelectorAll('.modal')).forEach((modalEl) => enableModalDragResize(modalEl));
+
+  // Sidebars + main content resize handles (drag any border).
+  try {
+    const primarySidebar = document.querySelector('.sidebar');
+    const dropSidebar = document.getElementById('drop-sidebar');
+    const mainContent = document.querySelector('.main-content');
+    enablePanelResize(primarySidebar, { key: 'sidebar' });
+    enablePanelResize(dropSidebar, { key: 'drop-sidebar' });
+    // Main area stays responsive to viewport; keep resize handles but don't persist fixed width.
+    try {
+      localStorage.removeItem('panel-size:main-content');
+    } catch { }
+    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: false, persist: false });
+  } catch { }
+
+  // Keep subject cards uniform-height, with a slight deduction to reduce visible bottom slack.
+  enableUniformSubjectCardHeights();
+  // Move some per-card overlays when the grid itself (not viewport) gets tight.
+  updateMainGridNarrowClass();
+  if (typeof ResizeObserver !== 'undefined' && mainGrid) {
+    try {
+      const mainGridResizeObserver = new ResizeObserver(() => updateMainGridNarrowClass());
+      mainGridResizeObserver.observe(mainGrid);
+    } catch { }
+  } else {
+    window.addEventListener('resize', updateMainGridNarrowClass, { passive: true });
+  }
   installModalCodeCopyButtons();
   setTimeout(() => {
     initialLoad = false;
@@ -16709,6 +18272,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (e.key === 'Escape') {
       hideAlertModal();
       hideCodeModal();
+      hideSelectByTypingModal();
       hideEmailScriptsAccessModal();
       hideCourseTimetableModal();
       hideTimetableModal();
@@ -16718,19 +18282,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideNextSemesterModal();
       hideLoadModal();
       hideInstructionsModal();
+      hideContainerPopoutModal();
     } else if (e.key === 'Enter') {
-      if (codeModal && codeModal.classList.contains('show')) {
+      // Enter submits "Go"; Shift/Ctrl+Enter inserts a newline in textareas.
+      if (selectByTypingModal && selectByTypingModal.classList.contains('show')) {
         const activeEl = document.activeElement;
-        if (activeEl && codeModal.contains(activeEl) && activeEl.matches('textarea, input')) {
+        if (activeEl && selectByTypingModal.contains(activeEl) && activeEl.matches('textarea, input') && (e.shiftKey || e.ctrlKey)) {
           return;
         }
+        e.preventDefault();
+        applyTypedSemesterSelections();
+        return;
+      }
+      if (codeModal && codeModal.classList.contains('show')) {
+        const activeEl = document.activeElement;
+        if (activeEl && codeModal.contains(activeEl) && activeEl.matches('textarea, input') && (e.shiftKey || e.ctrlKey)) {
+          return;
+        }
+        e.preventDefault();
+        applyCodes();
+        return;
       }
       if (loadModal && loadModal.classList.contains('show')) {
         e.preventDefault();
         applyLoadSettings();
-      } else if (codeModal && codeModal.classList.contains('show')) {
-        e.preventDefault();
-        applyCodes();
       }
     }
   });

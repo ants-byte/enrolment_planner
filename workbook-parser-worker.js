@@ -332,7 +332,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
   const sheet = workbook.Sheets?.[sheetName];
   if (!sheet) return [];
   const names = workbook.Workbook?.Names || [];
-  const columnMap = {};
+  let columnMap = {};
   names.forEach((nameEntry) => {
     if (!nameEntry?.Name || !nameEntry.Ref) return;
     const nameKey = resolveNamedRangeKey(nameEntry.Name, STUDENT_COLUMNS);
@@ -405,10 +405,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
   };
   collectSharePointByStudentId();
   let rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-  if (rowCount === 0) {
+  const buildColumnMapFromRows = () => {
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
     if (rows.length <= 1) {
-      return [];
+      return { columnMapFromRows: null, rowCountFromRows: 0 };
     }
     const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
       acc[normalizeHeader(col)] = col;
@@ -453,28 +453,36 @@ function buildStudentRecordsFromWorkbook(workbook) {
         headerIndex = bestHeaderIndex;
       }
     }
-    if (headerIndex >= 0) {
-      const headerRow = rows[headerIndex] || [];
-      const colIndexMap = {};
-      headerRow.forEach((cell, idx) => {
-        const key = columnKeyMap[normalizeHeader(cell)];
-        if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+    if (headerIndex < 0) return { columnMapFromRows: null, rowCountFromRows: 0 };
+    const headerRow = rows[headerIndex] || [];
+    const colIndexMap = {};
+    headerRow.forEach((cell, idx) => {
+      const key = columnKeyMap[normalizeHeader(cell)];
+      if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+    });
+    const rowsToRead = rows.slice(headerIndex + 1);
+    const hasStudentId = colIndexMap.Student_IDs_Unique !== undefined;
+    if (!hasStudentId) return { columnMapFromRows: null, rowCountFromRows: 0 };
+    const columnMapFromRows = {};
+    STUDENT_COLUMNS.forEach((columnName) => {
+      const idx = colIndexMap[columnName];
+      if (idx === undefined) return;
+      columnMapFromRows[columnName] = rowsToRead.map((row) => {
+        const cellValue = row[idx];
+        return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
       });
-      const rowsToRead = rows.slice(headerIndex + 1);
-      const hasStudentId = colIndexMap.Student_IDs_Unique !== undefined;
-      if (hasStudentId) {
-        columnMap = {};
-        STUDENT_COLUMNS.forEach((columnName) => {
-          const idx = colIndexMap[columnName];
-          if (idx === undefined) return;
-          columnMap[columnName] = rowsToRead.map((row) => {
-            const cellValue = row[idx];
-            return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
-          });
-        });
-        rowCount = Math.max(0, ...Object.values(columnMap).map((values) => values.length), 0);
-      }
-    }
+    });
+    const rowCountFromRows = Math.max(
+      0,
+      ...Object.values(columnMapFromRows).map((values) => values.length),
+      0
+    );
+    return { columnMapFromRows, rowCountFromRows };
+  };
+  const rowMapResult = buildColumnMapFromRows();
+  if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > rowCount) {
+    columnMap = rowMapResult.columnMapFromRows;
+    rowCount = rowMapResult.rowCountFromRows;
   }
   const records = [];
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {

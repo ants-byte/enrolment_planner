@@ -1,0 +1,57 @@
+profile=addve
+intake=Enrol 26_S1
+thisSemestersFolderPath=C:\Users\{PROFILE}\OneDrive - Melbourne Polytechnic\General - Bachelor of Information Technology Operations\{INTAKE}\Enrolment System\
+
+[defaults]
+salutation=Hello
+signoff_phrase=Kind regards
+signoff_name=
+
+[profile:addve]
+salutation=Hi
+signoff_phrase=Kind regards
+signoff_name=Antony
+
+[profile:XXXX]
+salutation=XXXX
+signoff_phrase=XXXX
+signoff_name=XXXX
+
+# INSTRUCTIONS:
+# ############################################################
+# For this website to work well, move the entire "site" folder to another location on your computer.  This will
+#	allow you to provide your personalised settings in this file, and it will allow web site links to folders and 
+#	files in your computer to work properly.   
+#   You could move it, for example, to your "Our temp and working files" folder.
+#	
+# Then personalise this settings.txt file by:
+#	- changing line 1 to your own profile name. Profile is your 'user' name.  You'll find it in your OneDrive path.
+#	- duplicating the sign-off block that's filled with XXXXXs.  Make sure the profile you provide here matches 
+#  	  the profile name that you provide on line 1. Then replace the other XXXXXs with your preferences.
+#
+# Intake is the top level folder for this semester e.g. Enrol 2025_S2.  Spaces are OK.  Quote are unnecessary.
+#
+# thisSemestersFolderPath defines the path to the "Enrolment System" folder for this semester. 
+#   This path must include "{PROFILE}" and "{INTAKE}".  These are replaced when the website runs with the
+#	values you provide on lines 1 and 2. Spaces are OK.  Quote are unnecessary.
+#
+# Note that you must have OneDrive set up so that you are storing all the Bachelor of IT SharePoint files in your
+# 	computer.  Without that, this web site will not work in staff mode: Instead it will only work in 
+#	student mode, where no student details are available to the site.
+#	The BIT SharePoint folder: https://melbournepolytechnic.sharepoint.com/sites/BachelorofInformationTechnologyOperations/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FBachelorofInformationTechnologyOperations%2FShared%20Documents%2FGeneral
+#	Don't have access? Ask Sazia for it.
+# 
+# ############################################################
+# Windows helper setup (folder buttons):
+# This helper enables more reliable opening of local folders from the web app.
+# Command to run (in this site folder):
+#   powershell -NoProfile -ExecutionPolicy Bypass -File .\install-enrol-protocol.ps1
+#
+# Steps:
+# 1. Open Command Prompt (or PowerShell).
+# 2. Change to the folder that contains this website (where install-enrol-protocol.ps1 is).
+#    Example:
+#      cd /d C:\_me\workspaces\site
+# 3. Run:
+#      powershell -NoProfile -ExecutionPolicy Bypass -File .\install-enrol-protocol.ps1
+# 4. Re-open the website and click ? then choose "Enable helper" (or keep it enabled).
