@@ -486,41 +486,87 @@ Created: December 30, 2025
         <button class="modal-close" id="close-instructions-modal" aria-label="Close instructions">X</button>
       </div>
       <div class="modal-body">
-        <p><strong>Quick guide:</strong> Use this web site to record completed subjects (your passes and credit
-          transfers if you have any), see a list of subjects that you can study this semester, and then build your
-          timetable.</p>
-        <ol class="instructions-list">
-          <li>
-            <p><strong>Step 1:</strong> Pick your major from the dropdown at the top of the sidebar.</p>
-            <p>By <strong>second semester</strong>, choose a stream:
-              <strong>Network Security</strong>, <strong>Business Analytics</strong>, or <strong>Software
-                Development</strong> and give some focus to completing subjects in that stream. Changing stream after
-              that may delay graduation.
-            </p>
-            <p>In <strong>first semester</strong>, it’s okay to leave this as <strong>Undecided</strong>. The planner
-              uses Network Security as a placeholder only - you can switch next semester.</p>
+        <ul class="instructions-list instructions-accordion" id="instructions-accordion">
+          <li class="instructions-step">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-1-toggle"
+              aria-expanded="false" aria-controls="instructions-step-1-panel">
+              <span class="instructions-step-heading">Step 1 - Your major?</span>
+            </button>
+            <div class="instructions-step-panel" id="instructions-step-1-panel" role="region"
+              aria-labelledby="instructions-step-1-toggle" hidden>
+              <p class="instructions-step-title">Pick your major from the colourful dropdown at the top of the sidebar. You'll see that as you choose a different option that the arrangement of subjects in the main grid changes.</p>
+              <p>You'll see that the 3 options are:</p>
+              <ul class="instructions-sublist">
+                <li>Network Security</li>
+                <li>Business Analytics</li>
+                <li>Software Development</li>
+              </ul>
+              <p><strong>Your 1st Semester?</strong> You don't need to decide yet (assuming you don't have credit transfers either).</p>
+              <ul class="instructions-sublist">
+                <li>You can just leave the dropdown as Undecided or switch it to another.</li>
+                <li>Some soft advice that will help keep your options for next semester and beyond:
+                  <ul class="instructions-sublist">
+                    <li>Choose BIT121 if you have a feeling that Network Security may become your major.</li>
+                    <li>Study BIT105 and BIT111 this semester.</li>
+                    <li>If you have a feeling Software Development may become your major, study BIT111 now.</li>
+                  </ul>
+                </li>
+              </ul>
+              <p><strong>Your 2nd semester?</strong> By second semester, you should be starting to settle on your choice for major.  If unsure, try dipping your toe into 1 or 2 streams.</p>
+              <p><strong>Your 2nd year?</strong> If you have passes or credits for 8 subjects or more, you should now be certain about which major stream will be yours. Your goal now is to complete 3 of your major's subjects, but preferably 5 of them, by the end of your 2nd year.</p>
+            </div>
           </li>
-          <li>
-            <p><strong>Step 2:</strong> Enter your passes and credits.</p>
-            <p>There are two easy ways:</p>
-            <ul class="instructions-sublist">
-              <li><strong>Clicking mode:</strong> Click subjects in the grid to mark them completed.</li>
-              <li><strong>Typing mode:</strong> Paste or type subject codes (e.g. BIT111, USE101). Extra text, spaces,
-                or
-                subject names don’t matter—the codes are pulled out automatically.</li>
-            </ul>
-            <p>Completed subjects will darken in the grid, and your <strong>available subjects</strong> will update
-              based on prerequisites.</p>
+          <li class="instructions-step">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-2-toggle"
+              aria-expanded="false" aria-controls="instructions-step-2-panel">
+              <span class="instructions-step-heading">Step 2 - Enter your history</span>
+            </button>
+            <div class="instructions-step-panel" id="instructions-step-2-panel" role="region"
+              aria-labelledby="instructions-step-2-toggle" hidden>
+              <p class="instructions-step-title"><strong>Enter your passes and credits.</strong></p>
+              <p>There are two easy ways:</p>
+              <ul class="instructions-sublist">
+                <li><strong>Clicking mode:</strong> Click the "Clicking Mode" button in the sidebar to go into <i>History Mode</i>.  You can then click subjects in the grid to mark them completed.</li>
+                <li><strong>Typing mode:</strong> Open a panel by clicking the "By Typing" button.  Then paste or type in subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be extraced
+                </li>
+              </ul>
+              <p>Only enter your <strong>completed subjects</strong> - passes and credit transfers.  That is, don't enter failed subjects or withdrawals.</p>
+              <p>You'll see that when you add a subject, the main the grid and sidebar change:</p>
+              <ul class="instructions-sublist">
+                <li>Its subject card greys-out.</li>
+                <li>Subjects that are <strong>available to you now</strong>, to study this semester, changes.  You'll see them highlighted with background shadows in the main grid, and in the
+                  sidebar list.  Note that all 2nd and 3rd year level subjects have prerequisites
+                </li>
+              </ul>
+            </div>
           </li>
-          <li>
-            <p><strong>Step 3:</strong> Choose your timetable by selecting subjects. Three ways:</p>
-            <ol class="instructions-sublist">
-              <li>Click subjects in the main grid.</li>
-              <li>Click a subject in the sidebar under <strong>Select</strong>.</li>
-              <li>Open the <strong>Select</strong> panel and click subjects there.</li>
-            </ol>
-            <p><br>
-
+          <li class="instructions-step">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-3-toggle"
+              aria-expanded="false" aria-controls="instructions-step-3-panel">
+              <span class="instructions-step-heading">Step 3 - Select your timetable</span>
+            </button>
+            <div class="instructions-step-panel" id="instructions-step-3-panel" role="region"
+              aria-labelledby="instructions-step-3-toggle" hidden>
+              <p class="instructions-step-title"><strong>Choose your timetable:</strong> Select subjects in one of these ways.</p>
+              <ol class="instructions-sublist">
+                <li>Click subjects in the main grid.</li>
+                <li>Click a subject in the sidebar under <strong>Select</strong>.</li>
+                <li>Open the <strong>Select</strong> panel and click subjects there.</li>
+              </ol>
+            </div>
+          </li>
+          <li class="instructions-step">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-4-toggle"
+              aria-expanded="false" aria-controls="instructions-step-4-panel">
+              <span class="instructions-step-heading">Step 4 - Send us your timetable</span>
+            </button>
+            <div class="instructions-step-panel" id="instructions-step-4-panel" role="region"
+              aria-labelledby="instructions-step-4-toggle" hidden>
+              <p>When you have selected your full semester load, a new button will appear: <strong>"Your semester plan"</strong>.
+              </p><p>Click it to open a panel that shows your timetable. Copy that table and email it to us at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+            </div>
+          </li>
+        </ul>
       </div>
       <div class="modal-actions">
         <button id="close-instructions-cta" class="clear-button" type="button">Got it</button>
@@ -577,7 +623,7 @@ Created: December 30, 2025
   <div id="code-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">Paste or type subject codes</div>
+        <div class="modal-title">Paste or type subject codes (Shift+Enter for new line)</div>
         <button class="modal-close" id="close-code-modal" aria-label="Close modal">X</button>
       </div>
       <div class="modal-body">
@@ -607,7 +653,7 @@ Created: December 30, 2025
   <div id="select-by-typing-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="select-by-typing-title">
       <div class="modal-header">
-        <div class="modal-title" id="select-by-typing-title">Enter subject selections for this semester</div>
+        <div class="modal-title" id="select-by-typing-title">Enter subject selections for this semester (Shift+Enter for new line)</div>
         <button class="modal-close" id="close-select-by-typing-modal" aria-label="Close modal">X</button>
       </div>
       <div class="modal-body">
@@ -1111,31 +1157,38 @@ Created: December 30, 2025
   <div id="load-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">Set study load</div>
+        <div class="modal-title">How many subjects will you study this semester?</div>
         <button class="modal-close" id="close-load-modal" aria-label="Close load modal">X</button>
       </div>
       <div class="modal-body">
-        <p><strong>Domestic students</strong> can study 1, 2, 3, or 4 subjects each semester.</p>
-        <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement).
-          This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
-          intervention.</p>
-        <p>Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final
-          year or <strong>5 or fewer</strong> subjects remain in the last semester.</p>
+        <div class="load-explanations">
+          <div class="load-explanations-title">Explanations:</div>
+          <p><strong>Domestic students</strong> can study full-time or part-time (so, 1, 2, 3, or 4 subjects) each semester.</p>
+          <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement).
+            This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
+            intervention.</p>
+          <p><strong>More the 4 subjects?</strong>  Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final
+            year or <strong>5 or fewer</strong> subjects remain in the final semester <strong>AND</strong> a CR average (which is 60 to 69%) has been achieved over the past year.</p>
+        </div>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining.
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining and a CR average over the past year.
           </label>
         </div>
         <div class="toggle-row load-extra-row">
-          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-international"
-              value="international" checked> International</label>
-          <label class="load-radio-label"><input type="radio" name="load-student-type" id="load-type-domestic"
-              value="domestic"> Domestic</label>
+          <label class="load-radio-label" for="load-type-domestic">
+            <input type="radio" name="load-student-type" id="load-type-domestic" value="domestic">
+            Domestic
+          </label>
+          <label class="load-radio-label" for="load-type-international">
+            <input type="radio" name="load-student-type" id="load-type-international" value="international" checked>
+            International
+          </label>
+        </div>
+        <div class="toggle-row" id="load-exceptional-row">
+          <label for="load-exceptional"><input type="checkbox" id="load-exceptional">I have APP, APR, or other exceptional approval to vary my visa requirement from a full load</label>
         </div>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-exceptional"> Exceptional approval to vary international load</label>
-        </div>
-        <div class="toggle-row">
-          <label for="load-value">Full load subjects:</label>
+          <label for="load-value">How many subjects I will study this semester:</label>
           <select id="load-value" class="load-value-select"></select>
           <span id="load-lock-msg" class="load-lock-msg">You must study
             4 subjects - a full load</span>
@@ -1149,12 +1202,12 @@ Created: December 30, 2025
     </div>
   </div>
   <div id="container-popout-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal container-popout-modal-box" role="dialog" aria-modal="true" aria-label="Planner Grid popout">
+    <div class="modal container-popout-modal-box" role="dialog" aria-modal="true" aria-label="Planner Grid popout"
+      data-resize-axis="x">
       <div class="container-popout-shell">
         <div class="modal-body container-popout-modal-body" id="container-popout-modal-body"></div>
         <aside class="container-popout-rail" aria-label="Popout controls">
           <button class="modal-close" id="close-container-popout-top" aria-label="Close grid popout">X</button>
-          <button id="close-container-popout-bottom" class="clear-button secondary" type="button">Close</button>
         </aside>
       </div>
     </div>

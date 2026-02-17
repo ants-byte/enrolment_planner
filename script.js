@@ -43,12 +43,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const mainGrid = document.querySelector('.main-grid');
   const electivesGrid = document.querySelector('.electives-grid');
-  const MAIN_GRID_NARROW_CLASS = 'main-grid-narrow-751';
-  const MAIN_GRID_NARROW_BREAKPOINT = 751;
+  const MAIN_GRID_NARROW_CLASS = 'main-grid-narrow-880';
+  const MAIN_GRID_NARROW_BREAKPOINT = 880;
+  const CONTAINER_NARROW_960_CLASS = 'container-narrow-960';
+  const CONTAINER_NARROW_960_BREAKPOINT = 960;
   const updateMainGridNarrowClass = () => {
     if (!mainGrid) return;
-    const width = mainGrid.getBoundingClientRect().width;
-    document.body.classList.toggle(MAIN_GRID_NARROW_CLASS, width < MAIN_GRID_NARROW_BREAKPOINT);
+    const mainGridWidth = mainGrid.getBoundingClientRect().width || 0;
+    const plannerWidth = plannerContainer?.getBoundingClientRect?.().width || mainGridWidth;
+    // Use effective available width in case the grid itself is wider than its visible container.
+    const effectiveWidth = Math.min(mainGridWidth, plannerWidth);
+    document.body.classList.toggle(MAIN_GRID_NARROW_CLASS, effectiveWidth < MAIN_GRID_NARROW_BREAKPOINT);
+    document.body.classList.toggle(CONTAINER_NARROW_960_CLASS, plannerWidth < CONTAINER_NARROW_960_BREAKPOINT);
   };
   const isElectivesGridCell = (cell) => !!(cell && electivesGrid && electivesGrid.contains(cell));
   const mainGridCells = normalizeSlotCells(mainGrid);
@@ -548,6 +554,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const renderDropZoneStatus = (lines) => {
     if (!dropZoneTextEl) return;
+    if (dropZone) {
+      const hasAllThreeDocs = !!(
+        lastDroppedFileInfo?.fileName &&
+        emailScriptsInfo?.fileName &&
+        triageFileInfo?.fileName
+      );
+      dropZone.classList.toggle('is-compact-loaded', hasAllThreeDocs);
+    }
     dropZoneTextEl.innerHTML = '';
     (lines || []).forEach((line) => {
       if (line === null || line === undefined) return;
@@ -571,7 +585,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? [payload.action]
           : [];
       if (lineActions.length) {
-        span.style.paddingRight = `${12 + lineActions.length * 30}px`;
+        // Single action line => 32px right padding.
+        span.style.paddingRight = `${2 + lineActions.length * 30}px`;
       }
       lineActions.forEach((action, idx) => {
         const { key, label, fileName, path, tooltip } = action || {};
@@ -581,7 +596,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (key === 'email-actions') btn.classList.add('drop-zone-action-dots');
         btn.textContent = label || '';
         btn.dataset.action = key || '';
-        btn.style.right = `${8 + idx * 30}px`;
+        btn.style.right = `${3 + idx * 30}px`;
         const safeName = fileName || 'file';
         const safePath = path || 'Unknown';
         btn.setAttribute('data-tooltip-html', tooltip || `Open ${safeName}. <br> <b>Path</b> ${safePath}`);
@@ -921,6 +936,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const instructionsModal = document.getElementById('instructions-modal');
   const closeInstructionsModal = document.getElementById('close-instructions-modal');
   const closeInstructionsCta = document.getElementById('close-instructions-cta');
+  const instructionsStepToggles = Array.from(
+    document.querySelectorAll('#instructions-modal .instructions-step-toggle')
+  );
   const codeModal = document.getElementById('code-modal');
   const closeCodeModal = document.getElementById('close-code-modal');
   const cancelCodeModal = document.getElementById('cancel-code-modal');
@@ -937,6 +955,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const loadTypeDomestic = document.getElementById('load-type-domestic');
   const loadTypeInternational = document.getElementById('load-type-international');
   const loadExceptional = document.getElementById('load-exceptional');
+  const loadExceptionalRow = document.getElementById('load-exceptional-row');
   const loadValueInput = document.getElementById('load-value');
   const loadError = document.getElementById('load-error');
   const loadRemainingConfirm = document.getElementById('load-remaining-confirm');
@@ -1320,6 +1339,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (typeClass) el.classList.add(typeClass);
   };
   const normalizeManualCode = (code) => (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const extractManualCodeTokens = (value) => {
+    const upper = String(value || '').toUpperCase();
+    const tokens = upper.match(/[A-Z0-9/]+/g) || [];
+    const out = [];
+    tokens.forEach((token, tokenIdx) => {
+      let code = '';
+      if (manualCodeRegex.test(token)) {
+        const match = token.match(manualCodeRegex);
+        code = match ? match[0] : '';
+      } else if (/^\d{3}$/.test(token)) {
+        const candidate = `BIT${token}`;
+        if (validSubjectCodes.has(candidate)) code = candidate;
+      }
+      if (!code) return;
+      out.push({ code, tokenIdx });
+    });
+    return out;
+  };
+  const getFirstManualCodeToken = (value) => {
+    const found = extractManualCodeTokens(value);
+    return found.length ? found[0].code : '';
+  };
   const resolveLegacyCode = (rawCode) => {
     let current = normalizeManualCode(rawCode);
     const original = current;
@@ -1918,7 +1959,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalEl.classList.add('is-draggable');
 
     const header = modalEl.querySelector('.modal-header');
-    const handles = [
+    const resizeAxis = String(modalEl.dataset.resizeAxis || 'both').toLowerCase();
+    const allHandles = [
       { dir: 'n' },
       { dir: 's' },
       { dir: 'e' },
@@ -1927,7 +1969,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       { dir: 'nw' },
       { dir: 'se' },
       { dir: 'sw' },
-    ].map(({ dir }) => {
+    ];
+    const allowedHandles =
+      resizeAxis === 'x'
+        ? allHandles.filter(({ dir }) => dir === 'e' || dir === 'w')
+        : allHandles;
+    const handles = allowedHandles.map(({ dir }) => {
       const el = document.createElement('div');
       el.className = `modal-resize-handle modal-resize-${dir}`;
       el.dataset.resizeDir = dir;
@@ -5095,7 +5142,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const name = getSubjectName(id);
       const titleBlock = document.createElement('div');
-      titleBlock.innerHTML = `<div class="subject-code">${id}</div><div class="tooltip-name">${name}</div>`;
+      titleBlock.className = 'tooltip-title';
+      titleBlock.innerHTML = `<div class="tooltip-code">${id}</div><div class="tooltip-name">${name}</div>`;
       tooltip.appendChild(titleBlock);
       const isNotThisSem = !isRunningThisSemester(id);
       if (isNotThisSem) {
@@ -5154,6 +5202,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           'beforeend',
           `<div class="tooltip-gap"></div><div class="pre-block"><span class="tooltip-prev-heading">Previously:</span> <span class="tooltip-prev-value">${previousCodeByNew[id]}</span></div>`
         );
+      }
+      const availability = getSemesterAvailability(id);
+      if (availability !== 'Any') {
+        const semesterNumber = availability === 'S1' ? '1' : availability === 'S2' ? '2' : '';
+        if (semesterNumber) {
+          tooltip.insertAdjacentHTML(
+            'beforeend',
+            `<div class="tooltip-gap"></div><div class="tooltip-alt-sem">Only runs in Semester ${semesterNumber}</div>`
+          );
+        }
       }
     }
 
@@ -5575,6 +5633,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (loadExceptional) {
       loadExceptional.checked = exceptionalLoadApproved && isInternational;
       loadExceptional.disabled = !isInternational;
+    }
+    if (loadExceptionalRow) {
+      loadExceptionalRow.style.display = isInternational ? '' : 'none';
+      loadExceptionalRow.setAttribute('aria-hidden', isInternational ? 'false' : 'true');
     }
     if (loadRemainingConfirm) {
       loadRemainingConfirm.checked = remainingConfirmed;
@@ -6055,8 +6117,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   }
 
+  const closeAllInstructionSteps = () => {
+    instructionsStepToggles.forEach((toggle) => {
+      toggle.setAttribute('aria-expanded', 'false');
+      const panelId = toggle.getAttribute('aria-controls');
+      if (!panelId) return;
+      const panel = document.getElementById(panelId);
+      if (panel) panel.hidden = true;
+    });
+  };
+
+  const toggleInstructionStep = (toggleEl) => {
+    if (!toggleEl) return;
+    const isExpanded = toggleEl.getAttribute('aria-expanded') === 'true';
+    closeAllInstructionSteps();
+    if (isExpanded) return;
+    toggleEl.setAttribute('aria-expanded', 'true');
+    const panelId = toggleEl.getAttribute('aria-controls');
+    if (!panelId) return;
+    const panel = document.getElementById(panelId);
+    if (panel) panel.hidden = false;
+  };
+
   const showInstructionsModal = () => {
     if (!instructionsModal) return;
+    closeAllInstructionSteps();
     instructionsModal.classList.add('show');
     instructionsModal.setAttribute('aria-hidden', 'false');
     if (openInstructionsModal) openInstructionsModal.setAttribute('aria-expanded', 'true');
@@ -6171,12 +6256,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     emailScriptsAccessModal.setAttribute('aria-hidden', 'true');
   };
 
+  const syncCourseMapKeyPanelBottomOffset = () => {
+    if (!courseMapModal) return;
+    const modalBox = courseMapModal.querySelector('.course-map-modal');
+    const actions = modalBox?.querySelector('.modal-actions');
+    if (!modalBox || !actions) return;
+    const modalRect = modalBox.getBoundingClientRect();
+    const actionsRect = actions.getBoundingClientRect();
+    const bottomOffset = Math.max(0, Math.round(modalRect.bottom - actionsRect.top));
+    modalBox.style.setProperty('--course-map-key-bottom', `${bottomOffset}px`);
+  };
+
+  const updateCourseMapKeyToggleButton = () => {
+    if (!openCourseMapKeyButton || !courseMapKeyModal) return;
+    const isOpen = courseMapKeyModal.classList.contains('show');
+    openCourseMapKeyButton.textContent = isOpen ? 'Hide Colour Key' : 'Show Colour Key';
+    openCourseMapKeyButton.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+  };
+
   const showCourseMapKeyModal = () => {
     if (!courseMapKeyModal) return;
     // Always rebuild so the key reflects current mode/toggles.
     buildCourseMapKey();
+    syncCourseMapKeyPanelBottomOffset();
     courseMapKeyModal.classList.add('show');
     courseMapKeyModal.setAttribute('aria-hidden', 'false');
+    updateCourseMapKeyToggleButton();
     if (closeCourseMapKey) closeCourseMapKey.focus();
     const modalBox = courseMapModal?.querySelector('.course-map-modal');
     if (modalBox) modalBox.classList.add('course-map-key-open');
@@ -6186,6 +6291,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!courseMapKeyModal) return;
     courseMapKeyModal.classList.remove('show');
     courseMapKeyModal.setAttribute('aria-hidden', 'true');
+    updateCourseMapKeyToggleButton();
     if (openCourseMapKeyButton) openCourseMapKeyButton.focus();
     const modalBox = courseMapModal?.querySelector('.course-map-modal');
     if (modalBox) modalBox.classList.remove('course-map-key-open');
@@ -6219,6 +6325,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const syncCourseMapKeyAvailability = () => {
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
     openCourseMapKeyButton.style.display = '';
+    updateCourseMapKeyToggleButton();
     // If the panel is open, keep it in sync with the current state.
     if (courseMapKeyModal.classList.contains('show')) {
       buildCourseMapKey();
@@ -7031,8 +7138,49 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!courseTimetableModal) return;
     renderCourseTimetableModal();
     updateCourseTimetableTeacherCopyButton();
+    const modalEl =
+      courseTimetableModal.querySelector('.semester-timetable-modal') ||
+      courseTimetableModal.querySelector('.modal');
+    if (modalEl) {
+      // Reset any prior drag/resize placement so open always starts at the top of the page.
+      modalEl.style.position = '';
+      modalEl.style.left = '';
+      modalEl.style.top = '';
+      modalEl.style.transform = '';
+      modalEl.style.margin = '';
+      modalEl.style.width = '';
+      modalEl.style.maxWidth = '';
+      modalEl.style.height = '';
+      modalEl.style.maxHeight = '';
+      modalEl.scrollTop = 0;
+      modalEl.scrollLeft = 0;
+    }
+    const bodyEl = courseTimetableModal.querySelector('.modal-body');
+    if (bodyEl) {
+      bodyEl.scrollTop = 0;
+      bodyEl.scrollLeft = 0;
+    }
+    courseTimetableModal.scrollTop = 0;
     courseTimetableModal.classList.add('show');
     courseTimetableModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      courseTimetableModal.scrollTop = 0;
+      courseTimetableModal.scrollLeft = 0;
+      const bodyAfterOpen = courseTimetableModal.querySelector('.modal-body');
+      if (bodyAfterOpen) {
+        bodyAfterOpen.scrollTop = 0;
+        bodyAfterOpen.scrollLeft = 0;
+      }
+    });
+    setTimeout(() => {
+      courseTimetableModal.scrollTop = 0;
+      courseTimetableModal.scrollLeft = 0;
+      const bodyAfterOpen = courseTimetableModal.querySelector('.modal-body');
+      if (bodyAfterOpen) {
+        bodyAfterOpen.scrollTop = 0;
+        bodyAfterOpen.scrollLeft = 0;
+      }
+    }, 60);
     if (showCourseTimetableButton) showCourseTimetableButton.setAttribute('aria-expanded', 'true');
     if (closeCourseTimetableCta) closeCourseTimetableCta.focus();
     updateCourseTimetableButtons();
@@ -7089,7 +7237,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const rowData = dataLines
         .map((line) => {
           const upper = line.toUpperCase();
-          if (!manualCodeRegex.test(upper)) return null;
+          if (!getFirstManualCodeToken(upper)) return null;
           return { line, columns: splitManualColumns(line) };
         })
         .filter(Boolean);
@@ -7109,20 +7257,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         extractedEntries = rowData
           .map(({ line, columns }) => {
             const upper = line.toUpperCase();
-            const match = upper.match(manualCodeRegex);
-            if (!match) return null;
+            const matchedCode = getFirstManualCodeToken(upper);
+            if (!matchedCode) return null;
             const gradeCell = columns[gradeColIndex] || '';
             const status = getGradeStatus(gradeCell);
             const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
             const dateToken = extractDateToken(dateCell);
             if (!status) {
               if (canIdentifyCurrent) {
-                return { rawCode: match[0], grade: '', date: dateToken, status: 'current' };
+                return { rawCode: matchedCode, grade: '', date: dateToken, status: 'current' };
               }
               return null;
             }
             return {
-              rawCode: match[0],
+              rawCode: matchedCode,
               grade: extractGradeToken(gradeCell),
               date: dateToken,
               status,
@@ -7137,11 +7285,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       extractedEntries = lines.flatMap((line) => {
         const upper = line.toUpperCase();
         const tokens = upper.match(/[A-Z0-9/]+/g) || [];
-        const codeTokens = [];
-        tokens.forEach((token, tokenIdx) => {
-          if (!manualCodeRegex.test(token)) return;
-          codeTokens.push({ code: token, tokenIdx });
-        });
+        const codeTokens = extractManualCodeTokens(upper);
         if (!codeTokens.length) return [];
         if (!hasAnyGradeToken) {
           return codeTokens.map(({ code }) => ({ rawCode: code, grade: '', date: '', status: 'pass' }));
@@ -7270,9 +7414,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const currentEntries = new Map();
         segments.forEach((segment) => {
           if (getGradeStatus(segment)) return;
-          const match = segment.toUpperCase().match(manualCodeRegex);
-          if (!match) return;
-          const { mapped } = resolveLegacyCode(match[0]);
+          const matchedCode = getFirstManualCodeToken(segment);
+          if (!matchedCode) return;
+          const { mapped } = resolveLegacyCode(matchedCode);
           if (!mapped) return;
           const dateToken = extractDateToken(segment);
           currentEntries.set(mapped, { date: dateToken || '' });
@@ -7296,7 +7440,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const rowData = dataLines
       .map((line) => {
         const upper = line.toUpperCase();
-        if (!manualCodeRegex.test(upper)) return null;
+        if (!getFirstManualCodeToken(upper)) return null;
         return { line, columns: splitManualColumns(line) };
       })
       .filter(Boolean);
@@ -7313,14 +7457,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const currentEntries = new Map();
     rowData.forEach(({ line, columns }) => {
       const upper = line.toUpperCase();
-      const match = upper.match(manualCodeRegex);
-      if (!match) return;
+      const matchedCode = getFirstManualCodeToken(upper);
+      if (!matchedCode) return;
       const gradeCell = columns[gradeColIndex] || '';
       const status = getGradeStatus(gradeCell);
       if (status) return;
       const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
       const dateToken = extractDateToken(dateCell);
-      const { mapped } = resolveLegacyCode(match[0]);
+      const { mapped } = resolveLegacyCode(matchedCode);
       if (!mapped) return;
       currentEntries.set(mapped, { date: dateToken || '' });
     });
@@ -7331,10 +7475,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!hasAnyGradeToken) return currentEntries;
     lines.forEach((line) => {
       const upper = line.toUpperCase();
-      const match = upper.match(manualCodeRegex);
-      if (!match) return;
+      const matchedCode = getFirstManualCodeToken(upper);
+      if (!matchedCode) return;
       if (getGradeStatus(line)) return;
-      const { mapped } = resolveLegacyCode(match[0]);
+      const { mapped } = resolveLegacyCode(matchedCode);
       if (!mapped) return;
       currentEntries.set(mapped, { date: '' });
     });
@@ -7934,6 +8078,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (openInstructionsModal) openInstructionsModal.addEventListener('click', showInstructionsModal);
   if (closeInstructionsModal) closeInstructionsModal.addEventListener('click', hideInstructionsModal);
   if (closeInstructionsCta) closeInstructionsCta.addEventListener('click', hideInstructionsModal);
+  instructionsStepToggles.forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+      toggleInstructionStep(toggle);
+    });
+  });
   if (openCodeModal) openCodeModal.addEventListener('click', () => {
     if (openCodeModal.disabled) return;
     showCodeModal();
@@ -8334,10 +8483,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let electiveFullPopupOpenedAt = 0;
   let electiveFullPopupAnchor = null;
   let electiveFullPopupAnchorRect = null;
+  const setAlternateSemesterBadgeVisibilityForElectivePopup = (hidden) => {
+    const badges = document.querySelectorAll('.alternate-semester-label');
+    badges.forEach((el) => {
+      if (hidden) {
+        el.style.setProperty('display', 'none', 'important');
+      } else {
+        el.style.removeProperty('display');
+      }
+    });
+  };
   const closeElectiveFullPopup = () => {
     if (!electiveFullPopup) return;
     electiveFullPopup.classList.remove('show');
     electiveFullPopup.style.display = 'none';
+    document.body.classList.remove('elective-full-banner-open');
+    setAlternateSemesterBadgeVisibilityForElectivePopup(false);
     electiveFullPopupAnchor = null;
     electiveFullPopupAnchorRect = null;
   };
@@ -8361,6 +8522,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     electiveFullPopup.style.display = 'block';
     electiveFullPopup.style.zIndex = '9999';
     electiveFullPopup.classList.add('show');
+    document.body.classList.add('elective-full-banner-open');
+    setAlternateSemesterBadgeVisibilityForElectivePopup(true);
     electiveFullPopupOpenedAt = Date.now();
     electiveFullPopupAnchorRect = anchorRect || null;
     requestAnimationFrame(() => {
@@ -15143,6 +15306,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderCourseMapModal();
     courseMapModal.classList.add('show');
     courseMapModal.setAttribute('aria-hidden', 'false');
+    syncCourseMapKeyPanelBottomOffset();
     updateCourseMapPrereqToggle();
     updateCourseMapPrereqTextToggle();
     updateCourseMapFontScale();
@@ -15206,6 +15370,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (width !== lastWidth || height !== lastHeight) {
             lastWidth = width;
             lastHeight = height;
+            syncCourseMapKeyPanelBottomOffset();
             positionCourseMapArrows();
             positionCourseMapCoreConnector();
             updateCourseMapStreamLabels();
@@ -16756,7 +16921,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const lines = [];
     const sourceLine = buildModifiedLine(lastDroppedFileInfo.fileName, lastDroppedFileInfo.modifiedMs);
     const sourceRowsText = lastStudentCountLine
-      ? lastStudentCountLine.replace(/\s+students\s+listed\.?$/i, ' rows.')
+      ? lastStudentCountLine.replace(/\s+students\s+listed\.?$/i, ' rows')
       : '';
     if (sourceLine) {
       lines.push({
@@ -16808,7 +16973,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : triageRecords.size;
       const triageRowsText =
         Number.isFinite(triageRowCountRaw) && triageRowCountRaw >= 0
-          ? `${triageRowCountRaw} rows.`
+          ? `${triageRowCountRaw} rows`
           : '';
       if (triageLine) {
         lines.push({
@@ -17092,6 +17257,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (selectedListEl) {
       selectedListEl.classList.toggle('available-list-warning', hasInsufficientLoad);
     }
+    if (containerPopoutModal?.classList.contains('show') && loadThreshold > 0 && plannedCount >= loadThreshold) {
+      hideContainerPopoutModal();
+    }
     if (hasInsufficientLoad) {
       const remainingLabel = remainingCount === 1 ? 'subject' : 'subjects';
       const loadLabel = loadThreshold === 1 ? 'subject' : 'subjects';
@@ -17109,7 +17277,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const count = available.length;
       const subjectLabel = count === 1 ? 'subject' : 'subjects';
       if (staffFacing) {
-        sidebarSectionDescriptor.textContent = 'Choose Subjects';
+        sidebarSectionDescriptor.textContent = 'Select subjects';
       } else {
         sidebarSectionDescriptor.innerHTML =
           `<span class="inline-strong">Choose your subjects</span> using one or all of these techniques: 
@@ -17628,7 +17796,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (e.target === courseMapModal) hideCourseMapModal();
     });
   }
-  if (openCourseMapKeyButton) openCourseMapKeyButton.addEventListener('click', showCourseMapKeyModal);
+  if (openCourseMapKeyButton) {
+    openCourseMapKeyButton.addEventListener('click', () => {
+      if (courseMapKeyModal?.classList.contains('show')) hideCourseMapKeyModal();
+      else showCourseMapKeyModal();
+    });
+  }
   if (closeCourseMapKey) closeCourseMapKey.addEventListener('click', hideCourseMapKeyModal);
   // Do not close the colour key modal on backdrop click; only via X.
   if (toggleCourseMapPrereqButton) {
@@ -17844,9 +18017,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!el) return;
     const streams = getElectiveStreams(majorKey);
     const streamText = streams
-      .map((s) => `<span class="stream-label ${s.className}"><strong>${s.label}</strong></span>`)
+      .map((s) => `<span class="stream-label-mid ${s.className}">${s.label}</span>`)
       .join(' and ');
-    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill the 4 Elective boxes these ${streamText} subjects`;
+    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill empty <span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span> boxes (above) with these ${streamText} subjects`;
   };
   const updateMajor = () => {
     const sheet = document.querySelector('.sheet');
@@ -17978,6 +18151,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateElectivesFullUI = () => {
     const full = areElectivesFull();
+    document.body.classList.toggle('electives-full-active', full);
     const electiveCells = subjects.filter((cell) => {
       const id = cell.dataset.subject || '';
       return id && !isPlaceholder(cell) && isElectivesGridCell(cell);
@@ -18161,7 +18335,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const dropSidebar = document.getElementById('drop-sidebar');
     const mainContent = document.querySelector('.main-content');
     enablePanelResize(primarySidebar, { key: 'sidebar' });
-    enablePanelResize(dropSidebar, { key: 'drop-sidebar' });
+    // Keep left sidebar defaulting to CSS width on every load.
+    try {
+      localStorage.removeItem('panel-size:drop-sidebar');
+    } catch { }
+    enablePanelResize(dropSidebar, { key: 'drop-sidebar', persist: false });
     // Main area stays responsive to viewport; keep resize handles but don't persist fixed width.
     try {
       localStorage.removeItem('panel-size:main-content');
@@ -18173,10 +18351,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableUniformSubjectCardHeights();
   // Move some per-card overlays when the grid itself (not viewport) gets tight.
   updateMainGridNarrowClass();
-  if (typeof ResizeObserver !== 'undefined' && mainGrid) {
+  requestAnimationFrame(updateMainGridNarrowClass);
+  setTimeout(updateMainGridNarrowClass, 80);
+  if (typeof ResizeObserver !== 'undefined' && (mainGrid || plannerContainer)) {
     try {
       const mainGridResizeObserver = new ResizeObserver(() => updateMainGridNarrowClass());
-      mainGridResizeObserver.observe(mainGrid);
+      if (mainGrid) mainGridResizeObserver.observe(mainGrid);
+      if (plannerContainer) mainGridResizeObserver.observe(plannerContainer);
     } catch { }
   } else {
     window.addEventListener('resize', updateMainGridNarrowClass, { passive: true });

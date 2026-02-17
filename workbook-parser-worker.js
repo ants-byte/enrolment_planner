@@ -480,7 +480,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     return { columnMapFromRows, rowCountFromRows };
   };
   const rowMapResult = buildColumnMapFromRows();
-  if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > rowCount) {
+  // Prefer explicit header-row parsing when available; named ranges can be offset per column.
+  if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > 0) {
     columnMap = rowMapResult.columnMapFromRows;
     rowCount = rowMapResult.rowCountFromRows;
   }
