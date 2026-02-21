@@ -44,7 +44,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const mainGrid = document.querySelector('.main-grid');
   const electivesGrid = document.querySelector('.electives-grid');
   const MAIN_GRID_NARROW_CLASS = 'main-grid-narrow-880';
-  const MAIN_GRID_NARROW_BREAKPOINT = 880;
+  const MAIN_GRID_NARROW_BREAKPOINT = 870;
   const CONTAINER_NARROW_960_CLASS = 'container-narrow-960';
   const CONTAINER_NARROW_960_BREAKPOINT = 960;
   const updateMainGridNarrowClass = () => {
@@ -984,6 +984,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const nextSemesterButton = document.getElementById('open-next-semester');
   const plannerContainer = document.getElementById('container');
   const containerPopoutModal = document.getElementById('container-popout-modal');
+  const containerPopoutModalBox = containerPopoutModal?.querySelector('.container-popout-modal-box') || null;
   const containerPopoutModalBody = document.getElementById('container-popout-modal-body');
   const closeContainerPopoutTop = document.getElementById('close-container-popout-top');
   const closeContainerPopoutBottom = document.getElementById('close-container-popout-bottom');
@@ -1120,7 +1121,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
+  const whitespaceHintTooltip = document.createElement('div');
+  whitespaceHintTooltip.className = 'hover-tooltip';
+  whitespaceHintTooltip.textContent = 'Double click on white space to open this grid in its own panel';
+  document.body.appendChild(whitespaceHintTooltip);
   let hoverTooltipTimer = null;
+  let whitespaceHintTimer = null;
   const subjectMeta = {
     BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
     BIT106: { name: 'Foundations of Software, Hardware & Cloud Computing', note: '', classes: ['core', 'sas'] },
@@ -1294,6 +1300,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const manualEntryCurrent = new Map();
   const workbookCurrent = new Map();
   const currentEnrolmentStudentRecord = new Set();
+  let currentEnrolmentOverrideCodes = null;
   const withdrawnCurrentEnrolments = new Set();
   const manualEntryUnknown = [];
   let manualEntryResults = [];
@@ -2126,23 +2133,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorLabel = document.getElementById('major-current-label');
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
-  const majorPickerSection = document.querySelector('.major-picker');
-  const majorPickerSelectContainer =
-    majorToggle?.closest('.major-picker__select') || majorToggle?.parentElement;
-  const majorStreamInsightsEl = document.createElement('div');
-  majorStreamInsightsEl.className = 'major-stream-insights hidden-initial';
-  majorStreamInsightsEl.setAttribute('aria-live', 'polite');
-  if (majorPickerSelectContainer?.parentElement) {
-    majorPickerSelectContainer.insertAdjacentElement('afterend', majorStreamInsightsEl);
-  } else if (majorPickerSection) {
-    majorPickerSection.appendChild(majorStreamInsightsEl);
-  }
   const majorStreamDefinitions = [
     { key: 'ns', shortLabel: 'NS', label: 'Network Security' },
     { key: 'ba', shortLabel: 'BA', label: 'Business Analytics' },
     { key: 'sd', shortLabel: 'SD', label: 'Software Development' },
   ];
-  const MAJOR_STREAM_YEAR_THRESHOLD = 8;
   const creditWarningIds = new Set([
     'BIT313', 'BIT314', 'BIT351', 'BIT352', 'BIT353', 'BIT355', 'BIT356', 'BIT357', 'BIT358', 'BIT362', 'BIT363', 'BIT364', 'BIT371', 'BIT372', 'BIT241'
   ]);
@@ -2286,24 +2281,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateMajorStreamInsights();
   };
 
-  const updateMajorStreamInsights = () => {
-    if (!majorStreamInsightsEl) return;
-    if (completedMode) {
-      majorStreamInsightsEl.classList.add('hidden-initial');
-      return;
-    }
-    const completed = getCompletedCount();
-    if (completed < MAJOR_STREAM_YEAR_THRESHOLD) {
-      majorStreamInsightsEl.classList.add('hidden-initial');
-      return;
-    }
-    const streamCounts = getMajorStreamCounts();
-    const summary = majorStreamDefinitions
-      .map((stream) => `${stream.shortLabel} ${streamCounts[stream.key] || 0}`)
-      .join('.  ');
-    majorStreamInsightsEl.innerHTML = `<span class="major-stream-summary">${summary}</span>`;
-    majorStreamInsightsEl.classList.remove('hidden-initial');
-  };
+  const updateMajorStreamInsights = () => { };
 
   const getMajorDisplayName = () => {
     const val = majorDropdown?.dataset?.value || currentMajorValue || 'undecided';
@@ -2954,7 +2932,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const refreshCurrentEnrolmentStudentRecord = () => {
     currentEnrolmentStudentRecord.clear();
     withdrawnCurrentEnrolments.clear();
-    const sources = [...workbookCurrent.keys(), ...manualEntryCurrent.keys()];
+    const sources = currentEnrolmentOverrideCodes
+      ? Array.from(currentEnrolmentOverrideCodes.values())
+      : [...workbookCurrent.keys(), ...manualEntryCurrent.keys()];
     sources.forEach((code) => {
       if (validSubjectCodes.has(code)) currentEnrolmentStudentRecord.add(code);
     });
@@ -3315,7 +3295,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (shouldShowSasNotice) {
       infoMessages.push({
         title: 'SAS certificates',
-        html: `<p><strong class="alert-inline-title alert-title-info">SAS enabled subjects.</strong> <span class="alert-inline-text">Two certificates available:</span></p><ul class="alert-inline-list"><li><strong>SAS Academic Specialisation in IT Analytics</strong> for completion of core subjects (BIT106, BIT231, BIT112) and 1 of the Business Analytics subjects BIT355 or BIT356.</li><li><strong>Academic Specialisation in Software Development Analytics</strong> for completion of core subjects (BIT106, BIT231, BIT112) and the Software Development subject BIT358.</li></ul>`,
+        html: `<div class="sas-alert-header"><p><strong class="alert-inline-title alert-title-info">Opportunity for a SAS badge and certificate.</strong></p>
+        <img class="sas-alert-badge" src="images/SAS-MelbournePoly%20badge.png" alt="SAS Melbourne Polytechnic badge"><p class="alert-inline-text">Two certificates are available:</p></div>
+        <ul class="alert-inline-list"><li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i" target="_blank" rel="noopener noreferrer">SAS Academic Specialisation in IT Analytics</a> for completion of core subjects (BIT106, BIT231, BIT112) and 1 of the Business Analytics subjects BIT355 or BIT356.</li>
+        <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1" target="_blank" rel="noopener noreferrer">Academic Specialisation in Software Development Analytics</a> for completion of core subjects (BIT106, BIT231, BIT112) and the Software Development subject BIT358.</li></ul>`,
       });
     }
     const studentFlag = getStudentFlagText(record);
@@ -3870,7 +3853,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetableFees.innerHTML = [
       `<p class="timetable-fee-paragraph census"><strong>Census Date:</strong> ${escapeHtml(
         censusText
-      )}. Subjects withdrawn before this day receive a grade of W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
+      )}. Subjects withdrawn before this day are graded W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
       `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
       `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>Domestic students fees: </strong> See the ${bachelorLink} web site. Switch to "LOCAL STUDENT" at top of page.</p>`,
     ].join('');
@@ -4025,7 +4008,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ],
     fmpDip: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'],
     mpDip: ['BIT105', 'BIT106', 'BIT108', 'BIT111', 'BIT121', 'BIT233', 'BIT213', 'USE101'],
-    mpDipOld: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'],
+    mpDipOld: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT233', 'BIT242', 'BIT245', 'USE101'],
   };
 
   const fillCodeInputWithPreset = (codes = []) => {
@@ -4607,7 +4590,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (st?.completed) completedCodes.add(code);
     });
     electivePlaceholderState.forEach((code) => {
-      if (code && validSubjectCodes.has(code)) completedCodes.add(code);
+      if (code && (validSubjectCodes.has(code) || validUseCodes.has(code))) completedCodes.add(code);
     });
     const selectedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
@@ -4621,7 +4604,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const formatListRows = (codes) =>
       codes
-        .map((code) => `${formatHistoryCode(code)} ${getSubjectName(code)}`.trim())
+        .map((code) => {
+          if (/^USE\d{3}$/i.test(code)) {
+            const useCode = code.toUpperCase();
+            const useName = useDisplayNames[useCode] || 'Unspecified Elective (USE)';
+            return `${useCode} ${useName}`.trim();
+          }
+          return `${formatHistoryCode(code)} ${getSubjectName(code)}`.trim();
+        })
         .sort((a, b) => a.localeCompare(b))
         .map((line) => `<div class="ui-tooltip-row">${escapeHtml(line)}</div>`)
         .join('');
@@ -4635,7 +4625,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       )}`;
     };
 
-    const completedTooltip = formatListHtml('Completed', Array.from(completedCodes));
+    const completedCodesList = Array.from(completedCodes);
+    const hasCompletedUse = completedCodesList.some((code) => /^USE\d{3}$/i.test(code));
+    const useTooltipNote = hasCompletedUse
+      ? '<div class="ui-tooltip-separator"></div><div class="ui-tooltip-row">USE credits are used for electives when subjects completed at your previous school<br>do not map directly to Melbourne Polytechnic subjects.</div>'
+      : '';
+    const completedTooltip = `${formatListHtml('Completed', completedCodesList)}${useTooltipNote}`;
     const selectedTooltip = formatListHtml('Selected', selectedCodes);
     const remainingTooltip = [
       formatListHtml('Core and Major remaining', remainingCoreMajorCodes),
@@ -4910,7 +4905,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCompletedModeUI = () => {
     if (!completedModeButton) return;
-    completedModeButton.textContent = completedMode ? 'History mode' : 'Clicking mode';
+    completedModeButton.textContent = completedMode ? 'Close history mode' : 'Clicking mode';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     if (!completedMode) {
@@ -5124,6 +5119,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : '<div class="inline-electives-heading">Electives</div><br>Fill these Elective boxes with the subjects from the below Electives section (or with any subject that you have completed at diploma level or higher.").';
       tooltip.innerHTML = msg;
     };
+    const isEventInsideCell = (event) => {
+      if (!event || typeof event.clientX !== 'number' || typeof event.clientY !== 'number') return true;
+      const rect = cell.getBoundingClientRect();
+      const insideRect =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      if (!insideRect) return false;
+      const hit = document.elementFromPoint(event.clientX, event.clientY);
+      if (!hit) return false;
+      return hit === cell || cell.contains(hit);
+    };
 
     if (isPlaceholderCell()) {
       setPlaceholderTooltip();
@@ -5216,6 +5224,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     const positionTooltip = (event) => {
+      if (isPlaceholderCell() && !isEventInsideCell(event)) return;
       const rect = cell.getBoundingClientRect();
       const tooltipWidth = tooltip.offsetWidth || rect.width * 0.9;
       const isMouseEvent =
@@ -5223,27 +5232,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isTouchLike = isTouchDevice && !isMouseEvent;
       const clientX = event?.clientX ?? rect.left + rect.width / 2;
       const clientY = event?.clientY ?? rect.top + rect.height * 0.7;
-      const offsetX = clientX - rect.left - tooltipWidth / 2;
-      // On smaller screens allow the tooltip to overflow the card so content isn't cramped.
-      const allowOverflow = window.innerWidth < 1300;
-      const minX = allowOverflow ? -tooltipWidth * 0.35 : 0;
-      const maxX = allowOverflow ? rect.width - tooltipWidth * 0.65 : rect.width - tooltipWidth;
-      const clampedX = Math.max(minX, Math.min(offsetX, maxX));
-      let offsetY = isTouchLike ? rect.height * 0.7 : clientY - rect.top + 27;
       const tooltipHeight = tooltip.offsetHeight || 0;
       const viewportPadding = 8;
-      if (tooltipHeight) {
-        const tooltipBottom = rect.top + offsetY + tooltipHeight;
-        if (tooltipBottom > window.innerHeight - viewportPadding) {
-          offsetY = event.clientY - rect.top - tooltipHeight - 12;
-          const minY = viewportPadding - rect.top;
-          offsetY = Math.max(minY, offsetY);
-        }
+      const pointerGap = 12;
+      let desiredLeft = isTouchLike ? clientX - tooltipWidth / 2 : clientX + pointerGap;
+      let desiredTop = isTouchLike ? clientY + pointerGap : clientY + pointerGap;
+      if (desiredLeft + tooltipWidth > window.innerWidth - viewportPadding) {
+        desiredLeft = clientX - tooltipWidth - pointerGap;
       }
-      tooltip.style.left = `${clampedX}px`;
+      if (desiredLeft < viewportPadding) {
+        desiredLeft = viewportPadding;
+      }
+      if (tooltipHeight && desiredTop + tooltipHeight > window.innerHeight - viewportPadding) {
+        desiredTop = clientY - tooltipHeight - pointerGap;
+      }
+      if (desiredTop < viewportPadding) {
+        desiredTop = viewportPadding;
+      }
+      const offsetX = desiredLeft - rect.left;
+      const offsetY = desiredTop - rect.top;
+      tooltip.style.left = `${offsetX}px`;
       tooltip.style.top = `${offsetY}px`;
     };
     const showTooltip = (event) => {
+      if (isPlaceholderCell() && !isEventInsideCell(event)) return;
       const isMouseEvent =
         !!event && (event.type.startsWith('mouse') || (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent));
       if (isTouchDevice && completedMode && isPlaceholderCell() && !isMouseEvent) {
@@ -5504,12 +5516,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const errorPayloads = [];
     const warningList = [...warningPayloads];
     const activeRecord = getActiveStudentRecord();
+    const activeStudentId = normalizeStudentId(activeRecord?.Student_IDs_Unique || '');
+    const allowEnrol = (activeRecord?.['Allow_Enrol?'] || '').toString().trim().toUpperCase();
     const suppsItems = formatSuppsAndHoldsItems(activeRecord?.SuppsAndHolds);
     if (suppsItems) {
       warningList.push({
         title: 'Supps and/or Holds',
         html: `<p><strong class="alert-inline-title alert-title-warning">Supps and/or Holds</strong> <span class="alert-inline-text">${suppsItems}</span></p>`,
       });
+    }
+    if (allowEnrol === 'N') {
+      errorPayloads.push({
+        title: 'Suspension is blocking enrolment',
+        html: `<p><strong class="alert-inline-title alert-title-error">Suspension is blocking enrolment:</strong>
+        <span class="alert-inline-text"> Strata was showing that this student has a suspension and cannot be enrolled.  
+        <br>This information comes from a manual copy-and-paste from a Strata export to Source.xlsx and might be 
+        out of date.
+        <br><br>Double-check in Strata to see if the flag has been removed:<br>
+        <span class="alert-indent">Open the student's record via Strata's '<strong>Student</strong>' tile.
+        <br>Open their '<strong>Activity</strong>' tab and look to the bottom for '<strong>Suspensions (Current)</strong>' panel.
+        <br> Within there you'll see an '<strong>Allow Enrol?</strong>' column with Y and N values.</span></span></p>`,
+      });
+    }
+    if (activeStudentId) {
+      const comparison = getCurrentEnrolmentComparisonForRecord(activeRecord);
+      if (comparison.hasBoth && comparison.mismatch) {
+        errorPayloads.push({
+          title: 'Current enrolment mismatch (Source vs Triage)',
+          html: `<p><strong class="alert-inline-title alert-title-error">Current enrolment mismatch</strong> <span class="alert-inline-text">Source.xlsx and Triage.xlsx both contain current enrolment data for this student, but the subject lists do not match.</span></p><p class="alert-inline-text"><strong>Source.xlsx:</strong> ${escapeHtml(comparison.sourceCurrentCodes.join(', '))}</p><p class="alert-inline-text"><strong>Triage.xlsx (In Strata):</strong> ${escapeHtml(comparison.triageCurrentCodes.join(', '))}</p>`,
+        });
+      }
     }
     if (electiveError) errorPayloads.push(electiveError);
     if (prereqError) errorPayloads.push(prereqError);
@@ -5708,7 +5744,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!dropZoneEnabled) return;
     const dropZoneTooltip = document.createElement('div');
     dropZoneTooltip.className = 'drop-zone-tooltip';
-    dropZoneTooltip.style.position = 'absolute';
+    dropZoneTooltip.style.position = 'fixed';
     dropZoneTooltip.style.pointerEvents = 'none';
     dropZoneTooltip.style.background = 'rgba(0,0,0,0.85)';
     dropZoneTooltip.style.color = '#fff';
@@ -5718,10 +5754,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     dropZoneTooltip.style.borderRadius = '6px';
     dropZoneTooltip.style.whiteSpace = 'pre-line';
     dropZoneTooltip.style.maxWidth = '320px';
-    dropZoneTooltip.style.zIndex = '5';
+    dropZoneTooltip.style.zIndex = '3500';
     dropZoneTooltip.style.display = 'none';
-    dropZone.appendChild(dropZoneTooltip);
+    document.body.appendChild(dropZoneTooltip);
     let dropZoneTooltipTarget = null;
+    const positionDropZoneTooltip = (clientX, clientY) => {
+      const viewportPadding = 8;
+      const pointerGap = 14;
+      const tooltipRect = dropZoneTooltip.getBoundingClientRect();
+      const tooltipWidth = tooltipRect.width || 0;
+      const tooltipHeight = tooltipRect.height || 0;
+      let nextLeft = clientX + pointerGap;
+      let nextTop = clientY + pointerGap;
+      if (nextLeft + tooltipWidth > window.innerWidth - viewportPadding) {
+        nextLeft = clientX - tooltipWidth - pointerGap;
+      }
+      if (nextTop + tooltipHeight > window.innerHeight - viewportPadding) {
+        nextTop = clientY - tooltipHeight - pointerGap;
+      }
+      nextLeft = Math.max(viewportPadding, Math.min(nextLeft, window.innerWidth - tooltipWidth - viewportPadding));
+      nextTop = Math.max(viewportPadding, Math.min(nextTop, window.innerHeight - tooltipHeight - viewportPadding));
+      dropZoneTooltip.style.left = `${nextLeft}px`;
+      dropZoneTooltip.style.top = `${nextTop}px`;
+    };
     const add = () => dropZone.classList.add('drag-over');
     const remove = () => dropZone.classList.remove('drag-over');
     ['dragenter', 'dragover'].forEach((evt) =>
@@ -5806,8 +5861,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     dropZone.addEventListener('mousemove', (e) => {
       if (dropZoneTooltip.style.display !== 'block') return;
-      dropZoneTooltip.style.left = `${e.offsetX + 12}px`;
-      dropZoneTooltip.style.top = `${e.offsetY + 12}px`;
+      positionDropZoneTooltip(e.clientX, e.clientY);
     });
     dropZone.addEventListener('mouseover', (e) => {
       const target = e.target?.closest?.('.drop-zone-line');
@@ -5815,6 +5869,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       dropZoneTooltipTarget = target;
       dropZoneTooltip.textContent = target.dataset.dropTooltip;
       dropZoneTooltip.style.display = 'block';
+      positionDropZoneTooltip(e.clientX, e.clientY);
     });
     dropZone.addEventListener('mouseout', (e) => {
       const target = e.target?.closest?.('.drop-zone-line');
@@ -5862,7 +5917,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   let uiTooltipEl = null;
   let uiTooltipTimer = null;
+  let uiTooltipHideTimer = null;
   let uiTooltipActiveTarget = null;
+  let uiTooltipHoverLocked = false;
   let uiTooltipPoint = { x: 0, y: 0 };
 
   const initTooltips = () => {
@@ -5874,6 +5931,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       uiTooltipEl = document.createElement('div');
       uiTooltipEl.className = 'ui-tooltip';
       document.body.appendChild(uiTooltipEl);
+      uiTooltipEl.addEventListener('mouseenter', () => {
+        if (uiTooltipEl.classList.contains('ui-tooltip-interactive')) {
+          uiTooltipHoverLocked = true;
+          if (uiTooltipHideTimer) {
+            clearTimeout(uiTooltipHideTimer);
+            uiTooltipHideTimer = null;
+          }
+        }
+      });
+      uiTooltipEl.addEventListener('mouseleave', () => {
+        if (!uiTooltipEl.classList.contains('ui-tooltip-interactive')) return;
+        uiTooltipHoverLocked = false;
+        if (uiTooltipHideTimer) clearTimeout(uiTooltipHideTimer);
+        uiTooltipHideTimer = setTimeout(() => {
+          if (!uiTooltipHoverLocked) {
+            clearTooltipTimer();
+            uiTooltipEl.style.display = 'none';
+            uiTooltipEl.textContent = '';
+            uiTooltipEl.classList.remove('ui-tooltip-interactive');
+            uiTooltipActiveTarget = null;
+          }
+        }, 40);
+      });
     }
 
     const clearTooltipTimer = () => {
@@ -5883,10 +5963,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     };
 
+    const clearTooltipHideTimer = () => {
+      if (uiTooltipHideTimer) {
+        clearTimeout(uiTooltipHideTimer);
+        uiTooltipHideTimer = null;
+      }
+    };
+
     const hideTooltip = () => {
+      if (uiTooltipHoverLocked) return;
       clearTooltipTimer();
+      clearTooltipHideTimer();
       uiTooltipEl.style.display = 'none';
       uiTooltipEl.textContent = '';
+      uiTooltipEl.classList.remove('ui-tooltip-interactive');
       uiTooltipActiveTarget = null;
     };
 
@@ -5909,7 +5999,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const text = target?.getAttribute('data-tooltip') || '';
       if (!text && !html) return;
       const isCounts = target.classList.contains('subject-counts-item');
+      const interactive = target?.getAttribute('data-tooltip-interactive') === 'true';
       uiTooltipEl.classList.toggle('ui-tooltip-counts', isCounts);
+      uiTooltipEl.classList.toggle('ui-tooltip-interactive', interactive);
+      uiTooltipHoverLocked = false;
       if (html) {
         uiTooltipEl.innerHTML = html;
       } else {
@@ -5926,6 +6019,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         uiTooltipActiveTarget = target;
         uiTooltipPoint = { x: event.clientX, y: event.clientY };
         clearTooltipTimer();
+        clearTooltipHideTimer();
+        uiTooltipHoverLocked = false;
         uiTooltipTimer = setTimeout(() => {
           if (uiTooltipActiveTarget === target) showTooltip(target, uiTooltipPoint.x, uiTooltipPoint.y);
         }, 250);
@@ -5936,7 +6031,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           positionTooltip(uiTooltipPoint.x, uiTooltipPoint.y);
         }
       });
-      target.addEventListener('mouseleave', hideTooltip);
+      target.addEventListener('mouseleave', () => {
+        if (uiTooltipEl.classList.contains('ui-tooltip-interactive')) {
+          clearTooltipHideTimer();
+          uiTooltipHideTimer = setTimeout(() => {
+            if (!uiTooltipHoverLocked) hideTooltip();
+          }, 150);
+          return;
+        }
+        hideTooltip();
+      });
       target.addEventListener('focus', (event) => {
         const rect = event.target.getBoundingClientRect();
         uiTooltipPoint = { x: rect.right, y: rect.bottom };
@@ -6089,6 +6193,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     manualEntryMeta.clear();
     manualEntryCurrent.clear();
     workbookCurrent.clear();
+    currentEnrolmentOverrideCodes = null;
     manualEntryUnknown.length = 0;
     manualEntryResults = [];
     subjectState.clear();
@@ -6185,6 +6290,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const showContainerPopoutModal = () => {
     if (!containerPopoutModal || !containerPopoutModalBody || !plannerContainer) return;
     if (containerPopoutModal.classList.contains('show')) return;
+    if (containerPopoutModalBox) {
+      const popoutIdealWidth = window.innerWidth >= 1400 ? 1288 : 1073;
+      containerPopoutModalBox.style.position = '';
+      containerPopoutModalBox.style.left = '';
+      containerPopoutModalBox.style.top = '';
+      containerPopoutModalBox.style.transform = '';
+      containerPopoutModalBox.style.margin = '';
+      containerPopoutModalBox.style.height = '';
+      containerPopoutModalBox.style.maxHeight = '';
+      containerPopoutModalBox.style.width = `min(${popoutIdealWidth}px, 100%)`;
+      containerPopoutModalBox.style.maxWidth = '100%';
+    }
     if (!containerPopoutPlaceholder && plannerContainer.parentNode) {
       containerPopoutPlaceholder = document.createComment('container-popout-placeholder');
       plannerContainer.parentNode.insertBefore(containerPopoutPlaceholder, plannerContainer);
@@ -6263,7 +6380,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!modalBox || !actions) return;
     const modalRect = modalBox.getBoundingClientRect();
     const actionsRect = actions.getBoundingClientRect();
-    const bottomOffset = Math.max(0, Math.round(modalRect.bottom - actionsRect.top));
+    const bottomOffset = Math.max(0, Math.round(modalRect.bottom - actionsRect.top) + 4);
     modalBox.style.setProperty('--course-map-key-bottom', `${bottomOffset}px`);
   };
 
@@ -6336,7 +6453,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'credit-transfer-sign-return', label: 'Credit Transfer - Please sign and return' },
     { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
     { key: 'suspended-students', label: 'Suspended students', dividerAfter: true },
-    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers' },
+    { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
+    { key: 'bit105', label: 'BIT105' },
+    { key: 'bit121-for-ns-major', label: 'BIT121 for NS major' },
+    { key: 'bit111-for-sd-major', label: 'BIT111 for SD major' },
+    { key: 'ba-or-sd-major-you-should-choose', label: 'BA or SD major? You should choose' },
+    { key: 'ba-major-you-should-choose', label: 'BA major? You should choose' },
+    { key: 'sd-major-you-should-choose', label: 'SD major? You should choose' },
+    { key: 'bit213-as-co-requisite', label: 'BIT213 as co-requisite' },
+    { key: 'major-subjects-for-capstone', label: 'Major subjects for Capstone' },
+    { key: 'major-stream-must-choose-now', label: 'Major stream - must choose now' },
+    { key: 'fmp-associate-degree-bit371-and-major', label: 'FMP Associate Degree - BIT371 and major.' },
+    { key: 'alternating-subjects-ba-major', label: 'Alternating subjects - BA major' },
+    { key: 'alternating-subjects-sd', label: 'Alternating subjects - SD' },
+    { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects - SD & BA' },
+    { key: '4-uses-your-major', label: '4 USEs - your major?' },
+    { key: 'bit106-bit230-bit242-bit371-bit372-to-4-semesters', label: 'BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters', dividerAfter: true },
+    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers', startNewColumn: true },
     { key: 'mp-outlook-email', label: 'MP outlook email' },
     { key: 'supports-at-risk', label: 'Supports (at risk) - Counselling etc.' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
@@ -6379,6 +6512,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ],
     'credit-transfer-sign-return': ['Credit Transfer - Please sign and return'],
     'credit-transfers-returned': ['Credit Transfers Returned'],
+    'bit111-and-bit106': ['BIT111 & BIT106'],
+    'bit105': ['BIT105'],
+    'bit121-for-ns-major': ['BIT121 for NS major'],
+    'bit111-for-sd-major': ['BIT111 for SD major'],
+    'ba-or-sd-major-you-should-choose': ['BA or SD major? You should choose'],
+    'ba-major-you-should-choose': ['BA major? You should choose'],
+    'sd-major-you-should-choose': ['SD major? You should choose'],
+    'bit213-as-co-requisite': ['BIT213 as co-requisite'],
+    'major-subjects-for-capstone': ['Major subjects for Capstone'],
+    'major-stream-must-choose-now': [
+      'Major stream - must choose now',
+      'Major stream – must choose now',
+    ],
+    'fmp-associate-degree-bit371-and-major': [
+      'FMP Associate Degree - BIT371 and major.',
+      'FMP Associate Degree – BIT371 and major.',
+    ],
+    'alternating-subjects-ba-major': [
+      'Alternating subjects - BA major',
+      'Alternating subjects – BA major',
+    ],
+    'alternating-subjects-sd': [
+      'Alternating subjects - SD',
+      'Alternating subjects – SD',
+    ],
+    'alternating-subjects-sd-and-ba': [
+      'Alternating subjects - SD & BA',
+      'Alternating subjects – SD & BA',
+    ],
+    '4-uses-your-major': ['4 USEs - your major?', '4 USEs – your major?'],
+    'bit106-bit230-bit242-bit371-bit372-to-4-semesters': ['BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters'],
     'transcript-mid-course-student-request': ['Transcript - mid course. Student request'],
     'personal-details-change-your-details': ['Personal Details'],
     'username-password-wifi-outlook-moodle-computers': [
@@ -6437,6 +6601,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const row = document.createElement('div');
       row.className = 'email-scripts-access-row';
       if (rowConfig.dividerAfter) row.classList.add('email-scripts-access-divider');
+      if (rowConfig.startNewColumn) row.classList.add('email-scripts-access-column-break');
       row.setAttribute('role', 'listitem');
 
       const text = document.createElement('div');
@@ -7253,30 +7418,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
         const hasDates =
           dateColIndex !== -1 && rowData.some(({ columns }) => extractDateToken(columns[dateColIndex] || ''));
-        canIdentifyCurrent = hasResults;
-        extractedEntries = rowData
-          .map(({ line, columns }) => {
-            const upper = line.toUpperCase();
-            const matchedCode = getFirstManualCodeToken(upper);
-            if (!matchedCode) return null;
-            const gradeCell = columns[gradeColIndex] || '';
-            const status = getGradeStatus(gradeCell);
-            const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
-            const dateToken = extractDateToken(dateCell);
-            if (!status) {
-              if (canIdentifyCurrent) {
-                return { rawCode: matchedCode, grade: '', date: dateToken, status: 'current' };
+        // Some pasted tables contain a "Credit Points" column, not grade results.
+        // If no actual grade values are present, fall back to generic code extraction.
+        if (!hasResults) {
+          useTranscriptParsing = false;
+        } else {
+          canIdentifyCurrent = hasResults;
+          extractedEntries = rowData
+            .map(({ line, columns }) => {
+              const upper = line.toUpperCase();
+              const matchedCode = getFirstManualCodeToken(upper);
+              if (!matchedCode) return null;
+              const gradeCell = columns[gradeColIndex] || '';
+              const status = getGradeStatus(gradeCell);
+              const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
+              const dateToken = extractDateToken(dateCell);
+              if (!status) {
+                if (canIdentifyCurrent) {
+                  return { rawCode: matchedCode, grade: '', date: dateToken, status: 'current' };
+                }
+                return null;
               }
-              return null;
-            }
-            return {
-              rawCode: matchedCode,
-              grade: extractGradeToken(gradeCell),
-              date: dateToken,
-              status,
-            };
-          })
-          .filter(Boolean);
+              return {
+                rawCode: matchedCode,
+                grade: extractGradeToken(gradeCell),
+                date: dateToken,
+                status,
+              };
+            })
+            .filter(Boolean);
+        }
       }
     }
 
@@ -7871,13 +8042,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.addEventListener('click', (event) => {
       if (!completedMode) {
         const id = cell.dataset.subject || '';
-        console.info('[Elective click]', {
-          context: 'grid',
-          id,
-          electivesFull: areElectivesFull(),
-          toggled: !!subjectState.get(id)?.toggled,
-          completedMode,
-        });
         if (id && areElectivesFull() && isElectiveId(id) && !subjectState.get(id)?.toggled) {
           const anchorRect = cell.getBoundingClientRect();
           openElectiveFullPopup('All 4 Elective slots are full, so this subject cannot be selected.', anchorRect, {
@@ -8011,25 +8175,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         return;
       }
-      const strataAdd = event.target?.closest?.('.triage-in-strata-add');
-      if (strataAdd) {
-        event.preventDefault();
-        const rawCodes =
-          strataAdd.getAttribute('data-subject-codes') ||
-          strataAdd.getAttribute('data-subject-code') ||
-          '';
-        const codes = rawCodes
-          .split(',')
-          .map((code) => normalizeSubjectCode(code))
-          .filter(Boolean);
-        if (!codes.length) return;
-        const added = addStrataSubjectsToCurrentEnrolments(codes);
-        if (added) {
-          const currentRecord = staffWorkbookState.getStudentRecord();
-          if (currentRecord) renderStudentPreviewHtml(formatStudentSummary(currentRecord));
-        }
-        return;
-      }
       const triageComment = event.target?.closest?.('.triage-comment-preview, .triage-comment-menu');
       if (triageComment) {
         event.preventDefault();
@@ -8091,6 +8236,67 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeContainerPopoutTop) closeContainerPopoutTop.addEventListener('click', hideContainerPopoutModal);
   if (closeContainerPopoutBottom) closeContainerPopoutBottom.addEventListener('click', hideContainerPopoutModal);
   if (plannerContainer) {
+    const hideWhitespaceHint = () => {
+      if (whitespaceHintTimer) {
+        clearTimeout(whitespaceHintTimer);
+        whitespaceHintTimer = null;
+      }
+      whitespaceHintTooltip.style.display = 'none';
+    };
+    plannerContainer.addEventListener('mousemove', (event) => {
+      if (containerPopoutModal?.classList.contains('show')) {
+        hideWhitespaceHint();
+        return;
+      }
+      if (plannerContainer.closest('#container-popout-modal-body')) {
+        hideWhitespaceHint();
+        return;
+      }
+      if (!isContainerWhitespaceTarget(event.target)) {
+        hideWhitespaceHint();
+        return;
+      }
+      whitespaceHintTooltip.style.display = 'none';
+      if (whitespaceHintTimer) clearTimeout(whitespaceHintTimer);
+      const x = event.clientX || 0;
+      const y = event.clientY || 0;
+      whitespaceHintTimer = setTimeout(() => {
+        whitespaceHintTimer = null;
+        if (containerPopoutModal?.classList.contains('show')) return;
+        if (plannerContainer.closest('#container-popout-modal-body')) return;
+        const hit = document.elementFromPoint(x, y);
+        if (!isContainerWhitespaceTarget(hit)) return;
+        whitespaceHintTooltip.style.display = 'block';
+        whitespaceHintTooltip.style.visibility = 'hidden';
+        whitespaceHintTooltip.style.left = `0px`;
+        whitespaceHintTooltip.style.top = `0px`;
+        const hintRect = whitespaceHintTooltip.getBoundingClientRect();
+        const hintWidth = hintRect.width || whitespaceHintTooltip.offsetWidth || 240;
+        const hintHeight = hintRect.height || whitespaceHintTooltip.offsetHeight || 32;
+        const viewportPadding = 8;
+        const gap = 10;
+        let left = x + gap;
+        let top = y + gap;
+        if (left + hintWidth > window.innerWidth - viewportPadding) {
+          left = x - hintWidth - gap;
+        }
+        if (left < viewportPadding) {
+          left = viewportPadding;
+        }
+        if (top + hintHeight > window.innerHeight - viewportPadding) {
+          top = y - hintHeight - gap;
+        }
+        if (top < viewportPadding) {
+          top = viewportPadding;
+        }
+        whitespaceHintTooltip.style.left = `${left}px`;
+        whitespaceHintTooltip.style.top = `${top}px`;
+        whitespaceHintTooltip.style.visibility = 'visible';
+        whitespaceHintTooltip.style.display = 'block';
+      }, 1000);
+    });
+    plannerContainer.addEventListener('mouseleave', hideWhitespaceHint);
+    plannerContainer.addEventListener('dblclick', hideWhitespaceHint);
     plannerContainer.addEventListener('dblclick', (event) => {
       if (!isContainerWhitespaceTarget(event.target)) return;
       event.preventDefault();
@@ -8395,9 +8601,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
-  const TRIAGE_STRATA_ADD_TOOLTIP_HTML =
-    "These new Strata additions are not recorded in the Source workbook and so don't appear in this web site as this student's Current Enrolments.  <br><br>Click to add them";
-
   const parseInStrataCodes = (value) => {
     const matches = String(value || '').toUpperCase().match(manualCodeRegexGlobal) || [];
     const unique = [];
@@ -8444,24 +8647,86 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return changed;
   };
 
-  const addStrataSubjectsToCurrentEnrolments = (codes = []) => {
-    const uniqueCodes = Array.from(
+  const getTriageInStrataMissingCodesForRecord = (record) => {
+    if (!record) return [];
+    const studentId = normalizeStudentId(record.Student_IDs_Unique || '');
+    if (!studentId) return [];
+    const triage = triageRecords.get(studentId);
+    if (!triage?.inStrata) return [];
+    const strataCodes = parseInStrataCodes(triage.inStrata);
+    if (!strataCodes.length) return [];
+    const historyCodes = getStudentHistoryCodeSet();
+    return strataCodes.filter((code) => !historyCodes.has(code));
+  };
+
+  const getCurrentEnrolmentComparisonForRecord = (record) => {
+    if (!record) {
+      return {
+        sourceCurrentCodes: [],
+        triageCurrentCodes: [],
+        hasBoth: false,
+        mismatch: false,
+      };
+    }
+    const studentId = normalizeStudentId(record.Student_IDs_Unique || '');
+    const triageRecord = studentId ? triageRecords.get(studentId) : null;
+    const sourceCurrentCodes = Array.from(
       new Set(
-        (codes || [])
+        Array.from(workbookCurrent.keys())
           .map((code) => normalizeSubjectCode(code))
-          .filter(Boolean)
+          .filter((code) => code && validSubjectCodes.has(code))
       )
-    );
+    ).sort();
+    const triageCurrentCodes = Array.from(
+      new Set(
+        (triageRecord?.inStrata ? parseInStrataCodes(triageRecord.inStrata) : [])
+          .map((code) => normalizeSubjectCode(code))
+          .filter((code) => code && validSubjectCodes.has(code))
+      )
+    ).sort();
+    const hasBoth = sourceCurrentCodes.length > 0 && triageCurrentCodes.length > 0;
+    let mismatch = false;
+    if (hasBoth) {
+      const sourceSet = new Set(sourceCurrentCodes);
+      const triageSet = new Set(triageCurrentCodes);
+      mismatch =
+        sourceSet.size !== triageSet.size ||
+        Array.from(sourceSet.values()).some((code) => !triageSet.has(code));
+    }
+    return {
+      sourceCurrentCodes,
+      triageCurrentCodes,
+      hasBoth,
+      mismatch,
+    };
+  };
+
+  const autoPopulateStrataCurrentForRecord = (record) => {
+    const comparison = getCurrentEnrolmentComparisonForRecord(record);
+    const overrideCodes =
+      comparison.hasBoth && comparison.mismatch ? comparison.triageCurrentCodes : null;
+    const previousOverrideSignature = currentEnrolmentOverrideCodes
+      ? Array.from(currentEnrolmentOverrideCodes.values()).sort().join('|')
+      : '';
+    const nextOverrideSignature = overrideCodes ? overrideCodes.slice().sort().join('|') : '';
+    currentEnrolmentOverrideCodes = overrideCodes ? new Set(overrideCodes) : null;
+
+    const missingCodes = getTriageInStrataMissingCodesForRecord(record);
+    if (!missingCodes.length) {
+      if (previousOverrideSignature !== nextOverrideSignature) {
+        refreshCurrentEnrolmentStudentRecord();
+        return true;
+      }
+      return false;
+    }
     let changed = false;
-    uniqueCodes.forEach((code) => {
+    missingCodes.forEach((code) => {
       if (addStrataSubjectToCurrentEnrolments(code)) changed = true;
     });
-    if (changed) {
+    if (changed || previousOverrideSignature !== nextOverrideSignature) {
       refreshCurrentEnrolmentStudentRecord();
-      applyPassForEnrolmentsState();
-      updateWarnings();
     }
-    return changed;
+    return changed || previousOverrideSignature !== nextOverrideSignature;
   };
 
   const isElectiveId = (id) => {
@@ -8515,7 +8780,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       electiveFullPopup.addEventListener('click', (event) => event.stopPropagation());
       document.body.appendChild(electiveFullPopup);
     }
-    console.info('[Elective popup]', { text, anchorRect });
     electiveFullPopup.textContent = text;
     electiveFullPopup.style.left = '0px';
     electiveFullPopup.style.top = '0px';
@@ -8608,6 +8872,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         // keep original encoded value
       }
     }
+    // Repair malformed duplicated schemes observed in some workbook cells.
+    raw = raw
+      .replace(/^https?:\/\/https?:\/\//i, 'https://')
+      .replace(/^https?:\/\/https:/i, 'https://')
+      .replace(/^https?:\/\/http:/i, 'http://');
     const directUrlMatch = raw.match(/https?:\/\/[^\s"'<>]+/i);
     if (directUrlMatch?.[0] && !/^(https?:\/\/|\/|sites\/|www\.|\/\/)/i.test(raw)) {
       raw = directUrlMatch[0];
@@ -8876,6 +9145,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const fundingSource = (record.Funding_Source || '').toString().trim();
     const suspended = (record.Suspended || '').toString().trim();
     const suspensionReason = (record.Suspended_Names || '').toString().trim();
+    const allowEnrol = (record['Allow_Enrol?'] || '').toString().trim().toUpperCase();
     const aprApp = (record.APR_APP || '').toString().trim();
     const aprAppCondition = (record.APR_APP_Condition || '').toString().trim();
     const aprAppAttended = (record.APR_APP_Attended || '').toString().trim();
@@ -8944,24 +9214,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const triageLines = [];
         if (triage.friendlyName) {
           triageLines.push(
-            `<div><strong>Friendly name:</strong> ${escapeHtml(triage.friendlyName)}</div>`
+            `<div><span class="triage-subheading">Friendly name:</span> ${escapeHtml(triage.friendlyName)}</div>`
           );
         }
         if (triage.handledBy) {
           triageLines.push(
-            `<div><strong>Handled by:</strong> ${escapeHtml(triage.handledBy)}</div>`
+            `<div><span class="triage-subheading">Handled by:</span> ${escapeHtml(triage.handledBy)}</div>`
           );
         }
         if (triage.statusLabel) {
-          const details = (triage.statusDetails || '').toLowerCase();
-          let suffix = '';
-          if (details.includes('details - crt, ongoing, domestic, etc.')) suffix += ' - New';
-          if (details.includes('with ct')) suffix += ' - CT';
-          triageLines.push(`<div>${escapeHtml(`${triage.statusLabel}${suffix}`)}</div>`);
+          const statusLabelRaw = String(triage.statusLabel || '').trim();
+          const statusLower = statusLabelRaw.toLowerCase();
+          let statusHtml = escapeHtml(statusLabelRaw);
+          if (statusLower === 'ongoing') {
+            statusHtml = '<span class="triage-status-emph">Ongoing</span> student';
+          } else if (statusLower === 'new') {
+            statusHtml = '<span class="triage-status-emph">New</span> student';
+          }
+          triageLines.push(`<div>${statusHtml}</div>`);
         }
         if (triage.alteredStatus) {
           triageLines.push(
-            `<div><strong>Altered Status:</strong> ${escapeHtml(triage.alteredStatus)}</div>`
+            `<div><span class="triage-subheading">Altered Status:</span> ${escapeHtml(triage.alteredStatus)}</div>`
           );
         }
         if (triage.onSharePoint) {
@@ -9017,37 +9291,53 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             linkFromDisplay ||
             linkFromSourceRaw ||
             String(triage.onSharePointLink || '').trim();
+          const recoveredRawHref =
+            String(tooltipAddress || '')
+              .replace(/^https?:\/\/https?:\/\//i, 'https://')
+              .replace(/^https?:\/\/https:/i, 'https://')
+              .replace(/^https?:\/\/http:/i, 'http://')
+              .match(/https?:\/\/[^\s"'<>]+/i)?.[0] || '';
+          const resolvedTooltipHref = resolveSidebarSharePointHref(
+            tooltipAddress,
+            sourceSharePointContext
+          );
+          const recoveredTooltipHref = resolveSidebarSharePointHref(
+            recoveredRawHref,
+            sourceSharePointContext
+          );
+          const effectiveHref = href || resolvedTooltipHref || recoveredTooltipHref;
           const tooltipText = tooltipAddress
             ? `SharePoint address: ${tooltipAddress}`
             : 'SharePoint address not resolved from Triage workbook.';
           const tooltipAttr = escapeHtml(tooltipText);
-          if (href) {
+          const tooltipHtml = effectiveHref
+            ? `<strong>SharePoint folder:</strong> <a href="${escapeHtml(
+              effectiveHref
+            )}" target="_blank" rel="noopener noreferrer">${display}</a><br><span>${escapeHtml(
+              effectiveHref
+            )}</span>`
+            : '';
+          const tooltipHtmlAttr = escapeHtml(tooltipHtml);
+          if (effectiveHref) {
             triageLines.push(
-              `<div><strong>On SharePoint:</strong> <a class="triage-sharepoint-link" href="${escapeHtml(
-                href
-              )}" data-tooltip="${tooltipAttr}" target="_blank" rel="noopener noreferrer">${display}</a></div>`
+              `<div><span class="triage-subheading">On SharePoint:</span> <a class="triage-sharepoint-link" href="${escapeHtml(
+                effectiveHref
+              )}" data-tooltip-html="${tooltipHtmlAttr}" data-tooltip-interactive="true" target="_blank" rel="noopener noreferrer">${display}</a></div>`
             );
           } else {
             triageLines.push(
-              `<div><strong>On SharePoint:</strong> <span class="triage-sharepoint-link" data-tooltip="${tooltipAttr}">${display}</span></div>`
+              `<div><span class="triage-subheading">On SharePoint:</span> <span class="triage-sharepoint-link" data-tooltip="${tooltipAttr}">${display}</span></div>`
             );
           }
         }
         if (triage.inStrata) {
           const strataCodes = parseInStrataCodes(triage.inStrata);
           if (strataCodes.length) {
-            const historyCodes = getStudentHistoryCodeSet();
-            const missingCodes = strataCodes.filter((code) => !historyCodes.has(code));
             const strataText = strataCodes.map((code) => escapeHtml(code)).join(', ');
-            const strataHtml = missingCodes.length
-              ? `<button type="button" class="triage-in-strata-add triage-in-strata-add-block" data-subject-codes="${escapeHtml(
-                missingCodes.join(',')
-              )}" data-tooltip-html="${TRIAGE_STRATA_ADD_TOOLTIP_HTML}" aria-label="Add all In Strata subjects to current enrolments">${strataText}</button>`
-              : `<span class="triage-in-strata-code">${strataText}</span>`;
-            triageLines.push(`<div><strong>In Strata:</strong> ${strataHtml}</div>`);
+            triageLines.push(`<div><span class="triage-subheading">In Strata:</span> <span class="triage-in-strata-code">${strataText}</span></div>`);
           } else {
             triageLines.push(
-              `<div><strong>In Strata:</strong> ${escapeHtml(
+              `<div><span class="triage-subheading">In Strata:</span> ${escapeHtml(
                 triage.inStrata
               )}</div>`
             );
@@ -9062,7 +9352,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             ? commentLines.map((line) => `<div class="triage-comment-line">${escapeHtml(line)}</div>`).join('')
             : `<div class="triage-comment-line">${commentText}</div>`;
           triageLines.push(
-            `<div class="triage-comment"><strong>Comments:</strong> <span class="triage-comment-preview" role="button" tabindex="0">${commentText}</span><span class="triage-comment-menu" aria-hidden="true">⋯</span><div class="triage-comment-full hidden-initial">${commentFull}</div></div>`
+            `<div class="triage-comment"><span class="triage-subheading">Comments:</span> <span class="triage-comment-preview" role="button" tabindex="0">${commentText}</span><span class="triage-comment-menu" aria-hidden="true">⋯</span><div class="triage-comment-full hidden-initial">${commentFull}</div></div>`
           );
         }
         if (triageLines.length) {
@@ -9111,14 +9401,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const hasVisa =
         feeDetails.visaType &&
         !feeDetails.feeLabel.toUpperCase().includes(feeDetails.visaType.toUpperCase());
+      const shouldHighlightVisa = hasVisa && !/\bSV\b/i.test(String(feeDetails.visaType || ''));
+      const visaDisplay = shouldHighlightVisa
+        ? `<span class="student-visa-strong">${escapeHtml(feeDetails.visaType)}</span>`
+        : escapeHtml(feeDetails.visaType);
       const visaSuffix = hasVisa
-        ? ` (Visa: <span class="student-visa-strong">${escapeHtml(feeDetails.visaType)}</span>)`
+        ? ` (Visa: ${visaDisplay})`
         : '';
       const scheduleLink = feeDetails.domesticFees
         ? ' <a class="fee-schedule-link" href="https://www.melbournepolytechnic.edu.au/study/fees/local-student-fees/fees-for-local-higher-education-students/schedule-of-higher-education-tuition-fees/" target="_blank" rel="noopener">schedule</a>'
         : '';
+      const feeTypeLabelHtml = escapeHtml(feeDetails.feeLabel).replace(
+        /^Fee Type:/,
+        '<span class="student-summary-lead">Fee Type:</span>'
+      );
       lines.push(
-        `${escapeHtml(feeDetails.feeLabel)}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
+        `${feeTypeLabelHtml}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
       );
       if (feeDetails.loadNote) {
         lines.push(escapeHtml(feeDetails.loadNote));
@@ -9132,7 +9430,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     if (feeDetails.fundingSource) {
-      lines.push(`Funding Source: ${escapeHtml(feeDetails.fundingSource)}`);
+      lines.push(`<span class="student-summary-lead">Funding Source:</span> ${escapeHtml(feeDetails.fundingSource)}`);
     }
     if (feeDetails.fundingSourcePrefix === 'F' && !visaType) {
       lines.push(
@@ -9151,6 +9449,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (suspended && suspended.toUpperCase() === 'Y') {
       const cleanReason = suspensionReason.replace(/\u2014/g, '\u2013');
       lines.push(escapeHtml(`Suspended: Suspension name: ${cleanReason}`));
+    }
+    if (allowEnrol === 'N') {
+      lines.push('<span class="allow-enrol-blocked">Allow Enrol? N</span>');
     }
     if (aprApp) {
       const aprToken = /\bAPR\b/i.test(aprApp) ? 'APR' : /\bAPP\b/i.test(aprApp) ? 'APP' : 'APR';
@@ -9175,19 +9476,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       lines.push(`${aprLabel} ${mainText}`);
     }
     if (failedCount) {
-      lines.push(`Failed (N) count: ${escapeHtml(failedCount)}`);
+      lines.push(`<span class="student-summary-lead">Failed (N) count:</span> ${escapeHtml(failedCount)}`);
     }
     if (hasHistory) {
       const creditPointsLabel = formatCountValue(creditPointsDisplay);
       lines.push(
         `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
           creditSubjectsLabel
-        )}">Credit Points Earned: ${escapeHtml(creditPointsLabel)} (${escapeHtml(
-          creditSubjectsLabel
-        )} subjects)</div>`
+        )}">${escapeHtml(creditSubjectsLabel)} subjects completed. ${escapeHtml(
+          creditPointsLabel
+        )} points.</div>`
       );
       const medianGrade = getMedianGradeLabel(manualEntryResults);
-      lines.push(`<div>Median grade: ${escapeHtml(medianGrade)}</div>`);
+      lines.push(`<div><span class="student-summary-lead">Median grade:</span> ${escapeHtml(medianGrade)}</div>`);
     }
     const remainingCount = getRemainingSubjectsCount();
     if (shouldShowRemainingNotice(remainingCount)) {
@@ -10506,6 +10807,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         manualEntryMeta.set(code, { result: '', date: meta?.date || '', failCountN: resultsParsed.failCountsN?.get(code) || 0 });
       }
     });
+    autoPopulateStrataCurrentForRecord(record);
 
     const acceptedOffered = (record.Accepted_Offered || '').toString().trim();
     const aprApp = (record.APR_APP || '').toString().trim();
@@ -10643,6 +10945,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     clearStudentSearchDropdown();
     resetStudentSelections();
+    currentEnrolmentOverrideCodes = null;
     syncLoadFormState();
     updateVaryLoadLabel();
     if (!skipPreviewUpdate) updateStudentPreview();
@@ -10748,6 +11051,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (activeStudentId !== matchId) {
       activeStudentId = matchId;
       applyStudentRecord(record);
+    } else {
+      const triageCurrentChanged = autoPopulateStrataCurrentForRecord(record);
+      if (triageCurrentChanged) {
+        applyPassForEnrolmentsState();
+        updateWarnings();
+      }
     }
     if (studentIdInput) studentIdInput.classList.add('student-match-found');
     renderStudentPreviewHtml(formatStudentSummary(record));
@@ -13534,6 +13843,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.toggled)
         .map(([code]) => code)
     );
+    const { completedMajorCount, plannedMajorCount } = getMajorCounts();
     const memo = new Map();
     const currentCodes = new Set([
       ...Array.from(workbookCurrent.keys()),
@@ -13553,7 +13863,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         usePlanned: false,
       });
       const hasCoreq = (corequisites[code] || []).length > 0;
-      const meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+      let meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+      if (code === 'BIT371') {
+        const bitReq = getBit371Requirement({
+          completedSet,
+          plannedSet,
+          usePlanned: false,
+          completedMajorCount,
+          plannedMajorCount,
+        });
+        meetsNow = bitReq.metNow;
+      }
       if (!meetsNow) {
         const dist = computeSemesterDistance(code, completedSet, plannedSet, false, false, memo);
         if (Number.isFinite(dist) && dist <= 2) return 'course-map-status-next';
@@ -17432,14 +17752,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         isElectiveLabel(row.dataset.stream) ||
         isElectiveId(id) ||
         isElectiveCandidateId(id);
-      console.info('[Elective click]', {
-        context: 'available-modal',
-        id,
-        isElectiveRow,
-        electivesFull: areElectivesFull(),
-        toggled: !!subjectState.get(id)?.toggled,
-        currentTableMode,
-      });
       if (
         currentTableMode === 'available' &&
         isElectiveRow &&
@@ -17483,18 +17795,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const x = event.clientX;
     const y = event.clientY;
     const inside = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-    console.info('[Elective popup move]', {
-      x,
-      y,
-      inside,
-      rect: {
-        left: rect.left,
-        top: rect.top,
-        right: rect.right,
-        bottom: rect.bottom,
-      },
-      target: event.target?.tagName,
-    });
     if (inside) return;
     closeElectiveFullPopup();
   });

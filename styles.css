@@ -560,7 +560,7 @@ td,
 }
 
 #student-id-input.student-match-found {
-  font-weight: 700;
+  font-weight: 500;
   animation: matchPulse 0.7s ease;
   box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7), 0 0 0 0 rgba(76, 175, 80, 0.35);
 }
@@ -655,7 +655,11 @@ td,
 }
 
 .student-visa-strong {
-  font-weight: 700;
+  color: #b6ff00;
+}
+
+.student-summary-lead {
+  font-weight: 500;
 }
 
 .visa-fee-guide {
@@ -1629,7 +1633,7 @@ td,
 
 .student-summary-id {
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .student-summary-id.copy-flash {
@@ -1664,7 +1668,18 @@ td,
   color: var(--alert-caution);
 }
 
+.student-data-preview .allow-enrol-blocked,
+.sidebar .allow-enrol-blocked {
+  color: #ff6cba;
+  font-weight: 500;
+}
 
+.alert-indent{
+  display: inline-block;
+  margin-left: 24px;
+  padding-right:20px;
+  margin-top:2px;
+}
 .sidebar .student-summary-credit {
   color: var(--sidebar-text);
 }
@@ -1683,6 +1698,14 @@ td,
 
 .student-summary-triage-body {
   margin-left: 12px;
+}
+
+.triage-subheading {
+  font-weight: 500;
+}
+
+.triage-status-emph {
+  font-weight: 500;
 }
 
 .triage-in-strata-add {
@@ -1708,7 +1731,7 @@ td,
 }
 
 .triage-in-strata-code {
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .triage-in-strata-add-block {
@@ -1985,6 +2008,15 @@ input:checked+.slider:before {
   pointer-events: none;
   z-index: 3000;
   display: none;
+}
+
+.ui-tooltip.ui-tooltip-interactive {
+  pointer-events: auto;
+}
+
+.ui-tooltip.ui-tooltip-interactive a {
+  color: #8fd3ff;
+  text-decoration: underline;
 }
 
 .title {
@@ -2475,7 +2507,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 
 .subject-card {
   position: relative;
-  padding: 8px 4px 0px 4px;
+  padding: 8px 4px 4px 4px;
   min-width: 0;
   border-radius: var(--card-radius);
   border: 1px rgb(237, 235, 235) solid;
@@ -2629,13 +2661,25 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   overflow: visible;
 }
 
-.subject-card.can-select-now {
-  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.32), var(--card-shadow);
+.subject-card.can-select-now,
+.satisfied.can-select-now {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16), 0 8px 20px rgba(0, 0, 0, 0.28), var(--card-shadow);
+  filter: brightness(1.06) saturate(1.12);
+  border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+  will-change: transform;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+
+.subject-card.can-select-now::after,
+.satisfied.can-select-now::after {
+  content: none !important;
 }
 
 .subject-card.can-select-now:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.22), var(--card-hover-shadow);
+  transform: translateY(-4px);
+  box-shadow: none;
 }
 
 .subject-card .sas {
@@ -2905,12 +2949,12 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 }
 
 .info-card {
-
+  font-size:1em;
   cursor: default;
   padding-left: 10px;
-  padding-top: 2px;
-  line-height: 1.1em;
   padding-top: 4px;
+  padding-bottom:4px;
+  line-height: 1em;
   box-shadow: none;
   border: 1px dashed #9b9898;
   background: linear-gradient(to bottom,
@@ -2966,7 +3010,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   margin-top: 12px;
   padding: 4px 12px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 60% 40%;
   gap: 0px 12px;
   align-items: start;
 }
@@ -2996,14 +3040,27 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 }
 
 .swatch {
-  width: 26px;
-  height: 24px;
+  width: 20px;
+  height: 18px;
   border: 1px solid #888;
 }
 
 .swatch.core {
   background: linear-gradient(to bottom, var(--core-band) 0%, var(--core-band) 18%, var(--core) 18%, var(--core) 100%);
   border-color: color-mix(in srgb, var(--core-band) 70%, #000 30%);
+}
+
+.swatch.core-completed {
+  background: linear-gradient(to bottom, var(--core-band) 0%, var(--core-band) 18%, var(--core) 18%, var(--core) 100%);
+  border-color: color-mix(in srgb, var(--core-band) 70%, #000 30%);
+  filter: brightness(.80);
+}
+
+.swatch.core-can-select {
+  background: linear-gradient(to bottom, var(--core-band) 0%, var(--core-band) 18%, var(--core) 18%, var(--core) 100%);
+  border: 0.5px solid rgba(255, 255, 255, 0.5);
+  filter: brightness(1.06) saturate(1.12);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16), 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 .swatch.network {
@@ -3121,11 +3178,21 @@ body.student-mode #select-by-typing-button {
 
 .footnote {
   grid-column: 2;
+  position: relative;
   margin-top: 3px;
   color: #111;
   line-height: 1.4;
   border: 1px solid #dddbdb;
   padding: 3px;
+}
+
+.sas-key-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 36px;
+  height:36px;
+  object-fit: contain;
 }
 
 .sas-inline {
@@ -3134,11 +3201,16 @@ body.student-mode #select-by-typing-button {
   height: 18px;
   background: url("images/sas_logo.png") no-repeat center center / contain;
   margin-right: 6px;
-  vertical-align: text-bottom;
+  vertical-align: top;
+  margin-top: 3px;
 }
 
 .sas-notes-list {
   margin: 0;
+}
+
+.sas-notes-list li {
+  margin-top: 4px;
 }
 
 .toggled {
@@ -3146,10 +3218,8 @@ body.student-mode #select-by-typing-button {
   position: relative;
   overflow: hidden;
   transform: translateY(2px);
-  box-shadow:
-    inset 4px 0 4px rgba(0, 0, 0, 0.25),
-    inset -4px 0 4px rgba(0, 0, 0, 0.25),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.32);
+  filter: brightness(1.06) saturate(1.12);
+
 }
 
 .toggled.show-tooltip,
@@ -3269,18 +3339,25 @@ body.student-mode #select-by-typing-button {
 }
 
 .satisfied.can-select-now {
-  box-shadow: 0px -1px 8px rgba(0, 0, 0, 0.803) !important;
   cursor: pointer;
   position: relative;
-  border: .5px grey solid;
+  border: 0.5px solid rgba(109, 109, 109, 0.5) !important;
+}
+
+.satisfied.can-select-now::after {
+  content: none !important;
 }
 
 .satisfied:not(.can-select-now) {
   box-shadow: none;
 }
 
-.satisfied::after {
+.satisfied:not(.can-select-now)::after {
   content: none !important;
+}
+
+.subject-card:not(.can-select-now) {
+  border-color: rgba(120, 120, 120, 0.25) !important;
 }
 
 .hover-zone {
@@ -3546,15 +3623,15 @@ body.main-grid-narrow-880 .electives-grid .alternate-semester-label {
   display: block !important;
 }
 
-body.elective-full-banner-open .main-grid .alternate-semester-label,
 body.elective-full-banner-open .electives-grid .alternate-semester-label,
-body.elective-full-banner-open .subject-card.not-this-sem .alternate-semester-label {
+body.elective-full-banner-open .elective-stream.not-this-sem .alternate-semester-label,
+body.elective-full-banner-open .subject-card.elective.not-this-sem .alternate-semester-label {
   display: none !important;
 }
 
-body.electives-full-active .main-grid .alternate-semester-label,
 body.electives-full-active .electives-grid .alternate-semester-label,
-body.electives-full-active .subject-card.not-this-sem .alternate-semester-label {
+body.electives-full-active .elective-stream.not-this-sem .alternate-semester-label,
+body.electives-full-active .subject-card.elective.not-this-sem .alternate-semester-label {
   display: none !important;
 }
 
@@ -4244,20 +4321,23 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
 }
 
 .email-scripts-access-modal {
-  width: max-content;
-  max-width: min(960px, 96vw);
+  width: min(1400px, 96vw);
+  max-width: min(1400px, 96vw);
 }
 
 #email-scripts-access-modal .modal.email-scripts-access-modal {
-  width: max-content;
+  width: min(1400px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   min-width: 0;
 }
 
 .email-scripts-access-list {
-  display: flex;
-  flex-direction: column;
+  display: block;
   gap: 0;
+}
+
+#email-scripts-extra-rows {
+  display: contents;
 }
 
 .email-scripts-access-row {
@@ -4266,7 +4346,9 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
   gap: 6px;
   align-items: center;
   border-bottom: 1px solid #d6d6d6;
-  padding: 4px 0;
+  padding: 1px 0;
+  break-inside: avoid-column;
+  page-break-inside: avoid;
 }
 
 .email-scripts-access-row>button:nth-of-type(1) {
@@ -4283,7 +4365,7 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
 
 .email-scripts-access-text {
   grid-column: 3;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .email-scripts-access-row>* {
@@ -4297,7 +4379,7 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
 .email-scripts-access-icon {
   width: 22px;
   padding-top: 1px;
-  padding-bottom: 1px;
+  padding-bottom: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4305,12 +4387,35 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
 
 .email-scripts-access-icon .clipboard-icon svg,
 .email-scripts-access-icon .email-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
 }
 
 #email-scripts-access-modal .modal-actions {
   justify-content: flex-end;
+}
+
+@media (min-width: 700px) {
+  .email-scripts-access-list {
+    column-count: 2;
+    column-gap: 18px;
+    column-fill: auto;
+  }
+
+  .email-scripts-access-row {
+    width: 100%;
+  }
+
+  .email-scripts-access-row.email-scripts-access-column-break {
+    break-before: column;
+    page-break-before: always;
+  }
+}
+
+@media (min-width: 1120px) {
+  .email-scripts-access-list {
+    column-count: 3;
+  }
 }
 
 #close-email-scripts-access-cta {
@@ -4490,6 +4595,28 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
   color: #111;
 }
 
+.alert-body strong {
+  font-weight: 700;
+}
+
+.sas-alert-header {
+  display: block;
+}
+
+.sas-alert-badge {
+  float: right;
+  height: 88px;
+  width: auto;
+  margin-left: 22px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.alert-inline-list a,
+.sas-notes-list a {
+  font-weight: 400;
+}
+
 .alert-item ul {
   margin: 0 0 6px 22px;
   padding: 0;
@@ -4538,12 +4665,9 @@ body.electives-full-active .subject-card.not-this-sem .alternate-semester-label 
 .completed {
   position: relative;
   cursor: default;
-  filter: brightness(1.1) opacity(.8) grayscale(0.0);
-  filter: brightness(.7) opacity(0.89) grayscale(0.0);
-
-  transform: translateY(2px);
-  box-shadow: none;
-  ;
+  filter: brightness(.80);
+  transform: scale(0.95);
+  transform-origin: center center;
 }
 
 /* Keep completed elective placeholders visually consistent with other completed cards (non-graduated). */
@@ -4568,6 +4692,10 @@ body:not(.graduate-highlight) .subject-card.completed.electives-full {
 .subject-card.completed .subject-note,
 .subject-card.completed .prerequsites-note {
   color: var(--completed-text, #cfcfcf);
+}
+
+.subject-card.completed .prerequsites-note {
+  display: none;
 }
 
 .subject-card.completed.core {
@@ -4713,6 +4841,12 @@ body.container-narrow-960 .electives-full-pill {
   top: 10px;
 }
 
+@media (max-width: 1230px) and (min-width: 881px) {
+  body:not(.container-narrow-960) .electives-full-pill {
+    top: 22px;
+  }
+}
+
 .completed .subject-note {
   font-weight: 400;
   text-decoration: none;
@@ -4785,7 +4919,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #container-popout-modal .container-popout-modal-box {
-  width: min(1300px, 100%);
+  width: min(1073px, 100%);
   max-width: 100%;
   height: 94vh;
   max-height: 94vh;
@@ -4795,6 +4929,12 @@ body.completed-mode .completed:hover::after {
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+}
+
+@media (min-width: 1400px) {
+  #container-popout-modal .container-popout-modal-box {
+    width: min(1288px, 100%);
+  }
 }
 
 #container-popout-modal .container-popout-shell {
@@ -4807,7 +4947,64 @@ body.completed-mode .completed:hover::after {
 #container-popout-modal .container-popout-modal-body {
   overflow: auto;
   min-height: 0;
-  padding: 10px;
+  padding: 0 10px 10px;
+}
+
+#container-popout-modal .container-popout-modal-body .main-grid {
+  margin-bottom: 0;
+}
+
+#container-popout-modal .container-popout-modal-body .electives-grid {
+  row-gap: 2px;
+  margin-top: 0;
+}
+
+#container-popout-modal .container-popout-modal-body .electives-grid .subject-card.elective-spacer,
+#container-popout-modal .container-popout-modal-body .electives-grid .placeholder-card.elective-spacer,
+#container-popout-modal .container-popout-modal-body .electives-grid .subject-card.empty {
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#container-popout-modal .container-popout-modal-body #electives-label {
+  display: block;
+  position: relative;
+  height: 0;
+  margin: 0;
+  padding: 14.5px 0;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#container-popout-modal .container-popout-modal-body #electives-label > * {
+  display: none !important;
+}
+
+#container-popout-modal .container-popout-modal-body #electives-label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  right: 14px;
+  border-top: 0.5px solid #d9d9d9;
+}
+
+#container-popout-modal .container-popout-modal-body .alternate-semester-label {
+  font-size: 0.62rem;
+  line-height: 0.95;
+  padding: 1px 4px 1px 4px !important;
+}
+
+#container-popout-modal .container-popout-modal-body .alternate-semester-label .alt-sem-line,
+#container-popout-modal .container-popout-modal-body .alternate-semester-label strong {
+  font-size: inherit;
+  line-height: inherit;
 }
 
 #container-popout-modal .container-popout-rail {
@@ -6566,6 +6763,11 @@ body.completed-mode .completed:hover::after {
   line-height: normal;
 }
 
+body.completed-mode #clear-selections {
+  border: 2px solid #ffffff;
+  padding: 6px 12px;
+}
+
 #toggle-completed-mode.completed-mode-wide.completed-mode-stuck {
   position: relative;
   top: 0;
@@ -6732,4 +6934,52 @@ body.completed-mode .completed:hover::after {
   .sidebar {
     width: 270px;
   }
+}
+
+@media (max-height: 950px) {
+  .main-grid,
+  .electives-grid {
+    row-gap: 6px;
+  }
+
+  .main-grid {
+    margin-bottom: 10px;
+  }
+
+  .electives-grid {
+    margin-top: 5px;
+  }
+
+  #container-popout-modal {
+    padding: 2px;
+  }
+
+  #container-popout-modal .container-popout-modal-body #container {
+    padding-top: 6px;
+  }
+
+  #container-popout-modal .container-popout-modal-body #electives-label {
+    padding: 9px 0;
+  }
+
+  #container-popout-modal .container-popout-modal-body .electives-grid {
+    row-gap: 2px;
+  }
+
+  #container-popout-modal .container-popout-modal-box {
+    height: 100vh;
+    max-height: 100vh;
+  }
+}
+
+.footnote .sas-heading-line1 {
+  display: inline-block;
+  position: relative;
+  top: 3px;
+}
+
+.footnote .sas-heading-line2 {
+  display: block;
+  margin-top: 6px;
+  margin-left: 24px;
 }

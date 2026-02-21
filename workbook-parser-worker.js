@@ -28,6 +28,7 @@ const STUDENT_COLUMNS = [
   'FMP',
   'Suspended',
   'Suspended_Names',
+  'Allow_Enrol?',
   'Passed_subjects',
   'Results_List',
   'Failed_Count',
