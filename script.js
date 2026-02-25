@@ -923,6 +923,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'email-scripts-email-online-progress-selections-look-good-classes-entered'
   );
   const emailScriptsExtraRowsHost = document.getElementById('email-scripts-extra-rows');
+  const emailScriptsAccessModalBox =
+    emailScriptsAccessModal?.querySelector('.modal.email-scripts-access-modal') || null;
+  const emailScriptsAccessList = emailScriptsAccessModal?.querySelector('.email-scripts-access-list') || null;
   const courseTimetableModal = document.getElementById('semester-timetable-modal');
   const closeCourseTimetable = document.getElementById('close-semester-timetable');
   const closeCourseTimetableCta = document.getElementById('close-semester-timetable-cta');
@@ -1685,14 +1688,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return lines.length ? lines.join('\n') : 'No prerequisites.';
   };
 
+  const getCourseMapSwitchMajorHint = (element) => {
+    const labelEl = element?.closest?.('.course-map-stream-label');
+    if (!labelEl) return '';
+    const streamSection = labelEl.closest('.course-map-stream[data-stream]');
+    if (!streamSection) return '';
+    const streamKey = streamSection.dataset.stream || '';
+    if (!['ns', 'ba', 'sd'].includes(streamKey)) return '';
+    const currentMajorKey = getMajorKeyFromUi();
+    if (streamKey === currentMajorKey) return '';
+    const streamNames = {
+      ns: 'Network Security',
+      ba: 'Business Analytics',
+      sd: 'Software Development',
+    };
+    const streamName = streamNames[streamKey] || 'this stream';
+    return `Click to switch your major to ${streamName}.`;
+  };
+
   const positionCourseMapTooltip = () => {
     courseMapTooltip.style.left = `${courseMapTooltipPos.x + 12}px`;
     courseMapTooltip.style.top = `${courseMapTooltipPos.y + 12}px`;
   };
 
-  const showCourseMapTooltip = (code) => {
+  const showCourseMapTooltip = (code, sourceElement = null) => {
     if (!code) return;
-    courseMapTooltip.textContent = getCourseMapPrereqText(code);
+    const baseText = getCourseMapPrereqText(code);
+    const clickHint = getCourseMapSwitchMajorHint(sourceElement);
+    courseMapTooltip.textContent = clickHint ? `${baseText}\n\n${clickHint}` : baseText;
     positionCourseMapTooltip();
     courseMapTooltip.style.display = 'block';
   };
@@ -2902,8 +2925,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (varyLoadButton) {
       varyLoadButton.textContent = 'Change';
-      varyLoadButton.disabled = !domesticLoad;
-      varyLoadButton.classList.toggle('disabled', !domesticLoad);
+      varyLoadButton.disabled = false;
+      varyLoadButton.classList.remove('disabled');
     }
   };
 
@@ -4496,7 +4519,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isElectiveSubject = id && id.startsWith('BIT') && !isPlaceholder(cell) && inElectivesGrid;
       if (!isElectiveSubject) return false;
       const st = subjectState.get(id);
-      if (st?.toggled) return false;
+      if (st?.toggled || st?.completed) return false;
       const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
         id,
         completedSet: completed,
@@ -4508,14 +4531,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return met;
     });
 
-    const sortedPlaceholders = electivePlaceholders.sort((a, b) => {
+    const sortedPlaceholders = [...electivePlaceholders].sort((a, b) => {
       const getNum = (cell) => parseInt(cell.dataset.subject.replace('ELECTIVE', ''), 10) || 0;
       return getNum(a) - getNum(b);
     });
 
+    let remainingWhiteElectivePlaceholders = availableElectiveSubjects.length;
     sortedPlaceholders.forEach((cell, idx) => {
       const isFilled = !!electivePlaceholderState[idx] || !!electiveBitState[idx];
-      const shouldShow = idx < availableElectiveSubjects.length && !isFilled;
+      const shouldShow = !isFilled && remainingWhiteElectivePlaceholders > 0;
+      if (shouldShow) remainingWhiteElectivePlaceholders -= 1;
       cell.classList.toggle('satisfied', shouldShow);
       cell.classList.toggle('can-select-now', false);
       cell.classList.toggle('locked', !shouldShow && !isFilled);
@@ -6363,6 +6388,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!emailScriptsAccessModal) return;
     emailScriptsAccessModal.classList.add('show');
     emailScriptsAccessModal.setAttribute('aria-hidden', 'false');
+    emailScriptsAccessPendingAutoHeight = true;
+    ensureEmailScriptsAccessLayoutObserver();
+    scheduleEmailScriptsAccessColumnLayout();
     const focusTarget = closeEmailScriptsAccessCta || closeEmailScriptsAccessModal;
     if (focusTarget) focusTarget.focus();
   };
@@ -6372,6 +6400,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     emailScriptsAccessModal.classList.remove('show');
     emailScriptsAccessModal.setAttribute('aria-hidden', 'true');
   };
+
+  window.addEventListener('resize', () => {
+    if (!emailScriptsAccessModal || !emailScriptsAccessModal.classList.contains('show')) return;
+    emailScriptsAccessPendingAutoHeight = true;
+    scheduleEmailScriptsAccessColumnLayout();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!emailScriptsAccessModal || !emailScriptsAccessModal.classList.contains('show')) return;
+    if (!emailScriptsAccessModalBox) return;
+    if (!emailScriptsAccessPendingAutoHeight) return;
+    if (emailScriptsAccessModalBox.classList.contains('is-resizing')) return;
+    scheduleEmailScriptsAccessColumnLayout();
+  });
 
   const syncCourseMapKeyPanelBottomOffset = () => {
     if (!courseMapModal) return;
@@ -6387,7 +6429,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapKeyToggleButton = () => {
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
     const isOpen = courseMapKeyModal.classList.contains('show');
-    openCourseMapKeyButton.textContent = isOpen ? 'Hide Colour Key' : 'Show Colour Key';
+    openCourseMapKeyButton.textContent = isOpen ? 'Hide Key' : 'Show Key';
     openCourseMapKeyButton.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
   };
 
@@ -6456,7 +6498,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
     { key: 'bit121-for-ns-major', label: 'BIT121 for NS major' },
+    { key: 'bit111-and-bit106-for-ba-major', label: 'BIT111 & BIT106 for BA major' },
+    { key: 'bit111-and-bit106-then-bit231-and-bit245-for-ba-major', label: 'BIT111 & BIT106, then BIT231 & BIT245 for BA major' },
     { key: 'bit111-for-sd-major', label: 'BIT111 for SD major' },
+    { key: 'bit111-then-bit231-and-bit245-sd-major', label: 'BIT111, then BIT231 & BIT245. SD major' },
     { key: 'ba-or-sd-major-you-should-choose', label: 'BA or SD major? You should choose' },
     { key: 'ba-major-you-should-choose', label: 'BA major? You should choose' },
     { key: 'sd-major-you-should-choose', label: 'SD major? You should choose' },
@@ -6515,7 +6560,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'bit111-and-bit106': ['BIT111 & BIT106'],
     'bit105': ['BIT105'],
     'bit121-for-ns-major': ['BIT121 for NS major'],
+    'bit111-and-bit106-for-ba-major': ['BIT111 & BIT106 for BA major'],
+    'bit111-and-bit106-then-bit231-and-bit245-for-ba-major': ['BIT111 & BIT106, then BIT231 & BIT245 for BA major'],
     'bit111-for-sd-major': ['BIT111 for SD major'],
+    'bit111-then-bit231-and-bit245-sd-major': ['BIT111, then BIT231 & BIT245. SD major'],
     'ba-or-sd-major-you-should-choose': ['BA or SD major? You should choose'],
     'ba-major-you-should-choose': ['BA major? You should choose'],
     'sd-major-you-should-choose': ['SD major? You should choose'],
@@ -6594,6 +6642,66 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return span;
   };
 
+  let emailScriptsAccessResizeObserver = null;
+  let emailScriptsAccessLayoutRaf = 0;
+  let emailScriptsAccessLastMeasuredWidth = -1;
+  let emailScriptsAccessPendingAutoHeight = false;
+  const EMAIL_SCRIPTS_COL_CLASSES = ['cols-1', 'cols-2', 'cols-3'];
+
+  const autoSizeEmailScriptsAccessModalHeight = () => {
+    if (!emailScriptsAccessModalBox || !emailScriptsAccessModal?.classList.contains('show')) return;
+    if (emailScriptsAccessModalBox.classList.contains('is-resizing')) {
+      emailScriptsAccessPendingAutoHeight = true;
+      return;
+    }
+    // Width may be user-resized (keep it), but height should track wrapped rows and cap at 96vh.
+    emailScriptsAccessModalBox.style.height = '';
+    emailScriptsAccessModalBox.style.maxHeight = '96vh';
+  };
+
+  const updateEmailScriptsAccessColumnLayout = () => {
+    if (!emailScriptsAccessList) return;
+    const width = Math.round(emailScriptsAccessList.getBoundingClientRect().width || 0);
+    const widthChanged = width !== emailScriptsAccessLastMeasuredWidth;
+    emailScriptsAccessLastMeasuredWidth = width;
+    let columnCount = 1;
+    let nextClass = 'cols-1';
+    if (width > 1480) {
+      columnCount = 3;
+      nextClass = 'cols-3';
+    } else if (width >= 990) {
+      columnCount = 2;
+      nextClass = 'cols-2';
+    }
+    emailScriptsAccessList.classList.remove(...EMAIL_SCRIPTS_COL_CLASSES);
+    emailScriptsAccessList.classList.add(nextClass);
+    emailScriptsAccessList.style.columnCount = String(columnCount);
+    emailScriptsAccessList.style.columnGap = columnCount > 1 ? '18px' : '0px';
+    emailScriptsAccessList.style.columnFill = 'balance';
+    emailScriptsAccessList.dataset.columnCount = String(columnCount);
+    if (widthChanged || emailScriptsAccessPendingAutoHeight) {
+      emailScriptsAccessPendingAutoHeight = false;
+      autoSizeEmailScriptsAccessModalHeight();
+    }
+  };
+
+  const scheduleEmailScriptsAccessColumnLayout = () => {
+    if (emailScriptsAccessLayoutRaf) cancelAnimationFrame(emailScriptsAccessLayoutRaf);
+    emailScriptsAccessLayoutRaf = requestAnimationFrame(() => {
+      emailScriptsAccessLayoutRaf = 0;
+      updateEmailScriptsAccessColumnLayout();
+    });
+  };
+
+  const ensureEmailScriptsAccessLayoutObserver = () => {
+    if (!emailScriptsAccessList || emailScriptsAccessResizeObserver || typeof ResizeObserver !== 'function') return;
+    emailScriptsAccessResizeObserver = new ResizeObserver(() => {
+      scheduleEmailScriptsAccessColumnLayout();
+    });
+    if (emailScriptsAccessModalBox) emailScriptsAccessResizeObserver.observe(emailScriptsAccessModalBox);
+    else emailScriptsAccessResizeObserver.observe(emailScriptsAccessList);
+  };
+
   const renderEmailScriptsExtraRows = () => {
     if (!emailScriptsExtraRowsHost) return;
     emailScriptsExtraRowsHost.innerHTML = '';
@@ -6631,6 +6739,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
   renderEmailScriptsExtraRows();
+  scheduleEmailScriptsAccessColumnLayout();
 
   const getSlotAbbreviation = (slot = '') => {
     const normalized = slot.trim().toLowerCase();
@@ -13672,19 +13781,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const positionCourseMapArrows = () => {
     if (!courseMapSharedEl || !courseMapStreamsBlockEl || !courseMapBaSectionEl || !courseMapSdSectionEl) return;
-    const containerRect = courseMapStreamsBlockEl.getBoundingClientRect();
-    const baRect = courseMapBaSectionEl.getBoundingClientRect();
-    const sdRect = courseMapSdSectionEl.getBoundingClientRect();
-    if (!baRect.height || !sdRect.top) return;
-    const baBottom = baRect.bottom - containerRect.top;
-    const sdTop = sdRect.top - containerRect.top;
-    const gapCenter = sdTop > baBottom ? (baBottom + sdTop) / 2 : baBottom;
     courseMapSharedEl.style.top = '0px';
     courseMapSharedEl.style.transform = 'none';
     courseMapSharedEl.classList.add('arrows-hidden');
 
     if (courseMapSharedRaf) cancelAnimationFrame(courseMapSharedRaf);
     courseMapSharedRaf = requestAnimationFrame(() => {
+      const containerRect = courseMapStreamsBlockEl.getBoundingClientRect();
+      const baRect = courseMapBaSectionEl.getBoundingClientRect();
+      const sdRect = courseMapSdSectionEl.getBoundingClientRect();
+      if (!baRect.height || !sdRect.top) return;
+      const baBottom = baRect.bottom - containerRect.top;
+      const sdTop = sdRect.top - containerRect.top;
+      const gapCenter = sdTop > baBottom ? (baBottom + sdTop) / 2 : baBottom;
       const sharedCell = courseMapSharedEl.querySelector('.course-map-shared-cell');
       const majorKey = getMajorKeyFromUi();
       if (sharedCell) {
@@ -13701,7 +13810,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const left = isNsMajor ? anchorRect.left - containerRect.left + 3 : anchorRect.left - containerRect.left;
       const widthBase = isNsMajor ? Math.max(0, anchorRect.width - 6) : anchorRect.width;
       // Make the floating BIT245 card slightly narrower than its anchor cell.
-      const width = Math.max(0, widthBase * 0.99);
+      const width = isNsMajor ? Math.max(0, widthBase * 0.99) : Math.max(0, widthBase);
       const height = anchorRect.height;
       const adjustedHeight = isNsMajor ? height * 1.1 : height;
       const top =
@@ -13731,8 +13840,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const stream = label.dataset.stream || '';
       const isMajor = stream === majorKey && courseMapIndicatorsOn;
       const isElective = courseMapIndicatorsOn && !isMajor;
+      const canSwitchMajor = ['ns', 'ba', 'sd'].includes(stream) && stream !== majorKey;
       label.classList.toggle('is-major', isMajor);
       label.classList.toggle('is-elective', isElective);
+      label.classList.toggle('can-switch-major', canSwitchMajor);
+      const streamSection = label.closest('.course-map-stream');
+      if (streamSection) {
+        streamSection.classList.toggle('is-major-stream', stream === majorKey);
+        streamSection.classList.toggle('can-switch-major', canSwitchMajor);
+      }
       const streamNames = {
         ns: 'Network Security',
         ba: 'Business Analytics',
@@ -13756,9 +13872,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           streamName
         )}</span><span class="stream-descriptor">${descriptorHtml}</span>`;
       label.innerHTML = labelHtml;
-      const tooltipText = isMajor
+      const tooltipTextBase = isMajor
         ? 'This stream is treated as your major.'
         : `This stream is treated as an elective. Major: ${majorName}.`;
+      const tooltipText = canSwitchMajor
+        ? `${tooltipTextBase} Click to switch your major to ${streamName}.`
+        : tooltipTextBase;
       label.setAttribute('data-tooltip', tooltipText);
       label.setAttribute('title', tooltipText);
     });
@@ -13934,22 +14053,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     const majorStreamRows = courseMapStreamLayouts[majorKey] || courseMapStreamLayouts.ns;
-    const majorStreamCodes = majorStreamRows
-      .flatMap((row) =>
-        row.map((entry) => {
-          if (!entry) return null;
-          if (typeof entry === 'object') return entry.code || null;
-          return entry;
-        })
-      )
-      .filter(Boolean);
-    const majorStatuses = majorStreamCodes.map((code) => getCourseMapStatusClass(code));
+    const majorStreamCodesByPlaceholderOrder = [];
+    const maxMajorStreamCols = Math.max(0, ...majorStreamRows.map((row) => row.length || 0));
+    for (let col = 0; col < maxMajorStreamCols; col += 1) {
+      for (let row = 0; row < majorStreamRows.length; row += 1) {
+        const entry = majorStreamRows[row]?.[col];
+        if (!entry) continue;
+        if (typeof entry === 'object') {
+          if (entry.code) majorStreamCodesByPlaceholderOrder.push(entry.code);
+          continue;
+        }
+        majorStreamCodesByPlaceholderOrder.push(entry);
+      }
+    }
     courseMapMajorPlaceholders.forEach((cell, idx) => {
       const slotRaw = cell.dataset.majorSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
-      const slotToStreamIndex = [0, 3, 1, 4, 2, 5];
-      const streamIndex = slotToStreamIndex[slotIndex] ?? slotIndex;
-      const status = majorStatuses[streamIndex];
+      const code = majorStreamCodesByPlaceholderOrder[slotIndex];
+      const status = code ? getCourseMapStatusClass(code) : '';
       if (status) cell.classList.add(status);
     });
     const getElectiveSlotStatus = (slotIndex) => {
@@ -13978,32 +14099,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const electiveCandidates = Array.from(
       new Set(Object.values(electiveLayout).filter(Boolean))
     ).filter((code) => !(majorLayouts[majorKey] || []).includes(code));
-    const usePlanned = !completedMode;
-    const hasAvailableElective = !areElectivesFull() && electiveCandidates.some((code) => {
-      const st = subjectState.get(code);
-      if (st?.toggled) return false;
-      const { prereqMetPlanned, prereqMetNow, coreqMetPlanned, coreqMetNow } = getRequisiteStatus({
-        id: code,
-        completedSet,
-        plannedSet,
-        usePlanned,
-      });
-      const hasCoreq = (corequisites[code] || []).length > 0;
-      return usePlanned
-        ? hasCoreq
-          ? prereqMetPlanned && coreqMetPlanned
-          : prereqMetPlanned
-        : hasCoreq
-          ? prereqMetNow && coreqMetNow
-          : prereqMetNow;
+    const availableElectiveCount = electiveCandidates.reduce((count, code) => {
+      const status = getCourseMapStatusClass(code);
+      return status ? count : count + 1;
+    }, 0);
+    const sortedElectivePlaceholders = [...courseMapElectivePlaceholders].sort((a, b) => {
+      const getSlot = (cell) => parseInt(cell.dataset.electiveSlot || '', 10) || 0;
+      return getSlot(a) - getSlot(b);
     });
-    courseMapElectivePlaceholders.forEach((cell) => {
+    let remainingWhiteCourseMapElectivePlaceholders = availableElectiveCount;
+    sortedElectivePlaceholders.forEach((cell) => {
       const isBlue =
         cell.classList.contains('course-map-status-current') ||
         cell.classList.contains('course-map-status-selected') ||
         cell.classList.contains('course-map-status-passed');
       if (!isBlue) {
-        cell.classList.toggle('course-map-elective-unavailable', !hasAvailableElective);
+        const shouldShowWhite = remainingWhiteCourseMapElectivePlaceholders > 0;
+        if (shouldShowWhite) remainingWhiteCourseMapElectivePlaceholders -= 1;
+        cell.classList.toggle('course-map-elective-unavailable', !shouldShowWhite);
       }
     });
     updateCourseMapStreamLabels();
@@ -15605,25 +15718,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     remainingModal.setAttribute('aria-hidden', 'true');
   };
 
-  const showCourseMapModal = () => {
+  const syncCourseMapOverlayBounds = () => {
     if (!courseMapModal) return;
     const doc = document.documentElement;
-    // Always open from a consistent viewport position so the top of the course map is visible.
-    // Use multiple scroll APIs because some browsers/contexts ignore `window.scrollTo` when focus shifts.
-    try {
-      window.scrollTo(0, 0);
-    } catch { }
-    try {
-      document.documentElement.scrollTop = 0;
-      document.documentElement.scrollLeft = 0;
-    } catch { }
-    try {
-      document.body.scrollTop = 0;
-      document.body.scrollLeft = 0;
-    } catch { }
-    courseMapModal.style.top = `0px`;
-    courseMapModal.style.height = `${doc.scrollHeight}px`;
+    const body = document.body;
+    const scrollY = Math.max(window.scrollY || 0, doc?.scrollTop || 0, body?.scrollTop || 0);
+    const scrollHeight = Math.max(
+      doc?.scrollHeight || 0,
+      body?.scrollHeight || 0,
+      window.innerHeight || 0
+    );
+    courseMapModal.style.top = '0px';
+    courseMapModal.style.height = `${scrollHeight}px`;
+    // Open the modal near the user's current viewport position so it scrolls with the page.
+    courseMapModal.style.paddingTop = `${scrollY + 16}px`;
+  };
+
+  const showCourseMapModal = () => {
+    if (!courseMapModal) return;
+    syncCourseMapOverlayBounds();
     renderCourseMapModal();
+    syncCourseMapOverlayBounds();
     courseMapModal.classList.add('show');
     courseMapModal.setAttribute('aria-hidden', 'false');
     syncCourseMapKeyPanelBottomOffset();
@@ -15634,9 +15749,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // Always show the colour key when the Course Map opens.
     showCourseMapKeyModal();
     const resetScrollPositions = () => {
-      try {
-        window.scrollTo(0, 0);
-      } catch { }
       // Reset any internal scrolling within the resizable modal.
       const modalBox = courseMapModal.querySelector('.course-map-modal');
       const modalBody = courseMapModal.querySelector('.modal-body');
@@ -15648,6 +15760,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         modalBody.scrollTop = 0;
         modalBody.scrollLeft = 0;
       }
+      syncCourseMapOverlayBounds();
     };
     // Run after layout and after content render settles.
     requestAnimationFrame(resetScrollPositions);
@@ -15665,6 +15778,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapModal.setAttribute('aria-hidden', 'true');
     courseMapModal.style.top = '';
     courseMapModal.style.height = '';
+    courseMapModal.style.paddingTop = '';
     if (courseMapButton) courseMapButton.focus();
     if (courseMapResizeObserver) {
       courseMapResizeObserver.disconnect();
@@ -15684,6 +15798,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       observer.disconnect();
       requestAnimationFrame(() => {
         if (courseMapModal?.classList.contains('show')) {
+          syncCourseMapOverlayBounds();
           const rect = target.getBoundingClientRect();
           const width = Math.round(rect.width);
           const height = Math.round(rect.height);
@@ -15712,6 +15827,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // Use a double-rAF to ensure layout has settled before measuring.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        syncCourseMapOverlayBounds();
         positionCourseMapArrows();
         positionCourseMapCoreConnector();
         updateCourseMapStreamLabels();
@@ -15720,14 +15836,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const scheduleCourseMapViewportRelayoutIfOpen = () => {
+    if (!courseMapModal?.classList.contains('show')) return;
+    scheduleCourseMapRelayout();
+  };
+
   const updateCourseMapPrereqToggle = () => {
     if (courseMapModal) {
       courseMapModal.classList.toggle('course-map-prereq-off', !courseMapPrereqColoursOn);
     }
     if (toggleCourseMapPrereqButton) {
       toggleCourseMapPrereqButton.textContent = courseMapPrereqColoursOn
-        ? 'Prereq colours on'
-        : 'Prereq colours off';
+        ? 'Prereq colours off'
+        : 'Prereq colours on';
       toggleCourseMapPrereqButton.setAttribute('aria-pressed', courseMapPrereqColoursOn ? 'true' : 'false');
     }
     updateCourseMapStreamLabels();
@@ -15769,11 +15890,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const bit105Style = getComputedStyle(bit105Cell);
     const bit108Style = getComputedStyle(bit108Cell);
     const bit105BorderRight = parseFloat(bit105Style.borderRightWidth) || 0;
-    const bit105BorderBottom = parseFloat(bit105Style.borderBottomWidth) || 0;
     const bit108BorderLeft = parseFloat(bit108Style.borderLeftWidth) || 0;
     const xStart = bit105Rect.right - containerRect.left - connectorNudge - bit105BorderRight / 2 + xNudge - 2;
     const xCorner = bit108Rect.left - containerRect.left + bit108BorderLeft / 2 + xNudge;
-    const yCenter = bit105Rect.bottom - containerRect.top - connectorNudge - bit105BorderBottom / 2;
+    // Align the BIT105/BIT121 separator and elbow to the same centerline as the major-grid top border.
+    const yCenter = majorRect.top - containerRect.top + sepWidth / 2;
     const yDownEnd = majorRect.top - containerRect.top + 4;
     if (!Number.isFinite(xStart) || !Number.isFinite(xCorner) || !Number.isFinite(yCenter) || !Number.isFinite(yDownEnd)) {
       return;
@@ -15794,9 +15915,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorElectiveVert = connector.querySelector('.connector-v-major-elective');
     if (!horiz || !vert || !bit121Horiz || !bit372Vert || !msVert || !majorElectiveVert) return;
     const fmt = (value) => `${value.toFixed(2)}px`;
-    // Small nudges so the elbow aligns crisply with the separator stroke and meets borders cleanly.
-    const elbowNudge = 1;
-    const elbowTopNudge = 1.25;
+    // Keep the elbow centered on the same separator centerline as the major-grid top border.
+    const elbowNudge = 0;
+    const elbowTopNudge = 0;
     const elbowX = xCorner - sepWidth / 2 - elbowNudge;
     const elbowY = yCenter - sepWidth / 2 - elbowNudge - elbowTopNudge;
     const horizExtraLeft = 1;
@@ -15817,17 +15938,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const bit121Cell = courseMapCells.get('BIT121');
     if (bit121Cell && bit105Cell) {
       const bit121Rect = bit121Cell.getBoundingClientRect();
-      const bit121Style = getComputedStyle(bit121Cell);
-      const bit105Style = getComputedStyle(bit105Cell);
-      const bit121BorderBottom = parseFloat(bit121Style.borderBottomWidth) || 0;
-      const bit105BorderBottom = parseFloat(bit105Style.borderBottomWidth) || 0;
-      const yBottom =
-        (bit121Rect.bottom - containerRect.top) - Math.max(bit121BorderBottom, bit105BorderBottom) / 2 - 2;
       const bit105BorderLeft = parseFloat(bit105Style.borderLeftWidth) || 0;
       const xStartLine = bit121Rect.right - containerRect.left;
       const xEndLine = bit105Rect.left - containerRect.left + bit105BorderLeft / 2;
       bit121Horiz.style.left = fmt(xStartLine);
-      bit121Horiz.style.top = fmt(yBottom - sepWidth / 2);
+      bit121Horiz.style.top = fmt(yCenter - sepWidth / 2);
       bit121Horiz.style.width = fmt(Math.max(0, xEndLine - xStartLine));
     } else {
       bit121Horiz.style.width = '0px';
@@ -15883,8 +15998,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (toggleCourseMapPrereqTextButton) {
       toggleCourseMapPrereqTextButton.textContent = courseMapPrereqTextOn
-        ? 'Prereq text on'
-        : 'Prereq text off';
+        ? 'Prereq text off'
+        : 'Prereq text on';
       toggleCourseMapPrereqTextButton.setAttribute('aria-pressed', courseMapPrereqTextOn ? 'true' : 'false');
     }
     updateCourseMapStreamLabels();
@@ -15895,8 +16010,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapIndicatorsToggle = () => {
     if (toggleCourseMapIndicatorsButton) {
       toggleCourseMapIndicatorsButton.textContent = courseMapIndicatorsOn
-        ? 'Stream indicators on'
-        : 'Stream indicators off';
+        ? 'Stream text off'
+        : 'Stream text on';
       toggleCourseMapIndicatorsButton.setAttribute('aria-pressed', courseMapIndicatorsOn ? 'true' : 'false');
     }
     updateCourseMapStreamLabels();
@@ -18173,7 +18288,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapTooltipTarget = cell;
       if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
       courseMapTooltipTimer = setTimeout(() => {
-        showCourseMapTooltip(code);
+        showCourseMapTooltip(code, cell);
       }, 300);
     });
     courseMapContent.addEventListener('mouseout', (event) => {
@@ -18188,6 +18303,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
       hideCourseMapTooltip();
     });
+    courseMapContent.addEventListener('click', (event) => {
+      const target = event.target;
+      const clickedLabel = target?.closest?.('.course-map-stream-label');
+      if (!clickedLabel || !courseMapContent.contains(clickedLabel)) return;
+      const streamSection = clickedLabel.closest('.course-map-stream[data-stream]');
+      if (!streamSection || !courseMapContent.contains(streamSection)) return;
+      const streamKey = streamSection.dataset.stream;
+      if (!['ns', 'ba', 'sd'].includes(streamKey || '')) return;
+      const nextMajorValue = mapStreamKeyToDropdownValue(streamKey);
+      const currentMajorValueRaw = majorDropdown?.dataset?.value || currentMajorValue || 'undecided';
+      if (!nextMajorValue || nextMajorValue === currentMajorValueRaw) return;
+      if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
+      courseMapTooltipTarget = null;
+      hideCourseMapTooltip();
+      setMajorDropdownSelection(nextMajorValue);
+      if (courseMapModal?.classList.contains('show')) {
+        renderCourseMapModal();
+        syncCourseMapKeyPanelBottomOffset();
+      }
+    });
   }
   window.addEventListener('scroll', () => {
     updateCompletedModeSticky();
@@ -18200,7 +18335,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCompletedModeSticky();
     queueMainTitleWrapStateUpdate();
     requestAnimationFrame(syncCurrentEnrolmentColumnWidths);
+    scheduleCourseMapViewportRelayoutIfOpen();
   });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleCourseMapViewportRelayoutIfOpen, { passive: true });
+  }
   if (nextSemesterModal) {
     nextSemesterModal.addEventListener('click', (e) => {
       if (e.target === nextSemesterModal) hideNextSemesterModal();
