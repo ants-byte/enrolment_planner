@@ -1,0 +1,241 @@
+
+
+------------------------
+Best semester-change candidates to move into settings.txt are:
+
+Semester timetable offering data (highest impact).
+timeSlots and full timetable object (day/slot/room/lecturer per subject): script.js:164, script.js:169
+semester1OnlyIds, semester2OnlyIds, currentSemesterKey: script.js:199, script.js:200, script.js:201
+Hardcoded semester/year text used for email-script insertion.
+'The subjects you have chosen for Semester 1 2026:' appears twice: script.js:18889, script.js:18926
+Fallback semester finance/date values (used when workbook data is missing).
+Fallback census date and prices: script.js:5457, script.js:5467, script.js:5470
+Semester-dependent folder conventions and aliases.
+Credit-transfer fallback paths and teacher alias map: script.js:533, script.js:534, script.js:535, script.js:538
+Triage filename preference convention (if naming standard changes).
+Preferred names are generated from intake pattern: script.js:14770
+Build/release metadata your team currently edits manually.
+Script cache-buster and “Last Modified” footer: index.html:1310, index.html:1313
+Worker cache-busters: script.js:717, script.js:724
+Already externalized (good as-is):
+
+profile, intake, thisSemestersFolderPath, and sign-off settings in settings.txt, settings.txt, settings.txt
+CSS note:
+
+--------------------------
+Credit Transfers
+Create a button called "ct -> temp" that looks for the student's folder in 2 place:
+1. the "credit transfers" folder (the one up one level from this semester's enrolment folder) 
+2. the teacher folders within "Our temp and working files".    
+The folder will be named with the student ID (without the preprended "S") in both lcoations.  It could be in a subfolder but don't look any deeper than 2 levels in both locations. 
+Then:
+1. If it's in both places, create a pop up that tell them that there is a problem to fix.  That the teacher should combine them so that there is only one source of truth.  Point out too that if the create subfolders, don't name any of them using the Student ID so that a search for a student id will only ever return one result for that student.  Then when they click OK open both folders (and thell them in the message that this will happen).  
+2. If the student has a folder only in a temp folder, tell the teacher which folder it is in adn that it will be moved to theirs.  
+2a.  if it's not in that teacher's folder that they should shift it to their own folder (and specify that folder name) and that they should update Triage by putting their own name in the "Handled by" column.  
+2b. If it's in that teacher's folder, say that it is already there, and open the folder.
+3. If the folder is only in "Credit Transfers" then create a popup to explain that it's there and that it will be moved to the teacher's temp folder.
+For all 4 situtations, in the message specify the name of any MS Word files in that folder that contain the student's ID and the word "Credit" and 
+1. if such a file exists say so and that it will be opened.  Do this opening only after the file has been moved to the teacher's folder.
+2. if such a file doesn't exist tell the teacher than a new Credit form will be created (and name it and source it using th technique we created over the previous few prompts) and then open that credit form and the student's folder (and say in the message that that will happen).
+In every message, there should be both a "Cancel" and "OK" button.  If OK is clicked, follow through as described above.  If "Cancel" is clicked, don't progress.
+
+------------------------------------------
+Course Map:	
+1. Place conditional Alert, Caution, Info, Data Error buttons (only when content exists) in the top panel.
+2. Next Sem button below the table that shows the selected subjects
+3. Bottom panel tweaks: •	reduce bottom padding (half)
+4. Bottom and top panels.  Double-clicking whitespace in the bars transform them into a right-edge vertical panel, buttons 100px wide and use right-edge text fade behavior.  GIve them toggle behaviour so tha they return.  They should toggle independently and if both are toggled to sidebars place the "top panel" to the left of the "bottom panel".
+
+------------------
+Button tidy up at top left of left sidebar (that is, the sidebar that appears in staff mode):
+There are at least 16 buttons there and I'd like to have them placed on 3 modals, with 3 buttons for activating those modals. 
+One of them already behaves this way - the (data-action="email-actions") button popus open a modal. I'd like to keep that and not change its design or behaviour despite what I say below here about how to create the other 2 modals. Do though renamethe button "Email Scripts".
+So, there should be 3 buttons named "folders/files", "Credits", "Email scripts", in that order.
+Place the buttons in the "folder-shortcuts-row" div and rename that div "shortcuts-file-folder-scripts".
+What should appear on the 2 new modals:
+1.	"credits" - all buttons in the 'folder-shortcuts-row folder-shortcuts-row-credit' div.  This div should then be removed.  
+2.  "folders/files" all other buttons, (including those that appear when the triage, email scripts, and source load.
+Modal behaviour for the 2 new modals:  
+1. Give them a closing modal cross at top right (but no close button at bottom)
+2. The modals should close when a selection is made on them or when esc is clicked or a cross in top right corner is clicked or when the mouse enters and then leaves the modal.  
+3. Size them to just fit the buttons.  No scrollbars.
+Regarding the buttons on the 2 new modals:
+1. Give the buttons more expansive/descriptive  names of less than 20 characters
+2. Give each button a tooltip that will explain what will happend when clicked (and where relevant discuss the teacher name and path that will be used).
+3. Give each button horizontal padding of 12px and vertical of 4px.
+
+
+----------------
+AI implementation
+Simple approach: Add a small “Ask AI” input in your UI (e.g., “Select for me a 2-day timetable”).
+Send that text to a backend endpoint (not directly from browser, so API key stays private).
+Use an LLM to return strict JSON like:
+{
+  "intent": "build_timetable",
+  "max_days": 2,
+  "preferences": []
+}
+In your existing app logic, run a deterministic timetable selector using your current subject/timetable data.
+Show 1-3 valid timetable options and let user click “Apply”.
+Why this is easiest
+
+AI handles natural language.
+Your codebase keeps control of business rules/prereqs.
+More reliable than letting AI “pick” subjects on its own.
+If you want, I can next give you a minimal backend + prompt/schema design tailored to your current script.js flow without changing anything yet.
+
+Short answer:
+
+Do you need a paid API key?
+Yes, typically yes. API usage is billed separately from ChatGPT subscriptions. So even if someone has ChatGPT Plus/Business/Edu, API costs are a different billing stream.
+(There may be limited trial/contract credit situations, but production use is usually paid.)
+
+How it works for colleagues/students
+Best setup: one backend-owned API key (your org), not user keys in browsers.
+Your app users (staff/students) use the UI normally; your server calls the API and enforces:
+
+per-user limits
+role rules (staff vs student)
+logging/audit
+spend caps/rate limits
+Should you predefine JSON possibilities?
+Yes. Use a small fixed schema (intents + constrained fields), and let AI map free text into that schema.
+Also give users clickable suggested options (“2-day timetable”, “avoid Friday”, etc.) that populate the same JSON structure.
+So: not endless custom JSON per user, but one controlled schema for everyone.
+
+Disclaimer: Create a tooltip popup that addresses this concern: "As more companies turn to generative AI to communicate with their customers, experts say a generic disclaimer like 'AI makes mistakes' isn’t good enough." Add that ultimately it's the student's responsibility to choose their own timetable.  AI can help you and enrolment officers will double-check your selections and try to assist. If you are uncertain about your choices or options, please write to enrol_bit@ to ask for clarification.
+
+--------------------
+Check all tooltips and button names for reflection of what is done, ensuring accuracy, and fullness of explanation.
+------------------------
+Colour blindness accomodation:
+Here is the same **soft, colour-blind safe palette**, now with a **light orange** added that remains clearly distinguishable from all three blues and both greys.
+
+Background
+#ffffff
+
+Text
+#000000
+
+Blues
+
+Light Blue
+#dbe9f6
+
+Mid Blue
+#a9c8e8
+
+Soft Steel Blue
+#6fa8dc
+
+Greys
+
+Light Grey
+#e2e2e2
+
+Mid Grey
+#9e9e9e
+
+Orange
+
+Light Soft Orange
+#f6d3b3
+
+---
+
+**Why this orange works**
+
+It is light, warm, and muted.
+It stays distinct from all blues under colour-blind simulation.
+It does not overpower the interface.
+It remains readable with black text.
+
+---
+
+**Suggested usage**
+
+Highlight panels or warnings
+#f6d3b3
+
+Accent icons or tags
+#6fa8dc or #f6d3b3
+
+Structural separators
+#e2e2e2
+
+Secondary UI elements
+#a9c8e8
+
+---
+
+**Final accessible set**
+
+#dbe9f6
+#a9c8e8
+#6fa8dc
+#f6d3b3
+#e2e2e2
+#9e9e9e
+
+If you'd like, I can now:
+
+Check WCAG contrast for each pairing.
+Generate CSS variables.
+Or create a small sample layout preview using these colours.
+
+-----------------------------
+given how this site is built now, the key decision is not “DB or Excel” in isolation, but where the single source of truth lives.
+
+Right now the app is a large static website that already knows how to read Source.xlsx and Triage.xlsx. That makes an Excel-based replacement easier in the short term. But if you want data to be edited reliably from the website, opened independently, and stay consistent over time, a database-backed model is the stronger design.
+
+My recommendation is:
+
+Make a database table the source of truth for triage data.
+Let the website load and edit that table through a small backend/API.
+Add Excel import/export so staff can still open the data independently in Excel when needed.
+
+Best long-term: Database + API
+Store one row per student triage record.
+Include fields like student ID, friendly name, handled by, status, altered status, comments, in-strata, SharePoint link, modified by, modified at.
+Website reads and updates via API.
+Add “Export to Excel” and optionally “Import from Excel”.
+Best if multiple staff use it or data quality matters.
+
+
+Middle ground: Local database file
+Use something like SQLite as a single file that can be opened independently and also used by the site through a small local helper app.
+Better structure than Excel, simpler than a server DB.
+Good if this is mostly one user on one machine, or a shared file with very limited simultaneous editing.
+Still not ideal for multi-user concurrent staff access over OneDrive/SharePoint.
+
+A practical rollout path would be:
+
+Define the triage columns and rules clearly.
+Build a DB schema that mirrors the current Triage workbook fields.
+Import the current Triage.xlsx once.
+Make the site read from the DB instead of parsing the workbook.
+Add edit/save from the site.
+Add export to .xlsx for offline/open-independent use.
+If you want, I can next help you choose between three concrete implementations for your environment:
+
+
+For your current Microsoft/OneDrive/SharePoint-heavy setup, a SharePoint List is probably the most pragmatic first DB-like option. It is independently openable, editable outside the site, and easier to integrate operationally than standing up a full custom database server.
+
+
+---
+I think I would:
+ - when a student id is entered that doesn't exist in db, auto add them and auto-add teacher to "Handled by" along with a cancel, and add  to website a remove from Triage button.  Also add a button to changed "Handled by".
+ - create an interaction table that lists all teachers that interact with the student
+ - when new student, present all the info abot that student and create a popup with 3 columns with radio buttons for int/dom, new/ongoing, credits/not, FMP, Dip, Deferred, Unknown.
+ - create a window that display all Triage data for a student where each entry is editable, deleteable
+ - where person doesn't exist in Source.xlsx, names and email must be manually don't exist, ask for manual entries and mark them as manual with a marker in DB.
+----------------------------------------------------------------
+dark light mode.png
+
+Night day svg
+<svg viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor;">
+    <path fill="currentColor"
+        d="M7.5,2C5.71,3.15 4.5,5.18 4.5,7.5C4.5,9.82 5.71,11.85 7.53,13C4.46,13 2,10.54 2,7.5A5.5,5.5 0 0,1 7.5,2M19.07,3.5L20.5,4.93L4.93,20.5L3.5,19.07L19.07,3.5M12.89,5.93L11.41,5L9.97,6L10.39,4.3L9,3.24L10.75,3.12L11.33,1.47L12,3.1L13.73,3.13L12.38,4.26L12.89,5.93M9.59,9.54L8.43,8.81L7.31,9.59L7.65,8.27L6.56,7.44L7.92,7.35L8.37,6.06L8.88,7.33L10.24,7.36L9.19,8.23L9.59,9.54M19,13.5A5.5,5.5 0 0,1 13.5,19C12.28,19 11.15,18.6 10.24,17.93L17.93,10.24C18.6,11.15 19,12.28 19,13.5M14.6,20.08L17.37,18.93L17.13,22.28L14.6,20.08M18.93,17.38L20.08,14.61L22.28,17.15L18.93,17.38M20.08,12.42L18.94,9.64L22.28,9.88L20.08,12.42M9.63,18.93L12.4,20.08L9.87,22.27L9.63,18.93Z">
+    </path>
+</svg>
+
