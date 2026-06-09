@@ -2842,6 +2842,12 @@ input:checked+.slider:before {
   fill: currentColor;
 }
 
+.title-help-button {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .title-settings-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -8158,6 +8164,104 @@ body.completed-mode .completed:hover::after {
   padding-right: 12px;
 }
 
+#instructions-modal .instructions-disclaimer {
+  margin-top: 18px;
+  padding-top: 14px;
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#instructions-modal .instructions-disclaimer p {
+  margin: 0;
+}
+
+#help-modal {
+  align-items: flex-start;
+}
+
+#help-modal .help-modal {
+  margin-top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+}
+
+#help-modal .modal-title {
+  font-size: 1.45em;
+}
+
+#help-modal .modal-header {
+  border-bottom: 1px solid #d8e8f7;
+  padding-bottom: 10px;
+}
+
+#help-modal .modal-actions {
+  border-top: 1px solid #d8e8f7;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+#help-modal #close-help-cta {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+#help-modal .help-support-content {
+  color: #666666;
+  line-height: 1.45;
+}
+
+#help-modal .help-support-content h3 {
+  margin: 0 0 12px;
+  color: rgb(0, 120, 212);
+  font-size: 1.2em;
+}
+
+#help-modal .help-support-content h3:not(:first-child) {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #d8e8f7;
+}
+
+#help-modal .help-support-content ul {
+  margin: 6px 0 0 20px;
+  padding: 0;
+}
+
+#help-modal .help-support-content li {
+  margin: 0 0 8px;
+}
+
+#help-modal .help-support-content li:last-child {
+  margin-bottom: 0;
+}
+
+#help-modal .help-support-content a {
+  color: #555555;
+}
+
+#help-modal #help-open-instructions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  margin-left: 20px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+#help-modal .help-site-disclaimer {
+  margin: 12px 0 0 20px;
+  color: #666666;
+}
+
 #semester-timetable-modal {
   align-items: flex-start;
   overflow: auto;
@@ -8869,7 +8973,6 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   margin: 10px 0 0;
   padding: 0;
   line-height: 1.45;
-  font-size: 16px;
 }
 
 .instructions-list>li {
@@ -8880,13 +8983,12 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 #instructions-modal .instructions-step {
   border: 1px solid #dddddd;
   border-radius: 4px;
-  padding: 8px 10px;
+  padding: 0px 10px 8px;
   background: #fff;
 }
 
 #instructions-modal .instructions-step:has(.instructions-step-toggle[aria-expanded="true"]) {
-  border-color: #c8c8c8;
-  background: #fafafa;
+  border-color: #888;
 }
 
 .instructions-list>li:last-child {
@@ -8903,7 +9005,7 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 
 #instructions-modal .instructions-step-heading {
   margin: 0 0 10px;
-  font-size: 18px;
+  font-size: 1em;
   font-weight: 700;
   line-height: 1.1;
   color: #111;
@@ -8948,19 +9050,7 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 }
 
 #instructions-modal .instructions-step-title {
-  font-size: 16px;
   line-height: 1.35;
-}
-
-#instructions-modal .instructions-list,
-#instructions-modal .instructions-list p,
-#instructions-modal .instructions-list li,
-#instructions-modal .instructions-list ul,
-#instructions-modal .instructions-list ol,
-#instructions-modal .instructions-list a,
-#instructions-modal .instructions-list strong,
-#instructions-modal .instructions-list i {
-  font-size: 16px;
 }
 
 .instructions-sublist {

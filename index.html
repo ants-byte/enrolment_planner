@@ -12,7 +12,7 @@ Created: December 30, 2025
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subject Planner. Bachelor of IT</title>
+  <title>Timetable Planner. Bachelor of IT</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
@@ -79,7 +79,7 @@ Created: December 30, 2025
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
           aria-controls="instructions-modal" aria-expanded="false"
-          data-tooltip="Open a quick guide to using this Subject Planner web site.">Instructions</button>
+          data-tooltip="Open a quick guide to using this Timetable Planner web site.">Instructions</button>
       </div>
       <div class="sidebar-section reset-section" id="reset-section">
         <button id="clear-selections" class="clear-button"
@@ -263,6 +263,12 @@ Created: December 30, 2025
                   </div>
                 </div>
               </div>
+              <button id="open-instructions-help" class="title-settings-button title-help-button" type="button"
+                aria-label="Help and support"
+                aria-haspopup="dialog"
+                aria-controls="instructions-modal"
+                aria-expanded="false"
+                data-tooltip="Help and support">?</button>
             </div>
           </div>
           <div class="title-right">
@@ -621,9 +627,45 @@ Created: December 30, 2025
             </div>
           </li>
         </ul>
+        <section class="instructions-disclaimer" aria-label="Site disclaimer">
+          <p>This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
+        </section>
       </div>
       <div class="modal-actions">
         <button id="close-instructions-cta" class="clear-button" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="modal-header">
+        <div class="modal-title" id="help-title">Help and Support</div>
+        <button class="modal-close" id="close-help-modal" aria-label="Close help and support">X</button>
+      </div>
+      <div class="modal-body">
+        <section class="help-support-content" aria-label="Help and support contacts">
+          <h3>Who to ask for help?</h3>
+          <ul>
+            <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT Enrolment Team at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
+            <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or Nandini at <a href="mailto:NandiniBiskunda@melbournepolytechnic.edu.au">NandiniBiskunda@melbournepolytechnic.edu.au</a>.</li>
+            <li>For <strong>general Melbourne Polytechnic enquiries</strong>, such as using technology, accessing the library, or obtaining your student card, the <a href="https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/">Student Hub</a> is probably your best bet.</li>
+            <li>For <strong>visa queries, international compliance, and admissions</strong>, please contact the International Office.
+              <ul>
+                <li><strong>Admissions:</strong> <a href="mailto:international-admissions@melbournepolytechnic.edu.au">international-admissions@melbournepolytechnic.edu.au</a></li>
+                <li><strong>Payments:</strong> <a href="mailto:international-payments@melbournepolytechnic.edu.au">international-payments@melbournepolytechnic.edu.au</a></li>
+                <li><strong>Compliance:</strong> <a href="mailto:compliance@melbournepolytechnic.edu.au">compliance@melbournepolytechnic.edu.au</a></li>
+                <li><strong>General contact:</strong> <a href="mailto:international@melbournepolytechnic.edu.au">international@melbournepolytechnic.edu.au</a></li>
+              </ul>
+            </li>
+          </ul>
+          <h3>How to use this site?</h3>
+          <button id="help-open-instructions" class="clear-button" type="button">Instructions</button>
+          <p class="help-site-disclaimer">This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
+        </section>
+      </div>
+      <div class="modal-actions">
+        <button id="close-help-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>

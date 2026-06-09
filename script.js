@@ -244,6 +244,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const clearButton = document.getElementById('clear-selections');
   const completedModeButton = document.getElementById('toggle-completed-mode');
   const openInstructionsModal = document.getElementById('open-instructions-modal');
+  const openInstructionsHelpButton = document.getElementById('open-instructions-help');
   const openCodeModal = document.getElementById('open-code-modal');
   const overrideToggle = document.getElementById('override-toggle');
   const overrideLabel = document.querySelector('.switch-label');
@@ -1329,6 +1330,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const instructionsStepToggles = Array.from(
     document.querySelectorAll('#instructions-modal .instructions-step-toggle')
   );
+  let instructionsReturnFocus = openInstructionsModal || openInstructionsHelpButton || null;
+  const helpModal = document.getElementById('help-modal');
+  const closeHelpModal = document.getElementById('close-help-modal');
+  const closeHelpCta = document.getElementById('close-help-cta');
+  const helpOpenInstructionsButton = document.getElementById('help-open-instructions');
   const codeModal = document.getElementById('code-modal');
   const closeCodeModal = document.getElementById('close-code-modal');
   const cancelCodeModal = document.getElementById('cancel-code-modal');
@@ -9027,7 +9033,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     instructionsModal.classList.remove('show');
     instructionsModal.setAttribute('aria-hidden', 'true');
     if (openInstructionsModal) openInstructionsModal.setAttribute('aria-expanded', 'false');
-    if (openInstructionsModal) openInstructionsModal.focus();
+    const returnTarget = instructionsReturnFocus || openInstructionsModal || openInstructionsHelpButton;
+    if (returnTarget) returnTarget.focus();
+  };
+
+  const showHelpModal = () => {
+    if (!helpModal) return;
+    helpModal.classList.add('show');
+    helpModal.setAttribute('aria-hidden', 'false');
+    if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'true');
+    if (closeHelpModal) closeHelpModal.focus();
+  };
+
+  const hideHelpModal = () => {
+    if (!helpModal) return;
+    helpModal.classList.remove('show');
+    helpModal.setAttribute('aria-hidden', 'true');
+    if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'false');
+    if (openInstructionsHelpButton) openInstructionsHelpButton.focus();
+  };
+
+  const switchHelpToInstructions = () => {
+    if (helpModal) {
+      helpModal.classList.remove('show');
+      helpModal.setAttribute('aria-hidden', 'true');
+    }
+    if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'false');
+    instructionsReturnFocus = openInstructionsHelpButton || openInstructionsModal;
+    showInstructionsModal();
   };
 
   const showCodeModal = () => {
@@ -11148,9 +11181,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   }
 
-  if (openInstructionsModal) openInstructionsModal.addEventListener('click', showInstructionsModal);
+  if (openInstructionsModal) {
+    openInstructionsModal.addEventListener('click', () => {
+      instructionsReturnFocus = openInstructionsModal;
+      showInstructionsModal();
+    });
+  }
+  if (openInstructionsHelpButton) {
+    openInstructionsHelpButton.addEventListener('click', () => {
+      showHelpModal();
+    });
+  }
   if (closeInstructionsModal) closeInstructionsModal.addEventListener('click', hideInstructionsModal);
   if (closeInstructionsCta) closeInstructionsCta.addEventListener('click', hideInstructionsModal);
+  if (closeHelpModal) closeHelpModal.addEventListener('click', hideHelpModal);
+  if (closeHelpCta) closeHelpCta.addEventListener('click', hideHelpModal);
+  if (helpOpenInstructionsButton) helpOpenInstructionsButton.addEventListener('click', switchHelpToInstructions);
   instructionsStepToggles.forEach((toggle) => {
     toggle.addEventListener('click', () => {
       toggleInstructionStep(toggle);
@@ -20721,7 +20767,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const fallback = extractSectionFromHtml(
         emailScriptsHtmlSource,
         'Student Declaration',
-        'For Subject Planner – your preference',
+        'For Timetable Planner – your preference',
         'copyStudentDeclaration'
       );
       html = fallback.html;
@@ -20829,7 +20875,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const fallback = extractSectionFromHtml(
         emailScriptsHtmlSource,
         'Student Declaration',
-        'For Subject Planner – your preference',
+        'For Timetable Planner – your preference',
         'copyStudentDeclaration'
       );
       html = fallback.html;
@@ -22725,6 +22771,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   enableOutsideClickClose(instructionsModal, hideInstructionsModal);
+  enableOutsideClickClose(helpModal, hideHelpModal);
   enableOutsideClickClose(codeModal, hideCodeModal);
   enableOutsideClickClose(selectByTypingModal, hideSelectByTypingModal);
   enableOutsideClickClose(emailScriptsAccessModal, hideEmailScriptsAccessModal);
@@ -23220,6 +23267,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideCourseMapModal();
       hideNextSemesterModal();
       hideLoadModal();
+      hideHelpModal();
       hideInstructionsModal();
       hideContainerPopoutModal();
     } else if (e.key === 'Enter') {
