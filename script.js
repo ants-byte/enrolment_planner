@@ -5257,11 +5257,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateVaryLoadLabel = () => {
     const loadLabel = document.getElementById('load-label');
+    const loadCount = fullLoadCap || 4;
+    const loadRow = varyLoadButton?.closest?.('.load-row') || loadLabel?.closest?.('.load-row') || null;
+    if (loadRow) loadRow.classList.toggle('load-row-nonstandard', loadCount !== 4);
     if (loadLabel) {
       loadLabel.textContent = 'How many subjects will study?';
     }
     if (varyLoadButton) {
-      const loadCount = fullLoadCap || 4;
       varyLoadButton.textContent = `${loadCount}`;
       varyLoadButton.disabled = false;
       varyLoadButton.classList.remove('disabled');

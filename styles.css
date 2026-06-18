@@ -30,6 +30,7 @@ Created: December 30, 2025
   --alert-info: #0b7fab;
   --bright-green: #19d966;
   --bright-blue: #92ddff;
+  --bright-yellow: #fff176;
   --core: #f5f0c6;
   --network: rgb(220, 240, 225);
   --network-text: #0d7a3d;
@@ -291,7 +292,7 @@ td,
   padding: 6px 12px;
   border-radius: 8px;
   display: block;
-  border: 1px solid rgb(108, 107, 107);
+  border: 1px solid var(--sidebar-border);
   overflow: hidden;
   position: relative;
 }
@@ -305,12 +306,6 @@ td,
   order: 1;
   flex: 0 1 auto;
   border-radius: 8px;
-}
-
-.sidebar {
-  order: 2;
-  /* Shrink/grow before the left sidebar on viewport resize. */
-  flex: 0 2 auto;
 }
 
 .hidden-initial {
@@ -962,8 +957,10 @@ td,
 }
 
 .sidebar {
+  order: 2;
+  flex: 0 2 auto;
   width: 270px;
-  max-width: 280px;
+  max-width: 516px;
   min-width: 155px;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
@@ -2381,7 +2378,7 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .toggle-row + .toggle-row {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .load-extra-row {
@@ -3331,7 +3328,7 @@ input:checked+.slider:before {
   box-sizing: border-box;
   border-radius: 12px !important;
   background: #fff;
-  border: 1px solid white;
+  border: 1px solid var(--sidebar-border);
   overflow: hidden;
 
 }
@@ -5501,14 +5498,14 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .email-scripts-access-modal {
-  width: min(1400px, 96vw);
-  max-width: min(1400px, 96vw);
+  width: min(1370px, 96vw);
+  max-width: min(1370px, 96vw);
   height: auto;
   max-height: 96vh;
 }
 
 #email-scripts-access-modal .modal.email-scripts-access-modal {
-  width: min(1400px, calc(100vw - 32px));
+  width: min(1370px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   min-width: 0;
   height: auto;
@@ -5560,7 +5557,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 
 .email-scripts-access-text {
   grid-column: 3;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .email-scripts-access-row>* {
@@ -9055,6 +9052,10 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   z-index: 2;
 }
 
+#code-modal .modal-actions {
+  align-items: center;
+}
+
 #code-modal .modal-actions .code-modal-presets {
   display: flex;
   flex-direction: column;
@@ -9082,6 +9083,7 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 .code-modal-actions-right {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 #apply-code-modal {
@@ -9381,12 +9383,21 @@ body.completed-mode #clear-selections {
   text-align: left;
 }
 
+.load-row.load-row-nonstandard #load-label {
+  font-weight: 700;
+}
+
 .load-row .load-button {
   padding-left: 8px;
   padding-right: 8px;
   width: 34px;
   min-width: 34px;
   flex: 0 0 34px;
+  font-weight:500;
+}
+
+.load-row.load-row-nonstandard .load-button {
+  color: var(--bright-yellow);
 }
 
 @media (max-width: 1500px) and (min-resolution: 2dppx) {
