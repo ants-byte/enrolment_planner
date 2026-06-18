@@ -38,14 +38,17 @@ Created: December 30, 2025
       <div id="folder-shortcuts-panel" class="folder-shortcuts-panel hidden-initial" aria-label="Folder shortcuts">
         <div class="folder-shortcuts-row">
           <button id="folder-shortcut-semester" class="folder-shortcut-btn hidden-initial" type="button"></button>
-          <button id="folder-shortcut-student-forms" class="folder-shortcut-btn hidden-initial" type="button"></button>
           <button id="folder-shortcut-student-forms-date" class="folder-shortcut-btn hidden-initial"
             type="button"></button>
           <button id="folder-shortcut-teacher" class="folder-shortcut-btn hidden-initial" type="button"></button>
-          <button id="folder-shortcut-help" class="folder-shortcut-btn folder-shortcut-help hidden-initial"
-            type="button" aria-label="Folder helper setup">?</button>
+          <button id="open-folder-shortcuts-modal" class="folder-shortcut-btn hidden-initial" type="button"
+            aria-haspopup="dialog" aria-controls="folder-shortcuts-modal" aria-expanded="false">more...</button>
         </div>
-        <div class="folder-shortcuts-row folder-shortcuts-row-credit">
+        <div class="folder-shortcuts-row folder-shortcuts-row-credit hidden-initial">
+          <button id="folder-shortcut-student-forms" class="folder-shortcut-btn hidden-initial" type="button"></button>
+          <button id="folder-shortcut-student-forms-date-dialog" class="folder-shortcut-btn hidden-initial"
+            type="button"></button>
+          <button id="folder-shortcut-teacher-dialog" class="folder-shortcut-btn hidden-initial" type="button"></button>
           <button id="folder-shortcut-credit-sp" class="folder-shortcut-btn hidden-initial" type="button"></button>
           <button id="folder-shortcut-credit-local" class="folder-shortcut-btn hidden-initial" type="button"></button>
           <button id="folder-shortcut-credit-sugg" class="folder-shortcut-btn hidden-initial" type="button"></button>
@@ -146,16 +149,6 @@ Created: December 30, 2025
           </div>
           <div id="selected-list" class="available-list" role="list"></div>
           <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
-          <div class="toggle-row load-row">
-            <span id="load-label" data-tooltip-html="A <b>full load</b> is <b>4</b> subjects.  
-              A Student Visa condition is that students must study a full load where possible.<br>
-              <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
-              <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
-              This website uses this count to determine when you've selected your full complement of subjects">Will
-              study 4 subjects</span>
-            <button id="vary-load" class="clear-button secondary load-button" type="button"
-              data-tooltip="Will you be studying a full load of 4 subjects, or something else?">Change</button>
-          </div>
           <div class="toggle-row"
             data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
             <label class="switch">
@@ -171,6 +164,15 @@ Created: December 30, 2025
               <span class="slider"></span>
             </label>
             <span class="switch-label">Pass the current enrolments</span>
+          </div>
+          <div class="toggle-row load-row">
+            <button id="vary-load" class="clear-button secondary load-button" type="button"
+              data-tooltip="Will you be studying a full load of 4 subjects, or something else?">4</button>
+            <span id="load-label" data-tooltip-html="A <b>full load</b> is <b>4</b> subjects.  
+              A Student Visa condition is that students must study a full load where possible.<br>
+              <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
+              <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
+              This website uses this count to determine when you've selected your full complement of subjects">How many subjects will study?</span>
           </div>
           <div class="toggle-row hidden-initial" id="live-prereq-row">
             <label class="switch">
@@ -539,6 +541,30 @@ Created: December 30, 2025
       </div>
     </main>
   </div>
+  <div id="folder-shortcuts-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal folder-shortcuts-modal" role="dialog" aria-modal="true"
+      aria-labelledby="folder-shortcuts-modal-title">
+      <div class="modal-header">
+        <div class="modal-title" id="folder-shortcuts-modal-title">Shortcuts to folders and files</div>
+        <button class="modal-close" id="close-folder-shortcuts-modal"
+          aria-label="Close folder shortcuts">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="folder-shortcuts-modal-section">
+          <h3>Student Forms</h3>
+          <div id="folder-shortcuts-student-forms-host" class="folder-shortcuts-modal-buttons"></div>
+        </div>
+        <div class="folder-shortcuts-modal-section">
+          <h3>Credit Transfers</h3>
+          <div id="folder-shortcuts-credit-host" class="folder-shortcuts-modal-buttons"></div>
+          <div id="folder-shortcuts-credit-docs-host" class="folder-shortcuts-modal-buttons"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="close-folder-shortcuts-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
   <div id="instructions-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal instructions-modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
       <div class="modal-header">
@@ -645,26 +671,35 @@ Created: December 30, 2025
       </div>
       <div class="modal-body">
         <section class="help-support-content" aria-label="Help and support contacts">
-          <h3>Who to ask for help?</h3>
-          <ul>
-            <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT Enrolment Team at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
-            <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or Nandini at <a href="mailto:NandiniBiskunda@melbournepolytechnic.edu.au">NandiniBiskunda@melbournepolytechnic.edu.au</a>.</li>
-            <li>For <strong>general Melbourne Polytechnic enquiries</strong>, such as using technology, accessing the library, or obtaining your student card, the <a href="https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/">Student Hub</a> is probably your best bet.</li>
-            <li>For <strong>visa queries, international compliance, and admissions</strong>, please contact the International Office.
-              <ul>
-                <li><strong>Admissions:</strong> <a href="mailto:international-admissions@melbournepolytechnic.edu.au">international-admissions@melbournepolytechnic.edu.au</a></li>
-                <li><strong>Payments:</strong> <a href="mailto:international-payments@melbournepolytechnic.edu.au">international-payments@melbournepolytechnic.edu.au</a></li>
-                <li><strong>Compliance:</strong> <a href="mailto:compliance@melbournepolytechnic.edu.au">compliance@melbournepolytechnic.edu.au</a></li>
-                <li><strong>General contact:</strong> <a href="mailto:international@melbournepolytechnic.edu.au">international@melbournepolytechnic.edu.au</a></li>
-              </ul>
-            </li>
-          </ul>
-          <h3>How to use this site?</h3>
-          <button id="help-open-instructions" class="clear-button" type="button">Instructions</button>
-          <p class="help-site-disclaimer">This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
+          <div id="enrolment-officers-help-section" class="help-support-section hidden-initial">
+            <h3>Enrolment Officers help and instructions</h3>
+            <button id="folder-shortcut-help" class="clear-button hidden-initial" type="button"
+              aria-label="Enable Windows integration">Enable Windows integration</button>
+          </div>
+          <div id="help-contact-section" class="help-support-section">
+            <h3>Who to ask for help?</h3>
+            <ul>
+              <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT Enrolment Team at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
+              <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or Nandini at <a href="mailto:NandiniBiskunda@melbournepolytechnic.edu.au">NandiniBiskunda@melbournepolytechnic.edu.au</a>.</li>
+              <li>For <strong>general Melbourne Polytechnic enquiries</strong>, such as using technology, accessing the library, or obtaining your student card, the <a href="https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/">Student Hub</a> is probably your best bet.</li>
+              <li>For <strong>visa queries, international compliance, and admissions</strong>, please contact the International Office.
+                <ul>
+                  <li><strong>Admissions:</strong> <a href="mailto:international-admissions@melbournepolytechnic.edu.au">international-admissions@melbournepolytechnic.edu.au</a></li>
+                  <li><strong>Payments:</strong> <a href="mailto:international-payments@melbournepolytechnic.edu.au">international-payments@melbournepolytechnic.edu.au</a></li>
+                  <li><strong>Compliance:</strong> <a href="mailto:compliance@melbournepolytechnic.edu.au">compliance@melbournepolytechnic.edu.au</a></li>
+                  <li><strong>General contact:</strong> <a href="mailto:international@melbournepolytechnic.edu.au">international@melbournepolytechnic.edu.au</a></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="help-support-section">
+            <h3>How to use this site?</h3>
+            <button id="help-open-instructions" class="clear-button" type="button">Instructions</button>
+          </div>
         </section>
       </div>
       <div class="modal-actions">
+        <p class="help-site-disclaimer">This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
         <button id="close-help-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
@@ -731,12 +766,11 @@ Created: December 30, 2025
           <div class="code-modal-presets-buttons" role="group" aria-label="Preset subject lists">
             <button id="preset-fmp-assoc" class="clear-button secondary" type="button">FMP Assoc Deg</button>
             <button id="preset-fmp-dip" class="clear-button secondary" type="button">FMP Dip</button>
-            <button id="preset-mp-dip" class="clear-button secondary" type="button">MP Dip</button>
-            <button id="preset-mp-dip-old" class="clear-button secondary" type="button">MP Dip old</button>
+            <button id="preset-mp-dip-old" class="clear-button secondary" type="button">MP Dip</button>
+            <button id="preset-mp-dip" class="clear-button secondary" type="button" disabled>MP Dip '27</button>
           </div>
           <div class="code-modal-presets-caption">
-            <div>Articulation agreements</div>
-            <div>(Credit Transfers)</div>
+            <div>Articulation agreements (Credit Transfers)</div>
           </div>
         </div>
         <div class="code-modal-actions-right">

@@ -543,7 +543,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const folderShortcutStudentFormsDateButton = document.getElementById(
     'folder-shortcut-student-forms-date'
   );
+  const folderShortcutStudentFormsDateDialogButton = document.getElementById(
+    'folder-shortcut-student-forms-date-dialog'
+  );
   const folderShortcutTeacherButton = document.getElementById('folder-shortcut-teacher');
+  const folderShortcutTeacherDialogButton = document.getElementById('folder-shortcut-teacher-dialog');
   const folderShortcutCreditSharePointButton = document.getElementById('folder-shortcut-credit-sp');
   const folderShortcutCreditLocalButton = document.getElementById('folder-shortcut-credit-local');
   const folderShortcutCreditSuggestionsButton = document.getElementById('folder-shortcut-credit-sugg');
@@ -553,6 +557,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const folderShortcutCreditMpArticulationButton = document.getElementById('folder-shortcut-credit-mp');
   const folderShortcutCreditFmpArticulationButton = document.getElementById('folder-shortcut-credit-fmp');
   const folderShortcutHelpButton = document.getElementById('folder-shortcut-help');
+  const openFolderShortcutsModalButton = document.getElementById('open-folder-shortcuts-modal');
+  const folderShortcutsModal = document.getElementById('folder-shortcuts-modal');
+  const closeFolderShortcutsModal = document.getElementById('close-folder-shortcuts-modal');
+  const closeFolderShortcutsCta = document.getElementById('close-folder-shortcuts-cta');
+  const folderShortcutsStudentFormsHost = document.getElementById('folder-shortcuts-student-forms-host');
+  const folderShortcutsCreditHost = document.getElementById('folder-shortcuts-credit-host');
+  const folderShortcutsCreditDocsHost = document.getElementById('folder-shortcuts-credit-docs-host');
+  [
+    folderShortcutCreditSharePointButton,
+    folderShortcutCreditLocalButton,
+    folderShortcutCreditSuggestionsButton,
+  ].forEach((button) => {
+    if (button && folderShortcutsCreditHost) folderShortcutsCreditHost.appendChild(button);
+  });
+  [
+    folderShortcutCreditStrategyButton,
+    folderShortcutCreditFormButton,
+    folderShortcutCreditMpArticulationButton,
+    folderShortcutCreditFmpArticulationButton,
+  ].forEach((button) => {
+    if (button && folderShortcutsCreditDocsHost) folderShortcutsCreditDocsHost.appendChild(button);
+  });
+  if (folderShortcutStudentFormsButton && folderShortcutsStudentFormsHost) {
+    folderShortcutsStudentFormsHost.appendChild(folderShortcutStudentFormsButton);
+  }
+  if (folderShortcutStudentFormsDateDialogButton && folderShortcutsStudentFormsHost) {
+    folderShortcutsStudentFormsHost.appendChild(folderShortcutStudentFormsDateDialogButton);
+  }
+  if (folderShortcutTeacherDialogButton && folderShortcutsStudentFormsHost) {
+    folderShortcutsStudentFormsHost.appendChild(folderShortcutTeacherDialogButton);
+  }
   const CREDIT_TRANSFERS_SHAREPOINT_URL = 'https://melbournepolytechnic.sharepoint.com/sites/BachelorofInformationTechnologyOperations/Shared%20Documents/Forms/AllItems.aspx?FolderCTID=0x012000792227319628994C8FDC6DDDE436E67C&isAscending=true&id=%2Fsites%2FBachelorofInformationTechnologyOperations%2FShared%20Documents%2FGeneral%2Fcredit%20transfers&sortField=LinkFilename&viewid=e570e16a-6813-4ed0-91af-90efd90079bf';
   const CREDIT_TRANSFERS_LOCAL_FALLBACK = 'C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\credit transfers';
   const CREDIT_TRANSFERS_SUGGESTIONS_FALLBACK = 'C:\\Users\\{PROFILE}\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\{INTAKE}\\Supporting Documents\\Credits Transfers\\Suggestions';
@@ -890,23 +925,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const TRIAGE_MAX_PREVIEW_COLS = 12;
   const TRIAGE_READ_MAX_ROWS = 800;
   const SOURCE_READ_MAX_ROWS = 4000;
+  const SOURCE_SHEET_NAMES = ['Students', 'STUDENTS', 'students'];
+  const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
   const WORKBOOK_PARSE_TIMEOUT_MS = 300000;
   const WORKER_PARSE_TIMEOUT_MS = 300000;
   const TRIAGE_WORKER_TIMEOUT_MS = 120000;
   const WORKBOOK_FALLBACK_MAX_BYTES = 50_000_000;
   const TRIAGE_FALLBACK_MAX_BYTES = 2_000_000;
+  const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
   const SOURCE_WORKER_URL = (() => {
     try {
-      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260208-3';
+      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260618-1';
     } catch {
-      return 'workbook-parser-worker.js?v=source-20260208-3';
+      return 'workbook-parser-worker.js?v=source-20260618-1';
     }
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260208-3';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260618-1';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260208-3';
+      return 'triage-parser-worker.js?v=triage-20260618-1';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -939,12 +977,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const renderDropZoneStatus = (lines) => {
     if (!dropZoneTextEl) return;
     if (dropZone) {
-      const hasAllThreeDocs = !!(
+      const hasSourceAndTriage = !!(
         lastDroppedFileInfo?.fileName &&
-        emailScriptsInfo?.fileName &&
         triageFileInfo?.fileName
       );
-      dropZone.classList.toggle('is-compact-loaded', hasAllThreeDocs);
+      dropZone.classList.toggle('is-compact-loaded', hasSourceAndTriage);
     }
     dropZoneTextEl.innerHTML = '';
     (lines || []).forEach((line) => {
@@ -969,18 +1006,41 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? [payload.action]
           : [];
       if (lineActions.length) {
-        // Single action line => 32px right padding.
-        span.style.paddingRight = `${2 + lineActions.length * 30}px`;
+        const actionWidth = lineActions.reduce(
+          (total, item) => total + (item?.key === 'email-actions' ? 52 : 30),
+          2
+        );
+        span.style.paddingRight = `${actionWidth}px`;
       }
+      let actionRight = 3;
       lineActions.forEach((action, idx) => {
         const { key, label, fileName, path, tooltip } = action || {};
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'drop-zone-action';
-        if (key === 'email-actions') btn.classList.add('drop-zone-action-dots');
-        btn.textContent = label || '';
+        if (key === 'email-actions') {
+          btn.classList.add('drop-zone-action-dots');
+          btn.classList.add('drop-zone-action-email-tools');
+          btn.innerHTML =
+            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"></path>' +
+            '</svg>' +
+            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path d="M8 3h8a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a2 2 0 0 1 2-2zm0 3h8V5H8v1zm-3 2v11h14V8H5z"></path>' +
+            '</svg>';
+          btn.setAttribute('aria-label', 'Open email and clipboard actions');
+        } else {
+          btn.classList.add('drop-zone-action-open');
+          btn.innerHTML =
+            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path d="M5 5h8v2H7v10h10v-6h2v8H5V5z"></path>' +
+            '<path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3z"></path>' +
+            '</svg>';
+          btn.setAttribute('aria-label', `Open ${fileName || 'file'}`);
+        }
         btn.dataset.action = key || '';
-        btn.style.right = `${3 + idx * 30}px`;
+        btn.style.right = `${actionRight}px`;
+        actionRight += key === 'email-actions' ? 52 : 30;
         const safeName = fileName || 'file';
         const safePath = path || 'Unknown';
         btn.setAttribute('data-tooltip-html', tooltip || `Open ${safeName}. <br> <b>Path</b> ${safePath}`);
@@ -1335,6 +1395,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeHelpModal = document.getElementById('close-help-modal');
   const closeHelpCta = document.getElementById('close-help-cta');
   const helpOpenInstructionsButton = document.getElementById('help-open-instructions');
+  const helpSupportContent = helpModal?.querySelector('.help-support-content') || null;
+  const enrolmentOfficersHelpSection = document.getElementById('enrolment-officers-help-section');
   const codeModal = document.getElementById('code-modal');
   const closeCodeModal = document.getElementById('close-code-modal');
   const cancelCodeModal = document.getElementById('cancel-code-modal');
@@ -3604,6 +3666,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (timetableModal && staffFacing) timetableModal.classList.add('staff-mode');
   if (document?.body) document.body.classList.toggle('student-mode', isStudentModeParam);
   if (document?.body) document.body.classList.toggle('staff-mode', !!staffFacing);
+  if (helpSupportContent) helpSupportContent.classList.toggle('has-staff-tools', !!staffFacing);
+  if (enrolmentOfficersHelpSection) {
+    enrolmentOfficersHelpSection.classList.toggle('hidden-initial', !staffFacing);
+  }
   if (selectByTypingButton) selectByTypingButton.hidden = !staffFacing;
   if (staffFacing) {
     if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
@@ -5192,10 +5258,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateVaryLoadLabel = () => {
     const loadLabel = document.getElementById('load-label');
     if (loadLabel) {
-      loadLabel.textContent = `Will study ${fullLoadCap || 4} subjects`;
+      loadLabel.textContent = 'How many subjects will study?';
     }
     if (varyLoadButton) {
-      varyLoadButton.textContent = 'Change';
+      const loadCount = fullLoadCap || 4;
+      varyLoadButton.textContent = `${loadCount}`;
       varyLoadButton.disabled = false;
       varyLoadButton.classList.remove('disabled');
     }
@@ -6234,12 +6301,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetablePreparedEl = null;
     if (!staffFacing) {
       timetableTitleEl.textContent = '';
-      timetableTitleEl.appendChild(document.createTextNode(`Timetable for ${label}. Prepared `));
+      timetableTitleEl.appendChild(document.createTextNode(`Timetable for ${label}`));
+      const preparedLine = document.createElement('span');
+      preparedLine.className = 'timetable-prepared-line';
+      preparedLine.appendChild(document.createTextNode('Prepared '));
       const dateSpan = document.createElement('span');
       dateSpan.className = 'timetable-date';
       dateSpan.textContent = prepared;
       timetablePreparedEl = dateSpan;
-      timetableTitleEl.appendChild(dateSpan);
+      preparedLine.appendChild(dateSpan);
+      timetableTitleEl.appendChild(preparedLine);
       applyTimetableDateHighlight();
       return;
     }
@@ -6253,15 +6324,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     strongEl.className = 'timetable-title-strong';
     strongEl.textContent = strongText;
     timetableTitleEl.appendChild(strongEl);
-    timetableTitleEl.appendChild(document.createTextNode('. Prepared '));
+    const preparedLine = document.createElement('span');
+    preparedLine.className = 'timetable-prepared-line';
+    preparedLine.appendChild(document.createTextNode('Prepared '));
     const dateSpan = document.createElement('span');
     dateSpan.className = 'timetable-date';
     dateSpan.textContent = prepared;
     timetablePreparedEl = dateSpan;
-    timetableTitleEl.appendChild(dateSpan);
+    preparedLine.appendChild(dateSpan);
     if (studentText) {
-      timetableTitleEl.appendChild(document.createTextNode(`, for ${studentText}`));
+      preparedLine.appendChild(document.createTextNode(`, for ${studentText}`));
     }
+    timetableTitleEl.appendChild(preparedLine);
     applyTimetableDateHighlight();
   };
 
@@ -7169,6 +7243,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selected = getPlannedCount();
     const remaining = getRemainingSubjectsCount();
     const completedTotal = completed + useCredits;
+    const passCurrentCodes =
+      passForEnrolmentsEnabled
+        ? Array.from(passForEnrolmentsOverrides)
+            .filter((code) => validSubjectCodes.has(code) && !withdrawnCurrentEnrolments.has(code))
+            .sort((a, b) => a.localeCompare(b))
+        : [];
     const activeRecord = getActiveStudentRecord();
     // Only use student-record Credit Points Earned for mismatch checks.
     // `creditPointsEarned` is sourced from course info and can be present even when no student record is loaded.
@@ -7176,10 +7256,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const creditPointsValue = parseCreditPoints(creditPointsSource);
     const creditSubjects =
       creditPointsValue === null ? null : parseFloat((creditPointsValue / 12).toFixed(2));
-    const creditMismatch =
+    const creditMismatchRaw =
       creditSubjects !== null &&
       Number.isFinite(creditSubjects) &&
       Math.abs(creditSubjects - completedTotal) > 0.01;
+    const creditMismatchExplainedByPassCurrent =
+      creditMismatchRaw &&
+      passCurrentCodes.length > 0 &&
+      Math.abs((creditSubjects + passCurrentCodes.length) - completedTotal) <= 0.01;
+    const creditMismatch = creditMismatchRaw && !creditMismatchExplainedByPassCurrent;
     const formatCountValue = (value) =>
       Number.isInteger(value) ? value.toString() : value.toFixed(1);
     const hasAny = completedTotal > 0 || selected > 0;
@@ -7265,8 +7350,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     selectedSpan.textContent = `${selected} selected`;
     selectedSpan.setAttribute('data-tooltip-html', selectedTooltip);
     lineOne.appendChild(completedSpan);
-    lineOne.appendChild(document.createTextNode(', '));
-    lineOne.appendChild(selectedSpan);
 
     const lineTwo = document.createElement('div');
     lineTwo.className = 'subject-counts-line';
@@ -7274,6 +7357,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     remainingSpan.className = 'subject-counts-item';
     remainingSpan.textContent = `${remaining} remaining`;
     remainingSpan.setAttribute('data-tooltip-html', remainingTooltip);
+    lineTwo.appendChild(selectedSpan);
+    lineTwo.appendChild(document.createTextNode(', '));
     lineTwo.appendChild(remainingSpan);
 
     subjectCountsEl.appendChild(lineOne);
@@ -7310,6 +7395,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const feeDetails = activeRecord ? getFeeStatusDetails(activeRecord) : {};
     {
       const { codes, info } = splitInfoMessages(buildInfoMessages(activeRecord, feeDetails));
+      if (creditMismatchExplainedByPassCurrent) {
+        const subjectLabel = passCurrentCodes.length === 1 ? 'subject' : 'subjects';
+        const codeList = passCurrentCodes.join(', ');
+        const alreadyPassedCount = Math.max(0, completedTotal - passCurrentCodes.length);
+        info.push({
+          title: 'Current enrolments treated as passes',
+          html: `<p><strong class="alert-inline-title alert-title-warning">Current enrolments treated as passes:</strong> <span class="alert-inline-text">Take caution when selecting subjects. Your student record shows that you have passed only ${escapeHtml(
+            alreadyPassedCount
+          )} subjects. You have checked the "Pass the current enrolments" button, so you can select subjects on the assumption that you will achieve pass grades in these ${escapeHtml(
+            passCurrentCodes.length
+          )} ${subjectLabel}: ${escapeHtml(codeList)}.</span></p>`,
+        });
+      }
       setAlertMessages('info', info);
       setAlertMessages('codes', codes);
     }
@@ -9051,6 +9149,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     helpModal.setAttribute('aria-hidden', 'true');
     if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'false');
     if (openInstructionsHelpButton) openInstructionsHelpButton.focus();
+  };
+
+  const showFolderShortcutsModal = () => {
+    if (!folderShortcutsModal) return;
+    const modalBox = folderShortcutsModal.querySelector('.folder-shortcuts-modal');
+    if (modalBox) {
+      modalBox.style.position = '';
+      modalBox.style.left = '';
+      modalBox.style.top = '';
+      modalBox.style.margin = '';
+      modalBox.style.transform = '';
+      modalBox.style.width = '';
+      modalBox.style.height = '';
+      modalBox.style.maxWidth = '';
+      modalBox.style.maxHeight = '';
+    }
+    folderShortcutsModal.classList.add('show');
+    folderShortcutsModal.setAttribute('aria-hidden', 'false');
+    if (openFolderShortcutsModalButton) openFolderShortcutsModalButton.setAttribute('aria-expanded', 'true');
+    if (closeFolderShortcutsModal) closeFolderShortcutsModal.focus();
+  };
+
+  const hideFolderShortcutsModal = () => {
+    if (!folderShortcutsModal) return;
+    folderShortcutsModal.classList.remove('show');
+    folderShortcutsModal.setAttribute('aria-hidden', 'true');
+    if (openFolderShortcutsModalButton) openFolderShortcutsModalButton.setAttribute('aria-expanded', 'false');
+    if (openFolderShortcutsModalButton) openFolderShortcutsModalButton.focus();
   };
 
   const switchHelpToInstructions = () => {
@@ -11192,6 +11318,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       showHelpModal();
     });
   }
+  if (openFolderShortcutsModalButton) {
+    openFolderShortcutsModalButton.addEventListener('click', () => {
+      if (openFolderShortcutsModalButton.disabled) return;
+      showFolderShortcutsModal();
+    });
+  }
+  if (closeFolderShortcutsModal) closeFolderShortcutsModal.addEventListener('click', hideFolderShortcutsModal);
+  if (closeFolderShortcutsCta) closeFolderShortcutsCta.addEventListener('click', hideFolderShortcutsModal);
+  if (folderShortcutHelpButton) {
+    folderShortcutHelpButton.addEventListener('click', () => {
+      const os = getClientOs();
+      if (os !== 'windows') {
+        window.alert('Windows only.');
+        return;
+      }
+      showFolderShortcutHelpPopup();
+    });
+  }
   if (closeInstructionsModal) closeInstructionsModal.addEventListener('click', hideInstructionsModal);
   if (closeInstructionsCta) closeInstructionsCta.addEventListener('click', hideInstructionsModal);
   if (closeHelpModal) closeHelpModal.addEventListener('click', hideHelpModal);
@@ -13174,12 +13318,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const readAndParse = (options) => {
       const workbook = XLSX.read(buffer, options);
-      const sheetNames = workbook.SheetNames || [];
       const sheet =
         workbook.Sheets?.Triage ||
         workbook.Sheets?.TRIAGE ||
         workbook.Sheets?.triage ||
-        (sheetNames.length ? workbook.Sheets?.[sheetNames[0]] : null);
+        null;
       const ref = sheet?.['!ref'];
       return parseTriageWorkbookFromSheet(sheet, ref, mode, workbook);
     };
@@ -13192,6 +13335,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cellNF: false,
       dense: false,
       sheetRows: TRIAGE_READ_MAX_ROWS,
+      sheets: TRIAGE_SHEET_NAMES,
     });
     if (fastResult?.parseInfo?.headerFound && fastResult?.parseInfo?.total === 0) {
       return readAndParse({
@@ -13201,6 +13345,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cellNF: false,
         dense: false,
         sheetRows: TRIAGE_READ_MAX_ROWS,
+        sheets: TRIAGE_SHEET_NAMES,
       });
     }
     return fastResult;
@@ -13357,6 +13502,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             cellNF: false,
             dense: false,
             sheetRows: SOURCE_READ_MAX_ROWS,
+            sheets: SOURCE_SHEET_NAMES,
           });
           resolve(workbook);
         } catch {
@@ -13404,9 +13550,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       worker.onerror = () => {
         finish(null);
       };
-      // Keep the original buffer for fallback parsing on main thread.
-      const workerBuffer =
-        typeof buffer.slice === 'function' ? buffer.slice(0) : buffer;
+      const shouldCopyBuffer =
+        typeof buffer.slice === 'function' &&
+        (buffer?.byteLength || 0) <= WORKER_BUFFER_COPY_MAX_BYTES;
+      const workerBuffer = shouldCopyBuffer ? buffer.slice(0) : buffer;
       const transfer = workerBuffer instanceof ArrayBuffer ? [workerBuffer] : [];
       worker.postMessage({ type: 'parseWorkbook', buffer: workerBuffer }, transfer);
     });
@@ -13415,6 +13562,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const workerResult = await parseWorkbookInWorker(buffer);
     if (workerResult && Array.isArray(workerResult.records) && workerResult.records.length > 0) {
       return workerResult;
+    }
+    if (buffer instanceof ArrayBuffer && buffer.byteLength === 0) {
+      return workerResult || null;
     }
     const bufferSize = buffer?.byteLength || 0;
     if (bufferSize > WORKBOOK_FALLBACK_MAX_BYTES) return null;
@@ -15674,6 +15824,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return getIntakeNameHint() || 'Enrol';
   };
 
+  const getCurrentSemesterShortcutLabel = (date = new Date()) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const monthIndex = date.getMonth();
+    let year = date.getFullYear();
+    let suffix = '01';
+    if (monthIndex > 8) {
+      suffix = 'SS';
+    } else if (monthIndex > 3) {
+      suffix = '02';
+    }
+    return `${String(year % 100).padStart(2, '0')}_${suffix}`;
+  };
+
   const hasLoadedPlannerFiles = () =>
     !!(
       sourceWorkbookFileObject ||
@@ -15716,6 +15879,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const showPanel = !!dropZoneEnabled && !isStudentModeParam;
     folderShortcutsPanel.classList.toggle('hidden-initial', !showPanel);
     if (!showPanel) return;
+    if (openFolderShortcutsModalButton) {
+      openFolderShortcutsModalButton.classList.remove('hidden-initial');
+      openFolderShortcutsModalButton.disabled = false;
+      openFolderShortcutsModalButton.textContent = 'more...';
+      openFolderShortcutsModalButton.setAttribute('title', 'More folder and credit transfer shortcuts');
+    }
     await ensureFileLocationsCacheLoaded().catch(() => false);
     await ensureSettingsSignOffPrefsLoaded().catch(() => false);
     const os = getClientOs();
@@ -15723,6 +15892,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const semesterPath = getSemesterFolderPath();
     const semesterLabelRaw = getSemesterFolderNameHint();
     const semesterLabel = (() => {
+      const dateLabel = getCurrentSemesterShortcutLabel(new Date());
+      if (dateLabel) return dateLabel;
       const raw = String(semesterLabelRaw || '').trim();
       // Example: "Enrol 26_S1" -> "26_01"
       const m = raw.match(/enrol\s*(\d{2})\s*[_-]?\s*s([12])/i);
@@ -15772,7 +15943,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         teacherName = TEACHER_FOLDER_FALLBACK_BY_PROFILE[profileHint];
       }
     }
-    const teacherLabel = 'Temp';
+    const teacherLabel = 'Temp.';
     const teacherFolderInfo = getTeacherTempFolderInfo(semesterPath, { os, teacherName });
     const teacherFolderRoot = teacherFolderInfo.rootPath;
     const teacherFolderPath =
@@ -15785,12 +15956,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       semesterPath,
       semesterLabel
     );
-    setFolderShortcutButton(folderShortcutStudentFormsButton, 'Forms', studentFormsPath, 'Forms');
+    setFolderShortcutButton(folderShortcutStudentFormsButton, 'Student Forms', studentFormsPath, 'Student Forms');
     setFolderShortcutButton(
       folderShortcutStudentFormsDateButton,
-      'sf',
+      'Today',
       studentFormsPath,
-      'sf',
+      'Today',
+      studentFormsTodayFolderName
+        ? `Student Forms folder for today's date (${studentFormsTodayFolderName}).`
+        : 'Student Forms folder for today.'
+    );
+    setFolderShortcutButton(
+      folderShortcutStudentFormsDateDialogButton,
+      'Today',
+      studentFormsPath,
+      'Today',
       studentFormsTodayFolderName
         ? `Student Forms folder for today's date (${studentFormsTodayFolderName}).`
         : 'Student Forms folder for today.'
@@ -15802,38 +15982,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       teacherLabel
     );
     setFolderShortcutButton(
+      folderShortcutTeacherDialogButton,
+      teacherName || "Teacher's Temp",
+      teacherFolderPath,
+      "Teacher's Temp"
+    );
+    setFolderShortcutButton(
       folderShortcutCreditSharePointButton,
-      's',
+      'SharePoint',
       CREDIT_TRANSFERS_SHAREPOINT_URL,
-      's',
+      'SharePoint',
       'Credit transfers folder  - to SharePoint in a new tab'
     );
     setFolderShortcutButton(
       folderShortcutCreditLocalButton,
-      'ct',
+      'Explorer Folder',
       creditTransfersLocalPath,
-      'ct',
+      'Explorer Folder',
       'Credit Transfers folder - via File Explorer and OneDrive'
     );
     setFolderShortcutButton(
       folderShortcutCreditSuggestionsButton,
-      'sg',
+      'Suggestions/Accreditations',
       creditTransfersSuggestionsPath,
-      'sg',
+      'Suggestions/Accreditations',
       'Credit transfer suggestions.  Suggestions folder'
     );
     setFolderShortcutButton(
       folderShortcutCreditStrategyButton,
-      'es',
+      'Enrolment Strategy',
       creditStrategyDocPath,
-      'es',
+      'Enrolment Strategy',
       'Open IT Enrolment Strategy document.'
     );
     setFolderShortcutButton(
       folderShortcutCreditFormButton,
-      'c',
+      'Credit (HE)',
       creditFormDocPath,
-      'c',
+      'Credit (HE)',
       'If a student is loaded (Windows helper enabled): create/open that student\'s Credit Form in temp, open Explorer + Word, and run copy personals. If no student is loaded (or helper unavailable): open the standard Credit (HE) Form template.'
     );
     if (folderShortcutCopyPersonalsButton) {
@@ -15848,23 +16034,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     setFolderShortcutButton(
       folderShortcutCreditMpArticulationButton,
-      'dip',
+      'Credit (HE) - MP Dip',
       creditMpArticulationDocPath,
-      'dip',
+      'Credit (HE) - MP Dip',
       'Open the MP Diploma of IT articulation credit form.'
     );
     setFolderShortcutButton(
       folderShortcutCreditFmpArticulationButton,
-      'fmp',
+      'Credit (HE) - FMP Assoc Deg',
       creditFmpArticulationDocPath,
-      'fmp',
+      'Credit (HE) - FMP Assoc Deg',
       'Open the FMP Associate Degree articulation credit form.'
     );
     if (folderShortcutHelpButton) {
       folderShortcutHelpButton.classList.remove('hidden-initial');
       folderShortcutHelpButton.classList.remove('is-unavailable');
       folderShortcutHelpButton.disabled = false;
-      folderShortcutHelpButton.textContent = '?';
+      folderShortcutHelpButton.textContent = 'Enable Windows integration';
       folderShortcutHelpButton.removeAttribute('data-path');
       folderShortcutHelpButton.setAttribute(
         'title',
@@ -15879,10 +16065,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     void renderFolderShortcutPanel();
   };
 
-  if (folderShortcutsPanel) {
-    folderShortcutsPanel.addEventListener('click', async (event) => {
+  const handleFolderShortcutClick = async (event) => {
       const target = event.target?.closest?.('.folder-shortcut-btn');
       if (!target) return;
+      if (target.id === 'open-folder-shortcuts-modal') return;
       event.preventDefault();
       if (target.id === 'folder-shortcut-help') {
         const os = getClientOs();
@@ -15897,7 +16083,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         await copyActiveStudentPersonalsSequence(target);
         return;
       }
-      if (target.id === 'folder-shortcut-student-forms-date') {
+      if (
+        target.id === 'folder-shortcut-student-forms-date' ||
+        target.id === 'folder-shortcut-student-forms-date-dialog'
+      ) {
         let studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
         if (!studentFormsRootPath) {
           await renderFolderShortcutPanel();
@@ -15960,7 +16149,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         triggerFlash(target);
       }
       void openFolderShortcutPath(path, label);
-    });
+  };
+  if (folderShortcutsPanel) {
+    folderShortcutsPanel.addEventListener('click', handleFolderShortcutClick);
+  }
+  if (folderShortcutsModal) {
+    folderShortcutsModal.addEventListener('click', handleFolderShortcutClick);
   }
   scheduleFolderShortcutPanelRefresh();
 
@@ -20346,7 +20540,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? 'Alerts'
           : type === 'data'
             ? 'Data Errors'
-            : payloads[0].title || 'Notice';
+            : type === 'info'
+              ? 'Information'
+              : payloads[0].title || 'Notice';
     alertTitle.style.display = 'block';
     alertTitle.style.fontWeight = '700';
     if (type === 'warning') {
@@ -23267,6 +23463,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideCourseMapModal();
       hideNextSemesterModal();
       hideLoadModal();
+      hideFolderShortcutsModal();
       hideHelpModal();
       hideInstructionsModal();
       hideContainerPopoutModal();

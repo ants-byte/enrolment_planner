@@ -54,6 +54,8 @@ const TRIAGE_ROW_LIMIT = 350;
 const TRIAGE_MAX_COL_SCAN = 120;
 const TRIAGE_MAX_PREVIEW_COLS = 12;
 const TRIAGE_READ_MAX_ROWS = 800;
+const SOURCE_SHEET_NAMES = ['Students', 'STUDENTS', 'students'];
+const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
 
 const normalizeHeader = (value) =>
   String(value ?? '')
@@ -445,6 +447,7 @@ const parseWorkbook = (buffer) => {
     cellNF: false,
     dense: true,
     sheetRows: TRIAGE_READ_MAX_ROWS,
+    sheets: SOURCE_SHEET_NAMES,
   });
   return {
     records: buildStudentRecordsFromWorkbook(workbook),
@@ -737,12 +740,11 @@ const parseTriageWorkbookBuffer = (buffer, mode) => {
   if (!buffer) return { records, previewRows, parseInfo };
   const readAndParse = (options) => {
     const workbook = XLSX.read(buffer, options);
-    const sheetNames = workbook.SheetNames || [];
     const sheet =
       workbook.Sheets?.Triage ||
       workbook.Sheets?.TRIAGE ||
       workbook.Sheets?.triage ||
-      (sheetNames.length ? workbook.Sheets?.[sheetNames[0]] : null);
+      null;
     const ref = sheet?.['!ref'];
     return parseTriageWorkbookFromSheet(sheet, ref, mode, workbook);
   };
@@ -755,6 +757,7 @@ const parseTriageWorkbookBuffer = (buffer, mode) => {
     cellNF: false,
     dense: false,
     sheetRows: TRIAGE_READ_MAX_ROWS,
+    sheets: TRIAGE_SHEET_NAMES,
   });
   if (fastResult?.parseInfo?.headerFound && fastResult?.parseInfo?.total === 0) {
     return readAndParse({
@@ -764,6 +767,7 @@ const parseTriageWorkbookBuffer = (buffer, mode) => {
       cellNF: false,
       dense: false,
       sheetRows: TRIAGE_READ_MAX_ROWS,
+      sheets: TRIAGE_SHEET_NAMES,
     });
   }
   return fastResult;
