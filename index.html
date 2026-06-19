@@ -130,7 +130,7 @@ Created: December 30, 2025
         1. Click on the subjects in this sidebar.
         2. Click on subjects in the main grid to the right.
         3. Click the 'Select' button and select subjects in the window that opens up.
-        <br>After you select your full load of subjects, you will see a '<b>Your Semester Plan</b>' button appear">
+        <br>After you select your full load of subjects, you will see a '<b>My times</b>' button appear">
           <span class="sidebar-heading">3.</span>
           <span class="sidebar-section-descriptor" id="sidebar-section-descriptor">Select your subjects. Click among the
             subjects below or in grid to right, or use this 'Select' popup.</span>
@@ -148,7 +148,10 @@ Created: December 30, 2025
               typing</button>
           </div>
           <div id="selected-list" class="available-list" role="list"></div>
-          <button id="show-timetable" class="clear-button secondary hidden-initial">Your semester plan</button>
+          <div class="selected-list-actions">
+            <button id="main-grid-details" class="clear-button secondary" type="button">Details</button>
+            <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
+          </div>
           <div class="toggle-row"
             data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
             <label class="switch">
@@ -648,7 +651,7 @@ Created: December 30, 2025
             </button>
             <div class="instructions-step-panel" id="instructions-step-4-panel" role="region"
               aria-labelledby="instructions-step-4-toggle" hidden>
-              <p>When you have selected your full semester load, a new button will appear: <strong>"Your semester plan"</strong>.
+              <p>When you have selected your full semester load, a new button will appear: <strong>"My times"</strong>.
               </p><p>Click it to open a panel that shows your timetable. Copy that table and email it to us at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
             </div>
           </li>

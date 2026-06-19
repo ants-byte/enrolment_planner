@@ -252,6 +252,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const livePrereqRow = document.getElementById('live-prereq-row');
   const passForEnrolmentsToggle = document.getElementById('pass-for-enrolments');
   const showTimetableButton = document.getElementById('show-timetable');
+  const mainGridDetailsButton = document.getElementById('main-grid-details');
   const showCourseTimetableButton = document.getElementById('show-semester-timetable');
   const courseTimetableIconButton = document.getElementById('open-semester-timetable-icon');
   const settingsPicker = document.getElementById('settings-picker');
@@ -1621,6 +1622,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let historyColoursOn = false;
   const manualFeeHidden = { domestic: false, international: false };
   let lastFullLoadSelected = false;
+  let mainGridFullLoadModalOpened = false;
   const hoverTooltip = document.createElement('div');
   hoverTooltip.className = 'hover-tooltip';
   document.body.appendChild(hoverTooltip);
@@ -3672,6 +3674,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const isLocalEnv = isLikelyLocalFile || isLocalHost;
   const isSharePointHost = /sharepoint/i.test(location.hostname);
+  const allowCourseMapModeToggle = !isStudentModeParam && isLocalEnv;
   const staffFacing =
     !isStudentModeParam && (isLocalHost || isSharePointHost || isLikelyLocalFile || isStaffModeParam);
   courseMapStaffMode = !!staffFacing;
@@ -7538,14 +7541,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const threshold = getLoadThreshold();
     const hasSelected = selectedCount >= threshold && threshold > 0;
     if (showTimetableButton) {
-      showTimetableButton.textContent = getCourseMapTimetableButtonLabel();
+      showTimetableButton.textContent = 'My times';
       // Ensure inline display overrides the hidden-initial class when we have selections.
-      showTimetableButton.style.display = hasSelected ? 'block' : 'none';
+      showTimetableButton.style.display = hasSelected ? '' : 'none';
       showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
       if (livePrereqRow) {
         livePrereqRow.style.display = hasSelected ? 'flex' : 'none';
         livePrereqRow.classList.toggle('hidden-initial', !hasSelected);
       }
+    }
+    if (hasSelected) {
+      if (!mainGridFullLoadModalOpened && !timetableModal?.classList.contains('show')) {
+        mainGridFullLoadModalOpened = true;
+        showAvailableModal();
+      }
+    } else {
+      mainGridFullLoadModalOpened = false;
     }
     syncCourseMapStaffTimetableButton();
     if (nextSemesterButton) {
@@ -17245,7 +17256,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCourseMapModeToggleButton = () => {
     if (!courseMapModeToggleButton) return;
-    if (!staffFacing) {
+    if (!allowCourseMapModeToggle) {
       courseMapModeToggleButton.hidden = true;
       return;
     }
@@ -22325,7 +22336,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderAlertButton('data');
   };
 
-  if (showTimetableButton) showTimetableButton.addEventListener('click', showTimetableModal);
+  if (mainGridDetailsButton) mainGridDetailsButton.addEventListener('click', () => showAvailableModal());
+  if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
   if (availableHeading) {
     const activateAvailable = () => showAvailableModal();
     availableHeading.addEventListener('click', activateAvailable);
@@ -22842,7 +22854,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapModeToggleButton) {
     courseMapModeToggleButton.addEventListener('click', () => {
-      if (!staffFacing) return;
+      if (!allowCourseMapModeToggle) return;
       courseMapStaffMode = !courseMapStaffMode;
       if (courseMapStaffMode) courseMapNotesOn = false;
       courseMapTooltipTarget = null;
@@ -23481,7 +23493,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   updateMajor();
   const selectedCount = getSelectedRows().length;
   if (showTimetableButton) {
-    showTimetableButton.textContent = getCourseMapTimetableButtonLabel();
+    showTimetableButton.textContent = 'My times';
   }
   syncCourseMapStaffTimetableButton();
   updatePrereqErrors();
