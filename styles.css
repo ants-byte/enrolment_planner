@@ -430,6 +430,7 @@ td,
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
+  justify-content: flex-start;
 }
 
 .folder-shortcuts-row-credit {
@@ -441,13 +442,14 @@ td,
 
 .folder-shortcut-btn {
   min-height: 22px;
-  padding: 3px 10px;
+  padding: 3px 12px;
   border-radius: 4px;
   border: 1px solid #8e5a24;
   background: linear-gradient(to bottom, #ddbc61, #ad934b);
   color: #1f1207;
   cursor: pointer;
   white-space: nowrap;
+ font-size: 1em;
 }
 
 .folder-shortcut-btn:hover {
@@ -1576,7 +1578,7 @@ body.staff-mode .drop-sidebar.is-active {
 #selected-list {
   list-style: none;
   padding-left: 0;
-  margin: 6px 0 11px;
+  margin: 6px 0 0px;
   padding: 5px 5px 8px 5px;
   color: #111111;
   font-size: 0.95rem;
@@ -2418,7 +2420,7 @@ body.staff-mode .drop-sidebar.is-active {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0;
+  margin: 4px 0;
 }
 
 .toggle-row+.toggle-row {
@@ -3905,6 +3907,8 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  position:relative;
+  bottom:2px;
 }
 
 .prerequsites-note.reqs-met {
@@ -4186,7 +4190,7 @@ body.student-mode #select-by-typing-button {
 .selected-list-actions {
   display: flex;
   gap: 8px;
-  margin-top: var(--sidebar-control-gap);
+  margin-bottom: 12px;
 }
 
 .selected-list-actions .clear-button {
@@ -9558,12 +9562,12 @@ body.completed-mode #clear-selections {
 }
 
 .load-row .load-button {
-  padding-left: 8px;
-  padding-right: 8px;
+
   width: 34px;
   min-width: 34px;
   flex: 0 0 34px;
   font-weight: 500;
+  padding:0px;
 }
 
 .load-row.load-row-nonstandard .load-button {
