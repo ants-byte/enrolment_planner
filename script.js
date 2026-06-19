@@ -1477,8 +1477,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapKeyModalBody = document.getElementById('course-map-key-modal-body');
   const courseMapModeToggleButton = document.getElementById('toggle-course-map-mode');
   const courseMapAiNamesToggleButton = document.getElementById('toggle-course-map-ai-names');
+  const courseMapAiNamesToggleRow = document.getElementById('course-map-ai-names-row');
+  const courseMapAiNamesToggleLabel = document.getElementById('course-map-ai-names-toggle-label');
   const openCourseMapKeyButton = document.getElementById('open-course-map-key');
+  const courseMapKeyToggleLabel = document.getElementById('course-map-key-toggle-label');
   const toggleCourseMapNotesButton = document.getElementById('toggle-course-map-notes');
+  const courseMapNotesToggleRow = toggleCourseMapNotesButton?.closest('.course-map-show-hide-row') || null;
+  const courseMapNotesToggleLabel = document.getElementById('course-map-notes-toggle-label');
   const closeCourseMapKey = document.getElementById('close-course-map-key');
   const courseMapPassForEnrolmentsToggle = document.getElementById('course-map-pass-for-enrolments');
   const courseMapPassForEnrolmentsToggleRow = document.getElementById('course-map-pass-for-enrolments-row');
@@ -1493,10 +1498,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeCourseMapCta = document.getElementById('close-course-map-cta');
   const courseMapLoadFilesButton = document.getElementById('course-map-load-files');
   const toggleCourseMapPrereqButton = document.getElementById('toggle-course-map-prereq');
+  const courseMapPrereqToggleLabel = document.getElementById('course-map-prereq-toggle-label');
   const toggleCourseMapPrereqTextButton = document.getElementById('toggle-course-map-prereq-text');
+  const courseMapPrereqTextToggleLabel = document.getElementById('course-map-prereq-text-toggle-label');
   const toggleCourseMapIndicatorsButton = document.getElementById('toggle-course-map-indicators');
-  const courseMapFontDecreaseButton = document.getElementById('course-map-font-decrease');
-  const courseMapFontIncreaseButton = document.getElementById('course-map-font-increase');
+  const courseMapIndicatorsToggleLabel = document.getElementById('course-map-indicators-toggle-label');
+  const courseMapFontSizeSlider = document.getElementById('course-map-font-size');
+  const resetCourseMapFontSizeButton = document.getElementById('reset-course-map-font-size');
+  const courseMapShowHideActions = document.querySelector('#course-map-modal .course-map-show-hide-actions');
+  const openCourseMapShowHideButton = document.getElementById('open-course-map-show-hide');
+  const courseMapShowHideDialog = document.getElementById('course-map-show-hide-dialog');
+  const courseMapImageActions = document.querySelector('#course-map-modal .course-map-image-actions');
+  const openCourseMapImageActionsButton = document.getElementById('open-course-map-image-actions');
+  const courseMapImageDialog = document.getElementById('course-map-image-dialog');
   const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
@@ -3443,7 +3457,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapStaffActionsRowEl.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenWindowButton) {
-      courseMapStaffOpenWindowButton.textContent = 'Modal for all';
+      courseMapStaffOpenWindowButton.textContent = 'Details';
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
       courseMapStaffOpenWindowButton.setAttribute('aria-hidden', 'false');
@@ -3454,7 +3468,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapStaffCopyTimetableButton.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenSelectedButton) {
-      courseMapStaffOpenSelectedButton.textContent = `Modal for ${selectedCount}`;
+      courseMapStaffOpenSelectedButton.textContent = 'Selections';
       courseMapStaffOpenSelectedButton.style.display = hasSelected ? 'block' : 'none';
       courseMapStaffOpenSelectedButton.classList.toggle('hidden-initial', !hasSelected);
       courseMapStaffOpenSelectedButton.setAttribute('aria-hidden', hasSelected ? 'false' : 'true');
@@ -4273,6 +4287,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const majorDropdown = document.getElementById('major-select');
   const majorToggle = document.getElementById('major-toggle');
   const majorLabel = document.getElementById('major-current-label');
+  const majorCaret = majorToggle?.querySelector('.major-caret') || null;
   const majorOptions = Array.from(document.querySelectorAll('.major-options li'));
   const majorHeading = document.getElementById('major-heading');
   const majorStreamDefinitions = [
@@ -4330,7 +4345,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapPrereqColoursOn = true;
   let courseMapPrereqTextOn = true;
   let courseMapIndicatorsOn = true;
-  let courseMapNotesOn = true;
+  let courseMapNotesOn = !staffFacing;
   let courseMapFontScaleEm = 1;
   let remainingNoticeUnlocked = false;
   let majorPulseTimer = null;
@@ -4689,15 +4704,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (pill) pill.classList.remove('final-sem-pill');
       cell.classList.remove('chain-delay');
       cell.classList.remove('alt-sem-attention');
+      cell.classList.remove('alt-sem-in-major');
     });
-    const semCountHistoryAvailable = (() => {
-      try {
-        return getHistoryRows().length > 0;
-      } catch {
-        return false;
-      }
-    })();
-    const semCountBadgesVisible = showSemCounts && semCountHistoryAvailable;
+    const semCountBadgesVisible = showSemCounts;
     const distanceData = [];
     const subjectDistanceById = new Map();
     const memo = new Map();
@@ -4911,10 +4920,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const st = subjectState.get(id);
       if (st?.completed) return;
 
-      const isActiveMajorSubject = majorSetForAltBadge.has(id);
+      const isActiveMajorSubject = hasSelectedMajor() && majorSetForAltBadge.has(id);
       const isElectiveOptionSubject =
         isElectivesGridCell(cell) && electiveSlotSetForAltBadge.has(id) && !isActiveMajorSubject;
       const dist = subjectDistanceById.get(id);
+      const isMainGridMajorSubject = !!(mainGrid && mainGrid.contains(cell) && isActiveMajorSubject && !st?.toggled);
 
       let shouldHighlight = false;
       if (isActiveMajorSubject) {
@@ -4929,6 +4939,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         shouldHighlight = true;
       }
       cell.classList.toggle('alt-sem-attention', shouldHighlight);
+      cell.classList.toggle('alt-sem-in-major', isMainGridMajorSubject);
     });
     finalSemWarning = null;
     const remaining = getRemainingSubjectsCount();
@@ -6556,7 +6567,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasScripts = hasEmailScriptsLoaded();
     const semesterPath = getSemesterFolderPath();
     const supportingDocsPath = semesterPath ? joinPath(semesterPath, 'Supporting Documents') : '';
-    const teacherTempRootPath = semesterPath ? joinPath(semesterPath, 'Our temp and working files') : '';
+    const teacherTempInfo = getTeacherTempFolderInfo(semesterPath);
+    const teacherTempPath = teacherTempInfo.effectivePath || teacherTempInfo.rootPath || '';
     if (emailPrimaryButton) {
       emailPrimaryButton.hidden = !shouldShow;
       setActionButtonDisabledState(emailPrimaryButton, !primary);
@@ -6592,13 +6604,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (openTeacherTempFolderButton) {
       openTeacherTempFolderButton.hidden = !shouldShow;
-      const canOpen = !!teacherTempRootPath;
+      const canOpen = !!teacherTempPath;
       openTeacherTempFolderButton.disabled = !canOpen;
       openTeacherTempFolderButton.classList.toggle('disabled', !canOpen);
       openTeacherTempFolderButton.setAttribute('aria-disabled', canOpen ? 'false' : 'true');
       openTeacherTempFolderButton.setAttribute(
         'title',
-        canOpen ? teacherTempRootPath : 'Semester folder path unavailable.'
+        canOpen ? teacherTempPath : 'Semester folder path unavailable.'
       );
     }
     updateStudDecAndEmailActionButtons({ hasScripts, hasAnyEmail });
@@ -7670,8 +7682,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
     if (semCountsLabel) {
       semCountsLabel.textContent = showSemCounts
-        ? 'Show # semesters remaining (active)'
-        : 'Show # semesters remaining';
+        ? 'Show semesters to complete (active)'
+        : 'Show semesters to complete';
       semCountsLabel.classList.toggle('active', showSemCounts);
     }
   };
@@ -9335,19 +9347,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapKeyToggleButton = () => {
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
     const isOpen = courseMapKeyModal.classList.contains('show');
-    openCourseMapKeyButton.textContent = isOpen ? 'Hide Key' : 'Show Key';
+    openCourseMapKeyButton.checked = isOpen;
     openCourseMapKeyButton.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
+    if (courseMapKeyToggleLabel) {
+      courseMapKeyToggleLabel.textContent = isOpen
+        ? 'Colour Key (showing)'
+        : 'Colour Key (removed)';
+      courseMapKeyToggleLabel.classList.toggle('active', isOpen);
+    }
   };
 
   const updateCourseMapNotesToggle = () => {
-    const staffMode = getCourseMapIsStaffMode();
+    if (courseMapNotesToggleRow) {
+      courseMapNotesToggleRow.hidden = getCourseMapIsStaffMode();
+    }
     if (toggleCourseMapNotesButton) {
-      toggleCourseMapNotesButton.hidden = staffMode;
-      toggleCourseMapNotesButton.textContent = courseMapNotesOn ? 'Hide Notes' : 'Show Notes';
+      toggleCourseMapNotesButton.checked = courseMapNotesOn;
       toggleCourseMapNotesButton.setAttribute('aria-pressed', courseMapNotesOn ? 'true' : 'false');
     }
+    if (courseMapNotesToggleLabel) {
+      courseMapNotesToggleLabel.textContent = courseMapNotesOn
+        ? 'Notes (showing)'
+        : 'Notes (removed)';
+      courseMapNotesToggleLabel.classList.toggle('active', courseMapNotesOn);
+    }
     if (courseMapNotesEl) {
-      courseMapNotesEl.hidden = staffMode || !courseMapNotesOn;
+      courseMapNotesEl.hidden = !courseMapNotesOn;
     }
     updateCourseMapNotesOverlap();
   };
@@ -9568,7 +9593,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let emailScriptsAccessLayoutRaf = 0;
   let emailScriptsAccessLastMeasuredWidth = -1;
   let emailScriptsAccessPendingAutoHeight = false;
-  const EMAIL_SCRIPTS_COL_CLASSES = ['cols-1', 'cols-2', 'cols-3'];
+  const EMAIL_SCRIPTS_COL_CLASSES = ['cols-1', 'cols-2', 'cols-3', 'cols-4'];
+  const EMAIL_SCRIPTS_ACCESS_COLUMN_GAP = 32;
 
   const autoSizeEmailScriptsAccessModalHeight = () => {
     if (!emailScriptsAccessModalBox || !emailScriptsAccessModal?.classList.contains('show')) return;
@@ -9582,25 +9608,72 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const updateEmailScriptsAccessColumnLayout = () => {
-    if (!emailScriptsAccessList) return;
-    const width = Math.round(emailScriptsAccessList.getBoundingClientRect().width || 0);
+    if (!emailScriptsAccessList || !emailScriptsAccessModalBox) return;
+    const rows = Array.from(emailScriptsAccessList.querySelectorAll('.email-scripts-access-row'));
+    if (!rows.length) return;
+    const previousColumnWidth = emailScriptsAccessList.style.getPropertyValue('--email-scripts-access-column-width');
+    const previousWidth = emailScriptsAccessList.style.width;
+    const previousModalWidth = emailScriptsAccessModalBox.style.width;
+    const previousModalMaxWidth = emailScriptsAccessModalBox.style.maxWidth;
+    emailScriptsAccessList.classList.remove(...EMAIL_SCRIPTS_COL_CLASSES);
+    emailScriptsAccessList.classList.add('cols-1');
+    emailScriptsAccessList.style.columnCount = '1';
+    emailScriptsAccessList.style.columnGap = '0px';
+    emailScriptsAccessList.style.width = 'max-content';
+    emailScriptsAccessList.style.setProperty('--email-scripts-access-column-width', 'max-content');
+    emailScriptsAccessModalBox.style.width = 'max-content';
+    emailScriptsAccessModalBox.style.maxWidth = 'calc(100vw - 32px)';
+    const widestRow = rows.reduce((max, row) => {
+      const rectWidth = Math.ceil(row.getBoundingClientRect().width || 0);
+      return Math.max(max, rectWidth, row.scrollWidth || 0);
+    }, 0);
+    const computed = window.getComputedStyle(emailScriptsAccessModalBox);
+    const modalChrome =
+      (parseFloat(computed.paddingLeft) || 0) +
+      (parseFloat(computed.paddingRight) || 0) +
+      (parseFloat(computed.borderLeftWidth) || 0) +
+      (parseFloat(computed.borderRightWidth) || 0);
+    const viewportWidth = Math.max(280, window.innerWidth - 32);
+    const headerWidth = Math.ceil(
+      emailScriptsAccessModalBox.querySelector('.modal-header')?.scrollWidth || 0
+    );
+    const actionsWidth = Math.ceil(
+      emailScriptsAccessModalBox.querySelector('.modal-actions')?.scrollWidth || 0
+    );
+    const columnWidth = Math.max(1, widestRow);
+    const maxContentWidth = Math.max(1, viewportWidth - modalChrome);
+    const maxColumnsByWidth = Math.max(
+      1,
+      Math.floor((maxContentWidth + EMAIL_SCRIPTS_ACCESS_COLUMN_GAP) / (columnWidth + EMAIL_SCRIPTS_ACCESS_COLUMN_GAP))
+    );
+    const maxUsefulColumns = Math.max(1, Math.min(4, Math.ceil(rows.length / 8)));
+    const columnCount = Math.max(1, Math.min(4, maxUsefulColumns, maxColumnsByWidth));
+    const listWidth = columnWidth * columnCount + EMAIL_SCRIPTS_ACCESS_COLUMN_GAP * (columnCount - 1);
+    const targetWidth = Math.min(
+      viewportWidth,
+      Math.max(listWidth, headerWidth, actionsWidth) + modalChrome
+    );
+    const width = Math.round(targetWidth);
     const widthChanged = width !== emailScriptsAccessLastMeasuredWidth;
     emailScriptsAccessLastMeasuredWidth = width;
-    let columnCount = 1;
-    let nextClass = 'cols-1';
-    if (width > 1480) {
-      columnCount = 3;
-      nextClass = 'cols-3';
-    } else if (width >= 990) {
-      columnCount = 2;
-      nextClass = 'cols-2';
-    }
+    const nextClass = `cols-${columnCount}`;
     emailScriptsAccessList.classList.remove(...EMAIL_SCRIPTS_COL_CLASSES);
     emailScriptsAccessList.classList.add(nextClass);
+    emailScriptsAccessList.style.setProperty('--email-scripts-access-column-width', `${columnWidth}px`);
+    emailScriptsAccessList.style.width = `${listWidth}px`;
     emailScriptsAccessList.style.columnCount = String(columnCount);
-    emailScriptsAccessList.style.columnGap = columnCount > 1 ? '18px' : '0px';
+    emailScriptsAccessList.style.columnGap = columnCount > 1 ? `${EMAIL_SCRIPTS_ACCESS_COLUMN_GAP}px` : '0px';
     emailScriptsAccessList.style.columnFill = 'balance';
     emailScriptsAccessList.dataset.columnCount = String(columnCount);
+    emailScriptsAccessModalBox.style.width = `${width}px`;
+    emailScriptsAccessModalBox.style.maxWidth = 'calc(100vw - 32px)';
+    if (!Number.isFinite(width) || width <= 0) {
+      emailScriptsAccessList.style.width = previousWidth;
+      emailScriptsAccessList.style.setProperty('--email-scripts-access-column-width', previousColumnWidth);
+      emailScriptsAccessModalBox.style.width = previousModalWidth;
+      emailScriptsAccessModalBox.style.maxWidth = previousModalMaxWidth;
+      return;
+    }
     if (widthChanged || emailScriptsAccessPendingAutoHeight) {
       emailScriptsAccessPendingAutoHeight = false;
       autoSizeEmailScriptsAccessModalHeight();
@@ -17228,7 +17301,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCourseMapSemCountToggleUi = () => {
     const staffMode = getCourseMapIsStaffMode();
-    if (courseMapSemCountsToggleRow) courseMapSemCountsToggleRow.hidden = staffMode;
+    if (courseMapSemCountsToggleRow) courseMapSemCountsToggleRow.hidden = false;
     if (!courseMapSemCountsToggle) return;
     const active = staffMode ? true : !!courseMapStudentSemCountsOn;
     courseMapSemCountsToggle.checked = active;
@@ -17236,8 +17309,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapSemCountsToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     if (courseMapSemCountsLabel) {
       courseMapSemCountsLabel.textContent = active
-        ? 'Show # semesters remaining (active)'
-        : 'Show # semesters remaining';
+        ? 'Show semesters to complete (active)'
+        : 'Show semesters to complete';
       courseMapSemCountsLabel.classList.toggle('active', active);
     }
   };
@@ -17247,16 +17320,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const staffMode = getCourseMapIsStaffMode();
     courseMapModal.classList.toggle('course-map-staff-mode', staffMode);
     courseMapModal.classList.toggle('course-map-student-view', !staffMode);
+    if (!staffMode) courseMapAiNamesOn = false;
     updateCourseMapModeToggleButton();
     applyCourseMapAiNameOverlay();
     updateCourseMapSemCountToggleUi();
     updatePassForEnrolmentsAvailability();
     updateCourseMapNotesToggle();
     syncCourseMapKeyAvailability();
-    if (staffMode) {
-      if (courseMapKeyModal?.classList.contains('show')) hideCourseMapKeyModal();
-      if (openCourseMapKeyButton) openCourseMapKeyButton.hidden = true;
-    }
     updateCourseMapTopInfoStrip();
     updateCourseMapStaffPanelState();
     updateCourseMapLoadFilesButtonVisibility();
@@ -17325,14 +17395,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCourseMapAiNamesToggle = () => {
     if (!courseMapAiNamesToggleButton) return;
-    const showButton = !!courseMapModal;
-    courseMapAiNamesToggleButton.hidden = !showButton;
-    courseMapAiNamesToggleButton.classList.toggle('is-active', !!courseMapAiNamesOn);
+    const showButton = getCourseMapIsStaffMode();
+    if (courseMapAiNamesToggleRow) courseMapAiNamesToggleRow.hidden = !showButton;
+    courseMapAiNamesToggleButton.checked = !!courseMapAiNamesOn;
     courseMapAiNamesToggleButton.setAttribute('aria-pressed', courseMapAiNamesOn ? 'true' : 'false');
-    courseMapAiNamesToggleButton.setAttribute(
-      'title',
-      courseMapAiNamesOn ? 'Show current course map names' : 'Show proposed AI course map names'
-    );
+    if (courseMapAiNamesToggleLabel) {
+      courseMapAiNamesToggleLabel.textContent = courseMapAiNamesOn
+        ? 'Proposed AI course map names (showing)'
+        : 'Proposed AI course map names (removed)';
+      courseMapAiNamesToggleLabel.classList.toggle('active', !!courseMapAiNamesOn);
+    }
   };
 
   const applyCourseMapAiNameOverlay = () => {
@@ -17720,7 +17792,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const staffOpenWindowBtn = document.createElement('button');
     staffOpenWindowBtn.type = 'button';
     staffOpenWindowBtn.className = 'clear-button secondary course-map-staff-open-window hidden-initial';
-    staffOpenWindowBtn.textContent = 'Modal for all';
+    staffOpenWindowBtn.textContent = 'Details';
     staffOpenWindowBtn.style.display = 'none';
     staffOpenWindowBtn.addEventListener('click', () => {
       showAvailableModal();
@@ -17757,7 +17829,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     staffOpenSelectedBtn.type = 'button';
     staffOpenSelectedBtn.className =
       'clear-button secondary course-map-staff-open-selected hidden-initial';
-    staffOpenSelectedBtn.textContent = 'Modal for 0';
+    staffOpenSelectedBtn.textContent = 'Selections';
     staffOpenSelectedBtn.style.display = 'none';
     staffOpenSelectedBtn.addEventListener('click', () => {
       if (staffOpenSelectedBtn.style.display === 'none') return;
@@ -17771,6 +17843,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     staffPanel.appendChild(selectedSummary);
 
     courseMapContent.appendChild(staffPanel);
+    enablePanelResize(staffPanel, {
+      key: 'course-map-staff-panel-v2',
+      persist: true,
+      respectCssMax: true,
+    });
     courseMapStaffPanelEl = staffPanel;
     courseMapStaffSelectedListHostEl = selectedListHost;
     courseMapStaffActionsRowEl = staffActions;
@@ -17991,6 +18068,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ...Array.from(workbookCurrent.keys()).filter((code) => !withdrawnCurrentEnrolments.has(code)),
       ...Array.from(manualEntryCurrent.keys()).filter((code) => !withdrawnCurrentEnrolments.has(code)),
     ]);
+    const activeMajorCodes = new Set(
+      selectedMajor ? (majorLayouts[majorKey] || []).map((code) => String(code || '').toUpperCase()) : []
+    );
     const getCourseMapStatusClass = (code) => {
       const st = subjectState.get(code);
       if (!st) return '';
@@ -18042,7 +18122,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-current',
         'course-map-status-selected',
         'course-map-status-next',
-        'course-map-status-later'
+        'course-map-status-later',
+        'course-map-in-major'
       );
     });
     courseMapMajorPlaceholders.forEach((cell) => {
@@ -18051,7 +18132,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-current',
         'course-map-status-selected',
         'course-map-status-next',
-        'course-map-status-later'
+        'course-map-status-later',
+        'course-map-in-major'
       );
       cell.classList.remove('course-map-major-placeholder', 'major-ns', 'major-ba', 'major-sd', 'major-undecided');
       cell.classList.add('course-map-major-placeholder', selectedMajor ? `major-${majorKey}` : 'major-undecided');
@@ -18063,7 +18145,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-selected',
         'course-map-status-next',
         'course-map-status-later',
-        'course-map-elective-unavailable'
+        'course-map-elective-unavailable',
+        'course-map-in-major'
       );
     });
     courseMapCells.forEach((cell, code) => {
@@ -18075,11 +18158,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-next',
         'course-map-status-later',
         'course-map-current-record',
-        'course-map-current-withdrawn'
+        'course-map-current-withdrawn',
+        'course-map-in-major'
       );
       const status = getCourseMapStatusClass(code);
       if (status) cell.classList.add(status);
       const st = subjectState.get(code);
+      const isCurrent =
+        (currentCodes.has(code) || passForEnrolmentsOverrides.has(code)) && !withdrawnCurrentEnrolments.has(code);
+      const isMajorSubjectPending =
+        activeMajorCodes.has(String(code || '').toUpperCase()) && !st?.completed && !st?.toggled && !isCurrent;
+      cell.classList.toggle('course-map-in-major', isMajorSubjectPending);
       const isCurrentInRecord = currentEnrolmentStudentRecord.has(code);
       const isCurrentWithdrawn = isCurrentInRecord && withdrawnCurrentEnrolments.has(code);
       const isCurrentRecordRibbon =
@@ -18138,6 +18227,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
       const status = code ? getCourseMapStatusClass(code) : '';
       if (status) cell.classList.add(status);
+      const st = code ? subjectState.get(code) : null;
+      const isCurrent =
+        code && (currentCodes.has(code) || passForEnrolmentsOverrides.has(code)) && !withdrawnCurrentEnrolments.has(code);
+      cell.classList.toggle(
+        'course-map-in-major',
+        !!(code && selectedMajor && activeMajorCodes.has(String(code || '').toUpperCase()) && !st?.completed && !st?.toggled && !isCurrent)
+      );
     });
     const getElectiveSlotStatus = (slotIndex) => {
       const bitCode = electiveBitState[slotIndex];
@@ -19962,22 +20058,52 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const syncCourseMapOverlayBounds = () => {
     if (!courseMapModal) return;
-    const doc = document.documentElement;
-    const body = document.body;
-    const scrollY = Math.max(window.scrollY || 0, doc?.scrollTop || 0, body?.scrollTop || 0);
-    const scrollHeight = Math.max(
-      doc?.scrollHeight || 0,
-      body?.scrollHeight || 0,
-      window.innerHeight || 0
-    );
     courseMapModal.style.top = '0px';
-    courseMapModal.style.height = `${scrollHeight}px`;
-    // Open the modal near the user's current viewport position so it scrolls with the page.
-    courseMapModal.style.paddingTop = `${scrollY + 16}px`;
+    courseMapModal.style.height = '100vh';
+    courseMapModal.style.paddingTop = '16px';
+  };
+
+  const getCourseMapDefaultModalSize = () => {
+    const margin = 16;
+    const maxWidth = Math.max(0, window.innerWidth - margin * 2);
+    const maxHeight = Math.max(0, window.innerHeight - margin * 2);
+    const preferredSizes = [
+      { width: 1653, height: 1092 },
+      { width: 1593, height: 1072 },
+      { width: 977, height: 1816 },
+      { width: 1646, height: 1220 },
+      { width: 1753, height: 1160 },
+    ];
+    for (let i = preferredSizes.length - 1; i >= 0; i -= 1) {
+      const size = preferredSizes[i];
+      if (size.width <= maxWidth && size.height <= maxHeight) return size;
+    }
+    const fallback = preferredSizes[preferredSizes.length - 1];
+    return {
+      width: Math.min(fallback.width, maxWidth),
+      height: Math.min(fallback.height, maxHeight),
+    };
+  };
+
+  const resetCourseMapModalDefaultPlacement = () => {
+    if (!courseMapModal) return;
+    const modalBox = courseMapModal.querySelector('.course-map-modal');
+    if (!modalBox) return;
+    const size = getCourseMapDefaultModalSize();
+    modalBox.style.position = '';
+    modalBox.style.left = '';
+    modalBox.style.top = '';
+    modalBox.style.margin = '';
+    modalBox.style.transform = '';
+    modalBox.style.width = `${Math.round(size.width)}px`;
+    modalBox.style.height = `${Math.round(size.height)}px`;
+    modalBox.style.maxWidth = 'calc(100vw - 32px)';
+    modalBox.style.maxHeight = 'calc(100vh - 32px)';
   };
 
   const showCourseMapModal = () => {
     if (!courseMapModal) return;
+    resetCourseMapModalDefaultPlacement();
     syncCourseMapOverlayBounds();
     renderCourseMapModal();
     syncCourseMapOverlayBounds();
@@ -19991,10 +20117,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     syncCourseMapKeyAvailability();
     updateCourseMapModeUi();
     updateCourseMapTopInfoStrip();
-    if (getCourseMapIsStaffMode()) {
-      if (courseMapKeyModal?.classList.contains('show')) hideCourseMapKeyModal();
-    }
-    else showCourseMapKeyModal();
+    showCourseMapKeyModal();
     const resetScrollPositions = () => {
       // Reset any internal scrolling within the resizable modal.
       const modalBox = courseMapModal.querySelector('.course-map-modal');
@@ -20109,10 +20232,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapModal.classList.toggle('course-map-prereq-off', !courseMapPrereqColoursOn);
     }
     if (toggleCourseMapPrereqButton) {
-      toggleCourseMapPrereqButton.textContent = courseMapPrereqColoursOn
-        ? 'Prereq colours off'
-        : 'Prereq colours on';
+      toggleCourseMapPrereqButton.checked = courseMapPrereqColoursOn;
       toggleCourseMapPrereqButton.setAttribute('aria-pressed', courseMapPrereqColoursOn ? 'true' : 'false');
+    }
+    if (courseMapPrereqToggleLabel) {
+      courseMapPrereqToggleLabel.textContent = courseMapPrereqColoursOn
+        ? 'Light and Dark Grey prerequisite colouring in subject cards (showing)'
+        : 'Light and Dark Grey prerequisite colouring in subject cards (turned off)';
+      courseMapPrereqToggleLabel.classList.toggle('active', courseMapPrereqColoursOn);
     }
     updateCourseMapStreamLabels();
     syncCourseMapKeyAvailability();
@@ -20279,10 +20406,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapModal.classList.toggle('course-map-prereq-text-off', !courseMapPrereqTextOn);
     }
     if (toggleCourseMapPrereqTextButton) {
-      toggleCourseMapPrereqTextButton.textContent = courseMapPrereqTextOn
-        ? 'Prereq text off'
-        : 'Prereq text on';
+      toggleCourseMapPrereqTextButton.checked = courseMapPrereqTextOn;
       toggleCourseMapPrereqTextButton.setAttribute('aria-pressed', courseMapPrereqTextOn ? 'true' : 'false');
+    }
+    if (courseMapPrereqTextToggleLabel) {
+      courseMapPrereqTextToggleLabel.textContent = courseMapPrereqTextOn
+        ? 'Prerequisite lists within subject cards (showing)'
+        : 'Prerequisite lists within subject cards (removed)';
+      courseMapPrereqTextToggleLabel.classList.toggle('active', courseMapPrereqTextOn);
     }
     updateCourseMapStreamLabels();
     // Hiding prereq text changes cell heights; recompute connector positions too.
@@ -20291,10 +20422,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCourseMapIndicatorsToggle = () => {
     if (toggleCourseMapIndicatorsButton) {
-      toggleCourseMapIndicatorsButton.textContent = courseMapIndicatorsOn
-        ? 'Stream text off'
-        : 'Stream text on';
+      toggleCourseMapIndicatorsButton.checked = courseMapIndicatorsOn;
       toggleCourseMapIndicatorsButton.setAttribute('aria-pressed', courseMapIndicatorsOn ? 'true' : 'false');
+    }
+    if (courseMapIndicatorsToggleLabel) {
+      courseMapIndicatorsToggleLabel.textContent = courseMapIndicatorsOn
+        ? 'Text below stream headings (showing)'
+        : 'Text below stream headings (removed)';
+      courseMapIndicatorsToggleLabel.classList.toggle('active', courseMapIndicatorsOn);
     }
     updateCourseMapStreamLabels();
   };
@@ -20321,8 +20456,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     // Non-invasive feedback to confirm the handler is firing.
     const scaleLabel = `${Math.round(courseMapFontScaleEm * 100)}%`;
-    if (courseMapFontDecreaseButton) courseMapFontDecreaseButton.title = `Course map font: ${scaleLabel}`;
-    if (courseMapFontIncreaseButton) courseMapFontIncreaseButton.title = `Course map font: ${scaleLabel}`;
+    if (courseMapFontSizeSlider) {
+      courseMapFontSizeSlider.value = String(courseMapFontScaleEm);
+      courseMapFontSizeSlider.title = `Course map font: ${scaleLabel}`;
+    }
     requestAnimationFrame(() => {
       positionCourseMapArrows();
       positionCourseMapCoreConnector();
@@ -22303,27 +22440,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (openTeacherTempFolderButton) {
     openTeacherTempFolderButton.addEventListener('click', () => {
       const semesterPath = getSemesterFolderPath();
-      const teacherFolderRoot = semesterPath ? joinPath(semesterPath, 'Our temp and working files') : '';
-      if (!teacherFolderRoot) {
+      const teacherTempInfo = getTeacherTempFolderInfo(semesterPath);
+      const teacherFolderPath = teacherTempInfo.effectivePath || teacherTempInfo.rootPath || '';
+      if (!teacherFolderPath) {
         window.alert('Semester folder path is unavailable.');
         return;
       }
-      const os = getClientOs();
-      let teacherName = String(emailScriptsCache?.preferences?.signOffName || '').trim();
-      if (!teacherName) {
-        teacherName = String(getSettingsSignOffPrefs()?.signOffName || '').trim();
-      }
-      {
-        const profileHint = String(getProfileNameHint() || '').trim().toLowerCase();
-        if (profileHint && TEACHER_FOLDER_FALLBACK_BY_PROFILE[profileHint]) {
-          teacherName = TEACHER_FOLDER_FALLBACK_BY_PROFILE[profileHint];
-        }
-      }
-      const teacherNameSegment = sanitizeFolderSegment(teacherName, os);
-      const teacherFolderPath =
-        teacherFolderRoot && teacherNameSegment
-          ? joinPath(teacherFolderRoot, teacherNameSegment)
-          : teacherFolderRoot;
       const record = getActiveStudentRecord();
       const studentId = normalizeStudentId(record?.Student_IDs_Unique || '');
       if (isEnrolProtocolEnabled()) {
@@ -22706,14 +22828,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   }
   if (openCourseMapKeyButton) {
-    openCourseMapKeyButton.addEventListener('click', () => {
-      if (courseMapKeyModal?.classList.contains('show')) hideCourseMapKeyModal();
-      else showCourseMapKeyModal();
+    openCourseMapKeyButton.addEventListener('change', () => {
+      if (openCourseMapKeyButton.checked) showCourseMapKeyModal();
+      else hideCourseMapKeyModal();
     });
   }
   if (toggleCourseMapNotesButton) {
-    toggleCourseMapNotesButton.addEventListener('click', () => {
-      courseMapNotesOn = !courseMapNotesOn;
+    toggleCourseMapNotesButton.addEventListener('change', () => {
+      courseMapNotesOn = !!toggleCourseMapNotesButton.checked;
       updateCourseMapNotesToggle();
     });
     updateCourseMapNotesToggle();
@@ -22722,6 +22844,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapModeToggleButton.addEventListener('click', () => {
       if (!staffFacing) return;
       courseMapStaffMode = !courseMapStaffMode;
+      if (courseMapStaffMode) courseMapNotesOn = false;
       courseMapTooltipTarget = null;
       if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
       hideCourseMapTooltip();
@@ -22734,8 +22857,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCourseMapModeToggleButton();
   }
   if (courseMapAiNamesToggleButton) {
-    courseMapAiNamesToggleButton.addEventListener('click', () => {
-      courseMapAiNamesOn = !courseMapAiNamesOn;
+    courseMapAiNamesToggleButton.addEventListener('change', () => {
+      courseMapAiNamesOn = !!courseMapAiNamesToggleButton.checked;
       applyCourseMapAiNameOverlay();
       initTooltips();
     });
@@ -22744,47 +22867,109 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeCourseMapKey) closeCourseMapKey.addEventListener('click', hideCourseMapKeyModal);
   // Do not close the colour key modal on backdrop click; only via X.
   if (toggleCourseMapPrereqButton) {
-    toggleCourseMapPrereqButton.addEventListener('click', () => {
-      courseMapPrereqColoursOn = !courseMapPrereqColoursOn;
+    toggleCourseMapPrereqButton.addEventListener('change', () => {
+      courseMapPrereqColoursOn = !!toggleCourseMapPrereqButton.checked;
       updateCourseMapPrereqToggle();
     });
     updateCourseMapPrereqToggle();
   }
   if (toggleCourseMapPrereqTextButton) {
-    toggleCourseMapPrereqTextButton.addEventListener('click', () => {
-      courseMapPrereqTextOn = !courseMapPrereqTextOn;
+    toggleCourseMapPrereqTextButton.addEventListener('change', () => {
+      courseMapPrereqTextOn = !!toggleCourseMapPrereqTextButton.checked;
       updateCourseMapPrereqTextToggle();
     });
     updateCourseMapPrereqTextToggle();
   }
   if (toggleCourseMapIndicatorsButton) {
-    toggleCourseMapIndicatorsButton.addEventListener('click', () => {
-      courseMapIndicatorsOn = !courseMapIndicatorsOn;
+    toggleCourseMapIndicatorsButton.addEventListener('change', () => {
+      courseMapIndicatorsOn = !!toggleCourseMapIndicatorsButton.checked;
       updateCourseMapIndicatorsToggle();
     });
     updateCourseMapIndicatorsToggle();
   }
-  if (courseMapFontDecreaseButton) {
-    courseMapFontDecreaseButton.addEventListener('click', () => {
-      courseMapFontScaleEm = Math.max(0.5, Math.round((courseMapFontScaleEm - 0.05) * 100) / 100);
+  if (courseMapFontSizeSlider) {
+    courseMapFontSizeSlider.addEventListener('input', () => {
+      const nextScale = Number(courseMapFontSizeSlider.value);
+      if (!Number.isFinite(nextScale)) return;
+      courseMapFontScaleEm = Math.min(1.6, Math.max(0.6, Math.round(nextScale * 100) / 100));
       updateCourseMapFontScale();
     });
   }
-  if (courseMapFontIncreaseButton) {
-    courseMapFontIncreaseButton.addEventListener('click', () => {
-      courseMapFontScaleEm = Math.min(3, Math.round((courseMapFontScaleEm + 0.05) * 100) / 100);
+  if (resetCourseMapFontSizeButton) {
+    resetCourseMapFontSizeButton.addEventListener('click', () => {
+      courseMapFontScaleEm = 1;
       updateCourseMapFontScale();
     });
   }
+  function setCourseMapShowHideDialogVisible(isVisible) {
+    if (!courseMapShowHideDialog || !openCourseMapShowHideButton) return;
+    courseMapShowHideDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+    openCourseMapShowHideButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+  }
+  function hideCourseMapShowHideDialog() {
+    setCourseMapShowHideDialogVisible(false);
+  }
+  function isCourseMapShowHideDialogVisible() {
+    return courseMapShowHideDialog?.getAttribute('aria-hidden') === 'false';
+  }
+  if (openCourseMapShowHideButton) {
+    openCourseMapShowHideButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const nextVisible = !isCourseMapShowHideDialogVisible();
+      hideCourseMapImageDialog();
+      setCourseMapShowHideDialogVisible(nextVisible);
+    });
+  }
+  if (courseMapShowHideActions) {
+    courseMapShowHideActions.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
+  document.addEventListener('click', (event) => {
+    if (!isCourseMapShowHideDialogVisible()) return;
+    if (courseMapShowHideActions?.contains(event.target)) return;
+    hideCourseMapShowHideDialog();
+  });
+  function setCourseMapImageDialogVisible(isVisible) {
+    if (!courseMapImageDialog || !openCourseMapImageActionsButton) return;
+    courseMapImageDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+    openCourseMapImageActionsButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+  }
+  function hideCourseMapImageDialog() {
+    setCourseMapImageDialogVisible(false);
+  }
+  function isCourseMapImageDialogVisible() {
+    return courseMapImageDialog?.getAttribute('aria-hidden') === 'false';
+  }
+  if (openCourseMapImageActionsButton) {
+    openCourseMapImageActionsButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const nextVisible = !isCourseMapImageDialogVisible();
+      hideCourseMapShowHideDialog();
+      setCourseMapImageDialogVisible(nextVisible);
+    });
+  }
+  if (courseMapImageActions) {
+    courseMapImageActions.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
+  document.addEventListener('click', (event) => {
+    if (!isCourseMapImageDialogVisible()) return;
+    if (courseMapImageActions?.contains(event.target)) return;
+    hideCourseMapImageDialog();
+  });
   if (copyCourseMapImageButton) {
     copyCourseMapImageButton.addEventListener('click', () => {
       flashCopyButton(copyCourseMapImageButton);
+      hideCourseMapImageDialog();
       copyCourseMapImage();
     });
   }
   if (downloadCourseMapImageButton) {
     downloadCourseMapImageButton.addEventListener('click', () => {
       flashCopyButton(downloadCourseMapImageButton);
+      hideCourseMapImageDialog();
       downloadCourseMapImage();
     });
   }
@@ -23013,8 +23198,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const streams = getElectiveStreams(majorKey);
     const streamText = streams
       .map((s) => `<span class="stream-label-mid ${s.className}">${s.label}</span>`)
-      .join(' and ');
-    el.innerHTML = `<span class="inline-electives-heading">Available Electives.</span> Fill empty <span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span> boxes (above) with these ${streamText} subjects`;
+      .join(' or ');
+    el.innerHTML = `<span class="inline-electives-heading">Electives.</span> Fill the 4 Elective boxes above (<span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span>) with these ${streamText} subjects`;
   };
   const updateMajor = () => {
     const sheet = document.querySelector('.sheet');
@@ -23024,6 +23209,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     sheet.classList.remove('major-ba', 'major-sd');
     const val = majorDropdown.dataset.value || 'undecided';
     majorDropdown.classList.remove('major-network', 'major-ba', 'major-sd', 'major-undecided');
+    if (majorCaret) majorCaret.textContent = val === 'undecided' ? '?' : '';
     if (val === 'network') {
       majorLabel.textContent = 'Network Security';
       majorDropdown.classList.add('major-network');
@@ -23452,6 +23638,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (isCourseMapShowHideDialogVisible()) {
+        e.preventDefault();
+        hideCourseMapShowHideDialog();
+        return;
+      }
+      if (isCourseMapImageDialogVisible()) {
+        e.preventDefault();
+        hideCourseMapImageDialog();
+        return;
+      }
       hideAllVisibleTooltips();
       hideAlertModal();
       hideCodeModal();

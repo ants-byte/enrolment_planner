@@ -184,10 +184,10 @@ Created: December 30, 2025
           <div class="toggle-row" data-tooltip-html="Eable if you want to see how many semesters it is going to take, at minimum, to complete each subject. 
           <br> Each subject card will get a little semester count at its right border.">
             <label class="switch">
-              <input type="checkbox" id="toggle-sem-counts" aria-label="Show # semesters remaining" checked>
+              <input type="checkbox" id="toggle-sem-counts" aria-label="Show semesters to complete" checked>
               <span class="slider"></span>
             </label>
-            <span class="switch-label">Show # semesters remaining</span>
+            <span class="switch-label">Show semesters to complete</span>
           </div>
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
@@ -1011,12 +1011,6 @@ Created: December 30, 2025
       <div class="modal-actions">
         <div class="course-map-left-actions">
           <button id="toggle-course-map-mode" class="clear-button secondary" type="button">Student mode</button>
-          <button id="open-course-map-key" class="clear-button secondary" type="button">Show Key</button>
-          <button id="toggle-course-map-notes" class="clear-button secondary" type="button"
-            aria-pressed="true">Hide Notes</button>
-          <button id="toggle-course-map-ai-names" class="clear-button secondary course-map-ai-toggle" type="button"
-            aria-pressed="false" hidden
-            data-tooltip="Temporarily show proposed AI course map names.">ai</button>
           <div class="toggle-row course-map-pass-enrolments-toggle pass-enrolments-tooltip"
             id="course-map-pass-for-enrolments-row"
             data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;"
@@ -1028,31 +1022,80 @@ Created: December 30, 2025
             </label>
             <span class="switch-label">Pass the current enrolments</span>
           </div>
-          <div class="toggle-row course-map-sem-count-toggle" id="course-map-sem-count-toggle-row"
-            data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
-            <br>Each subject will get a little semester count at right border.">
-            <label class="switch">
-              <input type="checkbox" id="course-map-sem-count-toggle" aria-label="Show # semesters remaining in course map">
-              <span class="slider"></span>
-            </label>
-            <span class="switch-label">Show # semesters remaining</span>
+        </div>
+        <div class="course-map-show-hide-actions">
+          <button id="open-course-map-show-hide" class="clear-button secondary" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-show-hide-dialog">Show/Hide</button>
+          <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
+            aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
+            <h3 id="course-map-show-hide-dialog-title">Show/Hide</h3>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="open-course-map-key" aria-label="Show colour key" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-key-toggle-label">Colour Key (showing)</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-notes" aria-label="Show notes" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-notes-toggle-label">Notes (showing)</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-prereq" aria-label="Show prerequisite colouring" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-prereq-toggle-label">Light and Dark Grey prerequisite colouring in subject cards (showing)</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-prereq-text" aria-label="Show prerequisite lists" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject cards (showing)</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-indicators" aria-label="Show stream heading text" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-indicators-toggle-label">Text below stream headings (showing)</span>
+            </div>
+            <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row" id="course-map-sem-count-toggle-row"
+              data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
+              <br>Each subject will get a little semester count at right border.">
+              <label class="switch">
+                <input type="checkbox" id="course-map-sem-count-toggle" aria-label="Show semesters to complete in course map">
+                  <span class="slider"></span>
+                </label>
+              <span class="switch-label">Show semesters to complete</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names (removed)</span>
+            </div>
           </div>
         </div>
-        <button id="toggle-course-map-prereq" class="clear-button secondary" type="button" aria-pressed="true">Prereq
-          colours off</button>
-        <button id="toggle-course-map-prereq-text" class="clear-button secondary" type="button"
-          aria-pressed="true">Prereq text off</button>
-        <button id="toggle-course-map-indicators" class="clear-button secondary" type="button"
-          aria-pressed="true">Stream text off</button>
-        <button id="course-map-font-decrease" class="clear-button secondary" type="button"
-          aria-label="Decrease course map font size">Font -</button>
-        <button id="course-map-font-increase" class="clear-button secondary" type="button"
-          aria-label="Increase course map font size">Font +</button>
+        <div class="course-map-font-size-control">
+          <button id="reset-course-map-font-size" class="course-map-font-size-reset" type="button">Font</button>
+          <input id="course-map-font-size" type="range" min="0.6" max="1.6" step="0.05" value="1"
+            aria-label="Course map font size">
+        </div>
         <div class="course-map-image-actions">
-          <button id="copy-course-map-image" class="clear-button secondary" type="button"
-            data-tooltip="Copy the course map to your clipboard as an image.">Image c.</button>
-          <button id="download-course-map-image" class="clear-button secondary" type="button"
-            data-tooltip="Download the course map as an image.">Image d</button>
+          <button id="open-course-map-image-actions" class="clear-button secondary" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-image-dialog">Image</button>
+          <div id="course-map-image-dialog" class="course-map-image-dialog" role="dialog" aria-modal="false"
+            aria-hidden="true" aria-labelledby="course-map-image-dialog-title">
+            <h3 id="course-map-image-dialog-title">Grab an image of the map, showing selections</h3>
+            <button id="copy-course-map-image" class="clear-button secondary" type="button">Copy image to Clipboard</button>
+            <button id="download-course-map-image" class="clear-button secondary" type="button">Download image</button>
+          </div>
         </div>
         <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
       </div>

@@ -88,7 +88,9 @@ Created: December 30, 2025
   --card-hover-shadow: 0 14px 24px rgba(0, 0, 0, 0.28);
   --course-map-separator-width: 3px;
   --course-map-separator-color: var(--core-band-strong);
-  --longest-sem-count-bg: rgba(99, 158, 179, 0.466);
+  --longest-sem-count-bg: rgba(147, 255, 250, 0.274);
+  --alternate-semester-in-major-label-bg: rgba(147, 255, 250, 0.171);
+  --alternate-semester-label-bg: rgba(94, 99, 100, 0.075);
 }
 
 :root[data-card-theme="clear-cards"] {
@@ -133,6 +135,30 @@ Created: December 30, 2025
 
 :root[data-card-theme="clear-cards"] .subject-card.completed.locked:not(.elective-placeholder):not(.electives-full) {
   background-color: #f5f5f5 !important;
+}
+
+:root[data-card-theme="clear-cards"]:not(:has(.main-grid .subject-card.completed, .main-grid .subject-card.toggled, .main-grid .subject-card.current-enrolment, .main-grid .subject-card.use-credit, .electives-grid .subject-card.completed, .electives-grid .subject-card.toggled, .electives-grid .subject-card.current-enrolment, .electives-grid .subject-card.use-credit)) .main-grid .subject-card.network:not(.empty):not(.elective-spacer) {
+  background: linear-gradient(to bottom,
+      var(--network-band) 0%,
+      var(--network-band) var(--card-band-height),
+      color-mix(in srgb, var(--network-body-coloured-ui) 50%, #fff 50%) var(--card-band-height),
+      color-mix(in srgb, var(--network-body-coloured-ui) 50%, #fff 50%) 100%);
+}
+
+:root[data-card-theme="clear-cards"]:not(:has(.main-grid .subject-card.completed, .main-grid .subject-card.toggled, .main-grid .subject-card.current-enrolment, .main-grid .subject-card.use-credit, .electives-grid .subject-card.completed, .electives-grid .subject-card.toggled, .electives-grid .subject-card.current-enrolment, .electives-grid .subject-card.use-credit)) .main-grid .subject-card.ba:not(.empty):not(.elective-spacer) {
+  background: linear-gradient(to bottom,
+      var(--ba-band) 0%,
+      var(--ba-band) var(--card-band-height),
+      color-mix(in srgb, var(--ba-body-coloured-ui) 50%, #fff 50%) var(--card-band-height),
+      color-mix(in srgb, var(--ba-body-coloured-ui) 50%, #fff 50%) 100%);
+}
+
+:root[data-card-theme="clear-cards"]:not(:has(.main-grid .subject-card.completed, .main-grid .subject-card.toggled, .main-grid .subject-card.current-enrolment, .main-grid .subject-card.use-credit, .electives-grid .subject-card.completed, .electives-grid .subject-card.toggled, .electives-grid .subject-card.current-enrolment, .electives-grid .subject-card.use-credit)) .main-grid .subject-card.software:not(.empty):not(.elective-spacer) {
+  background: linear-gradient(to bottom,
+      var(--software-band) 0%,
+      var(--software-band) var(--card-band-height),
+      color-mix(in srgb, var(--software-body-coloured-ui) 50%, #fff 50%) var(--card-band-height),
+      color-mix(in srgb, var(--software-body-coloured-ui) 50%, #fff 50%) 100%);
 }
 
 :root[data-card-theme="clear-cards"] .course-map-placeholder {
@@ -287,7 +313,6 @@ td,
   flex: 0 1 1245px;
   width: min(1245px, 100%);
   min-width: 0;
-  max-width: 1245px;
   background: var(--sidebar-bg);
   padding: 6px 12px;
   border-radius: 8px;
@@ -297,7 +322,7 @@ td,
   position: relative;
 }
 
-.page > * {
+.page>* {
   min-width: 0;
 }
 
@@ -403,7 +428,8 @@ td,
   border-radius: 0;
   background: transparent;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .folder-shortcuts-row-credit {
@@ -512,7 +538,7 @@ td,
   gap: 4px;
 }
 
-.folder-shortcuts-modal-buttons + .folder-shortcuts-modal-buttons {
+.folder-shortcuts-modal-buttons+.folder-shortcuts-modal-buttons {
   margin-top: 8px;
 }
 
@@ -1036,7 +1062,7 @@ td,
 
 .drop-sidebar.is-active {
   width: 257px;
-  max-width: 300px;
+  max-width: 500px;
   min-width: 140px;
   /* Left sidebar shrinks after the (middle) sidebar, but before the main content. */
   flex: 0 1 auto;
@@ -1050,13 +1076,13 @@ td,
 }
 
 body.staff-mode .sidebar {
-  flex: 0 0 250px;
-  width: 250px;
+  flex: 0 0 261px;
+  width: 261px;
 }
 
 body.staff-mode .drop-sidebar.is-active {
-  flex: 0 0 257px;
-  width: 257px;
+  flex: 0 0 297px;
+  width: 297px;
 }
 
 @media (min-width: 1277px) and (max-width: 1549px) and (min-resolution: 1.2dppx) and (max-resolution: 1.3dppx) {
@@ -1078,6 +1104,7 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 @media (min-width: 1080px) and (max-width: 1276px) and (min-resolution: 1.2dppx) and (max-resolution: 1.3dppx) {
+
   body.staff-mode .drop-sidebar.is-active,
   body.staff-mode .sidebar {
     flex: 0 1 calc((100vw - 32px - 24px - 739px) / 2);
@@ -1110,6 +1137,7 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 @media (min-width: 1080px) and (max-width: 1294px) and (min-resolution: 1.9dppx) {
+
   body.staff-mode .drop-sidebar.is-active,
   body.staff-mode .sidebar {
     flex: 0 1 calc((100vw - 32px - 24px - 743px) / 2);
@@ -1947,9 +1975,24 @@ body.staff-mode .drop-sidebar.is-active {
   pointer-events: none;
 }
 
-/* When a full load is selected (selected mode), align the Code header with the indented code values. */
+/* In selected mode, make the Code header itself appear indented with the selected rows. */
 #timetable-modal.mode-selected #timetable-table thead th:first-child {
-  text-indent: 16px;
+  padding-left: 29px;
+  position: sticky;
+  text-indent: 0;
+  text-align: left;
+}
+
+#timetable-modal.mode-selected #timetable-table thead th:first-child::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  bottom: -1px;
+  width: 16px;
+  background: #fff;
+  border-right: 1px solid #ccc;
+  pointer-events: none;
 }
 
 #timetable-modal #timetable-table tbody tr.row-hover td {
@@ -2205,12 +2248,13 @@ body.staff-mode .drop-sidebar.is-active {
   font-weight: 500;
 }
 
-.alert-indent{
+.alert-indent {
   display: inline-block;
   margin-left: 24px;
-  padding-right:20px;
-  margin-top:2px;
+  padding-right: 20px;
+  margin-top: 2px;
 }
+
 .sidebar .student-summary-credit {
   color: var(--sidebar-text);
 }
@@ -2377,7 +2421,7 @@ body.staff-mode .drop-sidebar.is-active {
   margin: 0;
 }
 
-.toggle-row + .toggle-row {
+.toggle-row+.toggle-row {
   margin-top: 2px;
 }
 
@@ -3902,9 +3946,8 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 }
 
 .electives-label {
-  font-weight: 400;
-  margin: 4px 0 8px;
-  font-size: 14px;
+  margin: 20px 0 8px;
+  font-size: 1rem;
 }
 
 .inline-electives-heading {
@@ -3915,11 +3958,11 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 }
 
 .info-card {
-  font-size:1em;
+  font-size: 1em;
   cursor: default;
   padding-left: 10px;
   padding-top: 4px;
-  padding-bottom:4px;
+  padding-bottom: 4px;
   line-height: 1em;
   box-shadow: none;
   border: 1px dashed #9b9898;
@@ -3956,9 +3999,11 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 .stream-label {
   font-weight: 700;
 }
-.stream-label-mid{
-  font-weight: 500;
+
+.stream-label-mid {
+  font-size: 1rem;
 }
+
 .stream-network {
   color: var(--network-text);
 }
@@ -4203,7 +4248,7 @@ body.student-mode #select-by-typing-button {
   top: 4px;
   right: 4px;
   width: 36px;
-  height:36px;
+  height: 36px;
   object-fit: contain;
 }
 
@@ -4562,7 +4607,7 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   left: auto;
   top: var(--card-band-height);
   transform: none;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--alternate-semester-label-bg);
   color: #000;
   font-size: .8em;
   padding: 1px 6px 2px 6px !important;
@@ -4573,7 +4618,7 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   border-radius: 0 0 4px 4px;
 
   text-align: center;
-  line-height:1em;
+  line-height: 1em;
 }
 
 .alternate-semester-label .alt-sem-line {
@@ -4581,7 +4626,11 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
 }
 
 .subject-card.alt-sem-attention .alternate-semester-label {
-  background: var(--longest-sem-count-bg);
+  background: var(--alternate-semester-label-bg);
+}
+
+.subject-card.alt-sem-in-major .alternate-semester-label {
+  background: var(--alternate-semester-in-major-label-bg);
 }
 
 body.main-grid-narrow-880 .main-grid .alternate-semester-label,
@@ -4711,6 +4760,10 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   font-weight: 400;
   pointer-events: auto;
   cursor: help;
+}
+
+#course-map-modal .course-map-cell.course-map-in-major .course-map-sem-count {
+  background: var(--alternate-semester-in-major-label-bg);
 }
 
 #course-map-modal .course-map-sem-count.is-unknown {
@@ -5498,14 +5551,14 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .email-scripts-access-modal {
-  width: min(1370px, 96vw);
-  max-width: min(1370px, 96vw);
+  width: max-content;
+  max-width: calc(100vw - 32px);
   height: auto;
   max-height: 96vh;
 }
 
 #email-scripts-access-modal .modal.email-scripts-access-modal {
-  width: min(1370px, calc(100vw - 32px));
+  width: max-content;
   max-width: calc(100vw - 32px);
   min-width: 0;
   height: auto;
@@ -5522,10 +5575,12 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 
 .email-scripts-access-list {
   display: block;
-  width: 100%;
+  width: max-content;
+  max-width: 100%;
   gap: 0;
   height: auto;
   overflow: visible;
+  --email-scripts-access-column-width: max-content;
 }
 
 #email-scripts-extra-rows {
@@ -5534,11 +5589,13 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 
 .email-scripts-access-row {
   display: grid;
-  grid-template-columns: min-content min-content auto;
+  grid-template-columns: min-content min-content max-content;
   gap: 6px;
   align-items: center;
   border-bottom: 1px solid #d6d6d6;
-  padding: 2px 0;
+  box-sizing: border-box;
+  padding: 2px 32px 2px 0;
+  width: var(--email-scripts-access-column-width);
   break-inside: avoid-column;
   page-break-inside: avoid;
 }
@@ -5589,18 +5646,20 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 
 .email-scripts-access-list.cols-2 {
   column-count: 2;
-  column-gap: 18px;
+  column-gap: 32px;
   column-fill: balance;
 }
 
 .email-scripts-access-list.cols-3 {
   column-count: 3;
-  column-gap: 18px;
+  column-gap: 32px;
   column-fill: balance;
 }
 
-.email-scripts-access-row {
-  width: 100%;
+.email-scripts-access-list.cols-4 {
+  column-count: 4;
+  column-gap: 32px;
+  column-fill: balance;
 }
 
 .email-scripts-access-row.email-scripts-access-column-break {
@@ -6220,14 +6279,14 @@ body.completed-mode .completed:hover::after {
 :root[data-card-theme="clear-cards"] .subject-card.toggled .subject-code,
 :root[data-card-theme="clear-cards"] .subject-card.toggled .subject-note,
 :root[data-card-theme="clear-cards"] .subject-card.toggled .prerequsites-note,
-:root[data-card-theme="clear-cards"] .subject-card.toggled > .subject-code::after {
+:root[data-card-theme="clear-cards"] .subject-card.toggled>.subject-code::after {
   color: #fff !important;
 }
 
 :root[data-card-theme="clear-cards"] .subject-card.completed .subject-code,
 :root[data-card-theme="clear-cards"] .subject-card.completed .subject-note,
 :root[data-card-theme="clear-cards"] .subject-card.completed .prerequsites-note,
-:root[data-card-theme="clear-cards"] .subject-card.completed > .subject-code::after {
+:root[data-card-theme="clear-cards"] .subject-card.completed>.subject-code::after {
   color: #111 !important;
 }
 
@@ -6322,7 +6381,7 @@ body.completed-mode .completed:hover::after {
   pointer-events: none;
 }
 
-#container-popout-modal .container-popout-modal-body #electives-label > * {
+#container-popout-modal .container-popout-modal-body #electives-label>* {
   display: none !important;
 }
 
@@ -6400,12 +6459,11 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-modal {
-  /* Default to 1764px when there is room, otherwise shrink to viewport. */
-  width: min(1764px, 96vw);
+  /* JS selects the preferred default size that fits the viewport on open. */
+  width: min(1753px, calc(100vw - 32px));
   max-width: 96vw;
   padding: 8px;
-  /* Fill the viewport height, respecting the overlay padding (16px top/bottom). */
-  height: calc(100vh - 32px);
+  height: min(1160px, calc(100vh - 32px));
   max-height: calc(100vh - 32px);
   /* Keep scrollbars on the inner `.modal-body` only. */
   overflow: hidden;
@@ -7167,7 +7225,14 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-staff-mode .course-map-cell[data-subject] {
-  padding-right: 52px;
+  --course-map-staff-right-reserve: 52px;
+  --course-map-name-right-reserve: 32px;
+  padding-right: 41px;
+}
+
+#course-map-modal.course-map-staff-mode .course-map-cell[data-subject] .course-map-name {
+  width: calc(100% + var(--course-map-staff-right-reserve) - var(--course-map-name-right-reserve));
+  max-width: calc(100% + var(--course-map-staff-right-reserve) - var(--course-map-name-right-reserve));
 }
 
 #course-map-modal.course-map-staff-mode .course-map-session-meta:not([hidden]) {
@@ -7214,6 +7279,11 @@ body.completed-mode .completed:hover::after {
   background: rgba(32, 32, 32, 0.68);
   border-color: rgba(232, 232, 232, 0.48);
   color: rgba(245, 245, 245, 0.9);
+}
+
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-in-major .course-map-alt-indicator:not([hidden]) {
+  background: var(--alternate-semester-in-major-label-bg);
+  color: #111;
 }
 
 #course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable {
@@ -7363,7 +7433,7 @@ body.completed-mode .completed:hover::after {
   white-space: nowrap;
   width: auto;
   z-index: 5;
-  font-size:.9em;
+  font-size: .9em;
 }
 
 #course-map-modal .course-map-cell.course-map-current-record::before {
@@ -7427,13 +7497,16 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-prereqs {
-  margin-top: 0px;
-  font-size: 0.92em !important;
+  margin-top: 0;
+  padding-top: 0.1em;
+  font-size: 0.9em !important;
+  line-height: 0.9;
   color: #1f1f1f;
+  font-style: italic;
 }
 
 #course-map-modal.course-map-staff-mode .course-map-prereqs {
-  font-size: 1em !important;
+  font-size: 0.9em !important;
 }
 
 .course-map-key,
@@ -7441,10 +7514,26 @@ body.completed-mode .completed:hover::after {
   font-size: 1.05em;
 }
 
-#course-map-font-decrease,
-#course-map-font-increase {
-  min-width: 0;
+.course-map-font-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 1em;
+  white-space: nowrap;
+}
+
+#course-map-font-size {
+  width: 120px;
+  margin: 0;
+}
+
+.course-map-font-size-reset {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .course-map-status-later .course-map-prereqs {
@@ -7795,8 +7884,10 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-staff-panel {
-  width: 308px;
-  max-width: 308px;
+  --course-map-staff-action-height: 28px;
+  width: 356px;
+  max-width: 500px;
+  max-height: calc(100% - 16px);
   min-width: 0;
   overflow: hidden;
   position: absolute;
@@ -7815,6 +7906,8 @@ body.completed-mode .completed:hover::after {
 .course-map-staff-selected-list-host {
   position: relative;
   z-index: 2;
+  min-height: 0;
+  overflow: auto;
 }
 
 #course-map-modal .course-map-staff-panel #selected-list {
@@ -7824,14 +7917,14 @@ body.completed-mode .completed:hover::after {
   border-radius: 6px;
   background: #fff;
   max-height: none;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   z-index: 2;
 }
 
 #course-map-modal .course-map-staff-panel #selected-list.course-map-scroll-threshold-active {
   max-height: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 #course-map-modal .course-map-staff-panel #selected-list.available-list-warning {
@@ -7923,6 +8016,7 @@ body.completed-mode .completed:hover::after {
 .course-map-staff-actions .course-map-staff-open-window,
 .course-map-staff-actions .course-map-staff-open-selected,
 .course-map-staff-actions .course-map-staff-clear {
+  height: var(--course-map-staff-action-height);
   width: auto;
   min-width: 0;
   padding-left: 12px;
@@ -7949,6 +8043,7 @@ body.completed-mode .completed:hover::after {
 
 .course-map-staff-actions .course-map-staff-copy-timetable {
   width: 34px;
+  height: var(--course-map-staff-action-height);
   padding-top: 4px;
   padding-bottom: 4px;
 }
@@ -8047,7 +8142,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal .modal-actions {
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   position: sticky;
   bottom: 0;
@@ -8057,15 +8152,18 @@ body.completed-mode .completed:hover::after {
   margin-right: -16px;
   padding-left: 16px;
   padding-right: 16px;
-  z-index: 3;
+  z-index: 13000;
 }
 
 #course-map-modal .modal-actions .course-map-left-actions {
   display: flex;
   gap: 8px;
-  margin-right: auto;
   align-items: center;
   flex-wrap: wrap;
+}
+
+#close-course-map-cta {
+  margin-left: auto;
 }
 
 #course-map-modal .modal-actions .course-map-ai-toggle {
@@ -8125,10 +8223,6 @@ body.completed-mode .completed:hover::after {
   display: none !important;
 }
 
-#course-map-modal.course-map-staff-mode .course-map-sem-count-toggle {
-  display: none !important;
-}
-
 #course-map-modal .course-map-sem-count-toggle .switch-label {
   color: #111;
   line-height: 1.1;
@@ -8139,9 +8233,97 @@ body.completed-mode .completed:hover::after {
   color: #111;
 }
 
-#course-map-modal .modal-actions .course-map-image-actions {
+#course-map-modal .modal-actions .course-map-show-hide-actions {
+  position: relative;
+  display: inline-flex;
+}
+
+#course-map-modal .course-map-show-hide-dialog {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 13010;
   display: flex;
+  flex-direction: column;
   gap: 8px;
+  width: max-content;
+  max-width: min(520px, calc(100vw - 40px));
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #8f8f8f;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+
+#course-map-modal .course-map-show-hide-dialog[aria-hidden="true"] {
+  display: none;
+}
+
+#course-map-modal .course-map-show-hide-dialog h3 {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.2;
+  color: #111;
+}
+
+#course-map-modal .course-map-show-hide-row {
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  background: transparent;
+  border: 0;
+}
+
+#course-map-modal .course-map-show-hide-row .switch-label {
+  color: #111;
+  font-size: 1.05rem;
+  line-height: 1.15;
+  white-space: normal;
+  font-weight: 400;
+}
+
+#course-map-modal .course-map-show-hide-row .switch-label.active {
+  color: #111;
+  font-weight: 400;
+}
+
+#course-map-modal .modal-actions .course-map-image-actions {
+  position: relative;
+  display: inline-flex;
+}
+
+#course-map-modal .course-map-image-dialog {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #8f8f8f;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+
+#course-map-modal .course-map-image-dialog[aria-hidden="true"] {
+  display: none;
+}
+
+#course-map-modal .course-map-image-dialog h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: #111;
+}
+
+#course-map-modal .course-map-image-dialog .clear-button {
+  width: 100%;
 }
 
 #close-course-map-key {
@@ -8255,9 +8437,7 @@ body.completed-mode .completed:hover::after {
   overflow: hidden;
 }
 
-#instructions-modal .modal-header {
- 
-}
+#instructions-modal .modal-header {}
 
 #instructions-modal .modal-title {
   font-size: 1.2em;
@@ -8336,7 +8516,7 @@ body.completed-mode .completed:hover::after {
   font-size: 1.2em;
 }
 
-#help-modal .help-support-section + .help-support-section {
+#help-modal .help-support-section+.help-support-section {
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid #d8e8f7;
@@ -9149,7 +9329,7 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   font-weight: 700;
   line-height: 1.1;
   color: #111;
-  margin-bottom:16px;
+  margin-bottom: 16px;
 }
 
 #instructions-modal .instructions-step-toggle {
@@ -9393,7 +9573,7 @@ body.completed-mode #clear-selections {
   width: 34px;
   min-width: 34px;
   flex: 0 0 34px;
-  font-weight:500;
+  font-weight: 500;
 }
 
 .load-row.load-row-nonstandard .load-button {
@@ -9544,6 +9724,7 @@ body.completed-mode #clear-selections {
 }
 
 @media (max-height: 950px) {
+
   .main-grid,
   .electives-grid {
     row-gap: 6px;
