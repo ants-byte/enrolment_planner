@@ -198,10 +198,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const semester1OnlyIds = new Set(['BIT351', 'BIT358', 'BIT357', 'BIT355']);
   const semester2OnlyIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
-  const currentSemesterKey = 'S1';
+  const getCurrentSemesterKey = (date = new Date()) => {
+    const month = date instanceof Date && !Number.isNaN(date.getTime()) ? date.getMonth() : 0;
+    if (month >= 8) return 'SS';
+    if (month >= 4) return 'S2';
+    return 'S1';
+  };
+  const currentSemesterKey = getCurrentSemesterKey();
+  const semesterSequence = ['S1', 'S2', 'SS'];
   const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
-  const getSemesterKeyForOffset = (offset) =>
-    offset % 2 === 0 ? currentSemesterKey : getOppositeSemester(currentSemesterKey);
+  const getSemesterKeyForOffset = (offset) => {
+    const startIndex = semesterSequence.indexOf(currentSemesterKey);
+    const safeStartIndex = startIndex >= 0 ? startIndex : 0;
+    return semesterSequence[(safeStartIndex + Math.max(0, offset)) % semesterSequence.length];
+  };
   const getSemesterAvailability = (id) => {
     if (semester1OnlyIds.has(id)) return 'S1';
     if (semester2OnlyIds.has(id)) return 'S2';
@@ -215,13 +225,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const isRunningNextSemester = (id) => {
     const availability = getSemesterAvailability(id);
     if (availability === 'Any') return true;
-    return availability === getOppositeSemester(currentSemesterKey);
+    return availability === getSemesterKeyForOffset(1);
   };
   const getNotRunningIds = () =>
     new Set(
       [...semester1OnlyIds, ...semester2OnlyIds].filter((id) => !isRunningThisSemester(id))
     );
-  const getSemesterLabel = (semesterKey) => (semesterKey === 'S1' ? 'Semester 1' : 'Semester 2');
+  const getSemesterLabel = (semesterKey) =>
+    semesterKey === 'S1' ? 'Semester 1' : semesterKey === 'S2' ? 'Semester 2' : 'Summer Semester';
   const alignDistanceToAvailability = (id, distance) => {
     if (!Number.isFinite(distance) || distance <= 0) return distance;
     const availability = getSemesterAvailability(id);
@@ -262,13 +273,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsCardThemeColoursLabel = document.getElementById('settings-card-theme-label');
   const settingsCourseMapDefaultToggle = document.getElementById('settings-course-map-default');
   const settingsCourseMapDefaultLabel = document.getElementById('settings-course-map-label');
-  const settingsRootFontSizeRadios = Array.from(document.querySelectorAll('input[name="settings-root-font-size"]'));
+  const settingsRootFontSizeSlider = document.getElementById('settings-root-font-size');
+  const settingsRootFontSizeLabel = document.getElementById('settings-font-size-label');
+  const settingsDefaultSidebarWidthsButton = document.getElementById('settings-default-sidebar-widths');
+  const settingsLightModeButton = document.getElementById('settings-light-mode');
+  const settingsDarkModeButton = document.getElementById('settings-dark-mode');
+  const settingsAccessibleColoursButton = document.getElementById('settings-accessible-colours');
+  const settingsGreyscaleColoursButton = document.getElementById('settings-greyscale-colours');
+  const settingsResetColoursButton = document.getElementById('settings-reset-colours');
   const varyLoadButton = document.getElementById('vary-load');
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
   const infoButton = document.getElementById('btn-info');
   const dataErrorButton = document.getElementById('btn-data-error');
   const codesButton = document.getElementById('btn-codes');
+  const courseMapErrorButton = document.getElementById('course-map-btn-error');
+  const courseMapWarningButton = document.getElementById('course-map-btn-warning');
+  const courseMapInfoButton = document.getElementById('course-map-btn-info');
+  const courseMapDataErrorButton = document.getElementById('course-map-btn-data-error');
+  const courseMapCodesButton = document.getElementById('course-map-btn-codes');
+  const courseMapAlertButtons = document.getElementById('course-map-alert-buttons');
   const subjectCountsEl = document.getElementById('subject-counts');
   const titleAlerts = document.getElementById('title-alerts');
   const mainTitleBar = document.querySelector('.title');
@@ -331,15 +355,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const CARD_THEME_STORAGE_KEY = 'subjectPlannerCardTheme';
   const ROOT_FONT_SIZE_STORAGE_KEY = 'subjectPlannerRootFontSizePx';
+  const APPEARANCE_STORAGE_KEY = 'subjectPlannerAppearance';
+  const COLOUR_PALETTE_STORAGE_KEY = 'subjectPlannerColourPalette';
   const SETTINGS_QUERY_CARDS_KEY = 'cards';
   const SETTINGS_QUERY_START_KEY = 'start';
   const SETTINGS_QUERY_FONT_KEY = 'font';
+  const SETTINGS_QUERY_COURSE_MAP_FONT_KEY = 'courseMapFont';
+  const SETTINGS_QUERY_APPEARANCE_KEY = 'mode';
+  const SETTINGS_QUERY_COLOUR_PALETTE_KEY = 'palette';
+  const SETTINGS_QUERY_PANEL_WIDTH_KEYS = {
+    sidebar: 'sidebar',
+    'drop-sidebar': 'dropSidebar',
+    'main-content': 'main',
+  };
   const SETTINGS_QUERY_START_COURSE_MAP = 'course-map';
   const COLOURED_CARD_THEME = 'default';
   const CLEAR_CARDS_THEME = 'clear-cards';
   const DEFAULT_CARD_THEME = CLEAR_CARDS_THEME;
-  const ROOT_FONT_SIZE_CHOICES = [12, 14, 15, 16, 17, 18, 20, 22];
+  const MIN_ROOT_FONT_SIZE_PX = 10;
+  const MAX_ROOT_FONT_SIZE_PX = 32;
   const DEFAULT_ROOT_FONT_SIZE_PX = 16;
+  const MIN_COURSE_MAP_FONT_SCALE = 0.75;
+  const MAX_COURSE_MAP_FONT_SCALE = 2;
+  const DEFAULT_COURSE_MAP_FONT_SCALE = 1;
+  const DEFAULT_APPEARANCE = 'light';
+  const DARK_APPEARANCE = 'dark';
+  const DEFAULT_COLOUR_PALETTE = 'default';
+  const ACCESSIBLE_COLOUR_PALETTE = 'accessible';
+  const GREYSCALE_COLOUR_PALETTE = 'greyscale';
   const getCardThemeFromQuery = () => {
     const raw = getQueryParamLower(SETTINGS_QUERY_CARDS_KEY);
     if (!raw) return '';
@@ -355,7 +398,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const normalizeRootFontSizePx = (value) => {
     const parsed = Number.parseInt(String(value ?? '').trim(), 10);
-    return ROOT_FONT_SIZE_CHOICES.includes(parsed) ? parsed : DEFAULT_ROOT_FONT_SIZE_PX;
+    if (!Number.isFinite(parsed)) return DEFAULT_ROOT_FONT_SIZE_PX;
+    return Math.min(MAX_ROOT_FONT_SIZE_PX, Math.max(MIN_ROOT_FONT_SIZE_PX, parsed));
   };
   const parseRootFontSizeToken = (value) => {
     const text = String(value ?? '').trim().toLowerCase();
@@ -376,15 +420,60 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const parsed = parseRootFontSizeToken(raw);
     return Number.isFinite(parsed) ? normalizeRootFontSizePx(parsed) : '';
   };
+  const normalizeCourseMapFontScale = (value) => {
+    const parsed = Number.parseFloat(String(value ?? '').trim());
+    if (!Number.isFinite(parsed)) return DEFAULT_COURSE_MAP_FONT_SCALE;
+    const scale = parsed > 4 ? parsed / 100 : parsed;
+    return Math.min(MAX_COURSE_MAP_FONT_SCALE, Math.max(MIN_COURSE_MAP_FONT_SCALE, Math.round(scale * 100) / 100));
+  };
+  const getCourseMapFontScaleFromQuery = () => {
+    const raw = getQueryParamLower(SETTINGS_QUERY_COURSE_MAP_FONT_KEY);
+    return raw ? normalizeCourseMapFontScale(raw) : DEFAULT_COURSE_MAP_FONT_SCALE;
+  };
+  const normalizeAppearance = (value) =>
+    String(value || '').toLowerCase() === DARK_APPEARANCE ? DARK_APPEARANCE : DEFAULT_APPEARANCE;
+  const normalizeColourPalette = (value) => {
+    const raw = String(value || '').toLowerCase();
+    if (['accessible', 'colourblind', 'colorblind', 'cb'].includes(raw)) return ACCESSIBLE_COLOUR_PALETTE;
+    if (['grey', 'gray', 'greyscale', 'grayscale'].includes(raw)) return GREYSCALE_COLOUR_PALETTE;
+    return DEFAULT_COLOUR_PALETTE;
+  };
+  const getAppearanceFromQuery = () => {
+    const raw = getQueryParamLower(SETTINGS_QUERY_APPEARANCE_KEY);
+    return raw ? normalizeAppearance(raw) : '';
+  };
+  const getColourPaletteFromQuery = () => {
+    const raw = getQueryParamLower(SETTINGS_QUERY_COLOUR_PALETTE_KEY);
+    return raw ? normalizeColourPalette(raw) : '';
+  };
   let openCourseMapByDefault = getCourseMapDefaultOpenFromQuery();
   let activeCardTheme = DEFAULT_CARD_THEME;
   let activeRootFontSizePx = DEFAULT_ROOT_FONT_SIZE_PX;
+  let courseMapFontScaleEm = getCourseMapFontScaleFromQuery();
+  let activeAppearance = DEFAULT_APPEARANCE;
+  let activeColourPalette = DEFAULT_COLOUR_PALETTE;
   const normalizeCardTheme = (value) =>
     value === COLOURED_CARD_THEME ? COLOURED_CARD_THEME : DEFAULT_CARD_THEME;
   const getCardThemeQueryValue = (theme = activeCardTheme) =>
     normalizeCardTheme(theme) === COLOURED_CARD_THEME ? 'coloured' : 'default';
   const getRootFontSizeQueryValue = (sizePx = activeRootFontSizePx) =>
     String(normalizeRootFontSizePx(sizePx));
+  const getPanelWidthFromQuery = (key) => {
+    const param = SETTINGS_QUERY_PANEL_WIDTH_KEYS[key];
+    if (!param || typeof URLSearchParams === 'undefined') return null;
+    try {
+      const raw = new URLSearchParams(window.location.search || '').get(param);
+      const parsed = Number.parseInt(String(raw ?? '').trim(), 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+  const activePanelWidthPx = Object.fromEntries(
+    Object.keys(SETTINGS_QUERY_PANEL_WIDTH_KEYS)
+      .map((key) => [key, getPanelWidthFromQuery(key)])
+      .filter(([, width]) => Number.isFinite(width))
+  );
   const updateBookmarkableSettingsUrl = () => {
     if (typeof URLSearchParams === 'undefined' || !window?.history?.replaceState) return;
     try {
@@ -395,11 +484,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         params.set(SETTINGS_QUERY_FONT_KEY, getRootFontSizeQueryValue(activeRootFontSizePx));
       }
+      if (courseMapFontScaleEm === DEFAULT_COURSE_MAP_FONT_SCALE) {
+        params.delete(SETTINGS_QUERY_COURSE_MAP_FONT_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_COURSE_MAP_FONT_KEY, String(Math.round(courseMapFontScaleEm * 100)));
+      }
+      if (activeAppearance === DEFAULT_APPEARANCE) {
+        params.delete(SETTINGS_QUERY_APPEARANCE_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_APPEARANCE_KEY, activeAppearance);
+      }
+      if (activeColourPalette === DEFAULT_COLOUR_PALETTE) {
+        params.delete(SETTINGS_QUERY_COLOUR_PALETTE_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_COLOUR_PALETTE_KEY, activeColourPalette);
+      }
       if (openCourseMapByDefault) {
         params.set(SETTINGS_QUERY_START_KEY, SETTINGS_QUERY_START_COURSE_MAP);
       } else {
         params.delete(SETTINGS_QUERY_START_KEY);
       }
+      Object.entries(SETTINGS_QUERY_PANEL_WIDTH_KEYS).forEach(([key, param]) => {
+        const width = activePanelWidthPx[key];
+        if (Number.isFinite(width) && width > 0) {
+          params.set(param, String(Math.round(width)));
+        } else {
+          params.delete(param);
+        }
+      });
       const query = params.toString();
       const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash || ''}`;
       window.history.replaceState(null, '', nextUrl);
@@ -433,13 +545,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (settingsCourseMapDefaultLabel) {
       settingsCourseMapDefaultLabel.textContent = `Course map mode (is ${openCourseMapByDefault ? 'on' : 'off'})`;
     }
-    if (settingsRootFontSizeRadios.length) {
-      const activeValue =
-        activeRootFontSizePx === DEFAULT_ROOT_FONT_SIZE_PX ? '' : String(normalizeRootFontSizePx(activeRootFontSizePx));
-      settingsRootFontSizeRadios.forEach((radio) => {
-        radio.checked = radio.value === activeValue;
-      });
+    if (settingsRootFontSizeSlider) {
+      settingsRootFontSizeSlider.value = String(normalizeRootFontSizePx(activeRootFontSizePx));
     }
+    if (settingsRootFontSizeLabel) {
+      settingsRootFontSizeLabel.textContent = `Font size: ${normalizeRootFontSizePx(activeRootFontSizePx)}px`;
+    }
+    settingsLightModeButton?.classList.toggle('is-active', activeAppearance === DEFAULT_APPEARANCE);
+    settingsDarkModeButton?.classList.toggle('is-active', activeAppearance === DARK_APPEARANCE);
+    settingsAccessibleColoursButton?.classList.toggle('is-active', activeColourPalette === ACCESSIBLE_COLOUR_PALETTE);
+    settingsGreyscaleColoursButton?.classList.toggle('is-active', activeColourPalette === GREYSCALE_COLOUR_PALETTE);
   };
   const updateMainGridKeyThemeUi = () => {
     if (mainKeyCompletedLabel) {
@@ -479,8 +594,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const applyRootFontSize = (sizePx, { persist = true } = {}) => {
     activeRootFontSizePx = normalizeRootFontSizePx(sizePx);
     if (document?.documentElement) {
-      const remValue = activeRootFontSizePx / 16;
-      document.documentElement.style.fontSize = `${remValue}rem`;
+      document.documentElement.style.fontSize = `${activeRootFontSizePx}px`;
       document.documentElement.setAttribute('data-root-font-size', String(activeRootFontSizePx));
     }
     updateSettingsMenuUi();
@@ -494,9 +608,67 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     } catch { }
   };
+  const applyAppearance = (appearance, { persist = true } = {}) => {
+    activeAppearance = normalizeAppearance(appearance);
+    if (document?.documentElement) {
+      if (activeAppearance === DARK_APPEARANCE) document.documentElement.setAttribute('data-appearance', DARK_APPEARANCE);
+      else document.documentElement.removeAttribute('data-appearance');
+    }
+    updateSettingsMenuUi();
+    updateBookmarkableSettingsUrl();
+    if (!persist) return;
+    try {
+      if (activeAppearance === DEFAULT_APPEARANCE) localStorage.removeItem(APPEARANCE_STORAGE_KEY);
+      else localStorage.setItem(APPEARANCE_STORAGE_KEY, activeAppearance);
+    } catch { }
+  };
+  const applyColourPalette = (palette, { persist = true } = {}) => {
+    activeColourPalette = normalizeColourPalette(palette);
+    if (document?.documentElement) {
+      if (activeColourPalette === DEFAULT_COLOUR_PALETTE) document.documentElement.removeAttribute('data-colour-palette');
+      else document.documentElement.setAttribute('data-colour-palette', activeColourPalette);
+    }
+    updateSettingsMenuUi();
+    updateBookmarkableSettingsUrl();
+    if (!persist) return;
+    try {
+      if (activeColourPalette === DEFAULT_COLOUR_PALETTE) localStorage.removeItem(COLOUR_PALETTE_STORAGE_KEY);
+      else localStorage.setItem(COLOUR_PALETTE_STORAGE_KEY, activeColourPalette);
+    } catch { }
+  };
+  const resetColourSettings = () => {
+    applyCardTheme(DEFAULT_CARD_THEME);
+    applyAppearance(DEFAULT_APPEARANCE);
+    applyColourPalette(DEFAULT_COLOUR_PALETTE);
+  };
+  const resetSidebarWidthsToDefault = () => {
+    Object.keys(SETTINGS_QUERY_PANEL_WIDTH_KEYS).forEach((key) => {
+      delete activePanelWidthPx[key];
+      const panel =
+        key === 'sidebar'
+          ? document.querySelector('.sidebar')
+          : document.getElementById(key) || document.querySelector(`.${key}`);
+      if (panel) {
+        panel.style.width = '';
+        panel.style.height = '';
+        panel.style.flex = '';
+      }
+    });
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('panel-size:')) keysToRemove.push(key);
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    } catch { }
+    updateBookmarkableSettingsUrl();
+  };
   const loadInitialSettingsPreferences = () => {
     const queryTheme = getCardThemeFromQuery();
     const queryRootFontSize = getRootFontSizeFromQuery();
+    const queryAppearance = getAppearanceFromQuery();
+    const queryColourPalette = getColourPaletteFromQuery();
     let initialTheme = DEFAULT_CARD_THEME;
     if (queryTheme) {
       initialTheme = queryTheme;
@@ -517,8 +689,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         initialRootFontSize = DEFAULT_ROOT_FONT_SIZE_PX;
       }
     }
+    let initialAppearance = DEFAULT_APPEARANCE;
+    if (queryAppearance) {
+      initialAppearance = queryAppearance;
+    } else {
+      try {
+        initialAppearance = localStorage.getItem(APPEARANCE_STORAGE_KEY) || DEFAULT_APPEARANCE;
+      } catch {
+        initialAppearance = DEFAULT_APPEARANCE;
+      }
+    }
+    let initialColourPalette = DEFAULT_COLOUR_PALETTE;
+    if (queryColourPalette) {
+      initialColourPalette = queryColourPalette;
+    } else {
+      try {
+        initialColourPalette = localStorage.getItem(COLOUR_PALETTE_STORAGE_KEY) || DEFAULT_COLOUR_PALETTE;
+      } catch {
+        initialColourPalette = DEFAULT_COLOUR_PALETTE;
+      }
+    }
     applyCardTheme(initialTheme, { persist: false });
     applyRootFontSize(initialRootFontSize, { persist: false });
+    applyAppearance(initialAppearance, { persist: false });
+    applyColourPalette(initialColourPalette, { persist: false });
     updateSettingsMenuUi();
     updateBookmarkableSettingsUrl();
   };
@@ -539,15 +733,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZone = document.getElementById('drop-zone');
   const dropSidebar = document.getElementById('drop-sidebar');
   const folderShortcutsPanel = document.getElementById('folder-shortcuts-panel');
+  const loadFromFolderButton = document.getElementById('load-from-folder');
   const folderShortcutSemesterButton = document.getElementById('folder-shortcut-semester');
+  const folderShortcutSemesterDialogButton = document.getElementById('folder-shortcut-semester-dialog');
   const folderShortcutStudentFormsButton = document.getElementById('folder-shortcut-student-forms');
   const folderShortcutStudentFormsDateButton = document.getElementById(
     'folder-shortcut-student-forms-date'
+  );
+  const folderShortcutStudentFormsDateMainDialogButton = document.getElementById(
+    'folder-shortcut-student-forms-date-main-dialog'
   );
   const folderShortcutStudentFormsDateDialogButton = document.getElementById(
     'folder-shortcut-student-forms-date-dialog'
   );
   const folderShortcutTeacherButton = document.getElementById('folder-shortcut-teacher');
+  const folderShortcutTeacherMainDialogButton = document.getElementById('folder-shortcut-teacher-main-dialog');
   const folderShortcutTeacherDialogButton = document.getElementById('folder-shortcut-teacher-dialog');
   const folderShortcutCreditSharePointButton = document.getElementById('folder-shortcut-credit-sp');
   const folderShortcutCreditLocalButton = document.getElementById('folder-shortcut-credit-local');
@@ -898,7 +1098,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
-    'Drop Source.xlsx / Email Scripts.html (or .htm/.docx) here\nor click to pick files';
+    "(or for lesser functionality: drag-and-drop the files here: 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. Depending on your setup, clicking the zone will auto-load those 3 files too.)";
   const dropZoneSpinner = dropZone
     ? (() => {
       const spinner = document.createElement('div');
@@ -931,6 +1131,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const WORKBOOK_PARSE_TIMEOUT_MS = 300000;
   const WORKER_PARSE_TIMEOUT_MS = 300000;
   const TRIAGE_WORKER_TIMEOUT_MS = 120000;
+  const TRIAGE_UPDATE_TIMEOUT_MS = 45000;
   const WORKBOOK_FALLBACK_MAX_BYTES = 50_000_000;
   const TRIAGE_FALLBACK_MAX_BYTES = 2_000_000;
   const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
@@ -943,9 +1144,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260618-1';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260622-3';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260618-1';
+      return 'triage-parser-worker.js?v=triage-20260622-3';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1076,6 +1277,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       dropZoneTextEl.appendChild(span);
     });
     updateCourseMapLoadFilesButtonVisibility();
+    syncCourseMapEmailToolsButton();
     initTooltips();
     scheduleFolderShortcutPanelRefresh();
   };
@@ -1307,6 +1509,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     String(value ?? '')
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
+  const STUDENT_ID_HEADER_KEYS = new Set(
+    [
+      'Student_IDs_Unique',
+      'Student IDs Unique',
+      'Student ID',
+      'StudentID',
+      'Student_ID',
+    ].map((label) => normalizeHeader(label))
+  );
+  const getStudentRecordId = (record) => {
+    if (!record) return '';
+    const direct = normalizeStudentId(record.Student_IDs_Unique);
+    if (direct) return direct;
+    const match = Object.entries(record).find(([key, value]) =>
+      STUDENT_ID_HEADER_KEYS.has(normalizeHeader(key)) && normalizeStudentId(value)
+    );
+    return match ? normalizeStudentId(match[1]) : '';
+  };
+  const findStudentRecordById = (id) => {
+    const normalizedId = normalizeStudentId(id);
+    if (!normalizedId) return null;
+    return studentRecords.find((record) => getStudentRecordId(record) === normalizedId) || null;
+  };
   const hostName = window.location.hostname || '';
   function getQueryParamLower(key) {
     const search = String(window.location.search || '');
@@ -1469,7 +1694,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeCourseMapRemainingInfo = document.getElementById('close-course-map-remaining-info');
   const closeCourseMapRemainingInfoCta = document.getElementById('close-course-map-remaining-info-cta');
   const copyCourseMapRemainingInfo = document.getElementById('copy-course-map-remaining-info');
+  const courseMapFullStudentDetailsModal = document.getElementById('course-map-full-student-details-modal');
+  const courseMapFullStudentDetailsContent = document.getElementById('course-map-full-student-details-content');
+  const closeCourseMapFullStudentDetails = document.getElementById('close-course-map-full-student-details');
+  const closeCourseMapFullStudentDetailsCta = document.getElementById('close-course-map-full-student-details-cta');
+  const courseMapStudentNoteModal = document.getElementById('course-map-student-note-modal');
+  const courseMapStudentNoteTitle = document.getElementById('course-map-student-note-title');
+  const courseMapStudentNoteContent = document.getElementById('course-map-student-note-content');
+  const closeCourseMapStudentNote = document.getElementById('close-course-map-student-note');
+  const closeCourseMapStudentNoteCta = document.getElementById('close-course-map-student-note-cta');
+  const courseMapTriageActions = document.getElementById('course-map-triage-actions');
+  const courseMapTriageEditButton = document.getElementById('course-map-triage-edit');
+  const courseMapTriageAddCommentButton = document.getElementById('course-map-triage-add-comment');
+  const courseMapTriageCommentModal = document.getElementById('course-map-triage-comment-modal');
+  const closeCourseMapTriageComment = document.getElementById('close-course-map-triage-comment');
+  const cancelCourseMapTriageComment = document.getElementById('cancel-course-map-triage-comment');
+  const saveCourseMapTriageComment = document.getElementById('save-course-map-triage-comment');
+  const courseMapTriageCommentText = document.getElementById('course-map-triage-comment-text');
   const courseMapHeaderStrip = document.getElementById('course-map-header-strip');
+  const courseMapOpenFolderShortcutsButton = document.getElementById('course-map-open-folder-shortcuts');
   const courseMapStudentInfoStrip = document.getElementById('course-map-student-info-strip');
   const courseMapStudentSearchInput = document.getElementById('course-map-student-search');
   const courseMapStudentSearchDropdown = document.getElementById('course-map-student-search-dropdown');
@@ -1477,6 +1720,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapKeyModal = document.getElementById('course-map-key-modal');
   const courseMapKeyModalBody = document.getElementById('course-map-key-modal-body');
   const courseMapModeToggleButton = document.getElementById('toggle-course-map-mode');
+  const courseMapStaffModeToggle = document.getElementById('course-map-staff-mode-toggle');
+  const courseMapStaffModeLabel = document.getElementById('course-map-staff-mode-label');
+  const courseMapOverrideToggle = document.getElementById('course-map-override-toggle');
+  const courseMapOverrideLabel = document.getElementById('course-map-override-label');
   const courseMapAiNamesToggleButton = document.getElementById('toggle-course-map-ai-names');
   const courseMapAiNamesToggleRow = document.getElementById('course-map-ai-names-row');
   const courseMapAiNamesToggleLabel = document.getElementById('course-map-ai-names-toggle-label');
@@ -1485,6 +1732,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const toggleCourseMapNotesButton = document.getElementById('toggle-course-map-notes');
   const courseMapNotesToggleRow = toggleCourseMapNotesButton?.closest('.course-map-show-hide-row') || null;
   const courseMapNotesToggleLabel = document.getElementById('course-map-notes-toggle-label');
+  const toggleCourseMapListColoursButton = document.getElementById('toggle-course-map-list-colours');
+  const courseMapListColoursToggleLabel = document.getElementById('course-map-list-colours-toggle-label');
   const closeCourseMapKey = document.getElementById('close-course-map-key');
   const courseMapPassForEnrolmentsToggle = document.getElementById('course-map-pass-for-enrolments');
   const courseMapPassForEnrolmentsToggleRow = document.getElementById('course-map-pass-for-enrolments-row');
@@ -1509,11 +1758,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapShowHideActions = document.querySelector('#course-map-modal .course-map-show-hide-actions');
   const openCourseMapShowHideButton = document.getElementById('open-course-map-show-hide');
   const courseMapShowHideDialog = document.getElementById('course-map-show-hide-dialog');
+  const courseMapModeActions = document.querySelector('#course-map-modal .course-map-mode-actions');
+  const openCourseMapModeButton = document.getElementById('open-course-map-mode');
+  const courseMapModeDialog = document.getElementById('course-map-mode-dialog');
+  const courseMapVaryLoadButton = document.getElementById('course-map-vary-load');
+  const courseMapLoadLabel = document.getElementById('course-map-load-label');
   const courseMapImageActions = document.querySelector('#course-map-modal .course-map-image-actions');
   const openCourseMapImageActionsButton = document.getElementById('open-course-map-image-actions');
   const courseMapImageDialog = document.getElementById('course-map-image-dialog');
   const copyCourseMapImageButton = document.getElementById('copy-course-map-image');
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
+  const courseMapEmailToolsButton = document.getElementById('course-map-email-tools');
+  const courseMapHistoryButton = document.getElementById('course-map-history');
+  const courseMapRemainingButton = document.getElementById('course-map-remaining');
+  const courseMapNextSemesterButton = document.getElementById('course-map-next-semester');
+  const courseMapOldCodesButton = document.getElementById('course-map-old-codes');
+  const courseMapFullSemesterTimetableButton = document.getElementById('course-map-full-semester-timetable');
   const currentEnrolmentsSection = document.getElementById('current-enrolments-section');
   const currentEnrolmentsTable = document.getElementById('current-enrolments-table');
   const historyGradedHeading = document.getElementById('history-graded-heading');
@@ -1831,6 +2091,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let sourceWorkbookFileObject = null;
   let emailScriptsFileObject = null;
   let triageWorkbookFileObject = null;
+  let triageWorkbookFileHandle = null;
+  let triageWorkbookDirectoryHandle = null;
   let fileLocationsProfileOverride = '';
   let fileLocationsIntakeOverride = '';
   let settingsSignOffDefaults = null;
@@ -2227,7 +2489,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapLoadButtonBusy = false;
   let courseMapLoadBusyWatcher = null;
   let courseMapLoadBusyStartedAt = 0;
-  const COURSE_MAP_EMAIL_SUBJECT = 'Student Enrolment Declaration';
+  const getCourseMapEmailSubject = () => {
+    const label = getCurrentSemesterShortcutLabel(new Date());
+    const match = String(label || '').match(/^(\d{2})_(01|02|SS)$/i);
+    if (!match) return 'Enrolment';
+    const year = 2000 + Number(match[1]);
+    const semester =
+      match[2].toUpperCase() === 'SS'
+        ? 'Summer Semester'
+        : `Semester ${Number(match[2])}`;
+    return `Enrolment ${semester} ${year}`;
+  };
   const COURSE_MAP_LOAD_BUSY_MAX_MS = 30000;
   const courseMapAiNameOverlay = {
     streams: {
@@ -2369,8 +2641,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   }
   function updateCourseMapLoadFilesButtonVisibility() {
+    const showStaffHeaderControls = shouldShowCourseMapLoadFilesButton();
+    if (courseMapOpenFolderShortcutsButton) {
+      courseMapOpenFolderShortcutsButton.hidden = !showStaffHeaderControls;
+    }
     if (courseMapLoadFilesButton) {
-      const show = shouldShowCourseMapLoadFilesButton();
+      const show = showStaffHeaderControls;
       const filesLoaded = hasCourseMapAllRequiredFilesLoaded();
       const loading = hasCourseMapActiveLoading();
       const activeRecord = typeof getActiveStudentRecord === 'function' ? getActiveStudentRecord() : null;
@@ -2526,6 +2802,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!record) return '';
     const feeDetails = getFeeStatusDetails(record);
     const visaType = String(record.Visa_Type || '').trim();
+    const visaTypeDisplay = formatVisaTypeForDisplay(visaType);
     const parts = [];
     const visaHtml = getVisaDetailModalHtml(visaType || '', feeDetails);
     if (visaHtml) parts.push(visaHtml);
@@ -2584,6 +2861,151 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       rows.push(`<div style="margin-top:8px"><strong>Comments:</strong></div>${commentsHtml}`);
     }
     return rows.join('');
+  };
+
+  const TRIAGE_HANDLED_BY_OPTIONS = ['', 'David', 'Antony', 'Sazia', 'Tony', 'Uma', 'Nandini', 'Sita', 'Anthony', 'Nidha', 'Promise'];
+  const TRIAGE_ALTERED_STATUS_OPTIONS = ['', 'Enquiry only', 'No longer enrolling', 'Changing existing enrolment', 'Teacher alert'];
+  const TRIAGE_STATUS_DETAILS_OPTIONS = [
+    '',
+    'Ongoing - International',
+    'Ongoing - International.  With new CT',
+    'Ongoing - Domestic',
+    'Ongoing - Domestic. With new CT',
+    'Ongoing - Deferred',
+    'New - International with CT',
+    'New - International sans CT',
+    "New - International - Don't know if CT",
+    'New - Domestic with CT',
+    'New - Domestic sans CT',
+    "New - Domestic - Don't know if CT",
+    'New - FMP Associate Degree',
+    'New - FMP Diploma',
+    'New - MP Diploma - International',
+    'New - MP Diploma - Domestic',
+    "New - Don't know more",
+    '? - need more info',
+  ];
+
+  const getCurrentTeacherNameForTriage = () => {
+    const signOffName = String(getSettingsSignOffPrefs()?.signOffName || '').trim();
+    const lowerSignOff = signOffName.toLowerCase();
+    const matched = TRIAGE_HANDLED_BY_OPTIONS.find((option) =>
+      option && lowerSignOff.includes(String(option).toLowerCase())
+    );
+    if (matched) return matched;
+    const profileHint = String(getProfileNameHint() || '').trim().toLowerCase();
+    return TRIAGE_HANDLED_BY_OPTIONS.find((option) =>
+      option && profileHint.includes(String(option).toLowerCase())
+    ) || '';
+  };
+
+  const splitTriageCommentLines = (comments) => {
+    const text = String(comments || '').trim();
+    if (!text) return [];
+    return text
+      .replace(/(?<!^)(?=\d{4}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{4})/g, '\n')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  };
+
+  const getPassedSubjectCountForRecord = (record) => {
+    const raw = String(record?.Passed_subjects || '').trim();
+    if (!raw) return 0;
+    const codes = raw.match(/\b[A-Z]{2,4}\d{3}\b/g);
+    if (codes?.length) return new Set(codes).size;
+    return raw.split(/[,;\n]+/).map((item) => item.trim()).filter(Boolean).length;
+  };
+
+  const buildCourseMapTriageEditFormHtml = (record) => {
+    const studentId = normalizeStudentId(record?.Student_IDs_Unique || '');
+    const triage = triageRecords.get(studentId) || {};
+    const hasTriageRecord = !!triageRecords.get(studentId);
+    const comments = String(triage.comments || '').trim();
+    const commentsLines = splitTriageCommentLines(comments);
+    const optionHtml = (options, selected) => {
+      const cleanSelected = String(selected || '').trim();
+      return options
+        .map((option) => {
+          const value = String(option || '');
+          const selectedAttr = value === cleanSelected ? ' selected' : '';
+          return `<option value="${escapeHtml(value)}"${selectedAttr}>${escapeHtml(value || '(blank)')}</option>`;
+        })
+        .join('');
+    };
+    const emailParts = [
+      record?.Primary_Email,
+      record?.Institute_Email,
+      record?.Secondary_Email,
+    ].map((value) => String(value || '').trim()).filter(Boolean);
+    const instituteEmail = String(record?.Institute_Email || '').trim();
+    const givenName = String(record?.Given_Name || '').trim();
+    const familyName = String(record?.Family_Name || '').trim();
+    const primaryEmail = String(record?.Primary_Email || '').trim();
+    const displayName = [
+      givenName,
+      familyName,
+    ].map((value) => String(value || '').trim()).filter(Boolean).join(' ');
+    const feeDetails = getFeeStatusDetails(record);
+    const remainingCount = getRemainingSubjectsCount();
+    const showPastYearMedian = [9, 7, 6, 5].includes(remainingCount);
+    const notInSource = !!record?._notInSource;
+    const tempClass = notInSource ? ' is-temp-hidden' : '';
+    const handledByValue = triage.handledBy || getCurrentTeacherNameForTriage();
+    return [
+      `<form id="course-map-triage-edit-form" class="course-map-triage-edit-form${tempClass}" data-new-triage-row="${hasTriageRecord ? 'false' : 'true'}" data-student-id="${escapeHtml(studentId)}" data-original-family-name="${escapeHtml(familyName)}" data-original-given-name="${escapeHtml(givenName)}" data-original-primary-email="${escapeHtml(primaryEmail)}" data-original-friendly-name="${escapeHtml(triage.friendlyName || '')}" data-original-handled-by="${escapeHtml(handledByValue)}" data-original-altered-status="${escapeHtml(triage.alteredStatus || '')}" data-original-status-details="${escapeHtml(triage.statusDetails || '')}" data-original-comments="${escapeHtml(comments)}">`,
+      '<div class="course-map-triage-static">',
+      notInSource
+        ? '<label class="course-map-triage-inline-field course-map-triage-student-id-field"><span>Student ID:</span>' +
+          `<input id="course-map-triage-student-id" type="text" value="${escapeHtml(studentId)}" />` +
+          '</label>'
+        : `<div class="course-map-triage-id-line">${escapeHtml([givenName, familyName, studentId].filter(Boolean).join(' '))}</div>`,
+      instituteEmail ? `<div class="course-map-triage-id-line">${escapeHtml(instituteEmail)}</div>` : '',
+      notInSource ? '' : `<div><strong>Suspended:</strong><span>${escapeHtml(String(record?.Suspended || '').trim() || 'N')}</span></div>`,
+      notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${getPassedSubjectCountForRecord(record)}</span></div>`,
+      notInSource ? '' : `<div><strong>Status:</strong><span>${escapeHtml(triage.statusLabel || '')}</span></div>`,
+      !notInSource && feeDetails.feeLabel ? `<div><strong>Fee Type:</strong><span>${escapeHtml(feeDetails.domesticFees ? 'Domestic Student' : 'International Student')}${feeDetails.fundingSource ? ` ${escapeHtml(feeDetails.fundingSource)}` : ''}</span></div>` : '',
+      notInSource ? '' : `<div><strong>Median grade:</strong><span>${escapeHtml(getMedianGradeLabel(manualEntryResults))}</span></div>`,
+      !notInSource && showPastYearMedian ? `<div><strong>Median grade past year:</strong><span>${escapeHtml(getMedianGradeLabelPastYear(manualEntryResults))}</span></div>` : '',
+      '</div>',
+      notInSource
+        ? '<div class="course-map-triage-temp-note">Student is not in Source. A new student or mistake in Student ID? If international, student must obtain student ID from our international office (along with their CoE) before can enrol. If domestic, student should complete online enrolment first. Then teacher should update Triage workbook.</div>'
+        : '',
+      '<div class="course-map-triage-edit-grid">',
+      '<label class="course-map-triage-inline-field"><span>Given Name:</span>',
+      `<input id="course-map-triage-given-name" type="text" value="${escapeHtml(givenName)}" />`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Family name:</span>',
+      `<input id="course-map-triage-family-name" type="text" value="${escapeHtml(familyName)}" />`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Primary Email:</span>',
+      `<input id="course-map-triage-primary-email" type="email" value="${escapeHtml(primaryEmail)}" />`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Friendly first name</span>',
+      `<input id="course-map-triage-friendly-name" type="text" value="${escapeHtml(triage.friendlyName || '')}" />`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Handled By</span>',
+      `<select id="course-map-triage-handled-by">${optionHtml(TRIAGE_HANDLED_BY_OPTIONS, handledByValue)}</select>`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Altered Status</span>',
+      `<select id="course-map-triage-altered-status">${optionHtml(TRIAGE_ALTERED_STATUS_OPTIONS, triage.alteredStatus)}</select>`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Status details</span>',
+      `<select id="course-map-triage-status-details">${optionHtml(TRIAGE_STATUS_DETAILS_OPTIONS, triage.statusDetails)}</select>`,
+      '</label>',
+      '</div>',
+      '<label class="course-map-triage-block-field">New Comment',
+      '<textarea id="course-map-triage-new-comment" rows="2"></textarea>',
+      '</label>',
+      commentsLines.length && hasTriageRecord
+        ? [
+          '<label class="course-map-triage-block-field">Comments',
+          `<textarea id="course-map-triage-comments" rows="${Math.min(25, Math.max(1, commentsLines.length))}">${escapeHtml(commentsLines.join('\n'))}</textarea>`,
+          '</label>',
+        ].join('')
+        : '',
+      '</form>',
+    ].join('');
   };
 
   const getCourseMapRemainingBreakdownCounts = () => {
@@ -3064,8 +3486,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .join('')
       : '';
     const failuresHeadingHtml = summary.totalFailures
-      ? `<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section"><strong>${summary.totalFailures} Failures</strong></div>`
-      : '<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section"><strong>0 Failures</strong><span class="course-map-remaining-info-inline-none"> none</span></div>';
+      ? `<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section"><strong>Failed:</strong> ${summary.totalFailures}</div>`
+      : '<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section"><strong>Failed:</strong> 0<span class="course-map-remaining-info-inline-none"> none</span></div>';
 
     return [
       `<div class="course-map-remaining-info-heading"><strong>${summary.remainingTotal} subjects remaining</strong></div>`,
@@ -3087,7 +3509,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       failuresHeadingHtml,
       failureRowsHtml,
       `<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section"><strong>Withdrawals:</strong> ${summary.hasAnyWithdrawals ? 'Y' : 'N'}</div>`,
-      `<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section course-map-remaining-info-heading-history"><strong>${summary.completedTotal} Completed</strong></div>`,
+      `<div class="course-map-remaining-info-heading course-map-remaining-info-heading-section course-map-remaining-info-heading-history"><strong>Completed:</strong> ${summary.completedTotal}</div>`,
       ...(hasCompletedHistoryDetails
         ? [
           creditRows.length
@@ -3131,14 +3553,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } else {
       lines.push('  None');
     }
-    lines.push(summary.failedSubjects.length ? `${summary.totalFailures} Failures` : '0 Failures none');
+    lines.push(summary.failedSubjects.length ? `Failed: ${summary.totalFailures}` : 'Failed: 0 none');
     if (summary.failedSubjects.length) summary.failedSubjects.forEach((item) => lines.push(`  ${item.code} (${item.count})`));
     lines.push(`Withdrawals: ${summary.hasAnyWithdrawals ? 'Y' : 'N'}`);
     lines.push('Remaining:');
     lines.push(`  ${summary.remainingCore} Core`);
     lines.push(`  ${summary.remainingMajor} Major`);
     lines.push(`  ${summary.remainingElectives} Elective${summary.remainingElectives === 1 ? '' : 's'}`);
-    lines.push(`${summary.completedTotal} Completed`);
+    lines.push(`Completed: ${summary.completedTotal}`);
     if ((Number(summary.completedTotal) || 0) > 0) {
       lines.push('Credit Transfers:');
       pushRows(creditRows);
@@ -3206,6 +3628,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       setCourseMapSearchLoadedState(false);
       courseMapLastAutoSearchStudentId = '';
       updateCourseMapLoadFilesButtonVisibility();
+      syncCourseMapEmailToolsButton();
       return;
     }
     syncCourseMapSearchFromSidebar();
@@ -3221,13 +3644,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const remainingChip = document.createElement('button');
       remainingChip.type = 'button';
       remainingChip.className = 'course-map-info-chip course-map-info-remaining';
-      remainingChip.textContent = `${remainingCount} remaining.`;
+      remainingChip.textContent = `${remainingCount} remaining`;
       remainingChip.setAttribute('data-tooltip-html', buildCourseMapRemainingTooltipHtml());
       remainingChip.setAttribute('aria-label', 'Open remaining summary');
       remainingChip.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showCourseMapRemainingInfoModal();
+        showCourseMapRemainingInfoModal(event.currentTarget);
       });
       courseMapStudentInfoStrip.appendChild(remainingChip);
 
@@ -3235,6 +3658,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapLastAutoSearchStudentId = '';
       initTooltips();
       updateCourseMapLoadFilesButtonVisibility();
+      syncCourseMapEmailToolsButton();
       return;
     }
     const studentId = normalizeStudentId(record.Student_IDs_Unique || '');
@@ -3275,6 +3699,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const instituteEmail = String(record.Institute_Email || '').trim();
     const personalEmail = String(record.Primary_Email || '').trim();
     const hasBothEmails = !!(instituteEmail && personalEmail);
+    const studentFlag = getStudentFlagText(record);
+    const studentNotes = String(record.International_Office_Notes || '').trim();
+    const completedBreakdown = getCourseMapCompletedBreakdownCounts();
+    const failedCountRaw = String(record.Failed_Count || '').trim();
+    const failedCount = failedCountRaw || String(completedBreakdown.failed || 0);
+    const withdrawnCount = String(completedBreakdown.withdrawn || 0);
     const aprApp = String(record.APR_APP || '').trim();
     const aprTooltipHtml = buildCourseMapAprTooltipHtml(record);
     const failWarningsTooltipHtml = buildCourseMapFailWarningsTooltipHtml();
@@ -3331,9 +3761,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       btn.className = 'course-map-strip-email clear-button secondary';
       btn.dataset.emails = list.join(';');
       btn.dataset.firstName = givenFirstName;
-      btn.dataset.subject = COURSE_MAP_EMAIL_SUBJECT;
+      const subjectLine = getCourseMapEmailSubject();
+      btn.dataset.subject = subjectLine;
       btn.setAttribute('aria-label', `Email ${label}`);
-      btn.setAttribute('title', 'Student Enrolment Declaration');
+      btn.setAttribute('title', subjectLine);
       if (tooltipText) btn.setAttribute('data-tooltip', tooltipText);
       const icon = typeof createEmailScriptsActionIcon === 'function'
         ? createEmailScriptsActionIcon('email')
@@ -3342,22 +3773,48 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       else btn.textContent = '@';
       courseMapStudentInfoStrip.appendChild(btn);
     };
-    appendEmailButton(
-      instituteEmail ? [instituteEmail] : [],
-      'institute email',
-      instituteEmail ? `Institute email: ${instituteEmail}` : ''
-    );
-    appendEmailButton(
-      personalEmail ? [personalEmail] : [],
-      'personal email',
-      personalEmail ? `Personal email: ${personalEmail}` : ''
-    );
-    if (hasBothEmails) {
-      appendEmailButton(
-        [instituteEmail, personalEmail],
-        'both emails',
-        `Both emails: ${instituteEmail}; ${personalEmail}`
-      );
+    const appendSeparatorText = (text, className = '', options = {}) => {
+      const cleanText = String(text || '').trim();
+      if (!cleanText) return null;
+      const chip = document.createElement('span');
+      chip.className = `course-map-info-text ${className}`.trim();
+      chip.textContent = `${options.pipeBefore ? '| ' : ''}${cleanText}${options.pipeAfter ? ' |' : ''}`;
+      courseMapStudentInfoStrip.appendChild(chip);
+      return chip;
+    };
+
+    const appendTextDetailButton = (label, title, text, className = '') => {
+      const cleanText = String(text || '').trim();
+      if (!cleanText) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `course-map-info-chip course-map-info-dialog-button ${className}`.trim();
+      btn.textContent = label;
+      btn.setAttribute('aria-label', `Open ${title}`);
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        showCourseMapStudentNoteModal(title, cleanText);
+      });
+      courseMapStudentInfoStrip.appendChild(btn);
+    };
+
+    if (studentFlag) {
+      const flagChip = document.createElement('span');
+      flagChip.className = 'course-map-info-chip course-map-info-flag is-warning';
+      flagChip.textContent = 'Student Flag';
+      flagChip.setAttribute('data-tooltip', studentFlag);
+      courseMapStudentInfoStrip.appendChild(flagChip);
+    }
+
+    appendTextDetailButton('Student Notes', 'Student Notes', studentNotes);
+
+    if (failedCount) {
+      appendSeparatorText(`Fail count: ${failedCount}`, 'course-map-info-fail-count');
+    }
+
+    if (withdrawnCount) {
+      appendSeparatorText(`W count: ${withdrawnCount}`, 'course-map-info-withdrawn-count', { pipeBefore: !!failedCount });
     }
 
     if (aprApp) {
@@ -3382,15 +3839,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     if (visaInfo.label) {
-      const visaChip = document.createElement('span');
-      visaChip.className = 'course-map-info-chip course-map-info-visa';
-      if (visaInfo.isNonSvInternational) visaChip.classList.add('is-warning');
-      visaChip.textContent = visaInfo.label;
+      const visaChip = appendSeparatorText(
+        visaInfo.label,
+        `course-map-info-visa${visaInfo.isNonSvInternational ? ' is-warning' : ''}`,
+        { pipeBefore: !!(failedCount || withdrawnCount) }
+      );
       if (visaInfo.tooltipHtml) {
         visaChip.setAttribute('data-tooltip-html', visaInfo.tooltipHtml);
         visaChip.setAttribute('data-tooltip-interactive', 'true');
       }
-      courseMapStudentInfoStrip.appendChild(visaChip);
     }
 
     if (holdText) {
@@ -3403,7 +3860,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     if (crtLocation) {
       const crtLink = document.createElement('a');
-      crtLink.className = 'course-map-info-chip course-map-info-link crt-form-link';
+      crtLink.className = 'course-map-info-chip course-map-info-dialog-button course-map-info-link crt-form-link';
       crtLink.href = crtLocation;
       crtLink.target = '_blank';
       crtLink.rel = 'noopener noreferrer';
@@ -3412,41 +3869,87 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     if (triageName || triage) {
-      const triageChip = document.createElement('span');
-      triageChip.className = 'course-map-info-chip course-map-info-triage';
-      triageChip.textContent = `Triage - ${triageName || 'There'}`;
+      const triageChip = document.createElement('button');
+      triageChip.type = 'button';
+      triageChip.className = 'course-map-info-chip course-map-info-dialog-button course-map-info-triage course-map-info-triage-detail';
+      triageChip.textContent = `Triage ${triageName || 'There'}`;
       if (triageTooltipHtml) {
         triageChip.setAttribute('data-tooltip-html', triageTooltipHtml);
         triageChip.setAttribute('data-tooltip-interactive', 'true');
       }
+      triageChip.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        showCourseMapStudentNoteModal('Triage', buildCourseMapTriageEditFormHtml(record), {
+          html: true,
+          triage: true,
+          triageEdit: true,
+        });
+      });
       courseMapStudentInfoStrip.appendChild(triageChip);
     } else {
       const triageMissingButton = document.createElement('button');
       triageMissingButton.type = 'button';
       triageMissingButton.className =
-        'course-map-info-chip course-map-info-triage course-map-info-triage-open';
+        'course-map-info-chip course-map-info-dialog-button course-map-info-triage course-map-info-triage-open';
       triageMissingButton.textContent = 'Not in Triage';
-      triageMissingButton.setAttribute('data-tooltip', 'Open Triage.xlsx');
-      triageMissingButton.setAttribute('title', 'Open Triage.xlsx');
+      triageMissingButton.setAttribute('title', 'Not in Triage');
       courseMapStudentInfoStrip.appendChild(triageMissingButton);
+    }
+
+    appendEmailButton(
+      instituteEmail ? [instituteEmail] : [],
+      'institute email',
+      instituteEmail ? `Institute email: ${instituteEmail}` : ''
+    );
+    appendEmailButton(
+      personalEmail ? [personalEmail] : [],
+      'personal email',
+      personalEmail ? `Personal email: ${personalEmail}` : ''
+    );
+    if (hasBothEmails) {
+      appendEmailButton(
+        [instituteEmail, personalEmail],
+        'both emails',
+        `Both emails: ${instituteEmail}; ${personalEmail}`
+      );
     }
 
     const remainingChip = document.createElement('button');
     remainingChip.type = 'button';
     remainingChip.className = 'course-map-info-chip course-map-info-remaining';
-    remainingChip.textContent = `${remainingCount} remaining.`;
+    remainingChip.textContent = `${remainingCount} remaining`;
     remainingChip.setAttribute('data-tooltip-html', buildCourseMapRemainingTooltipHtml());
     remainingChip.setAttribute('aria-label', 'Open remaining summary');
     remainingChip.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      showCourseMapRemainingInfoModal();
+      showCourseMapRemainingInfoModal(event.currentTarget);
     });
     courseMapStudentInfoStrip.appendChild(remainingChip);
 
     initTooltips();
     requestAnimationFrame(syncCourseMapNameFadeState);
     updateCourseMapLoadFilesButtonVisibility();
+    syncCourseMapEmailToolsButton();
+  };
+
+  const isMainEmailToolsButtonVisible = () => {
+    const mainButton = document.querySelector('.drop-zone-action-email-tools');
+    if (!mainButton || mainButton.hidden) return false;
+    const style = window.getComputedStyle(mainButton);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  };
+
+  const syncCourseMapEmailToolsButton = () => {
+    if (!courseMapEmailToolsButton) return;
+    const showButton = !!(
+      courseMapModal?.classList.contains('show') &&
+      getCourseMapIsStaffMode() &&
+      isMainEmailToolsButtonVisible()
+    );
+    courseMapEmailToolsButton.hidden = !showButton;
+    courseMapEmailToolsButton.classList.toggle('hidden-initial', !showButton);
   };
 
   const syncCourseMapStaffTimetableButton = () => {
@@ -3459,7 +3962,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapStaffActionsRowEl.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenWindowButton) {
-      courseMapStaffOpenWindowButton.textContent = 'Details';
+      courseMapStaffOpenWindowButton.textContent = 'Subject details';
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
       courseMapStaffOpenWindowButton.setAttribute('aria-hidden', 'false');
@@ -3470,7 +3973,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapStaffCopyTimetableButton.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenSelectedButton) {
-      courseMapStaffOpenSelectedButton.textContent = 'Selections';
+      courseMapStaffOpenSelectedButton.textContent = 'Selection details';
       courseMapStaffOpenSelectedButton.style.display = hasSelected ? 'block' : 'none';
       courseMapStaffOpenSelectedButton.classList.toggle('hidden-initial', !hasSelected);
       courseMapStaffOpenSelectedButton.setAttribute('aria-hidden', hasSelected ? 'false' : 'true');
@@ -3499,31 +4002,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapStaffSelectedSummary = () => {
     if (!courseMapStaffSelectedSummaryEl) return;
     courseMapStaffSelectedSummaryEl.innerHTML = '';
-    const rows = typeof getSelectedRows === 'function' ? getSelectedRows() : [];
-    if (!rows.length) {
-      const empty = document.createElement('div');
-      empty.className = 'course-map-staff-selected-empty';
-      empty.textContent = 'No subjects selected';
-      courseMapStaffSelectedSummaryEl.appendChild(empty);
-      return;
-    }
-    rows.forEach((row) => {
-      const item = document.createElement('div');
-      item.className = 'course-map-staff-selected-item';
-      const left = document.createElement('div');
-      left.className = 'course-map-staff-selected-left';
-      const fullName = getSubjectName(row.id);
-      left.textContent = `${row.id}${fullName ? ` ${fullName}` : ''}`;
-      left.title = left.textContent;
-      const right = document.createElement('div');
-      right.className = 'course-map-staff-selected-right';
-      const day = getCourseMapDayAbbrev(row.dayFull || row.dayShort || '', 3) || 'N/A';
-      const slot = getSlotAbbreviation(row.slot || '');
-      right.textContent = [day, slot].filter(Boolean).join(' ');
-      item.appendChild(left);
-      item.appendChild(right);
-      courseMapStaffSelectedSummaryEl.appendChild(item);
-    });
   };
 
   const mountCourseMapSelectedListIntoStaffPanel = () => {
@@ -3553,12 +4031,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapStaffPanelRaf) cancelAnimationFrame(courseMapStaffPanelRaf);
     courseMapStaffPanelRaf = requestAnimationFrame(() => {
       if (!courseMapStaffPanelEl || courseMapStaffPanelEl.hidden || !courseMapContent) return;
-      const bit121 = courseMapContent.querySelector('.course-map-cell[data-subject="BIT121"]');
-      if (!bit121) return;
-      const contentRect = courseMapContent.getBoundingClientRect();
-      const bitRect = bit121.getBoundingClientRect();
-      const desiredTop = Math.max(0, Math.round(bitRect.bottom - contentRect.top + 36));
-      courseMapStaffPanelEl.style.top = `${desiredTop}px`;
+      courseMapStaffPanelEl.style.top = '160px';
     });
   };
 
@@ -3787,12 +4260,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       panelEl.style.height = '';
       if (fixFlexOnResize) panelEl.style.flex = '';
       if (!persist) return;
+      const queryWidth = activePanelWidthPx[key];
+      if (Number.isFinite(queryWidth) && queryWidth > 0) {
+        panelEl.style.width = `${Math.round(queryWidth)}px`;
+        if (fixFlexOnResize) panelEl.style.flex = '0 0 auto';
+        return;
+      }
       try {
         const raw = localStorage.getItem(getStorageKey());
         if (!raw) return;
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return;
-        if (Number.isFinite(parsed.w)) panelEl.style.width = `${parsed.w}px`;
+        if (Number.isFinite(parsed.w)) {
+          panelEl.style.width = `${parsed.w}px`;
+          activePanelWidthPx[key] = Math.round(parsed.w);
+          updateBookmarkableSettingsUrl();
+        }
         if (Number.isFinite(parsed.h)) panelEl.style.height = `${parsed.h}px`;
         if (fixFlexOnResize && parsed.fixedFlex) panelEl.style.flex = '0 0 auto';
       } catch { }
@@ -3800,6 +4283,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const persistSize = (w, h, fixedFlex) => {
       if (!persist) return;
+      if (Number.isFinite(w) && w > 0) {
+        activePanelWidthPx[key] = Math.round(w);
+        updateBookmarkableSettingsUrl();
+      }
       try {
         const payload = { w, h, fixedFlex: !!fixedFlex };
         localStorage.setItem(getStorageKey(), JSON.stringify(payload));
@@ -4339,6 +4826,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const passForEnrolmentsOverrides = new Set();
   const currentEnrolmentsPlannedOverrides = new Set();
   let loadedStudentSnapshot = null;
+  let suppressNextFullLoadAutoModal = false;
   let nextSemWarning = null;
   let finalSemWarning = null;
   let warningPayloads = [];
@@ -4349,7 +4837,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapPrereqTextOn = true;
   let courseMapIndicatorsOn = true;
   let courseMapNotesOn = !staffFacing;
-  let courseMapFontScaleEm = 1;
+  let courseMapListColoursOn = false;
   let remainingNoticeUnlocked = false;
   let majorPulseTimer = null;
 
@@ -5282,6 +5770,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       varyLoadButton.disabled = false;
       varyLoadButton.classList.remove('disabled');
     }
+    if (courseMapVaryLoadButton) {
+      courseMapVaryLoadButton.textContent = `${loadCount}`;
+      courseMapVaryLoadButton.disabled = false;
+      courseMapVaryLoadButton.classList.remove('disabled');
+    }
+    if (courseMapLoadLabel) courseMapLoadLabel.textContent = 'How many subjects will study?';
   };
 
   const electiveCodeOrder = ['USE101', 'USE102', 'USE201', 'USE301'];
@@ -5491,11 +5985,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getTimetableLabel = (d) => {
     const m = d.getMonth(); // 0 = Jan
-    if (m <= 1) return `${d.getFullYear()} Semester 1`; // Jan-Feb
-    if (m >= 2 && m <= 5) return `${d.getFullYear()} Semester 1`; // Mar-Jun
-    if (m >= 6 && m <= 7) return `${d.getFullYear()} Semester 2`; // Jul-Aug
-    if (m >= 8 && m <= 10) return 'Summer Semester'; // Sep-Nov
-    return `${d.getFullYear() + 1} Semester 1`; // Dec -> next year Sem 1
+    if (m <= 3) return `${d.getFullYear()} Semester 1`;
+    if (m <= 7) return `${d.getFullYear()} Semester 2`;
+    return `${d.getFullYear()} Summer Semester`;
   };
 
   const formatShortDate = (value) => {
@@ -5543,8 +6035,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const buildDeferredNoticeText = (info) => {
     if (!info) return '';
-    const enrolmentText = info.lastEnrolmentText || 'unknown';
-    return `Last result recorded ${enrolmentText}.`;
+    const resultText = info.lastEnrolmentText || 'unknown';
+    return `Most recent result: ${resultText}.`;
   };
 
   const getStudentFlagText = (record) => String(record?.Student_Flag || '').trim();
@@ -5650,9 +6142,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const plannedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
-    const currentCodes = Array.from(currentEnrolmentStudentRecord.values()).filter(
-      (code) => !withdrawnCurrentEnrolments.has(code)
-    );
+    const currentCodes = passForEnrolmentsEnabled
+      ? []
+      : Array.from(currentEnrolmentStudentRecord.values()).filter(
+          (code) => !withdrawnCurrentEnrolments.has(code)
+        );
     return new Set([...plannedCodes, ...currentCodes]);
   };
 
@@ -6034,7 +6528,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const id = activeStudentId || normalizeStudentId(studentIdInput?.value || '');
     if (!id) return staffWorkbookState.getStudentRecord();
     return (
-      studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id) ||
+      findStudentRecordById(id) ||
       staffWorkbookState.getStudentRecord()
     );
   };
@@ -6111,6 +6605,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (number) return number[0];
     return String(visaType).trim();
   };
+  const formatVisaTypeForDisplay = (visaType) =>
+    String(visaType || '')
+      .replace(/\s*[-–—]\s*MP\s+CoE\s+issued\b/gi, '')
+      .trim();
   const DOMESTIC_VISA_CAVEATS = {
     humanitarianTemporary: ['785', '790'],
     provisional: ['491'],
@@ -6169,6 +6667,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getVisaDetailModalHtml = (visaType, feeDetails) => {
     if (!visaType) return '';
     const upper = visaType.toUpperCase();
+    const visaDisplay = formatVisaTypeForDisplay(visaType);
     const numbers = upper.match(/\b\d{3}\b/g) || [];
     const non500 = numbers.filter((code) => code !== '500');
     const isRefugee = upper.includes('REFUGEE');
@@ -6182,7 +6681,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ? 'Study load: part-time may be permitted (domestic or special/part-time visa rules apply).'
       : 'Study load: full load required (international student rules).';
     return `<p><strong class="alert-inline-title alert-title-info">Visa details</strong> <span class="alert-inline-text">Visa: ${escapeHtml(
-      visaType
+      visaDisplay
     )} – ${escapeHtml(description)}.</span></p><p class="alert-inline-text">${escapeHtml(
       feeText
     )}</p><p class="alert-inline-text">${escapeHtml(loadText)}</p>`;
@@ -6199,6 +6698,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       };
     }
     const visaType = String(record.Visa_Type || '').trim();
+    const visaTypeDisplay = formatVisaTypeForDisplay(visaType);
     const visaUpper = visaType.toUpperCase();
     const visaNumbers = (visaUpper.match(/\b\d{3}\b/g) || []);
     const hasRefugeeWord = visaUpper.includes('REFUGEE');
@@ -6264,7 +6764,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : status === 'domestic_csp'
           ? 'Fee Type: Domestic student paying CSP rates'
           : status === 'international_special'
-            ? `Fee Type: International student on ${visaType || 'special visa'} paying domestic fees`
+            ? `Fee Type: International student on ${visaTypeDisplay || 'special visa'} paying domestic fees`
             : 'Fee Type: International student rates';
     return {
       feeStatus: status,
@@ -6272,8 +6772,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       domesticLoad: domesticLoadAllowed,
       feeLabel,
       loadNote,
-      visaType,
-      visaShortLabel: getVisaShortLabel(visaType),
+      visaType: visaTypeDisplay,
+      visaShortLabel: getVisaShortLabel(visaTypeDisplay),
       isBridgingVisa,
       fundingSource: fundingSourceRaw,
       fundingSourcePrefix,
@@ -7530,7 +8030,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateResetState = () => {
     if (!clearButton) return;
-    const selectedCount = Array.from(subjectState.values()).filter((st) => st?.toggled).length;
+    const selectedCodes = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code);
+    const selectedCount = selectedCodes.length;
     const hasAnyState = Array.from(subjectState.values()).some((st) => st?.toggled || st?.completed);
     const hasAnyUse = electivePlaceholderState.some(Boolean);
     const hasAnyBit = electiveBitState.some(Boolean);
@@ -7551,17 +8054,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     if (hasSelected) {
-      if (!mainGridFullLoadModalOpened && !timetableModal?.classList.contains('show')) {
+      const isOnlyAutoCurrentEnrolments =
+        suppressNextFullLoadAutoModal &&
+        selectedCodes.length > 0 &&
+        currentEnrolmentsPlannedOverrides.size > 0 &&
+        selectedCodes.every((code) => currentEnrolmentsPlannedOverrides.has(code));
+      if (isOnlyAutoCurrentEnrolments) {
+        mainGridFullLoadModalOpened = true;
+        suppressNextFullLoadAutoModal = false;
+      } else if (!mainGridFullLoadModalOpened && !timetableModal?.classList.contains('show')) {
         mainGridFullLoadModalOpened = true;
         showAvailableModal();
       }
     } else {
       mainGridFullLoadModalOpened = false;
+      suppressNextFullLoadAutoModal = false;
     }
     syncCourseMapStaffTimetableButton();
     if (nextSemesterButton) {
       nextSemesterButton.style.display = hasSelected ? '' : 'none';
       nextSemesterButton.classList.toggle('hidden-initial', !hasSelected);
+    }
+    if (courseMapNextSemesterButton) {
+      courseMapNextSemesterButton.style.display = hasSelected ? '' : 'none';
+      courseMapNextSemesterButton.classList.toggle('hidden-initial', !hasSelected);
     }
     if (varyLoadButton) {
       varyLoadButton.style.display = '';
@@ -7573,14 +8089,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (availableHeading) {
       availableHeading.style.display = '';
     }
+    const hasHistory = getHistoryRows().length > 0 || manualEntryCurrent.size > 0 || manualEntryUnknown.length > 0;
+    const hasHistoryOrSelections = hasHistory || hasSelected;
     if (historyButton) {
-      const hasHistory = getHistoryRows().length > 0 || manualEntryCurrent.size > 0 || manualEntryUnknown.length > 0;
       historyButton.style.display = hasHistory ? '' : 'none';
+      if (courseMapHistoryButton) courseMapHistoryButton.style.display = hasHistory ? '' : 'none';
     }
     updatePassForEnrolmentsAvailability();
     if (remainingButton) {
-      remainingButton.style.display = '';
-      remainingButton.classList.remove('hidden-initial');
+      remainingButton.style.display = hasHistoryOrSelections ? '' : 'none';
+      remainingButton.classList.toggle('hidden-initial', !hasHistoryOrSelections);
+    }
+    if (courseMapRemainingButton) {
+      courseMapRemainingButton.style.display = hasHistoryOrSelections ? '' : 'none';
+      courseMapRemainingButton.classList.toggle('hidden-initial', !hasHistoryOrSelections);
     }
     if (nextSemList) {
       const rows = getNextSemRows();
@@ -7642,7 +8164,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateCompletedModeUI = () => {
     if (!completedModeButton) return;
-    completedModeButton.textContent = completedMode ? 'Close history mode' : 'Clicking mode';
+    completedModeButton.textContent = completedMode ? 'Finish entering history' : 'Clicking mode';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     if (!completedMode) {
@@ -7665,12 +8187,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const updateOverrideUI = () => {
-    if (!overrideToggle) return;
-    overrideToggle.checked = overrideMode;
-    overrideToggle.setAttribute('aria-pressed', overrideMode ? 'true' : 'false');
+    if (overrideToggle) {
+      overrideToggle.checked = overrideMode;
+      overrideToggle.setAttribute('aria-pressed', overrideMode ? 'true' : 'false');
+    }
+    if (courseMapOverrideToggle) {
+      courseMapOverrideToggle.checked = overrideMode;
+      courseMapOverrideToggle.setAttribute('aria-pressed', overrideMode ? 'true' : 'false');
+    }
     if (overrideLabel) {
       overrideLabel.textContent = overrideMode ? 'Override prerequisites (active)' : 'Override prerequisites';
       overrideLabel.classList.toggle('active', overrideMode);
+    }
+    if (courseMapOverrideLabel) {
+      courseMapOverrideLabel.textContent = overrideMode ? 'Override prerequisites (active)' : 'Override prerequisites';
+      courseMapOverrideLabel.classList.toggle('active', overrideMode);
     }
   };
 
@@ -8009,7 +8540,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     const positionTooltip = (event) => {
-      if (isPlaceholderCell() && !isEventInsideCell(event)) return;
+      if (!isEventInsideCell(event)) {
+        cell.classList.remove('show-tooltip', 'hover-active');
+        return;
+      }
       const rect = cell.getBoundingClientRect();
       const tooltipWidth = tooltip.offsetWidth || rect.width * 0.9;
       const isMouseEvent =
@@ -8040,7 +8574,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tooltip.style.top = `${offsetY}px`;
     };
     const showTooltip = (event) => {
-      if (isPlaceholderCell() && !isEventInsideCell(event)) return;
+      if (document.querySelector('.modal-overlay.show')) {
+        cell.classList.remove('show-tooltip', 'hover-active');
+        return;
+      }
+      if (!isEventInsideCell(event)) {
+        cell.classList.remove('show-tooltip', 'hover-active');
+        return;
+      }
       const isMouseEvent =
         !!event && (event.type.startsWith('mouse') || (typeof MouseEvent !== 'undefined' && event instanceof MouseEvent));
       if (isTouchDevice && completedMode && isPlaceholderCell() && !isMouseEvent) {
@@ -8554,10 +9095,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!dropZone) return;
     if (dropSidebar) {
       dropSidebar.style.display = dropZoneEnabled ? 'flex' : 'none';
-      dropSidebar.classList.toggle('is-active', dropZoneEnabled);
+      dropSidebar.classList.toggle('is-active', !!dropZoneEnabled);
     }
-    dropZone.style.display = dropZoneEnabled ? 'flex' : 'none';
+    dropZone.style.display = '';
+    if (loadFromFolderButton) loadFromFolderButton.style.display = dropZoneEnabled ? '' : 'none';
+    dropZone.classList.toggle('load-from-folder-hidden', !dropZoneEnabled);
     if (!dropZoneEnabled) return;
+    const hideLoadFromFolderButton = () => {
+      if (loadFromFolderButton) loadFromFolderButton.style.display = 'none';
+      dropZone.classList.add('load-from-folder-hidden');
+    };
     const dropZoneTooltip = document.createElement('div');
     dropZoneTooltip.className = 'drop-zone-tooltip';
     dropZoneTooltip.style.position = 'fixed';
@@ -8610,13 +9157,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       })
     );
     dropZone.addEventListener('click', async () => {
+      hideLoadFromFolderButton();
       await runPrimarySourceLoadFlow({ sourceOnly: false });
     });
     dropZone.addEventListener('dblclick', async () => {
       if (!staffFacing) return;
+      hideLoadFromFolderButton();
       await runPrimarySourceLoadFlow({ sourceOnly: true });
     });
     dropZone.addEventListener('drop', (e) => {
+      hideLoadFromFolderButton();
       if (dropSidebar) dropSidebar.classList.add('is-active');
       const files = Array.from(e.dataTransfer?.files || []);
       if (!files.length) {
@@ -8637,6 +9187,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       handleSourceFilesSelection(files);
     });
+
+    if (loadFromFolderButton) {
+      loadFromFolderButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const loaded = hasDirectoryPicker()
+          ? await promptForDirectoryHandle({ sourceOnly: false })
+          : await openSourceFilePicker();
+        if (loaded) {
+          hideLoadFromFolderButton();
+          if (dropSidebar) dropSidebar.classList.add('is-active');
+        }
+      });
+    }
 
     dropZone.addEventListener('mousemove', (e) => {
       if (dropZoneTooltip.style.display !== 'block') return;
@@ -8736,7 +9300,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const option = event.target?.closest?.('.student-search-option');
       if (!option) return;
       const id = option.getAttribute('data-student-id') || '';
-      const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+      const record = findStudentRecordById(id);
       if (record) applyStudentSearchSelection(record);
     });
     dropdown.addEventListener('keydown', (event) => {
@@ -8745,7 +9309,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!option) return;
       event.preventDefault();
       const id = option.getAttribute('data-student-id') || '';
-      const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+      const record = findStudentRecordById(id);
       if (record) applyStudentSearchSelection(record);
     });
   };
@@ -9178,6 +9742,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showFolderShortcutsModal = () => {
     if (!folderShortcutsModal) return;
+    void renderFolderShortcutPanel();
     const modalBox = folderShortcutsModal.querySelector('.folder-shortcuts-modal');
     if (modalBox) {
       modalBox.style.position = '';
@@ -9773,11 +10338,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getSemesterNote = (date = new Date()) => {
-    const month = date.getMonth();
-    if (month === 0 || month >= 10) return 'S1';
-    if (month >= 1 && month < 6) return 'S2';
-    if (month >= 6 && month < 10) return 'SS';
-    return 'S1';
+    return getCurrentSemesterKey(date);
   };
 
   const getSlotHeadingWithTime = (slot = '') => {
@@ -9912,15 +10473,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const updateTimetableAvailableColoursButton = () => {
     if (!timetableModal || !timetableColoursButton) return;
-    const isAvailableMode = currentTableMode === 'available' || timetableModal.classList.contains('mode-available');
-    if (staffFacing) {
-      timetableColoursButton.hidden = false;
-      timetableColoursButton.disabled = false;
-    } else {
-      timetableColoursButton.hidden = !isAvailableMode;
-      timetableColoursButton.disabled = !isAvailableMode;
-    }
-    timetableColoursButton.textContent = timetableAvailableColoursOn ? 'Colours Off' : 'Colours On';
+    timetableColoursButton.hidden = false;
+    timetableColoursButton.disabled = false;
+    timetableColoursButton.textContent = timetableAvailableColoursOn ? 'Hide Colours' : 'Show Colours';
     timetableColoursButton.setAttribute('aria-pressed', String(timetableAvailableColoursOn));
     timetableModal.classList.toggle('timetable-available-colours-on', !!timetableAvailableColoursOn);
   };
@@ -11259,6 +11814,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateOverrideUI();
     });
   }
+  if (courseMapOverrideToggle) {
+    courseMapOverrideToggle.addEventListener('change', () => {
+      overrideMode = courseMapOverrideToggle.checked;
+      updateOverrideUI();
+    });
+  }
   if (livePrereqToggle) {
     livePrereqToggle.addEventListener('change', () => {
       livePrereqUpdates = livePrereqToggle.checked;
@@ -11308,6 +11869,86 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!mailto) return;
     window.location.href = mailto;
   };
+  const handleStudentDetailsClick = (event) => {
+    const copyPersonalsTarget = event.target?.closest?.('.student-summary-copy-personals');
+    if (copyPersonalsTarget) {
+      event.preventDefault();
+      void copyActiveStudentPersonalsSequence(copyPersonalsTarget);
+      return;
+    }
+    const idCopyTarget = event.target?.closest?.('.student-summary-id-value');
+    if (idCopyTarget) {
+      event.preventDefault();
+      const idText = (idCopyTarget.getAttribute('data-copy-id') || idCopyTarget.textContent || '').trim();
+      if (!idText) return;
+      void copyPlainText(idText).then((copied) => {
+        if (!copied) return;
+        const flashTarget = idCopyTarget.closest('.student-summary-id') || idCopyTarget;
+        triggerFlash(flashTarget);
+      });
+      return;
+    }
+    const triageActionTarget = event.target?.closest?.('.student-summary-triage-action');
+    if (triageActionTarget) {
+      event.preventDefault();
+      let record = staffWorkbookState.getStudentRecord?.() || null;
+      if (!record && triageActionTarget.dataset.triageAction === 'add-temp') {
+        const studentId = normalizeStudentId(studentIdInput?.value || '');
+        record = { Student_IDs_Unique: studentId, _notInSource: true };
+      }
+      if (!record) return;
+      const action = triageActionTarget.dataset.triageAction || '';
+      showCourseMapStudentNoteModal(
+        action === 'add' || action === 'add-temp' ? 'Add to Triage' : 'Triage',
+        buildCourseMapTriageEditFormHtml(record),
+        { html: true, triage: true, triageEdit: true }
+      );
+      return;
+    }
+    const idRowTarget = event.target?.closest?.('.student-summary-id');
+    if (idRowTarget) {
+      event.preventDefault();
+      const fullText = (idRowTarget.getAttribute('data-copy') || idRowTarget.textContent || '').trim();
+      if (!fullText) return;
+      void copyPlainText(fullText).then((copied) => {
+        if (!copied) return;
+        triggerFlash(idRowTarget);
+      });
+      return;
+    }
+    const triageComment = event.target?.closest?.('.triage-comment-preview, .triage-comment-menu');
+    if (triageComment) {
+      event.preventDefault();
+      toggleTriageComment(triageComment);
+      return;
+    }
+    const emailTarget = event.target?.closest?.('.student-email-link');
+    if (emailTarget) {
+      event.preventDefault();
+      const email = emailTarget.getAttribute('data-email') || '';
+      const firstName = emailTarget.getAttribute('data-first-name') || '';
+      void openStudentEmail([email], firstName);
+      triggerFlash(emailTarget);
+      return;
+    }
+    const emailAllTarget = event.target?.closest?.('.student-email-all');
+    if (!emailAllTarget) return;
+    event.preventDefault();
+    const emails = (emailAllTarget.getAttribute('data-emails') || '')
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
+    const firstName = emailAllTarget.getAttribute('data-first-name') || '';
+    void openStudentEmail(emails, firstName);
+    triggerFlash(emailAllTarget);
+  };
+  const handleStudentDetailsKeydown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const triageComment = event.target?.closest?.('.triage-comment-preview, .triage-comment-menu');
+    if (!triageComment) return;
+    event.preventDefault();
+    toggleTriageComment(triageComment);
+  };
   if (studentDataPreview) {
     studentDataPreview.addEventListener('dblclick', (event) => {
       const target = event.target?.closest?.('.student-summary-id');
@@ -11318,69 +11959,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         triggerFlash(target);
       }).catch(() => { });
     });
-    studentDataPreview.addEventListener('click', (event) => {
-      const copyPersonalsTarget = event.target?.closest?.('.student-summary-copy-personals');
-      if (copyPersonalsTarget) {
-        event.preventDefault();
-        void copyActiveStudentPersonalsSequence(copyPersonalsTarget);
-        return;
-      }
-      const idCopyTarget = event.target?.closest?.('.student-summary-id-value');
-      if (idCopyTarget) {
-        event.preventDefault();
-        const idText = (idCopyTarget.getAttribute('data-copy-id') || idCopyTarget.textContent || '').trim();
-        if (!idText) return;
-        void copyPlainText(idText).then((copied) => {
-          if (!copied) return;
-          const flashTarget = idCopyTarget.closest('.student-summary-id') || idCopyTarget;
-          triggerFlash(flashTarget);
-        });
-        return;
-      }
-      const idRowTarget = event.target?.closest?.('.student-summary-id');
-      if (idRowTarget) {
-        event.preventDefault();
-        const fullText = (idRowTarget.getAttribute('data-copy') || idRowTarget.textContent || '').trim();
-        if (!fullText) return;
-        void copyPlainText(fullText).then((copied) => {
-          if (!copied) return;
-          triggerFlash(idRowTarget);
-        });
-        return;
-      }
-      const triageComment = event.target?.closest?.('.triage-comment-preview, .triage-comment-menu');
-      if (triageComment) {
-        event.preventDefault();
-        toggleTriageComment(triageComment);
-        return;
-      }
-      const emailTarget = event.target?.closest?.('.student-email-link');
-      if (emailTarget) {
-        event.preventDefault();
-        const email = emailTarget.getAttribute('data-email') || '';
-        const firstName = emailTarget.getAttribute('data-first-name') || '';
-        void openStudentEmail([email], firstName);
-        triggerFlash(emailTarget);
-        return;
-      }
-      const emailAllTarget = event.target?.closest?.('.student-email-all');
-      if (!emailAllTarget) return;
-      event.preventDefault();
-      const emails = (emailAllTarget.getAttribute('data-emails') || '')
-        .split(',')
-        .map((email) => email.trim())
-        .filter(Boolean);
-      const firstName = emailAllTarget.getAttribute('data-first-name') || '';
-      void openStudentEmail(emails, firstName);
-      triggerFlash(emailAllTarget);
-    });
-    studentDataPreview.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      const triageComment = event.target?.closest?.('.triage-comment-preview, .triage-comment-menu');
-      if (!triageComment) return;
-      event.preventDefault();
-      toggleTriageComment(triageComment);
-    });
+    studentDataPreview.addEventListener('click', handleStudentDetailsClick);
+    studentDataPreview.addEventListener('keydown', handleStudentDetailsKeydown);
     document.addEventListener('click', (event) => {
       if (event.target?.closest?.('.triage-comment-preview')) return;
       if (event.target?.closest?.('.triage-comment-menu')) return;
@@ -11391,6 +11971,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (event.key !== 'Escape') return;
       closeAllTriageComments();
     });
+  }
+  if (courseMapVaryLoadButton) courseMapVaryLoadButton.addEventListener('click', showLoadModal);
+  if (courseMapFullStudentDetailsContent) {
+    courseMapFullStudentDetailsContent.addEventListener('click', handleStudentDetailsClick);
+    courseMapFullStudentDetailsContent.addEventListener('keydown', handleStudentDetailsKeydown);
   }
 
   if (openInstructionsModal) {
@@ -11407,6 +11992,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (openFolderShortcutsModalButton) {
     openFolderShortcutsModalButton.addEventListener('click', () => {
       if (openFolderShortcutsModalButton.disabled) return;
+      showFolderShortcutsModal();
+    });
+  }
+  if (courseMapOpenFolderShortcutsButton) {
+    courseMapOpenFolderShortcutsButton.addEventListener('click', () => {
       showFolderShortcutsModal();
     });
   }
@@ -11570,13 +12160,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const triageOpenTarget = event.target?.closest?.('.course-map-info-triage-open');
       if (triageOpenTarget) {
         event.preventDefault();
-        openLoadedFile('triage').then((opened) => {
-          if (!opened) {
-            showEmailScriptsOpenError('triage');
-            return;
-          }
-          triggerFlash(triageOpenTarget);
-        });
+        showCourseMapStudentNoteModal('Not in Triage', 'Still under construction');
+        triggerFlash(triageOpenTarget);
         return;
       }
       const emailTarget = event.target?.closest?.('.course-map-strip-email');
@@ -11587,13 +12172,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .map((email) => email.trim())
         .filter(Boolean);
       const firstName = emailTarget.getAttribute('data-firstName') || emailTarget.getAttribute('data-first-name') || '';
-      const subjectLine = emailTarget.getAttribute('data-subject') || COURSE_MAP_EMAIL_SUBJECT;
+      const subjectLine = emailTarget.getAttribute('data-subject') || getCourseMapEmailSubject();
       void openStudentEmail(emails, firstName, subjectLine);
       triggerFlash(emailTarget);
     });
   }
   if (showCourseTimetableButton) showCourseTimetableButton.addEventListener('click', showCourseTimetableModal);
   if (courseTimetableIconButton) courseTimetableIconButton.addEventListener('click', showCourseTimetableModal);
+  if (courseMapFullSemesterTimetableButton) {
+    courseMapFullSemesterTimetableButton.addEventListener('click', showCourseTimetableModal);
+  }
   if (settingsButton && settingsMenu) {
     settingsButton.addEventListener('click', (event) => {
       event.preventDefault();
@@ -11612,14 +12200,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateBookmarkableSettingsUrl();
       });
     }
-    if (settingsRootFontSizeRadios.length) {
-      settingsRootFontSizeRadios.forEach((radio) => {
-        radio.addEventListener('change', () => {
-          if (!radio.checked) return;
-          applyRootFontSize(radio.value);
-        });
+    if (settingsRootFontSizeSlider) {
+      settingsRootFontSizeSlider.addEventListener('input', () => {
+        applyRootFontSize(settingsRootFontSizeSlider.value);
+        updateCourseMapFontScale();
       });
     }
+    if (settingsRootFontSizeLabel) {
+      settingsRootFontSizeLabel.addEventListener('click', () => {
+        applyRootFontSize(DEFAULT_ROOT_FONT_SIZE_PX);
+        updateCourseMapFontScale();
+      });
+    }
+    if (settingsDefaultSidebarWidthsButton) {
+      settingsDefaultSidebarWidthsButton.addEventListener('click', () => {
+        resetSidebarWidthsToDefault();
+      });
+    }
+    settingsLightModeButton?.addEventListener('click', () => applyAppearance(DEFAULT_APPEARANCE));
+    settingsDarkModeButton?.addEventListener('click', () => applyAppearance(DARK_APPEARANCE));
+    settingsAccessibleColoursButton?.addEventListener('click', () => applyColourPalette(ACCESSIBLE_COLOUR_PALETTE));
+    settingsGreyscaleColoursButton?.addEventListener('click', () => applyColourPalette(GREYSCALE_COLOUR_PALETTE));
+    settingsResetColoursButton?.addEventListener('click', resetColourSettings);
     settingsMenu.addEventListener('click', (event) => event.stopPropagation());
     document.addEventListener('click', (event) => {
       if (!settingsPicker?.contains(event.target)) closeSettingsMenu();
@@ -12589,8 +13191,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const creditPointsDisplay = creditPointsValue === null ? 0 : creditPointsValue;
     const creditSubjects = parseFloat((creditPointsDisplay / 12).toFixed(2));
     const creditSubjectsLabel = formatCountValue(creditSubjects);
+    const creditPointsLabel = formatCountValue(creditPointsDisplay);
     const hasHistory = !!(passedSubjects || resultsList);
+    const courseInfo = staffWorkbookState.getCourseInfo();
     const feeDetails = getFeeStatusDetails(record);
+    const historySummaryText = hasHistory
+      ? `${creditSubjectsLabel} subjects completed (${creditPointsLabel} points).`
+      : '';
 
     if (studentId || family || given) {
       const name = [family, given].filter(Boolean).join(', ');
@@ -12612,24 +13219,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (mpEmail || primaryEmail) {
       const emailList = [mpEmail, primaryEmail].filter(Boolean);
+      const emailIconHtml = '<span class="email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" /></svg></span>';
       const emailLinks = emailList
         .map(
           (email) =>
             `<a href="#" class="student-email-link" data-email="${escapeHtml(email)}" data-first-name="${escapeHtml(firstName)}">${escapeHtml(email)}</a>`
         )
-        .join(' ');
+        .join('<span class="student-email-sep">; </span>');
       const allEmails = emailList.join(',');
       const multiIcon =
         emailList.length > 1
-          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">@</button>`
+          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">${emailIconHtml}</button>`
           : '';
       lines.push(`<div class="student-email-row">${emailLinks}${multiIcon ? ` ${multiIcon}` : ''}</div>`);
     }
     if (deferredInfo?.isDeferred) {
       const deferredMessage = buildDeferredNoticeText(deferredInfo);
       lines.push(
-        `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Returning student.</strong> <span class="alert-inline-text">${escapeHtml(
-          deferredMessage
+        `<div class="student-summary-returning"><strong>Returning student.</strong> <span>${escapeHtml(
+          [historySummaryText, deferredMessage].filter(Boolean).join(' ')
         )}</span></div>`
       );
     }
@@ -12642,7 +13250,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
     }
     if (record) {
-      const triage = triageRecords.get(normalizeStudentId(record.Student_IDs_Unique));
+      const triage = triageRecords.get(getStudentRecordId(record));
       if (triage) {
         const triageLines = [];
         if (triage.friendlyName) {
@@ -12678,7 +13286,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const sourceSharePointUrl = sharePointInfo?.studentUrl || '';
           const sourceSharePointRaw = String(sharePoint || '').trim();
           const sourceSharePointContext = sourceSharePointRaw || sourceSharePointUrl || '';
-          const normalizedStudentId = normalizeStudentId(record.Student_IDs_Unique);
+          const normalizedStudentId = getStudentRecordId(record);
           const linkFromTriage = resolveSidebarSharePointHref(
             triage.onSharePointLink || '',
             sourceSharePointContext
@@ -12790,14 +13398,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
         if (triageLines.length) {
           lines.push(
-            `<div class="student-summary-triage"><div class="student-summary-triage-title">Triage</div><div class="student-summary-triage-body">${triageLines.join(
+            `<div class="student-summary-triage"><button type="button" class="student-summary-triage-title student-summary-triage-action" data-triage-action="open">Triage</button><div class="student-summary-triage-body">${triageLines.join(
               ''
             )}</div></div>`
           );
         }
       } else if (triageFileInfo?.fileName) {
         lines.push(
-          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Triage: not there</strong></div>`
+          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Triage: not in Triage by ID or email</strong></div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add" data-triage-action="add">Add to Triage</button>`
         );
       }
     }
@@ -12844,13 +13452,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const scheduleLink = feeDetails.domesticFees
         ? ' <a class="fee-schedule-link" href="https://www.melbournepolytechnic.edu.au/study/fees/local-student-fees/fees-for-local-higher-education-students/schedule-of-higher-education-tuition-fees/" target="_blank" rel="noopener">schedule</a>'
         : '';
-      const feeTypeLabelHtml = escapeHtml(feeDetails.feeLabel).replace(
-        /^Fee Type:/,
-        '<span class="student-summary-lead">Fee Type:</span>'
-      );
+      const feeTypeLabelHtml = `<span class="student-summary-lead">Fee Type:</span> ${feeDetails.domesticFees ? 'Domestic Student' : 'International Student'}`;
       lines.push(
         `${feeTypeLabelHtml}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
       );
+      if (!feeDetails.domesticFees) {
+        const unitPriceValue = parseCreditPoints(courseInfo?.Price_per_Unit || '');
+        const unitPrice = unitPriceValue && unitPriceValue > 0 ? formatCurrency(unitPriceValue) : '';
+        if (unitPrice) {
+          lines.push(`<span class="student-summary-lead">Cost Per Unit:</span> ${escapeHtml(unitPrice)}`);
+        }
+      }
       if (feeDetails.loadNote) {
         lines.push(escapeHtml(feeDetails.loadNote));
       }
@@ -12912,20 +13524,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       lines.push(`<span class="student-summary-lead">Failed (N) count:</span> ${escapeHtml(failedCount)}`);
     }
     if (hasHistory) {
-      const creditPointsLabel = formatCountValue(creditPointsDisplay);
-      lines.push(
-        `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
-          creditSubjectsLabel
-        )}">${escapeHtml(creditSubjectsLabel)} subjects completed. ${escapeHtml(
-          creditPointsLabel
-        )} points.</div>`
-      );
+      if (!deferredInfo?.isDeferred) {
+        lines.push(
+          `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
+            creditSubjectsLabel
+          )}">${escapeHtml(historySummaryText)}</div>`
+        );
+      }
       const medianGrade = getMedianGradeLabel(manualEntryResults);
       lines.push(`<div><span class="student-summary-lead">Median grade:</span> ${escapeHtml(medianGrade)}</div>`);
+    }
+    const remainingCount = getRemainingSubjectsCount();
+    if (hasHistory && [9, 7, 6, 5].includes(remainingCount)) {
       const medianGradePastYear = getMedianGradeLabelPastYear(manualEntryResults);
       lines.push(`<div><span class="student-summary-lead">Median grade past year:</span> ${escapeHtml(medianGradePastYear)}</div>`);
     }
-    const remainingCount = getRemainingSubjectsCount();
     if (shouldShowRemainingNotice(remainingCount)) {
       const medianGradePastYear = getMedianGradeLabelPastYear(manualEntryResults);
       lines.push(
@@ -13109,7 +13722,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
-    const sem = now.getMonth() <= 5 ? 'S1' : 'S2';
+    const sem = getCurrentSemesterKey(now);
     return `Enrol ${yy}_${sem}`;
   };
 
@@ -13176,6 +13789,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         for (const label of labels) {
           const idx = getIdx(label);
           if (idx !== undefined) return idx;
+          const target = normalizeHeadingText(label);
+          const match = Object.entries(headerMap).find(([key]) =>
+            key === target || key.includes(target) || target.includes(key)
+          );
+          if (match) return match[1];
         }
         return undefined;
       };
@@ -13188,12 +13806,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const fields = {
         friendlyName: getIdx('Friendly name'),
         handledBy: getIdx('Handled By'),
-        statusLabel: getIdx('Int, Ongoing, FMP'),
+        statusLabel: getIdxAny('Int, Ongoing, FMP', 'Int Ongoing FMP', 'Int, Ongiong, FMP'),
         statusDetails: getIdx('Details - CRT, Ongoing, Domestic, etc.'),
         alteredStatus: getIdx('Altered Status'),
         onSharePoint: getIdx('On SharePoint'),
         inStrata: getIdx('In Strata (Enrolled) - subject list'),
         comments: getIdx('Comments'),
+        familyName: getIdx('Family Names'),
+        givenName: getIdx('Given Names'),
+        primaryEmail: getIdxAny('Primary Email', 'Personal Email', 'Email'),
       };
       const sharePointPathIdx = getIdxAny('SharePoint Path', 'Sharepoint Path');
       const familyIdx = getIdx('Family Names');
@@ -13385,6 +14006,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         status: 'ok',
         headerFound: true,
         idIdx,
+        commentsIdx: fields.comments ?? null,
+        fieldIdx: fields,
+        headerRowIndex,
         total: records.size,
         preview: previewRows.length,
       };
@@ -14128,8 +14752,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   function applyStudentRecord(record) {
     if (!record) return;
     remainingNoticeUnlocked = false;
-    const nextId = normalizeStudentId(record.Student_IDs_Unique || '');
-    console.info('[Triage] active student id:', nextId, 'triage match:', triageRecords.has(nextId));
+    const nextId = getStudentRecordId(record);
     if (activeStudentId && nextId && nextId !== activeStudentId) {
       loadedStudentSnapshot = null;
       staffWorkbookState.setStudentRecord(null);
@@ -14161,11 +14784,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     deferredInfo = null;
     if (isWorkbookFlag(record.In_Deferred)) {
       const entries = resultsParsed.resultEntries || [];
-      const currentEntries = resultsParsed.currentEntries || new Map();
       const enrolmentDates = entries.map((entry) => entry?.date).filter(Boolean);
-      currentEntries.forEach((meta) => {
-        if (meta?.date) enrolmentDates.push(meta.date);
-      });
       const lastEnrolmentDate = getLatestDateFromDates(enrolmentDates);
       const lastEnrolmentText = lastEnrolmentDate ? formatNumericDate(lastEnrolmentDate) : 'unknown';
       deferredInfo = {
@@ -14323,6 +14942,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const bestMajor = getBestMajorSelection();
     if (bestMajor) setMajorDropdownSelection(bestMajor);
 
+    suppressNextFullLoadAutoModal = currentEnrolmentStudentRecord.size > 0;
     applyPassForEnrolmentsState();
 
     applySubjectStateToCells();
@@ -14352,7 +14972,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const formatStudentSearchLabel = (record, includeEmail = false) => {
     if (!record) return '';
-    const id = normalizeStudentId(record.Student_IDs_Unique || '');
+    const id = getStudentRecordId(record);
     const given = toProperCase(record.Given_Name || '');
     const family = String(record.Family_Name || '').toUpperCase();
     const primaryEmail = String(record.Primary_Email || '').toLowerCase();
@@ -14452,7 +15072,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const option = document.createElement('div');
         option.className = 'student-search-option';
         option.textContent = formatStudentSearchLabel(record, includeEmail);
-        option.setAttribute('data-student-id', normalizeStudentId(record.Student_IDs_Unique || ''));
+        option.setAttribute('data-student-id', getStudentRecordId(record));
         option.tabIndex = 0;
         dropdown.appendChild(option);
       });
@@ -14487,12 +15107,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const currentIndex = Number(activeDropdown.dataset.activeIndex || '0');
     const option = options[currentIndex] || options[0];
     const id = option.getAttribute('data-student-id') || '';
-    const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === id);
+    const record = findStudentRecordById(id);
     if (record) applyStudentSearchSelection(record);
   };
   const applyStudentSearchSelection = (record) => {
     if (!record) return;
-    const id = normalizeStudentId(record.Student_IDs_Unique || '');
+    const id = getStudentRecordId(record);
     if (id && activeStudentId && id !== activeStudentId) {
       clearActiveStudentState({ keepInput: true, keepExtractedId: false, skipPreviewUpdate: true });
     }
@@ -14534,6 +15154,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     setStudentSearchEmptyNotice('');
     setStudentLookupVisible(true);
+    if (!extractedStudentId && studentIdInput?.value) {
+      extractedStudentId = normalizeStudentId(studentIdInput.value);
+    }
+    if (!extractedStudentId && activeStudentId) {
+      extractedStudentId = normalizeStudentId(activeStudentId);
+    }
     if (!extractedStudentId) {
       renderStudentPreview('');
       setStudentPreviewVisible(false);
@@ -14541,10 +15167,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
     const matchId = normalizeStudentId(extractedStudentId);
-    const record = studentRecords.find((row) => normalizeStudentId(row.Student_IDs_Unique) === matchId);
+    const activeRecordFallback = staffWorkbookState.getStudentRecord();
+    const record =
+      findStudentRecordById(matchId) ||
+      (getStudentRecordId(activeRecordFallback) === matchId ? activeRecordFallback : null);
     if (!record) {
-      renderStudentPreview('');
-      setStudentPreviewVisible(false);
+      const entered = String(studentIdInput?.value || '').trim();
+      if (entered && triageFileInfo?.fileName) {
+        renderStudentPreviewHtml(
+          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Student not found.</strong> Only started applying? Enquiry only? You can add still add the student's information to Triage:</div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add" data-triage-action="add-temp">Add to Triage</button>`
+        );
+        setStudentPreviewVisible(true);
+      } else {
+        renderStudentPreview('');
+        setStudentPreviewVisible(false);
+      }
       if (studentIdInput) studentIdInput.classList.remove('student-match-found');
       return;
     }
@@ -14560,7 +15197,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     if (studentIdInput) studentIdInput.classList.add('student-match-found');
-    renderStudentPreviewHtml(formatStudentSummary(record));
+    try {
+      renderStudentPreviewHtml(formatStudentSummary(record));
+    } catch (error) {
+      console.error('[Student preview] summary render failed', error);
+      const fallbackName = [
+        record.Family_Name,
+        record.Given_Name,
+      ].map((value) => String(value || '').trim()).filter(Boolean).join(', ');
+      const fallbackEmail = [record.Institute_Email, record.Primary_Email]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+        .join('; ');
+      renderStudentPreviewHtml([
+        `<div class="student-summary-id">${escapeHtml(matchId)} ${escapeHtml(fallbackName)}</div>`,
+        fallbackEmail ? `<div class="student-email-row">${escapeHtml(fallbackEmail)}</div>` : '',
+        triageFileInfo?.fileName
+          ? '<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Triage: not in Triage by ID or email</strong></div>'
+          : '',
+      ].filter(Boolean).join(''));
+    }
     if (timetableModal && timetableModal.classList.contains('show')) {
       updateTimetableStaffContent(currentTableMode);
     }
@@ -14593,11 +15249,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const numericQuery = sPrefixMatch ? sPrefixMatch[1] : digitsOnly.match(/^\d{1,7}$/)?.[0];
     if (numericQuery && studentRecords.length) {
       let matches = studentRecords.filter((record) =>
-        normalizeStudentId(record.Student_IDs_Unique || '').startsWith(numericQuery)
+        getStudentRecordId(record).startsWith(numericQuery)
       );
       if (!matches.length) {
         matches = studentRecords.filter((record) =>
-          normalizeStudentId(record.Student_IDs_Unique || '').includes(numericQuery)
+          getStudentRecordId(record).includes(numericQuery)
         );
       }
       if (matches.length === 1) {
@@ -14632,7 +15288,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(Boolean);
 
     studentRecords.forEach((record) => {
-      const id = normalizeStudentId(record.Student_IDs_Unique || '');
+      const id = getStudentRecordId(record);
       if (!id || seen.has(id)) return;
       const given = String(record.Given_Name || '');
       const family = String(record.Family_Name || '');
@@ -14918,7 +15574,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return { columnMapFromRows, rowCountFromRows };
     };
     const rowMapResult = buildColumnMapFromRows();
-    if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > rowCount) {
+    if (rowMapResult.columnMapFromRows && rowMapResult.rowCountFromRows > 0) {
       columnMap = rowMapResult.columnMapFromRows;
       rowCount = rowMapResult.rowCountFromRows;
     }
@@ -15915,9 +16571,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const monthIndex = date.getMonth();
     let year = date.getFullYear();
     let suffix = '01';
-    if (monthIndex > 8) {
+    if (monthIndex >= 8) {
       suffix = 'SS';
-    } else if (monthIndex > 3) {
+    } else if (monthIndex >= 4) {
       suffix = '02';
     }
     return `${String(year % 100).padStart(2, '0')}_${suffix}`;
@@ -16042,6 +16698,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       semesterPath,
       semesterLabel
     );
+    setFolderShortcutButton(
+      folderShortcutSemesterDialogButton,
+      `${semesterLabel} enrolment folder`,
+      semesterPath,
+      semesterLabel
+    );
     setFolderShortcutButton(folderShortcutStudentFormsButton, 'Student Forms', studentFormsPath, 'Student Forms');
     setFolderShortcutButton(
       folderShortcutStudentFormsDateButton,
@@ -16062,6 +16724,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : 'Student Forms folder for today.'
     );
     setFolderShortcutButton(
+      folderShortcutStudentFormsDateMainDialogButton,
+      "Today's forms folder",
+      studentFormsPath,
+      'Today',
+      studentFormsTodayFolderName
+        ? `Student Forms folder for today's date (${studentFormsTodayFolderName}).`
+        : 'Student Forms folder for today.'
+    );
+    setFolderShortcutButton(
       folderShortcutTeacherButton,
       teacherLabel,
       teacherFolderPath,
@@ -16070,6 +16741,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setFolderShortcutButton(
       folderShortcutTeacherDialogButton,
       teacherName || "Teacher's Temp",
+      teacherFolderPath,
+      "Teacher's Temp"
+    );
+    setFolderShortcutButton(
+      folderShortcutTeacherMainDialogButton,
+      teacherName ? `${teacherName}'s temp folder` : "Teacher temp folder",
       teacherFolderPath,
       "Teacher's Temp"
     );
@@ -16171,7 +16848,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       if (
         target.id === 'folder-shortcut-student-forms-date' ||
-        target.id === 'folder-shortcut-student-forms-date-dialog'
+        target.id === 'folder-shortcut-student-forms-date-dialog' ||
+        target.id === 'folder-shortcut-student-forms-date-main-dialog'
       ) {
         let studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
         if (!studentFormsRootPath) {
@@ -16288,7 +16966,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         source = loc;
         return;
       }
-      if (!triage && /^triage.*\.xlsx$/i.test(name)) {
+      if (!triage && isTriageWorkbookName(name)) {
         triage = loc;
         return;
       }
@@ -16422,10 +17100,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const yyOrYear = String(m[1] || '');
     const sem = `S${m[2]}`;
     const year4 = yyOrYear.length === 2 ? `20${yyOrYear}` : yyOrYear;
-    const year2 = yyOrYear.length >= 2 ? yyOrYear.slice(-2) : yyOrYear;
     const names = new Set([
       `triage_${year4}_${sem}.xlsx`,
-      `triage_${year2}_${sem}.xlsx`,
     ]);
     return Array.from(names);
   };
@@ -16433,6 +17109,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const isCopyVariantName = (name = '') => {
     const lower = String(name || '').toLowerCase();
     return /\bcopy\b/.test(lower) || /~\$/.test(lower);
+  };
+
+  const isTriageWorkbookName = (name = '') => {
+    const clean = String(name || '').trim();
+    if (!/^triage(?:$|[\s_-]).*\.xlsx$/i.test(clean)) return false;
+    if (/^triage\s*updates?\.xlsx$/i.test(clean)) return false;
+    if (/^triage[_\s-]*updates?\.xlsx$/i.test(clean)) return false;
+    const base = clean.replace(/\.xlsx$/i, '').trim();
+    return /^triage(?:[\s_-]+)(20\d{2})(?:[\s_-]+)(?:s(?:em(?:ester)?)?[\s_-]*[12])$/i.test(base);
   };
 
   const pickPreferredTriageName = (names = []) => {
@@ -16448,7 +17133,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const pickBestTriageEntryByPreference = (entries = []) => {
-    const matches = entries.filter((entry) => /^triage.*\.xlsx$/i.test(entry?.handle?.name || ''));
+    const matches = entries.filter((entry) => isTriageWorkbookName(entry?.handle?.name || ''));
     if (!matches.length) return null;
     const preferredNames = new Set(getPreferredTriageNames().map((n) => String(n || '').toLowerCase()));
     const sorted = [...matches].sort((a, b) => {
@@ -16478,7 +17163,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const fileEntries = await findFilesInHandle(staffFolderHandle, 2);
     const sourceExact = (name) => String(name || '').toLowerCase() === 'source.xlsx';
     const sourceStarts = (name) => /^source.*\.xlsx$/i.test(name || '');
-    const triageStarts = (name) => /^triage.*\.xlsx$/i.test(name || '');
+    const triageStarts = (name) => isTriageWorkbookName(name);
     const emailExact = (name) =>
       /^email scripts\.(docx|html|htm)$/i.test(String(name || ''));
     const bestSource = pickBestFileByDepth(
@@ -16534,6 +17219,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (bestTriage && triageFileInfo) {
       triageFileInfo.path = formatHandlePath(bestTriage.path || '');
+      triageWorkbookFileHandle = bestTriage.handle || null;
+      triageWorkbookDirectoryHandle = dirHandle;
     }
     ensureFileLocationsCacheLoaded().then((loaded) => {
       if (!loaded) return;
@@ -16944,7 +17631,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const list = Array.from(files || []);
     if (!list.length) return;
     const sourceWorkbook = list.find((f) => /^source.*\.xlsx$/i.test(f.name || ''));
-    const triageCandidates = list.filter((f) => /^triage.*\.xlsx$/i.test(f.name || ''));
+    const triageCandidates = list.filter((f) => isTriageWorkbookName(f.name || ''));
     const triagePreferredName = pickPreferredTriageName(triageCandidates.map((f) => String(f?.name || '')));
     const triageWorkbook =
       triageCandidates.find((f) => String(f?.name || '').toLowerCase() === triagePreferredName.toLowerCase()) ||
@@ -16987,6 +17674,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (triageWorkbook) {
       triageWorkbookFileObject = triageWorkbook;
+      triageWorkbookFileHandle = triageWorkbook.handle || null;
+      triageWorkbookDirectoryHandle = null;
       triageWorkbookFileName = triageWorkbook.name;
       triageFileInfo = {
         fileName: triageWorkbook.name,
@@ -17002,6 +17691,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       triageReader.readAsArrayBuffer(triageWorkbook);
     } else {
       triageWorkbookFileObject = null;
+      triageWorkbookFileHandle = null;
+      triageWorkbookDirectoryHandle = null;
       triageWorkbookBuffer = null;
       triageFileInfo = null;
       triageRecords = new Map();
@@ -17047,12 +17738,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     try {
       const dir = await window.showDirectoryPicker();
       const files = [];
+      let pickedTriageHandle = null;
       for await (const entry of dir.values()) {
         if (entry.kind !== 'file') continue;
         const file = await entry.getFile();
         files.push(file);
+        if (isTriageWorkbookName(file?.name || '')) {
+          pickedTriageHandle = entry;
+        }
       }
       handleSourceFilesSelection(files);
+      if (pickedTriageHandle && triageFileInfo) {
+        triageWorkbookFileHandle = pickedTriageHandle;
+        triageWorkbookDirectoryHandle = dir;
+      }
     } catch (error) {
       // Browser denied/blocked directory picker (or user cancelled): fall back to regular file picker.
       openSourceFilePicker();
@@ -17224,10 +17923,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderOldCodesModal();
     oldCodesModal.classList.add('show');
     oldCodesModal.setAttribute('aria-hidden', 'false');
+    if (closeOldCodesCta) closeOldCodesCta.focus();
   };
 
   const hideOldCodesModal = () => {
     if (!oldCodesModal) return;
+    if (oldCodesModal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
     oldCodesModal.classList.remove('show');
     oldCodesModal.setAttribute('aria-hidden', 'true');
     if (oldCodesButton) oldCodesButton.focus();
@@ -17252,16 +17955,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapStaffCopyTimetableButton = null;
   let courseMapStaffOpenSelectedButton = null;
   let courseMapStaffClearButton = null;
+  let courseMapStaffFullTimetableButton = null;
+  let courseMapStaffAlertButtonsHostEl = null;
   let courseMapStaffPanelRaf = null;
 
   const updateCourseMapModeToggleButton = () => {
+    const staffMode = getCourseMapIsStaffMode();
+    if (courseMapStaffModeToggle) {
+      courseMapStaffModeToggle.checked = staffMode;
+      courseMapStaffModeToggle.disabled = !allowCourseMapModeToggle;
+      courseMapStaffModeToggle.setAttribute('aria-pressed', staffMode ? 'true' : 'false');
+    }
+    if (courseMapStaffModeLabel) {
+      courseMapStaffModeLabel.textContent = staffMode ? 'Staff mode is active.' : 'Student mode is active.';
+    }
     if (!courseMapModeToggleButton) return;
     if (!allowCourseMapModeToggle) {
       courseMapModeToggleButton.hidden = true;
       return;
     }
     courseMapModeToggleButton.hidden = false;
-    const staffMode = getCourseMapIsStaffMode();
     // Label shows the mode you can switch to.
     courseMapModeToggleButton.textContent = staffMode ? 'Student mode' : 'Staff mode';
     courseMapModeToggleButton.setAttribute('aria-pressed', staffMode ? 'true' : 'false');
@@ -17306,17 +18019,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const shouldShowCourseMapSemCountBadges = () => {
-    if (getCourseMapIsStaffMode()) return true;
     return !!courseMapStudentSemCountsOn;
   };
 
   const updateCourseMapSemCountToggleUi = () => {
-    const staffMode = getCourseMapIsStaffMode();
     if (courseMapSemCountsToggleRow) courseMapSemCountsToggleRow.hidden = false;
     if (!courseMapSemCountsToggle) return;
-    const active = staffMode ? true : !!courseMapStudentSemCountsOn;
+    const active = !!courseMapStudentSemCountsOn;
     courseMapSemCountsToggle.checked = active;
-    courseMapSemCountsToggle.disabled = staffMode;
+    courseMapSemCountsToggle.disabled = false;
     courseMapSemCountsToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     if (courseMapSemCountsLabel) {
       courseMapSemCountsLabel.textContent = active
@@ -17341,6 +18052,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCourseMapTopInfoStrip();
     updateCourseMapStaffPanelState();
     updateCourseMapLoadFilesButtonVisibility();
+    syncCourseMapEmailToolsButton();
     syncCourseMapSemCountBadgesFromMainGrid();
   };
 
@@ -17701,6 +18413,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffCopyTimetableButton = null;
     courseMapStaffOpenSelectedButton = null;
     courseMapStaffClearButton = null;
+    courseMapStaffFullTimetableButton = null;
+    courseMapStaffAlertButtonsHostEl = null;
 
     const coreRows = [
       ['BIT106', 'BIT111', 'BIT112', 'BIT231', 'BIT241', 'BIT314', 'BIT352'],
@@ -17778,6 +18492,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     staffPanel.className = 'course-map-staff-panel';
     staffPanel.hidden = true;
 
+    const alertHost = document.createElement('div');
+    alertHost.className = 'course-map-staff-alert-buttons-host';
+    if (courseMapAlertButtons) alertHost.appendChild(courseMapAlertButtons);
+    staffPanel.appendChild(alertHost);
+
     const selectedListHost = document.createElement('div');
     selectedListHost.className = 'course-map-staff-selected-list-host';
     staffPanel.appendChild(selectedListHost);
@@ -17791,6 +18510,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     staffClearBtn.type = 'button';
     staffClearBtn.className = 'clear-button secondary course-map-staff-clear hidden-initial disabled';
     staffClearBtn.textContent = 'Clear';
+    staffClearBtn.setAttribute('data-tooltip-html', 'Clear the current Course Map subject selections.');
     staffClearBtn.style.display = 'none';
     staffClearBtn.disabled = true;
     staffClearBtn.setAttribute('aria-disabled', 'true');
@@ -17803,7 +18523,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const staffOpenWindowBtn = document.createElement('button');
     staffOpenWindowBtn.type = 'button';
     staffOpenWindowBtn.className = 'clear-button secondary course-map-staff-open-window hidden-initial';
-    staffOpenWindowBtn.textContent = 'Details';
+    staffOpenWindowBtn.textContent = 'Subject details';
+    staffOpenWindowBtn.setAttribute('data-tooltip-html', 'Open the available subjects table with subject codes, names, streams, and availability.');
     staffOpenWindowBtn.style.display = 'none';
     staffOpenWindowBtn.addEventListener('click', () => {
       showAvailableModal();
@@ -17836,11 +18557,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     staffActions.appendChild(staffCopyTimetableBtn);
 
+    const staffInfoActions = document.createElement('div');
+    staffInfoActions.className = 'course-map-staff-info-actions';
+    [courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
+      .filter(Boolean)
+      .forEach((button) => staffInfoActions.appendChild(button));
+    staffPanel.appendChild(staffInfoActions);
+
     const staffOpenSelectedBtn = document.createElement('button');
     staffOpenSelectedBtn.type = 'button';
     staffOpenSelectedBtn.className =
       'clear-button secondary course-map-staff-open-selected hidden-initial';
-    staffOpenSelectedBtn.textContent = 'Selections';
+    staffOpenSelectedBtn.textContent = 'Selection details';
+    staffOpenSelectedBtn.setAttribute('data-tooltip-html', 'Open a read-only table of the currently selected subjects.');
     staffOpenSelectedBtn.style.display = 'none';
     staffOpenSelectedBtn.addEventListener('click', () => {
       if (staffOpenSelectedBtn.style.display === 'none') return;
@@ -17848,25 +18577,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     staffActions.appendChild(staffOpenSelectedBtn);
 
-    const selectedSummary = document.createElement('div');
-    selectedSummary.className = 'course-map-staff-selected-summary';
-    selectedSummary.setAttribute('aria-live', 'polite');
-    staffPanel.appendChild(selectedSummary);
-
     courseMapContent.appendChild(staffPanel);
     enablePanelResize(staffPanel, {
-      key: 'course-map-staff-panel-v2',
+      key: 'course-map-staff-panel-v3',
       persist: true,
       respectCssMax: true,
     });
     courseMapStaffPanelEl = staffPanel;
     courseMapStaffSelectedListHostEl = selectedListHost;
     courseMapStaffActionsRowEl = staffActions;
-    courseMapStaffSelectedSummaryEl = selectedSummary;
+    courseMapStaffSelectedSummaryEl = null;
     courseMapStaffOpenWindowButton = staffOpenWindowBtn;
     courseMapStaffCopyTimetableButton = staffCopyTimetableBtn;
     courseMapStaffOpenSelectedButton = staffOpenSelectedBtn;
     courseMapStaffClearButton = staffClearBtn;
+    courseMapStaffFullTimetableButton = null;
+    courseMapStaffAlertButtonsHostEl = alertHost;
+    renderAllAlertButtons();
     updateCourseMapStaffSelectedSummary();
     syncCourseMapStaffTimetableButton();
   };
@@ -18126,6 +18853,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapModalTarget.classList.add(
         selectedMajor ? `course-map-major-${majorKey}` : 'course-map-major-undecided'
       );
+      courseMapModalTarget.classList.toggle('course-map-pass-current-on', passForEnrolmentsEnabled);
     }
     courseMapSharedPlaceholders.forEach((cell) => {
       cell.classList.remove(
@@ -20050,13 +20778,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return info;
   };
 
-  const showCourseMapRemainingInfoModal = () => {
+  const positionCourseMapRemainingInfoModal = (anchorEl) => {
+    const modalBox = courseMapRemainingInfoModal?.querySelector('.course-map-remaining-info-modal');
+    if (!modalBox || !anchorEl) return;
+    modalBox.style.position = 'fixed';
+    modalBox.style.width = '';
+    modalBox.style.height = '';
+    modalBox.style.maxWidth = '96vw';
+    modalBox.style.maxHeight = 'calc(100vh - 24px)';
+    modalBox.style.margin = '0';
+    modalBox.style.transform = 'none';
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const modalRect = modalBox.getBoundingClientRect();
+    const margin = 12;
+    const maxLeft = Math.max(margin, window.innerWidth - modalRect.width - margin);
+    const maxTop = Math.max(margin, window.innerHeight - modalRect.height - margin);
+    const nextLeft = clampValue(window.innerWidth - modalRect.width - 48, margin, maxLeft);
+    const nextTop = clampValue(anchorRect.bottom + 8, margin, maxTop);
+    modalBox.style.left = `${Math.round(nextLeft)}px`;
+    modalBox.style.top = `${Math.round(nextTop)}px`;
+  };
+
+  const showCourseMapRemainingInfoModal = (anchorEl = null) => {
     if (!courseMapRemainingInfoModal) return;
     hideAllVisibleTooltips();
     resetCourseMapRemainingInfoSortState();
     renderCourseMapRemainingInfoModal();
     courseMapRemainingInfoModal.classList.add('show');
     courseMapRemainingInfoModal.setAttribute('aria-hidden', 'false');
+    positionCourseMapRemainingInfoModal(anchorEl);
     const focusTarget = closeCourseMapRemainingInfoCta || closeCourseMapRemainingInfo;
     if (focusTarget) focusTarget.focus();
   };
@@ -20065,6 +20815,497 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!courseMapRemainingInfoModal) return;
     courseMapRemainingInfoModal.classList.remove('show');
     courseMapRemainingInfoModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showCourseMapFullStudentDetailsModal = () => {
+    if (!courseMapFullStudentDetailsModal || !courseMapFullStudentDetailsContent) return;
+    const content = studentDataPreview?.innerHTML || '';
+    courseMapFullStudentDetailsContent.innerHTML = content.trim()
+      ? content
+      : '<div class="student-summary-warning">No student selected.</div>';
+    courseMapFullStudentDetailsModal.classList.add('show');
+    courseMapFullStudentDetailsModal.setAttribute('aria-hidden', 'false');
+    const focusTarget = closeCourseMapFullStudentDetailsCta || closeCourseMapFullStudentDetails;
+    if (focusTarget) focusTarget.focus();
+  };
+
+  const hideCourseMapFullStudentDetailsModal = () => {
+    if (!courseMapFullStudentDetailsModal) return;
+    courseMapFullStudentDetailsModal.classList.remove('show');
+    courseMapFullStudentDetailsModal.setAttribute('aria-hidden', 'true');
+    if (courseMapFullStudentDetailsContent) courseMapFullStudentDetailsContent.innerHTML = '';
+  };
+
+  const showCourseMapStudentNoteModal = (title, text, options = {}) => {
+    if (!courseMapStudentNoteModal || !courseMapStudentNoteContent) return;
+    if (courseMapStudentNoteTitle) courseMapStudentNoteTitle.textContent = title || 'Student details';
+    const content = String(text || '').trim();
+    courseMapStudentNoteContent.classList.toggle('is-html', !!options.html);
+    if (options.html) courseMapStudentNoteContent.innerHTML = content;
+    else courseMapStudentNoteContent.textContent = content;
+    if (courseMapTriageActions) courseMapTriageActions.hidden = !options.triage;
+    if (courseMapTriageEditButton) {
+      courseMapTriageEditButton.hidden = !options.triageEdit;
+      courseMapTriageEditButton.textContent = 'Save';
+      courseMapTriageEditButton.setAttribute('aria-busy', 'false');
+    }
+    if (courseMapTriageAddCommentButton) courseMapTriageAddCommentButton.hidden = true;
+    courseMapStudentNoteModal.classList.add('show');
+    courseMapStudentNoteModal.setAttribute('aria-hidden', 'false');
+    const newCommentField = document.getElementById('course-map-triage-new-comment');
+    if (newCommentField && newCommentField.dataset.dateBound !== 'true') {
+      newCommentField.dataset.dateBound = 'true';
+      newCommentField.addEventListener('focus', () => {
+        if (String(newCommentField.value || '').trim()) return;
+        newCommentField.value = `${getTodayYmdSlash()} `;
+        updateCourseMapTriageSaveVisibility();
+      });
+    }
+    bindCourseMapTriageDirtyDetection();
+    const focusTarget = closeCourseMapStudentNoteCta || closeCourseMapStudentNote;
+    if (focusTarget) focusTarget.focus();
+  };
+
+  const hideCourseMapStudentNoteModal = () => {
+    if (!courseMapStudentNoteModal) return;
+    hideCourseMapTriageCommentModal();
+    if (courseMapStudentNoteModal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    courseMapStudentNoteModal.classList.remove('show');
+    courseMapStudentNoteModal.setAttribute('aria-hidden', 'true');
+    if (courseMapStudentNoteContent) courseMapStudentNoteContent.textContent = '';
+    if (courseMapTriageActions) courseMapTriageActions.hidden = true;
+  };
+
+  const getTodayYmdSlash = () => {
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('/');
+  };
+
+  const showCourseMapTriageCommentModal = () => {
+    if (!courseMapTriageCommentModal || !courseMapTriageCommentText) return;
+    if (courseMapStudentNoteModal?.classList.contains('show')) {
+      if (courseMapStudentNoteModal.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+      courseMapStudentNoteModal.classList.remove('show');
+      courseMapStudentNoteModal.setAttribute('aria-hidden', 'true');
+      if (courseMapTriageActions) courseMapTriageActions.hidden = true;
+    }
+    if (saveCourseMapTriageComment) saveCourseMapTriageComment.disabled = false;
+    courseMapTriageCommentText.value = getTodayYmdSlash();
+    courseMapTriageCommentModal.classList.add('show');
+    courseMapTriageCommentModal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      courseMapTriageCommentText.focus();
+      courseMapTriageCommentText.select();
+    });
+  };
+
+  const hideCourseMapTriageCommentModal = () => {
+    if (!courseMapTriageCommentModal) return;
+    if (courseMapTriageCommentModal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    courseMapTriageCommentModal.classList.remove('show');
+    courseMapTriageCommentModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const ensureFileHandleReadWritePermission = async (handle) => {
+    if (!handle?.queryPermission || !handle?.requestPermission) return false;
+    try {
+      if ((await handle.queryPermission({ mode: 'readwrite' })) === 'granted') return true;
+      return (await handle.requestPermission({ mode: 'readwrite' })) === 'granted';
+    } catch {
+      return false;
+    }
+  };
+
+  const prependTriageCommentInWorker = (buffer, studentId, comment) =>
+    new Promise((resolve) => {
+      if (!buffer || typeof Worker === 'undefined') {
+        resolve({ ok: false, error: 'Triage update worker is not available.' });
+        return;
+      }
+      let worker = null;
+      let settled = false;
+      let timeoutId = null;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (worker) worker.terminate();
+        resolve(value);
+      };
+      try {
+        worker = new Worker(TRIAGE_WORKER_URL);
+      } catch {
+        finish({ ok: false, error: 'Triage update worker could not start.' });
+        return;
+      }
+      console.info('[Triage save] worker started', {
+        bufferBytes: buffer?.byteLength || buffer?.size || null,
+        studentId,
+      });
+      timeoutId = setTimeout(() => finish({
+        ok: false,
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+      }), TRIAGE_UPDATE_TIMEOUT_MS);
+      worker.onmessage = (event) => {
+        const payload = event?.data || {};
+        if (payload.type !== 'triageCommentPrepended') return;
+        console.info('[Triage save] worker finished', {
+          ok: !!payload.ok,
+          outputBytes: payload.output?.byteLength || null,
+          sheetCount: payload.sheetCount || null,
+          error: payload.error || '',
+        });
+        finish(payload);
+      };
+      worker.onerror = () => {
+        console.error('[Triage save] worker error');
+        finish({ ok: false, error: 'Triage update worker failed.' });
+      };
+      const workerBuffer = typeof buffer.slice === 'function' ? buffer.slice(0) : buffer;
+      const transfer = workerBuffer instanceof ArrayBuffer ? [workerBuffer] : [];
+      worker.postMessage({
+        type: 'prependTriageComment',
+        buffer: workerBuffer,
+        studentId,
+        comment,
+        parseInfo: triageParseInfo || null,
+      }, transfer);
+    });
+
+  const updateTriageFieldsInWorker = (buffer, studentId, values) =>
+    new Promise((resolve) => {
+      if (!buffer || typeof Worker === 'undefined') {
+        resolve({ ok: false, error: 'Triage update worker is not available.' });
+        return;
+      }
+      let worker = null;
+      let settled = false;
+      let timeoutId = null;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (worker) worker.terminate();
+        resolve(value);
+      };
+      try {
+        worker = new Worker(TRIAGE_WORKER_URL);
+      } catch {
+        finish({ ok: false, error: 'Triage update worker could not start.' });
+        return;
+      }
+      timeoutId = setTimeout(() => finish({
+        ok: false,
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+      }), TRIAGE_UPDATE_TIMEOUT_MS);
+      worker.onmessage = (event) => {
+        const payload = event?.data || {};
+        if (payload.type !== 'triageFieldsUpdated') return;
+        finish(payload);
+      };
+      worker.onerror = () => finish({ ok: false, error: 'Triage update worker failed.' });
+      const workerBuffer = typeof buffer.slice === 'function' ? buffer.slice(0) : buffer;
+      const transfer = workerBuffer instanceof ArrayBuffer ? [workerBuffer] : [];
+      worker.postMessage({
+        type: 'updateTriageFields',
+        buffer: workerBuffer,
+        studentId,
+        values,
+        parseInfo: triageParseInfo || null,
+      }, transfer);
+    });
+
+  const addTriageRowInWorker = (buffer, studentId, values) =>
+    new Promise((resolve) => {
+      if (!buffer || typeof Worker === 'undefined') {
+        resolve({ ok: false, error: 'Triage update worker is not available.' });
+        return;
+      }
+      let worker = null;
+      let settled = false;
+      let timeoutId = null;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        if (worker) worker.terminate();
+        resolve(value);
+      };
+      try {
+        worker = new Worker(TRIAGE_WORKER_URL);
+      } catch {
+        finish({ ok: false, error: 'Triage update worker could not start.' });
+        return;
+      }
+      timeoutId = setTimeout(() => finish({
+        ok: false,
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+      }), TRIAGE_UPDATE_TIMEOUT_MS);
+      worker.onmessage = (event) => {
+        const payload = event?.data || {};
+        if (payload.type !== 'triageRowAdded') return;
+        finish(payload);
+      };
+      worker.onerror = () => finish({ ok: false, error: 'Triage update worker failed.' });
+      const workerBuffer = typeof buffer.slice === 'function' ? buffer.slice(0) : buffer;
+      const transfer = workerBuffer instanceof ArrayBuffer ? [workerBuffer] : [];
+      worker.postMessage({
+        type: 'addTriageRow',
+        buffer: workerBuffer,
+        studentId,
+        values,
+        parseInfo: triageParseInfo || null,
+      }, transfer);
+    });
+
+  const getCourseMapTriageFormValues = (form) => {
+    if (!form) return {};
+    const existingCommentsField = document.getElementById('course-map-triage-comments');
+    const newComment = String(document.getElementById('course-map-triage-new-comment')?.value || '').trim();
+    const existingComments = String(existingCommentsField?.value || '').trim();
+    const values = {
+      studentId: document.getElementById('course-map-triage-student-id')?.value || form.dataset.studentId || '',
+      familyName: document.getElementById('course-map-triage-family-name')?.value || '',
+      givenName: document.getElementById('course-map-triage-given-name')?.value || '',
+      primaryEmail: document.getElementById('course-map-triage-primary-email')?.value || '',
+      friendlyName: document.getElementById('course-map-triage-friendly-name')?.value || '',
+      handledBy: document.getElementById('course-map-triage-handled-by')?.value || '',
+      alteredStatus: document.getElementById('course-map-triage-altered-status')?.value || '',
+      statusDetails: document.getElementById('course-map-triage-status-details')?.value || '',
+    };
+    if (existingCommentsField || newComment) {
+      values.comments = [newComment, existingComments].filter(Boolean).join('\n');
+    }
+    return values;
+  };
+
+  const getCourseMapTriageOriginalValues = (form) => ({
+    studentId: form?.dataset.studentId || '',
+    familyName: form?.dataset.originalFamilyName || '',
+    givenName: form?.dataset.originalGivenName || '',
+    primaryEmail: form?.dataset.originalPrimaryEmail || '',
+    friendlyName: form?.dataset.originalFriendlyName || '',
+    handledBy: form?.dataset.originalHandledBy || '',
+    alteredStatus: form?.dataset.originalAlteredStatus || '',
+    statusDetails: form?.dataset.originalStatusDetails || '',
+    comments: splitTriageCommentLines(form?.dataset.originalComments || '').join('\n'),
+  });
+
+  const getCourseMapTriageChangedValues = (form) => {
+    const values = getCourseMapTriageFormValues(form);
+    const original = getCourseMapTriageOriginalValues(form);
+    const changedValues = {};
+    Object.entries(values).forEach(([key, value]) => {
+      if (String(value || '').trim() !== String(original[key] || '').trim()) changedValues[key] = value;
+    });
+    return changedValues;
+  };
+
+  const updateCourseMapTriageSaveVisibility = () => {
+    const form = document.getElementById('course-map-triage-edit-form');
+    if (!form || !courseMapTriageEditButton) return;
+    if (form.classList.contains('is-temp-hidden')) {
+      courseMapTriageEditButton.hidden = false;
+      courseMapTriageEditButton.textContent = 'Add a new row to Triage';
+      return;
+    }
+    courseMapTriageEditButton.textContent = 'Save';
+    const changedValues = getCourseMapTriageChangedValues(form);
+    if (form.dataset.newTriageRow === 'true') {
+      const values = getCourseMapTriageFormValues(form);
+      const hasName = !!String(values.givenName || '').trim() || !!String(values.familyName || '').trim();
+      courseMapTriageEditButton.hidden = !hasName || Object.keys(changedValues).length === 0;
+      return;
+    }
+    courseMapTriageEditButton.hidden = Object.keys(changedValues).length === 0;
+  };
+
+  const bindCourseMapTriageDirtyDetection = () => {
+    const form = document.getElementById('course-map-triage-edit-form');
+    if (!form) return;
+    form.querySelectorAll('input, textarea, select').forEach((field) => {
+      if (field.dataset.triageDirtyBound === 'true') return;
+      field.dataset.triageDirtyBound = 'true';
+      field.addEventListener('input', updateCourseMapTriageSaveVisibility);
+      field.addEventListener('change', updateCourseMapTriageSaveVisibility);
+    });
+    updateCourseMapTriageSaveVisibility();
+  };
+
+  const writeUpdatedTriageWorkbook = async (result) => {
+    if (!result?.ok || !result.output) {
+      window.alert(`Could not save to Triage workbook. ${result?.error || 'The workbook update failed.'}`);
+      return false;
+    }
+    if (Number(result.sheetCount || 0) <= 1) {
+      window.alert('Could not save to Triage workbook. Safety stop: the update output did not preserve all sheets.');
+      return false;
+    }
+    try {
+      const writable = await triageWorkbookFileHandle.createWritable();
+      await writable.write(result.output);
+      await writable.close();
+      triageWorkbookBuffer = result.output;
+      return true;
+    } catch {
+      window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
+      return false;
+    }
+  };
+
+  const appendTriageUpdateBackup = async (result) => {
+    if (!result?.oldRow || !result?.newRow || !triageWorkbookDirectoryHandle || typeof XLSX === 'undefined') return;
+    try {
+      const allowed = await ensureHandlePermission(triageWorkbookDirectoryHandle);
+      if (!allowed) return;
+      const handle = await triageWorkbookDirectoryHandle.getFileHandle('Triage Updates.xlsx', { create: true });
+      let workbook = null;
+      try {
+        const file = await handle.getFile();
+        if (file.size > 0) {
+          workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        }
+      } catch {
+        workbook = null;
+      }
+      if (!workbook) {
+        workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([]), 'Updates');
+      }
+      const sheetName = workbook.SheetNames[0] || 'Updates';
+      if (!workbook.Sheets[sheetName]) workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet([]);
+      const sheet = workbook.Sheets[sheetName];
+      const existing = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      const timestamp = new Date().toLocaleString('en-AU', { hour12: false });
+      const teacher = getCurrentTeacherNameForTriage() || '';
+      existing.push([timestamp, teacher, ...result.oldRow]);
+      existing.push([timestamp, teacher, ...result.newRow]);
+      workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(existing);
+      const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const writable = await handle.createWritable();
+      await writable.write(output);
+      await writable.close();
+    } catch (error) {
+      console.warn('[Triage update backup] could not write Triage Updates.xlsx', error);
+    }
+  };
+
+  const prependTriageCommentForActiveStudent = async (comment) => {
+    const studentId = activeStudentId || normalizeStudentId(studentIdInput?.value || '');
+    const cleanComment = String(comment || '').trim();
+    console.info('[Triage save] requested', {
+      studentId,
+      commentLength: cleanComment.length,
+      hasBuffer: !!triageWorkbookBuffer,
+      hasHandle: !!triageWorkbookFileHandle,
+    });
+    if (!studentId || !cleanComment) return false;
+    if (!triageWorkbookBuffer || !triageWorkbookFileHandle) {
+      window.alert('Could not save to Triage workbook. Load Triage from a writable folder picker, then try again.');
+      return false;
+    }
+    const allowed = await ensureFileHandleReadWritePermission(triageWorkbookFileHandle);
+    console.info('[Triage save] permission result', allowed);
+    if (!allowed) {
+      window.alert('Could not save to Triage workbook. Write permission was not granted.');
+      return false;
+    }
+    const result = await prependTriageCommentInWorker(triageWorkbookBuffer, studentId, cleanComment);
+    if (!result?.ok || !result.output) {
+      console.warn('[Triage save] worker returned failure', result);
+      window.alert(`Could not save to Triage workbook. ${result?.error || 'The workbook update failed.'}`);
+      return false;
+    }
+    if (Number(result.sheetCount || 0) <= 1) {
+      window.alert('Could not save to Triage workbook. Safety stop: the update output did not preserve all sheets. Reload the original Triage workbook and try again after this is fixed.');
+      return false;
+    }
+    if (typeof triageWorkbookFileHandle.createWritable !== 'function') {
+      window.alert('Could not save to Triage workbook. This browser did not provide writable access to the loaded file.');
+      return false;
+    }
+    try {
+      console.info('[Triage save] writing file', { outputBytes: result.output?.byteLength || null });
+      const writable = await triageWorkbookFileHandle.createWritable();
+      await writable.write(result.output);
+      await writable.close();
+      const savedFile = await triageWorkbookFileHandle.getFile();
+      console.info('[Triage save] write complete', { savedBytes: savedFile?.size || null });
+      if (!savedFile?.size) {
+        window.alert('Could not save to Triage workbook. The browser did not confirm a saved file.');
+        return false;
+      }
+      await appendTriageUpdateBackup(result);
+    } catch {
+      console.error('[Triage save] file write failed');
+      window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
+      return false;
+    }
+    triageWorkbookBuffer = result.output;
+    const triage = triageRecords.get(studentId) || {};
+    triageRecords.set(studentId, { ...triage, comments: result.next || cleanComment });
+    updateCourseMapTopInfoStrip();
+    updateStudentPreview();
+    return true;
+  };
+
+  const saveCourseMapTriageEditForm = async () => {
+    const form = document.getElementById('course-map-triage-edit-form');
+    if (!form) return false;
+    const formValues = getCourseMapTriageFormValues(form);
+    const isNewTriageRow = form.dataset.newTriageRow === 'true';
+    const studentId = normalizeStudentId(
+      (isNewTriageRow ? formValues.studentId : '') || form.dataset.studentId || activeStudentId || studentIdInput?.value || ''
+    );
+    if (!studentId || !triageWorkbookBuffer || !triageWorkbookFileHandle) {
+      window.alert('Could not save to Triage workbook. Load Triage from a writable folder picker, then try again.');
+      return false;
+    }
+    const allowed = await ensureFileHandleReadWritePermission(triageWorkbookFileHandle);
+    if (!allowed) {
+      window.alert('Could not save to Triage workbook. Write permission was not granted.');
+      return false;
+    }
+    const changedValues = getCourseMapTriageChangedValues(form);
+    if (!Object.keys(changedValues).length) return true;
+    let result = null;
+    let savedValues = changedValues;
+    if (isNewTriageRow) {
+      if (!String(formValues.givenName || '').trim() && !String(formValues.familyName || '').trim()) {
+        window.alert('Enter at least a first name or family name before saving to Triage.');
+        return false;
+      }
+      result = await addTriageRowInWorker(triageWorkbookBuffer, studentId, formValues);
+      savedValues = result?.values || formValues;
+    } else {
+      delete changedValues.studentId;
+      if (!Object.keys(changedValues).length) return true;
+      result = await updateTriageFieldsInWorker(triageWorkbookBuffer, studentId, changedValues);
+    }
+    const saved = await writeUpdatedTriageWorkbook(result);
+    if (!saved) return false;
+    await appendTriageUpdateBackup(result);
+    const triage = triageRecords.get(studentId) || {};
+    triageRecords.set(studentId, { ...triage, ...savedValues });
+    const record = findStudentRecordById(studentId) || staffWorkbookState.getStudentRecord?.();
+    if (record && getStudentRecordId(record) === studentId) {
+      if (Object.prototype.hasOwnProperty.call(savedValues, 'familyName')) record.Family_Name = savedValues.familyName;
+      if (Object.prototype.hasOwnProperty.call(savedValues, 'givenName')) record.Given_Name = savedValues.givenName;
+      if (Object.prototype.hasOwnProperty.call(savedValues, 'primaryEmail')) record.Primary_Email = savedValues.primaryEmail;
+    }
+    updateCourseMapTopInfoStrip();
+    updateStudentPreview();
+    return true;
   };
 
   const syncCourseMapOverlayBounds = () => {
@@ -20114,21 +21355,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showCourseMapModal = () => {
     if (!courseMapModal) return;
+    hideAllVisibleTooltips();
     resetCourseMapModalDefaultPlacement();
     syncCourseMapOverlayBounds();
     renderCourseMapModal();
+    renderAllAlertButtons();
     syncCourseMapOverlayBounds();
     courseMapModal.classList.add('show');
     courseMapModal.setAttribute('aria-hidden', 'false');
     updateCourseMapStaffPanelState();
     syncCourseMapKeyPanelBottomOffset();
     updateCourseMapPrereqToggle();
+    updateCourseMapListColoursToggle();
     updateCourseMapPrereqTextToggle();
     updateCourseMapFontScale();
     syncCourseMapKeyAvailability();
     updateCourseMapModeUi();
     updateCourseMapTopInfoStrip();
-    showCourseMapKeyModal();
+    syncCourseMapEmailToolsButton();
+    if (getCourseMapIsStaffMode()) hideCourseMapKeyModal();
+    else showCourseMapKeyModal();
     const resetScrollPositions = () => {
       // Reset any internal scrolling within the resizable modal.
       const modalBox = courseMapModal.querySelector('.course-map-modal');
@@ -20163,7 +21409,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const hideCourseMapModal = () => {
     if (!courseMapModal) return;
+    hideCourseMapTriageCommentModal();
     hideCourseMapRemainingInfoModal();
+    hideCourseMapFullStudentDetailsModal();
+    hideCourseMapStudentNoteModal();
     hideCourseMapKeyModal();
     courseMapModal.classList.remove('show');
     courseMapModal.setAttribute('aria-hidden', 'true');
@@ -20173,6 +21422,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCourseMapTopInfoStrip();
     updateCourseMapStaffPanelState();
     updateCourseMapLoadFilesButtonVisibility();
+    syncCourseMapEmailToolsButton();
     if (courseMapButton) courseMapButton.focus();
     if (courseMapResizeObserver) {
       courseMapResizeObserver.disconnect();
@@ -20254,6 +21504,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     updateCourseMapStreamLabels();
     syncCourseMapKeyAvailability();
+  };
+
+  const updateCourseMapListColoursToggle = () => {
+    if (courseMapModal) {
+      courseMapModal.classList.toggle('course-map-list-colours-on', courseMapListColoursOn);
+    }
+    if (toggleCourseMapListColoursButton) {
+      toggleCourseMapListColoursButton.checked = courseMapListColoursOn;
+      toggleCourseMapListColoursButton.setAttribute('aria-pressed', courseMapListColoursOn ? 'true' : 'false');
+    }
+    if (courseMapListColoursToggleLabel) {
+      courseMapListColoursToggleLabel.textContent = courseMapListColoursOn
+        ? 'Selected list colours (showing)'
+        : 'Selected list colours (turned off)';
+      courseMapListColoursToggleLabel.classList.toggle('active', courseMapListColoursOn);
+    }
   };
 
   const getCourseMapCoreConnector = () => {
@@ -20465,12 +21731,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.style.fontSize = `${courseMapFontScaleEm}em`;
       });
     }
-    // Non-invasive feedback to confirm the handler is firing.
-    const scaleLabel = `${Math.round(courseMapFontScaleEm * 100)}%`;
+    const baseFontPx = courseMapContent
+      ? parseFloat(getComputedStyle(courseMapContent).fontSize) || 16
+      : 16;
+    const fontPx = Math.round(baseFontPx * courseMapFontScaleEm * 10) / 10;
     if (courseMapFontSizeSlider) {
       courseMapFontSizeSlider.value = String(courseMapFontScaleEm);
-      courseMapFontSizeSlider.title = `Course map font: ${scaleLabel}`;
+      courseMapFontSizeSlider.title = `Course map font: ${Math.round(courseMapFontScaleEm * 100)}% (${fontPx}px)`;
     }
+    if (resetCourseMapFontSizeButton) {
+      resetCourseMapFontSizeButton.textContent = `${Math.round(courseMapFontScaleEm * 100)}%`;
+    }
+    updateBookmarkableSettingsUrl();
     requestAnimationFrame(() => {
       positionCourseMapArrows();
       positionCourseMapCoreConnector();
@@ -20580,21 +21852,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (type === 'codes') return codesButton;
     return null;
   };
+  const getAlertButtons = (type) => {
+    if (type === 'error') return [errorButton, courseMapErrorButton].filter(Boolean);
+    if (type === 'warning') return [warningButton, courseMapWarningButton].filter(Boolean);
+    if (type === 'info') return [infoButton, courseMapInfoButton].filter(Boolean);
+    if (type === 'data') return [dataErrorButton, courseMapDataErrorButton].filter(Boolean);
+    if (type === 'codes') return [codesButton, courseMapCodesButton].filter(Boolean);
+    return [];
+  };
 
   const hideAlertModal = () => {
     if (!alertModal) return;
     const type = alertModal.dataset.type;
-    const btn = getAlertButton(type);
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    if (btn) btn.classList.remove('alert-open');
+    getAlertButtons(type).forEach((btn) => {
+      btn.setAttribute('aria-expanded', 'false');
+      btn.classList.remove('alert-open');
+    });
     alertModal.classList.remove('show');
+    alertModal.classList.remove('alert-from-course-map');
     alertModal.setAttribute('aria-hidden', 'true');
     alertModal.removeAttribute('data-type');
   };
 
   const renderAlertButton = (type) => {
-    const btn = getAlertButton(type);
-    if (!btn) return;
+    const buttons = getAlertButtons(type);
+    if (!buttons.length) return;
+    const btn = buttons[0];
     const labels = { error: 'Alert', warning: 'Caution', info: 'Info', data: 'Data Error?', codes: 'Codes' };
     const content = alertContent[type] || [];
     const count = content.length;
@@ -20603,26 +21886,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const contentChanged = signature !== alertPrevSignatures[type];
     const isCountless = type === 'codes';
     if (count > 0) {
-      btn.classList.remove('hidden');
-      if (isCountless) {
-        btn.textContent = labels[type] || type;
-        btn.classList.remove('has-unread');
-      } else {
-        btn.innerHTML = `<span class="alert-label">${labels[type] || type}</span><span class="alert-count">${count}</span>`;
-        btn.classList.toggle('has-unread', hasUnread);
-      }
-      btn.setAttribute('aria-expanded', 'false');
+      buttons.forEach((button) => {
+        button.classList.remove('hidden');
+        if (isCountless || !hasUnread) {
+          button.textContent = labels[type] || type;
+          button.classList.remove('has-unread');
+        } else {
+          button.innerHTML = `<span class="alert-label">${labels[type] || type}</span><span class="alert-count">${count}</span>`;
+          button.classList.toggle('has-unread', hasUnread);
+        }
+        button.setAttribute('aria-expanded', 'false');
+      });
       const prev = alertPrevCounts[type] || 0;
       const delta = count - prev;
       const isOpen = alertModal && alertModal.classList.contains('show') && alertModal.dataset.type === type;
       if (isOpen) {
-        btn.classList.remove('alert-pending', 'alert-flash');
-        btn.classList.add('alert-open');
-        btn.classList.remove('has-unread');
+        buttons.forEach((button) => {
+          button.classList.remove('alert-pending', 'alert-flash');
+          button.classList.add('alert-open');
+          button.classList.remove('has-unread');
+        });
       } else {
-        btn.classList.remove('alert-open');
+        buttons.forEach((button) => button.classList.remove('alert-open'));
         if (!hasUnread) {
-          btn.classList.remove('has-unread');
+          buttons.forEach((button) => button.classList.remove('has-unread'));
         }
         if (!isCountless && (delta > 0 || (contentChanged && hasUnread))) {
           const rect = btn.getBoundingClientRect();
@@ -20634,19 +21921,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             setTimeout(() => btn.classList.remove('alert-flash'), 500);
           }, 150);
         } else if (!isCountless && delta < 0) {
-          btn.classList.remove('alert-pending', 'alert-flash');
+          buttons.forEach((button) => button.classList.remove('alert-pending', 'alert-flash'));
         }
         if (!isCountless && delta === 0 && !hasUnread) {
-          btn.classList.remove('alert-pending', 'alert-flash');
+          buttons.forEach((button) => button.classList.remove('alert-pending', 'alert-flash'));
         }
       }
       alertPrevCounts[type] = count;
       alertPrevSignatures[type] = signature;
     } else {
-      btn.classList.add('hidden');
-      btn.classList.remove('has-unread');
-      btn.textContent = labels[type] || type;
-      btn.classList.remove('alert-pending', 'alert-flash', 'alert-open');
+      buttons.forEach((button) => {
+        button.classList.add('hidden');
+        button.classList.remove('has-unread');
+        button.textContent = labels[type] || type;
+        button.classList.remove('alert-pending', 'alert-flash', 'alert-open');
+      });
       alertPrevCounts[type] = 0;
       alertPrevSignatures[type] = '';
       if (alertModal && alertModal.dataset.type === type) {
@@ -20656,11 +21945,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateAlertBoxVisibility();
   };
 
+  const renderAllAlertButtons = () => {
+    ['error', 'warning', 'info', 'codes', 'data'].forEach((type) => renderAlertButton(type));
+  };
+
   const showAlertModal = (type) => {
     if (!alertModal || !alertBody || !alertTitle) return;
     rebuildAlertContent(type);
     const payloads = alertContent[type] || [];
-    const btn = getAlertButton(type);
+    const buttons = getAlertButtons(type);
     if (!payloads.length) return;
     const modalEl = alertModal.querySelector('.modal');
     const sheet = document.querySelector('.sheet');
@@ -20703,14 +21996,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       alertTitle.style.color = ALERT_COLORS.info;
     }
     alertModal.dataset.type = type;
+    alertModal.classList.toggle('alert-from-course-map', !!courseMapModal?.classList.contains('show'));
     alertModal.classList.add('show');
     alertModal.setAttribute('aria-hidden', 'false');
-    if (btn) {
-      btn.setAttribute('aria-expanded', 'true');
-      btn.classList.remove('alert-pending', 'alert-flash');
-      btn.classList.add('alert-open');
+    if (buttons.length) {
+      buttons.forEach((btn) => {
+        btn.setAttribute('aria-expanded', 'true');
+        btn.classList.remove('alert-pending', 'alert-flash');
+        btn.classList.add('alert-open');
+        btn.classList.remove('has-unread');
+      });
       alertPrevCounts[type] = alertContent[type]?.length || 0;
-      btn.classList.remove('has-unread');
     }
     const state = alertState[type];
     if (state) {
@@ -20922,11 +22218,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .join('\n');
   };
 
+  const getCurrentSemesterEmailLabel = (date = new Date()) =>
+    `${getSemesterLabel(getCurrentSemesterKey(date))} ${date.getFullYear()}`;
+
+  const getTimetableMarkerMatch = (text) => {
+    const dynamicMarker = `The subjects you have chosen for ${getCurrentSemesterEmailLabel()}:`;
+    const dynamicIndex = String(text || '').indexOf(dynamicMarker);
+    if (dynamicIndex >= 0) return { index: dynamicIndex, marker: dynamicMarker };
+    const match = String(text || '').match(/The subjects you have chosen for (?:Semester [12]|Summer Semester) \d{4}:/);
+    return match ? { index: match.index, marker: match[0] } : null;
+  };
+
   const insertTimetableIntoDeclaration = (text) => {
-    const markerBefore = 'The subjects you have chosen for Semester 1 2026:';
     const markerAfter = 'Other important information:';
     if (!text) return { text: '', inserted: false };
-    const idxStart = text.indexOf(markerBefore);
+    const markerMatch = getTimetableMarkerMatch(text);
+    const idxStart = markerMatch?.index ?? -1;
+    const markerBefore = markerMatch?.marker || '';
     const idxEnd = text.indexOf(markerAfter);
     if (idxStart === -1 || idxEnd === -1 || idxEnd <= idxStart) {
       return { text, inserted: false };
@@ -20960,12 +22268,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const insertTimetableIntoDeclarationHtml = (html) => {
-    const markerBefore = 'The subjects you have chosen for Semester 1 2026:';
     const markerAfter = 'Other important information:';
     if (!html) return { html: '', inserted: false };
     const timetableHtml = buildTimetableHtmlBlock();
     if (!timetableHtml) return { html, inserted: false };
-    const idxStart = html.indexOf(markerBefore);
+    const markerMatch = getTimetableMarkerMatch(html);
+    const idxStart = markerMatch?.index ?? -1;
+    const markerBefore = markerMatch?.marker || '';
     const idxEnd = html.indexOf(markerAfter);
     if (idxStart === -1 || idxEnd === -1 || idxEnd <= idxStart) {
       return { html, inserted: false };
@@ -22608,9 +23917,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (historyButton) historyButton.addEventListener('click', showHistoryModal);
   if (remainingButton) remainingButton.addEventListener('click', showRemainingModal);
+  if (courseMapHistoryButton) courseMapHistoryButton.addEventListener('click', showHistoryModal);
+  if (courseMapRemainingButton) courseMapRemainingButton.addEventListener('click', showRemainingModal);
   if (oldCodesButton) oldCodesButton.addEventListener('click', showOldCodesModal);
+  if (courseMapOldCodesButton) courseMapOldCodesButton.addEventListener('click', showOldCodesModal);
   if (courseMapButton) courseMapButton.addEventListener('click', showCourseMapModal);
   if (nextSemesterButton) nextSemesterButton.addEventListener('click', showNextSemesterModal);
+  if (courseMapNextSemesterButton) courseMapNextSemesterButton.addEventListener('click', showNextSemesterModal);
   if (historySortButtons.length) {
     historySortButtons.forEach((button) => {
       button.addEventListener('click', () => {
@@ -22787,8 +24100,101 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (e.target === courseMapRemainingInfoModal) hideCourseMapRemainingInfoModal();
     });
   }
+  if (courseMapFullStudentDetailsModal) {
+    courseMapFullStudentDetailsModal.addEventListener('click', (e) => {
+      if (e.target === courseMapFullStudentDetailsModal) hideCourseMapFullStudentDetailsModal();
+    });
+  }
+  if (courseMapStudentNoteModal) {
+    courseMapStudentNoteModal.addEventListener('click', (e) => {
+      if (e.target === courseMapStudentNoteModal) hideCourseMapStudentNoteModal();
+    });
+  }
+  if (closeCourseMapFullStudentDetails) {
+    closeCourseMapFullStudentDetails.addEventListener('click', hideCourseMapFullStudentDetailsModal);
+  }
+  if (closeCourseMapFullStudentDetailsCta) {
+    closeCourseMapFullStudentDetailsCta.addEventListener('click', hideCourseMapFullStudentDetailsModal);
+  }
+  if (closeCourseMapStudentNote) closeCourseMapStudentNote.addEventListener('click', hideCourseMapStudentNoteModal);
+  if (closeCourseMapStudentNoteCta) {
+    closeCourseMapStudentNoteCta.addEventListener('click', hideCourseMapStudentNoteModal);
+  }
+  if (courseMapTriageEditButton) {
+    courseMapTriageEditButton.addEventListener('click', async () => {
+      const form = document.getElementById('course-map-triage-edit-form');
+      if (form?.classList.contains('is-temp-hidden')) {
+        form.classList.remove('is-temp-hidden');
+        updateCourseMapTriageSaveVisibility();
+        return;
+      }
+      const originalText = courseMapTriageEditButton.textContent;
+      courseMapTriageEditButton.disabled = true;
+      courseMapTriageEditButton.classList.add('is-saving');
+      courseMapTriageEditButton.textContent = 'Saving...';
+      courseMapTriageEditButton.setAttribute('aria-busy', 'true');
+      try {
+        const saved = await saveCourseMapTriageEditForm();
+        if (saved) hideCourseMapStudentNoteModal();
+      } finally {
+        courseMapTriageEditButton.disabled = false;
+        courseMapTriageEditButton.classList.remove('is-saving');
+        courseMapTriageEditButton.textContent = originalText || 'Save';
+        courseMapTriageEditButton.setAttribute('aria-busy', 'false');
+      }
+    });
+  }
+  if (courseMapTriageAddCommentButton) {
+    courseMapTriageAddCommentButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      requestAnimationFrame(showCourseMapTriageCommentModal);
+    });
+  }
+  if (closeCourseMapTriageComment) {
+    closeCourseMapTriageComment.addEventListener('click', hideCourseMapTriageCommentModal);
+  }
+  if (cancelCourseMapTriageComment) {
+    cancelCourseMapTriageComment.addEventListener('click', hideCourseMapTriageCommentModal);
+  }
+  if (saveCourseMapTriageComment) {
+    saveCourseMapTriageComment.addEventListener('click', async () => {
+      const originalText = saveCourseMapTriageComment.textContent;
+      saveCourseMapTriageComment.disabled = true;
+      saveCourseMapTriageComment.classList.add('is-saving');
+      saveCourseMapTriageComment.textContent = 'Saving...';
+      saveCourseMapTriageComment.setAttribute('aria-busy', 'true');
+      try {
+        const saved = await prependTriageCommentForActiveStudent(courseMapTriageCommentText?.value || '');
+        if (saved) {
+          hideCourseMapTriageCommentModal();
+          hideCourseMapStudentNoteModal();
+        }
+      } finally {
+        saveCourseMapTriageComment.disabled = false;
+        saveCourseMapTriageComment.classList.remove('is-saving');
+        saveCourseMapTriageComment.textContent = originalText || 'Save';
+        saveCourseMapTriageComment.setAttribute('aria-busy', 'false');
+      }
+    });
+  }
+  if (courseMapTriageCommentModal) {
+    courseMapTriageCommentModal.addEventListener('click', (event) => {
+      if (event.target !== courseMapTriageCommentModal) return;
+      hideCourseMapTriageCommentModal();
+      hideCourseMapStudentNoteModal();
+    });
+  }
   if (closeCourseMap) closeCourseMap.addEventListener('click', hideCourseMapModal);
   if (closeCourseMapCta) closeCourseMapCta.addEventListener('click', hideCourseMapModal);
+  if (courseMapEmailToolsButton) {
+    courseMapEmailToolsButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      const mainButton = document.querySelector('.drop-zone-action-email-tools');
+      if (mainButton) mainButton.click();
+      else showEmailScriptsAccessModal();
+    });
+  }
   if (courseMapLoadFilesButton) {
     courseMapLoadFilesButton.addEventListener('click', async (event) => {
       event.preventDefault();
@@ -22811,17 +24217,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateCourseMapLoadFilesButtonVisibility();
       startCourseMapLoadBusyWatcher();
       try {
-        const result = await runPrimarySourceLoadFlow({ sourceOnly: false });
+        const loaded = hasDirectoryPicker()
+          ? await promptForDirectoryHandle({ sourceOnly: false })
+          : await openSourceFilePicker();
         if (
-          !result?.loaded &&
-          !result?.pickerUsed &&
+          !loaded &&
           !dropZoneSpinnerVisible &&
           !hasCourseMapSourceWorkbookLoaded() &&
           !hasCourseMapTriageWorkbookLoaded()
         ) {
-          clearCourseMapLoadBusyWatcher();
-          setCourseMapLoadFilesButtonBusy(false);
-        } else if (result?.pickerUsed && !result?.pickerSelected && !dropZoneSpinnerVisible) {
           clearCourseMapLoadBusyWatcher();
           setCourseMapLoadFilesButtonBusy(false);
         }
@@ -22852,10 +24256,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     updateCourseMapNotesToggle();
   }
-  if (courseMapModeToggleButton) {
-    courseMapModeToggleButton.addEventListener('click', () => {
+  const setCourseMapStaffModeFromControl = (staffMode) => {
       if (!allowCourseMapModeToggle) return;
-      courseMapStaffMode = !courseMapStaffMode;
+      courseMapStaffMode = !!staffMode;
       if (courseMapStaffMode) courseMapNotesOn = false;
       courseMapTooltipTarget = null;
       if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
@@ -22865,8 +24268,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         renderCourseMapModal();
         syncCourseMapKeyPanelBottomOffset();
       }
+  };
+  if (courseMapModeToggleButton) {
+    courseMapModeToggleButton.addEventListener('click', () => {
+      setCourseMapStaffModeFromControl(!courseMapStaffMode);
     });
     updateCourseMapModeToggleButton();
+  }
+  if (courseMapStaffModeToggle) {
+    courseMapStaffModeToggle.addEventListener('change', () => {
+      setCourseMapStaffModeFromControl(courseMapStaffModeToggle.checked);
+    });
   }
   if (courseMapAiNamesToggleButton) {
     courseMapAiNamesToggleButton.addEventListener('change', () => {
@@ -22885,6 +24297,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     updateCourseMapPrereqToggle();
   }
+  if (toggleCourseMapListColoursButton) {
+    toggleCourseMapListColoursButton.addEventListener('change', () => {
+      courseMapListColoursOn = !!toggleCourseMapListColoursButton.checked;
+      updateCourseMapListColoursToggle();
+    });
+    updateCourseMapListColoursToggle();
+  }
   if (toggleCourseMapPrereqTextButton) {
     toggleCourseMapPrereqTextButton.addEventListener('change', () => {
       courseMapPrereqTextOn = !!toggleCourseMapPrereqTextButton.checked;
@@ -22901,15 +24320,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapFontSizeSlider) {
     courseMapFontSizeSlider.addEventListener('input', () => {
-      const nextScale = Number(courseMapFontSizeSlider.value);
-      if (!Number.isFinite(nextScale)) return;
-      courseMapFontScaleEm = Math.min(1.6, Math.max(0.6, Math.round(nextScale * 100) / 100));
+      courseMapFontScaleEm = normalizeCourseMapFontScale(courseMapFontSizeSlider.value);
       updateCourseMapFontScale();
     });
   }
   if (resetCourseMapFontSizeButton) {
     resetCourseMapFontSizeButton.addEventListener('click', () => {
-      courseMapFontScaleEm = 1;
+      courseMapFontScaleEm = DEFAULT_COURSE_MAP_FONT_SCALE;
       updateCourseMapFontScale();
     });
   }
@@ -22924,10 +24341,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   function isCourseMapShowHideDialogVisible() {
     return courseMapShowHideDialog?.getAttribute('aria-hidden') === 'false';
   }
+  function setCourseMapModeDialogVisible(isVisible) {
+    if (!courseMapModeDialog || !openCourseMapModeButton) return;
+    courseMapModeDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+    openCourseMapModeButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
+  }
+  function hideCourseMapModeDialog() {
+    setCourseMapModeDialogVisible(false);
+  }
+  function isCourseMapModeDialogVisible() {
+    return courseMapModeDialog?.getAttribute('aria-hidden') === 'false';
+  }
   if (openCourseMapShowHideButton) {
     openCourseMapShowHideButton.addEventListener('click', (event) => {
       event.stopPropagation();
       const nextVisible = !isCourseMapShowHideDialogVisible();
+      hideCourseMapModeDialog();
       hideCourseMapImageDialog();
       setCourseMapShowHideDialogVisible(nextVisible);
     });
@@ -22937,11 +24366,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       event.stopPropagation();
     });
   }
+  if (openCourseMapModeButton) {
+    openCourseMapModeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const nextVisible = !isCourseMapModeDialogVisible();
+      hideCourseMapShowHideDialog();
+      hideCourseMapImageDialog();
+      setCourseMapModeDialogVisible(nextVisible);
+    });
+  }
+  if (courseMapModeActions) {
+    courseMapModeActions.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
   document.addEventListener('click', (event) => {
     if (!isCourseMapShowHideDialogVisible()) return;
     if (courseMapShowHideActions?.contains(event.target)) return;
     hideCourseMapShowHideDialog();
-  });
+  }, true);
+  document.addEventListener('click', (event) => {
+    if (!isCourseMapModeDialogVisible()) return;
+    if (courseMapModeActions?.contains(event.target)) return;
+    hideCourseMapModeDialog();
+  }, true);
   function setCourseMapImageDialogVisible(isVisible) {
     if (!courseMapImageDialog || !openCourseMapImageActionsButton) return;
     courseMapImageDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
@@ -22958,6 +24406,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       event.stopPropagation();
       const nextVisible = !isCourseMapImageDialogVisible();
       hideCourseMapShowHideDialog();
+      hideCourseMapModeDialog();
       setCourseMapImageDialogVisible(nextVisible);
     });
   }
@@ -23101,6 +24550,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (infoButton) infoButton.addEventListener('click', () => showAlertModal('info'));
   if (codesButton) codesButton.addEventListener('click', () => showAlertModal('codes'));
   if (dataErrorButton) dataErrorButton.addEventListener('click', () => showAlertModal('data'));
+  if (courseMapErrorButton) courseMapErrorButton.addEventListener('click', () => showAlertModal('error'));
+  if (courseMapWarningButton) courseMapWarningButton.addEventListener('click', () => showAlertModal('warning'));
+  if (courseMapInfoButton) courseMapInfoButton.addEventListener('click', () => showAlertModal('info'));
+  if (courseMapCodesButton) courseMapCodesButton.addEventListener('click', () => showAlertModal('codes'));
+  if (courseMapDataErrorButton) courseMapDataErrorButton.addEventListener('click', () => showAlertModal('data'));
   if (closeAlert) closeAlert.addEventListener('click', hideAlertModal);
   if (alertModal) {
     alertModal.addEventListener('click', (e) => {
@@ -23175,7 +24629,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(courseTimetableModal, hideCourseTimetableModal);
   enableOutsideClickClose(historyModal, hideHistoryModal);
   enableOutsideClickClose(remainingModal, hideRemainingModal);
-  enableOutsideClickClose(oldCodesModal, hideOldCodesModal);
+enableOutsideClickClose(oldCodesModal, hideOldCodesModal);
+  if (oldCodesModal) {
+    oldCodesModal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') hideOldCodesModal();
+    });
+  }
   enableOutsideClickClose(courseMapRemainingInfoModal, hideCourseMapRemainingInfoModal);
   enableOutsideClickClose(courseMapModal, hideCourseMapModal);
   enableOutsideClickClose(containerPopoutModal, hideContainerPopoutModal);
@@ -23650,9 +25109,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (loadModal?.classList?.contains('show')) {
+        e.preventDefault();
+        hideLoadModal();
+        return;
+      }
       if (isCourseMapShowHideDialogVisible()) {
         e.preventDefault();
         hideCourseMapShowHideDialog();
+        return;
+      }
+      if (isCourseMapModeDialogVisible()) {
+        e.preventDefault();
+        hideCourseMapModeDialog();
         return;
       }
       if (isCourseMapImageDialogVisible()) {
@@ -23660,6 +25129,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         hideCourseMapImageDialog();
         return;
       }
+      const closeTopModal = (modal, closeFn) => {
+        if (!modal?.classList?.contains('show')) return false;
+        e.preventDefault();
+        closeFn();
+        return true;
+      };
+      if (closeTopModal(courseMapTriageCommentModal, hideCourseMapTriageCommentModal)) return;
+      if (closeTopModal(alertModal, hideAlertModal)) return;
+      if (closeTopModal(folderShortcutsModal, hideFolderShortcutsModal)) return;
+      if (closeTopModal(courseTimetableModal, hideCourseTimetableModal)) return;
+      if (closeTopModal(historyModal, hideHistoryModal)) return;
+      if (closeTopModal(remainingModal, hideRemainingModal)) return;
+      if (closeTopModal(oldCodesModal, hideOldCodesModal)) return;
+      if (closeTopModal(courseMapFullStudentDetailsModal, hideCourseMapFullStudentDetailsModal)) return;
+      if (closeTopModal(courseMapStudentNoteModal, hideCourseMapStudentNoteModal)) return;
+      if (closeTopModal(courseMapRemainingInfoModal, hideCourseMapRemainingInfoModal)) return;
+      if (closeTopModal(emailScriptsAccessModal, hideEmailScriptsAccessModal)) return;
       hideAllVisibleTooltips();
       hideAlertModal();
       hideCodeModal();
@@ -23670,6 +25156,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideHistoryModal();
       hideRemainingModal();
       hideCourseMapRemainingInfoModal();
+      hideCourseMapFullStudentDetailsModal();
+      hideCourseMapStudentNoteModal();
       hideCourseMapModal();
       hideNextSemesterModal();
       hideLoadModal();

@@ -515,6 +515,11 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     for (const label of labels) {
       const idx = getIdx(label);
       if (idx !== undefined) return idx;
+      const target = normalizeHeadingText(label);
+      const match = Object.entries(headerMap).find(([key]) =>
+        key === target || key.includes(target) || target.includes(key)
+      );
+      if (match) return match[1];
     }
     return undefined;
   };
@@ -527,12 +532,15 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
   const fields = {
     friendlyName: getIdx('Friendly name'),
     handledBy: getIdx('Handled By'),
-    statusLabel: getIdx('Int, Ongoing, FMP'),
+    statusLabel: getIdxAny('Int, Ongoing, FMP', 'Int Ongoing FMP', 'Int, Ongiong, FMP'),
     statusDetails: getIdx('Details - CRT, Ongoing, Domestic, etc.'),
     alteredStatus: getIdx('Altered Status'),
     onSharePoint: getIdx('On SharePoint'),
     inStrata: getIdx('In Strata (Enrolled) - subject list'),
     comments: getIdx('Comments'),
+    familyName: getIdx('Family Names'),
+    givenName: getIdx('Given Names'),
+    primaryEmail: getIdxAny('Primary Email', 'Personal Email', 'Email'),
   };
   const sharePointPathIdx = getIdxAny('SharePoint Path', 'Sharepoint Path');
   const familyIdx = getIdx('Family Names');
@@ -727,6 +735,8 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     status: 'ok',
     headerFound: true,
     idIdx,
+    commentsIdx: fields.comments ?? null,
+    fieldIdx: fields,
     total: records.length,
     preview: previewRows.length,
   };
@@ -771,6 +781,319 @@ const parseTriageWorkbookBuffer = (buffer, mode) => {
     });
   }
   return fastResult;
+};
+
+const decodeUtf8 = (content) => new TextDecoder('utf-8').decode(content);
+const encodeUtf8 = (text) => new TextEncoder().encode(text);
+const escapeXmlText = (text) =>
+  String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+const unescapeXmlText = (text) =>
+  String(text || '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+const getZipEntry = (cfb, path) =>
+  XLSX.CFB.find(cfb, path) ||
+  XLSX.CFB.find(cfb, `/${path}`) ||
+  null;
+const getZipEntryText = (cfb, path) => {
+  const entry = getZipEntry(cfb, path);
+  return entry?.content ? decodeUtf8(entry.content) : '';
+};
+const resolveWorkbookTarget = (target) => {
+  const clean = String(target || '').replace(/^\/+/, '');
+  return clean.startsWith('xl/') ? clean : `xl/${clean}`;
+};
+const getXmlAttr = (xml, name) => {
+  const match = String(xml || '').match(new RegExp(`\\b${name}="([^"]*)"`, 'i'));
+  return match ? unescapeXmlText(match[1]) : '';
+};
+const colIndexFromCellRef = (ref) => {
+  const letters = String(ref || '').match(/^[A-Z]+/i)?.[0] || '';
+  let value = 0;
+  for (let i = 0; i < letters.length; i += 1) {
+    value = value * 26 + (letters.toUpperCase().charCodeAt(i) - 64);
+  }
+  return value - 1;
+};
+const readSharedStrings = (cfb) => {
+  const xml = getZipEntryText(cfb, 'xl/sharedStrings.xml');
+  if (!xml) return [];
+  const strings = [];
+  const siRegex = /<si\b[\s\S]*?<\/si>/g;
+  let match = null;
+  while ((match = siRegex.exec(xml))) {
+    const parts = [];
+    const tRegex = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
+    let tMatch = null;
+    while ((tMatch = tRegex.exec(match[0]))) parts.push(unescapeXmlText(tMatch[1]));
+    strings.push(parts.join(''));
+  }
+  return strings;
+};
+const getCellTextFromXml = (cellXml, sharedStrings) => {
+  if (!cellXml) return '';
+  const type = getXmlAttr(cellXml, 't');
+  if (type === 'inlineStr') {
+    const text = cellXml.match(/<is\b[\s\S]*?<t\b[^>]*>([\s\S]*?)<\/t>[\s\S]*?<\/is>/)?.[1] || '';
+    return unescapeXmlText(text);
+  }
+  const rawValue = cellXml.match(/<v\b[^>]*>([\s\S]*?)<\/v>/)?.[1] || '';
+  if (type === 's') return sharedStrings[Number(rawValue)] || '';
+  return unescapeXmlText(rawValue);
+};
+const findTriageSheetPath = (cfb) => {
+  const workbookXml = getZipEntryText(cfb, 'xl/workbook.xml');
+  const relsXml = getZipEntryText(cfb, 'xl/_rels/workbook.xml.rels');
+  if (!workbookXml || !relsXml) return '';
+  const sheetRegex = /<sheet\b[^>]*>/g;
+  let sheetMatch = null;
+  let relId = '';
+  while ((sheetMatch = sheetRegex.exec(workbookXml))) {
+    const sheetTag = sheetMatch[0];
+    const name = getXmlAttr(sheetTag, 'name');
+    if (!TRIAGE_SHEET_NAMES.some((candidate) => candidate.toLowerCase() === name.toLowerCase())) continue;
+    relId = getXmlAttr(sheetTag, 'r:id');
+    break;
+  }
+  if (!relId) return '';
+  const relRegex = /<Relationship\b[^>]*>/g;
+  let relMatch = null;
+  while ((relMatch = relRegex.exec(relsXml))) {
+    const relTag = relMatch[0];
+    if (getXmlAttr(relTag, 'Id') === relId) return resolveWorkbookTarget(getXmlAttr(relTag, 'Target'));
+  }
+  return '';
+};
+const updateCellInSheetXml = (sheetXml, cellRef, nextValue) => {
+  const rowNumber = Number(String(cellRef).match(/\d+$/)?.[0] || 0);
+  if (!rowNumber) return { ok: false, error: 'Target row was not found.' };
+  const rowRegex = new RegExp(`<row\\b[^>]*\\br="${rowNumber}"[^>]*>[\\s\\S]*?<\\/row>`);
+  const rowMatch = sheetXml.match(rowRegex);
+  if (!rowMatch) return { ok: false, error: 'Target row XML was not found.' };
+  const rowXml = rowMatch[0];
+  const cellRegex = new RegExp(`<c\\b[^>]*\\br="${cellRef}"[^>]*>[\\s\\S]*?<\\/c>`);
+  const cellMatch = rowXml.match(cellRegex);
+  const styleAttr = cellMatch ? (cellMatch[0].match(/\bs="[^"]*"/)?.[0] || '') : '';
+  const stylePart = styleAttr ? ` ${styleAttr}` : '';
+  const newCell = `<c r="${cellRef}"${stylePart} t="inlineStr"><is><t xml:space="preserve">${escapeXmlText(nextValue)}</t></is></c>`;
+  let nextRowXml = '';
+  if (cellMatch) {
+    nextRowXml = rowXml.replace(cellRegex, newCell);
+  } else {
+    const targetCol = colIndexFromCellRef(cellRef);
+    const cells = Array.from(rowXml.matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>[\s\S]*?<\/c>/g));
+    const insertBefore = cells.find((cell) => colIndexFromCellRef(cell[1]) > targetCol);
+    nextRowXml = insertBefore
+      ? rowXml.replace(insertBefore[0], `${newCell}${insertBefore[0]}`)
+      : rowXml.replace('</row>', `${newCell}</row>`);
+  }
+  return { ok: true, xml: sheetXml.replace(rowXml, nextRowXml) };
+};
+
+const getTriageEditableColumns = (sheetXml, sharedStrings, parseInfo, requestedKeys) => {
+  let idCol = Number.isFinite(Number(parseInfo?.idIdx)) ? Number(parseInfo.idIdx) : null;
+  const fieldCols = {
+    friendlyName: Number.isFinite(Number(parseInfo?.fieldIdx?.friendlyName)) ? Number(parseInfo.fieldIdx.friendlyName) : null,
+    handledBy: Number.isFinite(Number(parseInfo?.fieldIdx?.handledBy)) ? Number(parseInfo.fieldIdx.handledBy) : null,
+    alteredStatus: Number.isFinite(Number(parseInfo?.fieldIdx?.alteredStatus)) ? Number(parseInfo.fieldIdx.alteredStatus) : null,
+    statusDetails: Number.isFinite(Number(parseInfo?.fieldIdx?.statusDetails)) ? Number(parseInfo.fieldIdx.statusDetails) : null,
+    comments: Number.isFinite(Number(parseInfo?.commentsIdx)) ? Number(parseInfo.commentsIdx) : null,
+    familyName: Number.isFinite(Number(parseInfo?.fieldIdx?.familyName)) ? Number(parseInfo.fieldIdx.familyName) : null,
+    givenName: Number.isFinite(Number(parseInfo?.fieldIdx?.givenName)) ? Number(parseInfo.fieldIdx.givenName) : null,
+    primaryEmail: Number.isFinite(Number(parseInfo?.fieldIdx?.primaryEmail)) ? Number(parseInfo.fieldIdx.primaryEmail) : null,
+  };
+  if (idCol === null || requestedKeys.some((key) => fieldCols[key] === null)) {
+    const headerRows = Array.from(sheetXml.matchAll(/<row\b[^>]*>[\s\S]*?<\/row>/g)).slice(0, 200);
+    for (const rowMatch of headerRows) {
+      const cells = Array.from(rowMatch[0].matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>[\s\S]*?<\/c>/g));
+      for (const cell of cells) {
+        const c = colIndexFromCellRef(cell[1]);
+        const value = normalizeHeadingText(getCellTextFromXml(cell[0], sharedStrings));
+        if (!value) continue;
+        if (idCol === null && ['studentidasstring', 'studentid', 'student_id'].includes(value)) idCol = c;
+        if (fieldCols.friendlyName === null && value === 'friendlyname') fieldCols.friendlyName = c;
+        if (fieldCols.handledBy === null && value === 'handledby') fieldCols.handledBy = c;
+        if (fieldCols.alteredStatus === null && value === 'alteredstatus') fieldCols.alteredStatus = c;
+        if (fieldCols.statusDetails === null && value === 'detailscrtongoingdomesticetc') fieldCols.statusDetails = c;
+        if (fieldCols.comments === null && value === 'comments') fieldCols.comments = c;
+        if (fieldCols.familyName === null && value === 'familynames') fieldCols.familyName = c;
+        if (fieldCols.givenName === null && value === 'givennames') fieldCols.givenName = c;
+        if (fieldCols.primaryEmail === null && ['primaryemail', 'personalemail', 'email'].includes(value)) fieldCols.primaryEmail = c;
+      }
+      if (idCol !== null && requestedKeys.every((key) => fieldCols[key] !== null)) break;
+    }
+  }
+  return { idCol, fieldCols };
+};
+
+const getMaxUsedColInSheetXml = (sheetXml) => {
+  let maxCol = 0;
+  const cells = String(sheetXml || '').matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>/g);
+  for (const cell of cells) maxCol = Math.max(maxCol, colIndexFromCellRef(cell[1]));
+  return maxCol;
+};
+
+const getRowValuesFromSheetXml = (sheetXml, rowNumber, sharedStrings, maxCol) => {
+  const rowXml = String(sheetXml || '').match(new RegExp(`<row\\b[^>]*\\br="${rowNumber}"[^>]*>[\\s\\S]*?<\\/row>`))?.[0] || '';
+  const values = Array.from({ length: Math.max(0, maxCol + 1) }, () => '');
+  const cells = rowXml.matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>[\s\S]*?<\/c>/g);
+  for (const cell of cells) {
+    const col = colIndexFromCellRef(cell[1]);
+    if (col >= 0 && col < values.length) values[col] = getCellTextFromXml(cell[0], sharedStrings);
+  }
+  return values;
+};
+
+const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = null) => {
+  const values = updateTriageFieldValuesInWorkbook(buffer, studentId, { comments: comment }, parseInfo, {
+    prependComment: true,
+  });
+  return values;
+};
+
+const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parseInfo = null, options = {}) => {
+  const cleanStudentId = normalizeStudentId(studentId);
+  const cleanValues = {};
+  ['friendlyName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments', 'familyName', 'givenName', 'primaryEmail'].forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(values, key)) {
+      cleanValues[key] = String(values[key] ?? '').trim();
+    }
+  });
+  console.info('[Triage save worker] start', {
+    bufferBytes: buffer?.byteLength || null,
+    studentId: cleanStudentId,
+    commentLength: cleanValues.comments?.length || 0,
+    parseInfo,
+  });
+  if (!buffer || !cleanStudentId) {
+    return { ok: false, error: 'Missing student/comment data.' };
+  }
+  const packageBytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const cfb = XLSX.CFB.read(packageBytes, { type: 'buffer' });
+  const sheetCount = (getZipEntryText(cfb, 'xl/workbook.xml').match(/<sheet\b/g) || []).length;
+  const sheetPath = findTriageSheetPath(cfb);
+  const sheetEntry = sheetPath ? getZipEntry(cfb, sheetPath) : null;
+  if (!sheetPath || !sheetEntry?.content) return { ok: false, error: 'Triage sheet XML was not found.', sheetCount };
+  let sheetXml = decodeUtf8(sheetEntry.content);
+  const sharedStrings = readSharedStrings(cfb);
+  console.info('[Triage save worker] package read', { sheetCount, sheetPath, sharedStringCount: sharedStrings.length });
+
+  const requestedKeys = Object.keys(cleanValues);
+  const { idCol, fieldCols } = getTriageEditableColumns(sheetXml, sharedStrings, parseInfo, requestedKeys);
+  if (idCol === null || requestedKeys.some((key) => fieldCols[key] === null)) {
+    return { ok: false, error: 'One or more editable Triage columns were not found.' };
+  }
+  console.info('[Triage save worker] columns found', { idCol, fieldCols });
+
+  let targetRow = -1;
+  const idColName = XLSX.utils.encode_col(5);
+  const idCellRegex = new RegExp(`<c\\b[^>]*\\br="${idColName}(\\d+)"[^>]*>[\\s\\S]*?<\\/c>`, 'g');
+  let idMatch = null;
+  while ((idMatch = idCellRegex.exec(sheetXml))) {
+    if (normalizeStudentId(getCellTextFromXml(idMatch[0], sharedStrings)) === cleanStudentId) {
+      targetRow = Number(idMatch[1]);
+      break;
+    }
+  }
+  if (targetRow < 0) return { ok: false, error: 'This student was not found in Triage.' };
+  console.info('[Triage save worker] row found', { targetRow });
+  const maxCol = getMaxUsedColInSheetXml(sheetXml);
+  const oldRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
+
+  const nextValues = { ...cleanValues };
+  if (options.prependComment) {
+    const commentAddress = `${XLSX.utils.encode_col(fieldCols.comments)}${targetRow}`;
+    const existingCell = sheetXml.match(new RegExp(`<c\\b[^>]*\\br="${commentAddress}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
+    const existing = getCellTextFromXml(existingCell, sharedStrings).trim();
+    nextValues.comments = existing ? `${cleanValues.comments}\n${existing}` : cleanValues.comments;
+  }
+  for (const [key, value] of Object.entries(nextValues)) {
+    const col = fieldCols[key];
+    const updated = updateCellInSheetXml(sheetXml, `${XLSX.utils.encode_col(col)}${targetRow}`, value);
+    if (!updated.ok) return { ok: false, error: updated.error || 'Could not update Triage sheet XML.', sheetCount };
+    sheetXml = updated.xml;
+  }
+  const newRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
+  sheetEntry.content = encodeUtf8(sheetXml);
+  sheetEntry.size = sheetEntry.content.length;
+  const output = XLSX.CFB.write(cfb, { fileType: 'zip', type: 'array', compression: true });
+  console.info('[Triage save worker] package written', { outputBytes: output?.byteLength || null, sheetCount });
+  return { ok: true, output, next: nextValues.comments, values: nextValues, oldRow, newRow, sheetCount };
+};
+
+const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null) => {
+  const cleanStudentId = normalizeStudentId(studentId || values.studentId);
+  const cleanValues = {};
+  ['friendlyName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments', 'familyName', 'givenName', 'primaryEmail'].forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(values, key)) {
+      cleanValues[key] = String(values[key] ?? '').trim();
+    }
+  });
+  if (!buffer || !cleanStudentId) return { ok: false, error: 'Missing student data.' };
+  const packageBytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const cfb = XLSX.CFB.read(packageBytes, { type: 'buffer' });
+  const sheetCount = (getZipEntryText(cfb, 'xl/workbook.xml').match(/<sheet\b/g) || []).length;
+  const sheetPath = findTriageSheetPath(cfb);
+  const sheetEntry = sheetPath ? getZipEntry(cfb, sheetPath) : null;
+  if (!sheetPath || !sheetEntry?.content) return { ok: false, error: 'Triage sheet XML was not found.', sheetCount };
+  let sheetXml = decodeUtf8(sheetEntry.content);
+  const sharedStrings = readSharedStrings(cfb);
+  const requestedKeys = Object.keys(cleanValues);
+  const { idCol, fieldCols } = getTriageEditableColumns(sheetXml, sharedStrings, parseInfo, requestedKeys);
+  if (idCol === null || requestedKeys.some((key) => fieldCols[key] === null)) {
+    return { ok: false, error: 'One or more editable Triage columns were not found.', sheetCount };
+  }
+
+  const idColName = XLSX.utils.encode_col(5);
+  const idCellRegex = new RegExp(`<c\\b[^>]*\\br="${idColName}(\\d+)"[^>]*>[\\s\\S]*?<\\/c>`, 'g');
+  let idMatch = null;
+  while ((idMatch = idCellRegex.exec(sheetXml))) {
+    if (normalizeStudentId(getCellTextFromXml(idMatch[0], sharedStrings)) === cleanStudentId) {
+      return { ok: false, error: 'This student is already in Triage.', sheetCount };
+    }
+  }
+
+  const freeColName = 'D';
+  let targetRow = -1;
+  const rows = Array.from(sheetXml.matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g));
+  for (const rowMatch of rows) {
+    const rowNumber = Number(rowMatch[1]);
+    if (rowNumber <= 4) continue;
+    const freeCell = rowMatch[0].match(new RegExp(`<c\\b[^>]*\\br="${freeColName}${rowNumber}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
+    if (!getCellTextFromXml(freeCell, sharedStrings).trim()) {
+      targetRow = rowNumber;
+      break;
+    }
+  }
+  if (targetRow < 0) {
+    return { ok: false, error: 'No existing blank Triage row was found in column D below row 4.', sheetCount };
+  }
+
+  const familyName = cleanValues.familyName || '-';
+  const givenName = cleanValues.givenName || '-';
+  const rowValues = { ...cleanValues, familyName, givenName, studentId: cleanStudentId };
+  const columns = { ...fieldCols, studentId: 5 };
+  const maxCol = getMaxUsedColInSheetXml(sheetXml);
+  const oldRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
+  for (const [key, value] of Object.entries(rowValues)) {
+    const col = columns[key];
+    if (col === null || col === undefined) continue;
+    const updated = updateCellInSheetXml(sheetXml, `${XLSX.utils.encode_col(col)}${targetRow}`, value);
+    if (!updated.ok) return { ok: false, error: updated.error || 'Could not add Triage row.', sheetCount };
+    sheetXml = updated.xml;
+  }
+
+  const newRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
+  sheetEntry.content = encodeUtf8(sheetXml);
+  sheetEntry.size = sheetEntry.content.length;
+  const output = XLSX.CFB.write(cfb, { fileType: 'zip', type: 'array', compression: true });
+  return { ok: true, output, values: rowValues, oldRow, newRow, targetRow, sheetCount };
 };
 
 try {
@@ -818,6 +1141,73 @@ self.onmessage = (event) => {
         type: 'triageParsed',
         ok: false,
         error: error?.message || 'Triage parse failed.',
+      });
+    }
+  }
+  if (data.type === 'prependTriageComment') {
+    try {
+      const result = prependTriageCommentToWorkbook(data.buffer, data.studentId, data.comment, data.parseInfo);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageCommentPrepended',
+        ok: !!result.ok,
+        output: result.output || null,
+        next: result.next || '',
+        oldRow: result.oldRow || null,
+        newRow: result.newRow || null,
+        error: result.error || '',
+        sheetCount: result.sheetCount || null,
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageCommentPrepended',
+        ok: false,
+        error: error?.message || 'Triage comment update failed.',
+      });
+    }
+  }
+  if (data.type === 'updateTriageFields') {
+    try {
+      const result = updateTriageFieldValuesInWorkbook(data.buffer, data.studentId, data.values || {}, data.parseInfo);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageFieldsUpdated',
+        ok: !!result.ok,
+        output: result.output || null,
+        values: result.values || null,
+        oldRow: result.oldRow || null,
+        newRow: result.newRow || null,
+        error: result.error || '',
+        sheetCount: result.sheetCount || null,
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageFieldsUpdated',
+        ok: false,
+        error: error?.message || 'Triage field update failed.',
+      });
+    }
+  }
+  if (data.type === 'addTriageRow') {
+    try {
+      const result = addTriageRowToWorkbook(data.buffer, data.studentId, data.values || {}, data.parseInfo);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageRowAdded',
+        ok: !!result.ok,
+        output: result.output || null,
+        values: result.values || null,
+        oldRow: result.oldRow || null,
+        newRow: result.newRow || null,
+        targetRow: result.targetRow || null,
+        error: result.error || '',
+        sheetCount: result.sheetCount || null,
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageRowAdded',
+        ok: false,
+        error: error?.message || 'Triage row add failed.',
       });
     }
   }

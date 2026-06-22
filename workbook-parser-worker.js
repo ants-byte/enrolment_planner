@@ -867,6 +867,58 @@ const parseTriageWorkbookBuffer = (buffer, mode) => {
   return fastResult;
 };
 
+const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = null) => {
+  const cleanStudentId = normalizeStudentId(studentId);
+  const cleanComment = String(comment || '').trim();
+  if (!buffer || !cleanStudentId || !cleanComment) {
+    return { ok: false, error: 'Missing student/comment data.' };
+  }
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const sheetName =
+    TRIAGE_SHEET_NAMES.find((name) => workbook.Sheets?.[name]) ||
+    workbook.SheetNames.find((name) => /^triage$/i.test(name)) ||
+    workbook.SheetNames[0];
+  const sheet = workbook.Sheets?.[sheetName];
+  const ref = sheet?.['!ref'];
+  if (!sheet || !ref) return { ok: false, error: 'Triage sheet was not found.' };
+
+  const range = XLSX.utils.decode_range(ref);
+  let idCol = Number.isFinite(Number(parseInfo?.idIdx)) ? Number(parseInfo.idIdx) : null;
+  let commentsCol = Number.isFinite(Number(parseInfo?.commentsIdx)) ? Number(parseInfo.commentsIdx) : null;
+  if (idCol === null || commentsCol === null) {
+    const maxScanRow = Math.min(range.e.r, range.s.r + 200);
+    for (let r = range.s.r; r <= maxScanRow; r += 1) {
+      for (let c = range.s.c; c <= range.e.c; c += 1) {
+        const value = normalizeHeadingText(sheet[XLSX.utils.encode_cell({ r, c })]?.w ?? sheet[XLSX.utils.encode_cell({ r, c })]?.v ?? '');
+        if (!value) continue;
+        if (idCol === null && ['studentidasstring', 'studentid', 'student_id'].includes(value)) idCol = c;
+        if (commentsCol === null && value === 'comments') commentsCol = c;
+      }
+      if (idCol !== null && commentsCol !== null) break;
+    }
+  }
+  if (idCol === null || commentsCol === null) {
+    return { ok: false, error: 'The Student ID or Comments column was not found.' };
+  }
+
+  let targetRow = -1;
+  for (let r = range.s.r; r <= range.e.r; r += 1) {
+    const cell = sheet[XLSX.utils.encode_cell({ r, c: idCol })];
+    if (normalizeStudentId(cell?.w ?? cell?.v ?? '') === cleanStudentId) {
+      targetRow = r;
+      break;
+    }
+  }
+  if (targetRow < 0) return { ok: false, error: 'This student was not found in Triage.' };
+
+  const address = XLSX.utils.encode_cell({ r: targetRow, c: commentsCol });
+  const existing = String(sheet[address]?.w ?? sheet[address]?.v ?? '').trim();
+  const next = existing ? `${cleanComment}\n${existing}` : cleanComment;
+  sheet[address] = { t: 's', v: next, w: next };
+  const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return { ok: true, output, next };
+};
+
 try {
   importScripts('vendor/xlsx.full.min.js');
 } catch (error) {
@@ -912,6 +964,25 @@ self.onmessage = (event) => {
         type: 'triageParsed',
         ok: false,
         error: error?.message || 'Triage parse failed.',
+      });
+    }
+  }
+  if (data.type === 'prependTriageComment') {
+    try {
+      const result = prependTriageCommentToWorkbook(data.buffer, data.studentId, data.comment, data.parseInfo);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageCommentPrepended',
+        ok: !!result.ok,
+        output: result.output || null,
+        next: result.next || '',
+        error: result.error || '',
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageCommentPrepended',
+        ok: false,
+        error: error?.message || 'Triage comment update failed.',
       });
     }
   }

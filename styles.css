@@ -25,6 +25,11 @@ Created: December 30, 2025
   --btn-disabled-bg: #555;
   --btn-disabled-text: #ccc;
   --btn-disabled-border: #444;
+  --folder-shortcut-border: #b9b7b5be;
+  --folder-shortcut-bg: linear-gradient(to bottom, #ecd698, #dabb66);
+  --folder-shortcut-hover-bg: linear-gradient(to bottom, #e5c76f, #b99f55);
+  --folder-shortcut-text: #1f1207;
+  --folder-shortcut-hover-text: #000;
   --alert-error: #d32f2f;
   --alert-caution: #c25a00;
   --alert-info: #0b7fab;
@@ -91,6 +96,9 @@ Created: December 30, 2025
   --longest-sem-count-bg: rgba(147, 255, 250, 0.274);
   --alternate-semester-in-major-label-bg: rgba(147, 255, 250, 0.171);
   --alternate-semester-label-bg: rgba(94, 99, 100, 0.075);
+  --dark-card-bg: #232323;
+  --dark-pill-bg: #3a3a3a;
+  --dark-longest-pill-bg: #000;
 }
 
 :root[data-card-theme="clear-cards"] {
@@ -169,11 +177,383 @@ Created: December 30, 2025
   background: #cfcfcf;
 }
 
+:root[data-colour-palette="accessible"] {
+  --core: #f6d3b3;
+  --network: #dbe9f6;
+  --software: #e2e2e2;
+  --ba: #a9c8e8;
+  --dual: #6fa8dc;
+  --text: #000;
+  --note: #222;
+  --core-band: #f6d3b3;
+  --network-band: #6fa8dc;
+  --software-band: #9e9e9e;
+  --ba-band: #a9c8e8;
+  --dual-band: #6fa8dc;
+  --elective-band: #9e9e9e;
+  --network-text: #000;
+  --sd-text: #000;
+  --ba-text: #000;
+  --course-map-separator-color: #9e9e9e;
+  --completed-core-bg: #e2e2e2;
+  --completed-network-bg: #e2e2e2;
+  --completed-software-bg: #e2e2e2;
+  --completed-ba-bg: #e2e2e2;
+  --completed-dual-bg: #e2e2e2;
+  --completed-elective-bg: #e2e2e2;
+}
+
+:root[data-colour-palette="greyscale"] {
+  --core: #f2f2f2;
+  --network: #e2e2e2;
+  --software: #d4d4d4;
+  --ba: #c6c6c6;
+  --dual: #b8b8b8;
+  --text: #000;
+  --note: #222;
+  --core-band: #777;
+  --network-band: #666;
+  --software-band: #555;
+  --ba-band: #444;
+  --dual-band: #333;
+  --elective-band: #888;
+  --network-text: #000;
+  --sd-text: #000;
+  --ba-text: #000;
+  --course-map-separator-color: #777;
+  --completed-core-bg: #d9d9d9;
+  --completed-network-bg: #d9d9d9;
+  --completed-software-bg: #d9d9d9;
+  --completed-ba-bg: #d9d9d9;
+  --completed-dual-bg: #d9d9d9;
+  --completed-elective-bg: #d9d9d9;
+}
+
+:root[data-appearance="dark"] {
+  --bg: #050607;
+  --panel: #101316;
+  --panel-boder: #3b4652;
+  --header: #101316;
+  --border: #2f3944;
+  --sidebar-bg: #101316;
+  --sidebar-border: #3b4652;
+  --sidebar-text: #f4f7fb;
+  --btn-primary-start: #0b3a70;
+  --btn-primary-end: #061f3f;
+  --btn-primary-border: #303e4e;
+  --btn-primary-hover-start: #104a8b;
+  --btn-primary-hover-end: #0a315f;
+  --btn-secondary-start: #0c3769;
+  --btn-secondary-end: #061f3f;
+  --btn-disabled-text: #fff;
+  --folder-shortcut-border: #3b2b1a;
+  --folder-shortcut-bg: linear-gradient(to bottom, #5a3516, #2f1b0b);
+  --folder-shortcut-hover-bg: linear-gradient(to bottom, #6a401d, #3a220e);
+  --folder-shortcut-text: #fff;
+  --folder-shortcut-hover-text: #fff;
+  --text: #f4f7fb;
+  --note: #c9d3df;
+  --core: #3d3424;
+  --network: #1f3545;
+  --software: #34343a;
+  --ba: #20384d;
+  --dual: #254c61;
+  --core-band: #f6d3b3;
+  --network-band: #6fa8dc;
+  --software-band: #9e9e9e;
+  --ba-band: #a9c8e8;
+  --dual-band: #6fa8dc;
+  --elective-band: #9e9e9e;
+  --network-text: #f4f7fb;
+  --sd-text: #f4f7fb;
+  --ba-text: #f4f7fb;
+  --completed-core-bg: #26323d;
+  --completed-network-bg: #26323d;
+  --completed-software-bg: #26323d;
+  --completed-ba-bg: #26323d;
+  --completed-dual-bg: #26323d;
+  --completed-elective-bg: #26323d;
+  --alternate-semester-label-bg: var(--dark-pill-bg);
+  --alternate-semester-in-major-label-bg: var(--dark-pill-bg);
+  --longest-sem-count-bg: var(--dark-longest-pill-bg);
+}
+
+:root[data-appearance="dark"] .sheet,
+:root[data-appearance="dark"] #container,
+:root[data-appearance="dark"] .main-content,
+:root[data-appearance="dark"] .modal,
+:root[data-appearance="dark"] .course-map-modal,
+:root[data-appearance="dark"] .course-map-key-panel,
+:root[data-appearance="dark"] .student-data-preview,
+:root[data-appearance="dark"] .student-search-dropdown {
+  background: #101316;
+  color: var(--text);
+  border-color: #3b4652;
+}
+
+:root[data-appearance="dark"] .subject-card,
+:root[data-appearance="dark"] .course-map-cell,
+:root[data-appearance="dark"] .course-map-placeholder,
+:root[data-appearance="dark"] .course-map-elective-unavailable,
+:root[data-appearance="dark"] #course-map-modal .course-map-placeholder[data-major-slot]:not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected):not(.course-map-status-next):not(.course-map-status-later),
+:root[data-appearance="dark"] #course-map-modal .course-map-placeholder[data-elective-slot]:not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected):not(.course-map-status-next):not(.course-map-status-later):not(.course-map-elective-unavailable) {
+  background: var(--dark-card-bg) !important;
+  background-color: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .subject-card *,
+:root[data-appearance="dark"] .course-map-cell *,
+:root[data-appearance="dark"] .modal,
+:root[data-appearance="dark"] .modal * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .alternate-semester-label,
+:root[data-appearance="dark"] .sem-count,
+:root[data-appearance="dark"] .course-map-sem-count,
+:root[data-appearance="dark"] #course-map-modal.course-map-staff-mode .course-map-cell.course-map-in-major .course-map-alt-indicator:not([hidden]) {
+  background: var(--dark-pill-bg) !important;
+  color: #fff !important;
+  border-color: #777 !important;
+}
+
+:root[data-appearance="dark"] .sem-count.final-sem-pill,
+:root[data-appearance="dark"] #course-map-modal .course-map-sem-count.final-sem-pill {
+  background: #050505 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .toggled::before,
+:root[data-appearance="dark"] .completed.current-enrolment::before {
+  background: linear-gradient(to right, #050505 0%, #151515 12%, #151515 88%, #050505 100%) !important;
+  border-color: #555 !important;
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .available-list .available-item.chosen,
+:root[data-appearance="dark"] #selected-list .available-item.chosen {
+  border-color: #555 !important;
+  box-shadow: inset 0 0 0 1px #444 !important;
+}
+
+:root[data-appearance="dark"] .sem-count,
+:root[data-appearance="dark"] .course-map-sem-count {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] #selected-list .available-item {
+  --available-item-fade-bg: #252525 !important;
+}
+
+:root[data-appearance="dark"] #selected-list .avail-main::after {
+  background: linear-gradient(to right, rgba(37, 37, 37, 0), #252525 75%) !important;
+}
+
+:root[data-appearance="dark"] .major-toggle,
+:root[data-appearance="dark"] .major-options,
+:root[data-appearance="dark"] .major-options li,
+:root[data-appearance="dark"] .available-list,
+:root[data-appearance="dark"] #selected-list,
+:root[data-appearance="dark"] .available-list .available-item,
+:root[data-appearance="dark"] #selected-list .available-item,
+:root[data-appearance="dark"] #selected-list li,
+:root[data-appearance="dark"] .semester-timetable-item,
+:root[data-appearance="dark"] .semester-timetable-not-running-item {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .major-toggle *,
+:root[data-appearance="dark"] .major-options *,
+:root[data-appearance="dark"] .available-list *,
+:root[data-appearance="dark"] #selected-list *,
+:root[data-appearance="dark"] .semester-timetable-item *,
+:root[data-appearance="dark"] .semester-timetable-not-running-item * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .modal-body,
+:root[data-appearance="dark"] .modal-actions,
+:root[data-appearance="dark"] .subject-table-actions,
+:root[data-appearance="dark"] .timetable-actions,
+:root[data-appearance="dark"] .timetable-table-wrapper,
+:root[data-appearance="dark"] .semester-timetable-content,
+:root[data-appearance="dark"] .semester-timetable-section,
+:root[data-appearance="dark"] .semester-timetable-not-running,
+:root[data-appearance="dark"] .old-codes-table-wrap {
+  background: #101316 !important;
+  color: #fff !important;
+  border-color: #3b4652 !important;
+}
+
+:root[data-appearance="dark"] table,
+:root[data-appearance="dark"] thead,
+:root[data-appearance="dark"] tbody,
+:root[data-appearance="dark"] tr,
+:root[data-appearance="dark"] th,
+:root[data-appearance="dark"] td,
+:root[data-appearance="dark"] .subject-table th,
+:root[data-appearance="dark"] .subject-table td,
+:root[data-appearance="dark"] #timetable-table th,
+:root[data-appearance="dark"] #timetable-table td,
+:root[data-appearance="dark"] .old-codes-table th,
+:root[data-appearance="dark"] .old-codes-table td,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table th,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table td {
+  background: #151a20 !important;
+  color: #fff !important;
+  border-color: #46515f !important;
+}
+
+:root[data-appearance="dark"] .major-toggle,
+:root[data-appearance="dark"] .major-options,
+:root[data-appearance="dark"] .major-options li,
+:root[data-appearance="dark"] .available-list,
+:root[data-appearance="dark"] #selected-list,
+:root[data-appearance="dark"] .available-list .available-item,
+:root[data-appearance="dark"] #selected-list .available-item,
+:root[data-appearance="dark"] #selected-list li,
+:root[data-appearance="dark"] .semester-timetable-item,
+:root[data-appearance="dark"] .semester-timetable-not-running-item {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .major-toggle *,
+:root[data-appearance="dark"] .major-options *,
+:root[data-appearance="dark"] .available-list *,
+:root[data-appearance="dark"] #selected-list *,
+:root[data-appearance="dark"] .semester-timetable-item *,
+:root[data-appearance="dark"] .semester-timetable-not-running-item * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .modal-body,
+:root[data-appearance="dark"] .modal-actions,
+:root[data-appearance="dark"] .subject-table-actions,
+:root[data-appearance="dark"] .timetable-actions,
+:root[data-appearance="dark"] .timetable-table-wrapper,
+:root[data-appearance="dark"] .semester-timetable-content,
+:root[data-appearance="dark"] .semester-timetable-section,
+:root[data-appearance="dark"] .semester-timetable-not-running,
+:root[data-appearance="dark"] .old-codes-table-wrap {
+  background: #101316 !important;
+  color: #fff !important;
+  border-color: #3b4652 !important;
+}
+
+:root[data-appearance="dark"] table,
+:root[data-appearance="dark"] thead,
+:root[data-appearance="dark"] tbody,
+:root[data-appearance="dark"] tr,
+:root[data-appearance="dark"] th,
+:root[data-appearance="dark"] td,
+:root[data-appearance="dark"] .subject-table th,
+:root[data-appearance="dark"] .subject-table td,
+:root[data-appearance="dark"] #timetable-table th,
+:root[data-appearance="dark"] #timetable-table td,
+:root[data-appearance="dark"] .old-codes-table th,
+:root[data-appearance="dark"] .old-codes-table td,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table th,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table td {
+  background: #151a20 !important;
+  color: #fff !important;
+  border-color: #46515f !important;
+}
+
+:root[data-appearance="dark"] .major-toggle,
+:root[data-appearance="dark"] .major-dropdown.major-network .major-toggle,
+:root[data-appearance="dark"] .major-dropdown.major-ba .major-toggle,
+:root[data-appearance="dark"] .major-dropdown.major-sd .major-toggle,
+:root[data-appearance="dark"] .major-dropdown.major-undecided .major-toggle,
+:root[data-appearance="dark"] .major-options,
+:root[data-appearance="dark"] .major-options li {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .available-list,
+:root[data-appearance="dark"] #selected-list,
+:root[data-appearance="dark"] .available-list .available-item,
+:root[data-appearance="dark"] #selected-list .available-item,
+:root[data-appearance="dark"] #selected-list li {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .available-list .available-item *,
+:root[data-appearance="dark"] #selected-list * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .modal-body,
+:root[data-appearance="dark"] .modal-actions,
+:root[data-appearance="dark"] .subject-table-actions,
+:root[data-appearance="dark"] .timetable-actions,
+:root[data-appearance="dark"] .timetable-table-wrapper,
+:root[data-appearance="dark"] .semester-timetable-content,
+:root[data-appearance="dark"] .semester-timetable-section,
+:root[data-appearance="dark"] .semester-timetable-not-running,
+:root[data-appearance="dark"] .old-codes-table-wrap {
+  background: #101316 !important;
+  color: #fff !important;
+  border-color: #3b4652 !important;
+}
+
+:root[data-appearance="dark"] table,
+:root[data-appearance="dark"] thead,
+:root[data-appearance="dark"] tbody,
+:root[data-appearance="dark"] tr,
+:root[data-appearance="dark"] th,
+:root[data-appearance="dark"] td,
+:root[data-appearance="dark"] .subject-table th,
+:root[data-appearance="dark"] .subject-table td,
+:root[data-appearance="dark"] #timetable-table th,
+:root[data-appearance="dark"] #timetable-table td,
+:root[data-appearance="dark"] .old-codes-table th,
+:root[data-appearance="dark"] .old-codes-table td,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table th,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table td {
+  background: #151a20 !important;
+  color: #fff !important;
+  border-color: #46515f !important;
+}
+
+:root[data-appearance="dark"] .semester-timetable-item,
+:root[data-appearance="dark"] .semester-timetable-not-running-item {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] input,
+:root[data-appearance="dark"] textarea,
+:root[data-appearance="dark"] select {
+  background: #151a20;
+  color: var(--text);
+  border-color: #657386;
+}
+
+:root[data-appearance="dark"] table,
+:root[data-appearance="dark"] th,
+:root[data-appearance="dark"] td {
+  color: var(--text);
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
+  font-size: 1rem;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -183,7 +563,7 @@ body {
   background: var(--bg);
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 1rem;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -266,33 +646,6 @@ button {
 /* #f2e5f7 */
 
 /* Normalize font sizing to button text (1rem) across UI */
-button,
-input,
-select,
-textarea,
-.sidebar-heading,
-.sidebar-section-descriptor,
-.major-toggle,
-.major-options li,
-.switch-label,
-.clear-button,
-.title-btn,
-.available-heading,
-.available-list,
-.available-list li,
-#selected-list,
-#selected-list li,
-table,
-th,
-td,
-.subject-code,
-.subject-note,
-.prerequsites-note,
-.modal,
-.modal * {
-  font-size: 1rem;
-}
-
 .page {
   /* Full-width layout: sidebars left, main content flexes to the right and tracks the viewport. */
   width: 100%;
@@ -339,8 +692,8 @@ td,
 
 .drop-zone {
   display: none;
-  min-height: 80px;
-  border: 2px dashed #666;
+  min-height: 0;
+  border: 1px solid #777;
   border-radius: 6px;
   color: #ddd;
   font-weight: 600;
@@ -353,6 +706,19 @@ td,
   line-height: 1.3;
   padding-top: 4px;
   padding-bottom: 8px;
+}
+
+.load-from-folder-button {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 3;
+  width: auto !important;
+  min-width: 0 !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .drop-zone {
@@ -405,14 +771,21 @@ td,
   align-items: flex-start;
   font-weight: 400;
   width: 100%;
+  padding-top: 34px;
+}
+
+.drop-zone.load-from-folder-hidden .drop-zone-text {
+  padding-top: 0;
 }
 
 .folder-shortcuts-panel {
+  order: 20;
   width: 100%;
   gap: 4px;
   padding: 0;
   padding-bottom: 0;
-  margin-bottom: var(--sidebar-control-gap);
+  margin-top: 8px;
+  margin-bottom: 0;
   border-radius: 0;
   border: 0;
   background: transparent;
@@ -442,19 +815,19 @@ td,
 
 .folder-shortcut-btn {
   min-height: 22px;
-  padding: 3px 12px;
+  padding: 3px 6px;
   border-radius: 4px;
-  border: 1px solid #8e5a24;
-  background: linear-gradient(to bottom, #ddbc61, #ad934b);
-  color: #1f1207;
+  border: 1px solid var(--folder-shortcut-border);
+  background: var(--folder-shortcut-bg);
+  color: var(--folder-shortcut-text);
   cursor: pointer;
   white-space: nowrap;
  font-size: 1em;
 }
 
 .folder-shortcut-btn:hover {
-  background: linear-gradient(to bottom, #c7a955, #8d773c);
-  color: #000;
+  background: var(--folder-shortcut-hover-bg);
+  color: var(--folder-shortcut-hover-text);
 }
 
 #open-folder-shortcuts-modal {
@@ -509,6 +882,7 @@ td,
 
 #folder-shortcuts-modal {
   padding: 20px;
+  z-index: 14050;
 }
 
 .folder-shortcuts-modal .modal-body {
@@ -563,8 +937,8 @@ td,
   width: auto;
   min-width: 0;
   height: 28px;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 .folder-help-overlay {
@@ -946,10 +1320,24 @@ td,
 
 .student-email-all {
   margin-left: 6px;
-  background: none;
-  border: none;
+  width: 22px;
+  height: 20px;
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 6px;
+  background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
   padding: 0;
   cursor: pointer;
+}
+
+.student-email-all .email-icon,
+.student-email-all .email-icon svg {
+  width: 13px;
+  height: 13px;
+  display: block;
 }
 
 .student-email-link.copy-flash,
@@ -1255,12 +1643,13 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .drop-sidebar.is-active .drop-zone {
+  display: flex;
   width: 100%;
   min-height: 120px;
 }
 
 .drop-sidebar.is-active .drop-zone.is-compact-loaded {
-  min-height: 0;
+  min-height: 88px;
   height: auto;
   padding-top: 8px;
   padding-bottom: 8px;
@@ -1383,6 +1772,7 @@ body.staff-mode .drop-sidebar.is-active {
   background: transparent;
   padding: 0;
   box-shadow: none;
+  gap: 4px;
 }
 
 .major-picker {
@@ -1726,6 +2116,12 @@ body.staff-mode .drop-sidebar.is-active {
   background: #fff;
 }
 
+#course-map-modal:not(.course-map-list-colours-on) .course-map-staff-panel .available-list .available-item:not(.available-item-error):not(.available-item-warning):not(.available-item-success) {
+  --available-item-bg: #fff;
+  --available-item-fade-bg: #fff;
+  background: #fff;
+}
+
 .available-list .avail-main {
   position: relative;
   display: inline-flex;
@@ -1997,6 +2393,13 @@ body.staff-mode .drop-sidebar.is-active {
   pointer-events: none;
 }
 
+:root[data-appearance="dark"] #timetable-modal.mode-available #timetable-table tbody tr.chosen-row td:first-child::after,
+:root[data-appearance="dark"] #timetable-modal.mode-selected #timetable-table tbody tr.chosen-row td:first-child::after,
+:root[data-appearance="dark"] #timetable-modal.mode-selected #timetable-table thead th:first-child::before {
+  background: #000 !important;
+  border-color: #000 !important;
+}
+
 #timetable-modal #timetable-table tbody tr.row-hover td {
   font-size: inherit;
   box-shadow: none;
@@ -2063,7 +2466,7 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .completed-mode .dim-when-complete {
-  opacity: 0.35;
+  opacity: 0.25;
   filter: grayscale(0.6);
   pointer-events: none;
 }
@@ -2120,6 +2523,10 @@ body.staff-mode .drop-sidebar.is-active {
 
 .clear-button:active {
   transform: scale(0.99);
+}
+
+.clear-button.secondary.load-from-folder-button:active {
+  transform: translateX(-50%) scale(0.99);
 }
 
 .clear-button.copy-flash {
@@ -2277,6 +2684,22 @@ body.staff-mode .drop-sidebar.is-active {
   margin-left: 12px;
 }
 
+.student-summary-triage-add {
+  display: inline-flex;
+  width: auto;
+  min-width: 0;
+  margin: 0px 0 6px 14px;
+  padding: 4px 12px;
+}
+
+.student-summary-triage .triage-comment {
+  margin-top: 12px;
+}
+
+.student-summary-triage .triage-comment .triage-subheading {
+  font-weight: 700;
+}
+
 .triage-subheading {
   font-weight: 500;
 }
@@ -2340,6 +2763,7 @@ body.staff-mode .drop-sidebar.is-active {
 .triage-comment-preview {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   cursor: pointer;
@@ -2587,7 +3011,7 @@ input:checked+.slider:before {
   line-height: 1.25;
   white-space: pre-line;
   pointer-events: none;
-  z-index: 12000;
+  z-index: 14000;
   display: none;
 }
 
@@ -3021,7 +3445,8 @@ input:checked+.slider:before {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(16, 16, 16, 0.97);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
-  z-index: 2400;
+  z-index: 13050;
+  pointer-events: auto;
 }
 
 .title-settings-menu[hidden] {
@@ -3144,73 +3569,104 @@ input:checked+.slider:before {
   outline-offset: 1px;
 }
 
-.title-settings-radio-group {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(82px, 1fr));
-  gap: 6px;
-  width: 100%;
+.title-settings-font-field {
+  padding: 10px 16px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-.title-settings-radio {
+.title-settings-font-slider {
+  width: 50%;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.title-settings-font-reset {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.title-settings-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.title-settings-icon-action {
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  min-height: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 6px;
-  background: rgba(16, 16, 16, 0.58);
+  background: rgba(255, 255, 255, 0.08);
   color: #f5f5f5;
   cursor: pointer;
-  padding: 4px 7px;
-  font-size: 13px;
-  line-height: 1.2;
 }
 
-.title-settings-radio:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+.title-settings-icon-action svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 
-.title-settings-radio:has(input:checked) {
-  background: rgba(16, 16, 16, 0.58);
-  border-color: rgba(255, 255, 255, 0.2);
-  font-weight: inherit;
+.title-settings-icon-action:hover,
+.title-settings-icon-action:focus-visible {
+  background: rgba(146, 221, 255, 0.18);
+  border-color: rgba(146, 221, 255, 0.7);
 }
 
-.title-settings-radio input[type="radio"] {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-}
-
-.title-settings-font-field .title-settings-radio {
-  padding-left: 6px;
-}
-
-.title-settings-radio input[type="radio"]:checked {
-  border-color: #92ddff;
-}
-
-.title-settings-radio input[type="radio"]:checked::before {
-  content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.title-settings-icon-action.is-active {
   background: #92ddff;
+  border-color: #92ddff;
+  color: #111;
 }
 
-.title-settings-radio:focus-within {
-  outline: 2px solid rgba(146, 221, 255, 0.9);
-  outline-offset: 1px;
+.title-settings-separator {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.title-settings-action {
+  align-self: flex-start;
+  width: auto;
+  margin: 0 16px 10px;
+  padding: 6px 14px;
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 6px;
+  background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
+  color: #f5f5f5;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.title-settings-action:hover,
+.title-settings-action:focus-visible {
+  background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end));
+  border-color: var(--btn-primary-border);
+}
+
+#settings-menu #settings-default-sidebar-widths {
+  align-self: flex-start !important;
+  display: inline-flex;
+  width: auto !important;
+  max-width: max-content;
+  min-width: 0 !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  font-size: 15px !important;
+  line-height: 1.2;
 }
 
 .title-btn {
@@ -3379,9 +3835,6 @@ input:checked+.slider:before {
 
 }
 
-#container.is-graduated-24 {
-  /* Targetable state: exactly fully graduated (24 completed, no remaining, no selected). */
-}
 
 body.graduate-highlight #container {
   background: #353535;
@@ -3404,7 +3857,7 @@ body.graduate-highlight .key {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   /* Let cards be content-height instead of row-stretching to the tallest item. */
   align-items: start;
 }
@@ -3480,7 +3933,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   align-items: start;
 }
 
@@ -3493,8 +3946,26 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   padding: 0;
 }
 
-.hover-active {
-  z-index: 30 !important;
+.hover-active,
+.show-tooltip {
+  position: relative;
+  overflow: visible !important;
+  z-index: 12000 !important;
+}
+
+body:has(#course-map-modal.show) .main-grid .hover-active,
+body:has(#course-map-modal.show) .main-grid .show-tooltip,
+body:has(#course-map-modal.show) .electives-grid .hover-active,
+body:has(#course-map-modal.show) .electives-grid .show-tooltip {
+  z-index: auto !important;
+}
+
+body:has(#course-map-modal.show) .main-grid .subject-tooltip,
+body:has(#course-map-modal.show) .electives-grid .subject-tooltip,
+body:has(#course-map-modal.show) .main-grid .hover-zone,
+body:has(#course-map-modal.show) .electives-grid .hover-zone,
+body:has(#course-map-modal.show) .not-running-tooltip {
+  display: none !important;
 }
 
 .clickable {
@@ -3516,7 +3987,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
   line-height: 1.15em;
   justify-content: flex-start;
   align-items: flex-start;
@@ -3903,12 +4374,10 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   font-size: 0.85em !important;
   font-style: italic;
   line-height: 1.05em;
-  margin: 0;
+  margin: auto 0 2px;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
-  position:relative;
-  bottom:2px;
 }
 
 .prerequsites-note.reqs-met {
@@ -3949,15 +4418,22 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   opacity: 1;
 }
 
+:root[data-appearance="dark"] .sas,
+:root[data-appearance="dark"] .sas-inline,
+:root[data-appearance="dark"] .sas-key-badge,
+:root[data-appearance="dark"] .sas-alert-badge {
+  filter: brightness(70%);
+}
+
 .electives-label {
   margin: 20px 0 8px;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .inline-electives-heading {
   display: inline;
   margin: 0;
-  font-size: 1.2em;
+  font-size: 0.95rem;
   font-weight: 700;
 }
 
@@ -4210,6 +4686,10 @@ body.student-mode #select-by-typing-button {
   border-color: var(--btn-primary-border);
 }
 
+#open-old-codes {
+  margin-top: 4px;
+}
+
 #show-semester-timetable:focus,
 #show-semester-timetable:focus-visible {
   outline: none;
@@ -4419,7 +4899,7 @@ body.student-mode #select-by-typing-button {
   inset: 0;
   cursor: inherit;
   background: transparent;
-  z-index: 15;
+  z-index: 12001;
 }
 
 .completed-mode [data-subject]:not([data-subject="BIT371"]):not([data-subject="BIT372"]) {
@@ -4452,7 +4932,7 @@ body.student-mode #select-by-typing-button {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
-  z-index: 20;
+  z-index: 12000;
 }
 
 .subject-tooltip .satisfied-heading {
@@ -4624,16 +5104,6 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   background: var(--alternate-semester-in-major-label-bg);
 }
 
-body.main-grid-narrow-880 .main-grid .alternate-semester-label,
-body.main-grid-narrow-880 .electives-grid .alternate-semester-label {
-  top: auto;
-  bottom: 0;
-  padding-top: 3px !important;
-  border-top: 1px solid #b9b8b8;
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
-}
-
 .not-this-sem .subject-note {
   color: inherit !important;
 }
@@ -4656,7 +5126,7 @@ body.main-grid-narrow-880 .electives-grid .alternate-semester-label {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
-  z-index: 4;
+  z-index: 12000;
   max-width: calc(100% - 8px);
   width: max-content;
 }
@@ -5209,6 +5679,38 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   background: #fff;
 }
 
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.core td {
+  background: var(--core-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.network td {
+  background: var(--network-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.software td {
+  background: var(--software-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.ba td {
+  background: var(--ba-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.dual td {
+  background: var(--dual-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.elective td {
+  background: var(--elective-body-coloured-ui);
+}
+
+#timetable-modal.mode-selected.timetable-available-colours-on #timetable-table tbody tr.dual-split td {
+  background: linear-gradient(165deg,
+      var(--ba-body-coloured-ui) 0,
+      var(--ba-body-coloured-ui) calc(50% - 6px),
+      var(--software-body-coloured-ui) calc(50% + 6px),
+      var(--software-body-coloured-ui) 100%);
+}
+
 #remaining-modal .subject-table tbody tr td:first-child {
   border-left: 6px solid transparent;
 }
@@ -5450,6 +5952,14 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   margin-bottom: 0;
 }
 
+:root[data-appearance="dark"] #timetable-fees,
+:root[data-appearance="dark"] .timetable-fees {
+  background: #151a20 !important;
+  color: #fff !important;
+  border-color: #46515f !important;
+  border-left-color: #2b2b2b !important;
+}
+
 .timetable-fee-spacer {
   height: 18px;
 }
@@ -5668,8 +6178,8 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   width: auto;
   min-width: 0;
   flex: 0 0 auto;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 .subject-table-actions {
@@ -5830,11 +6340,23 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .old-codes-modal {
-  width: min(760px, 94vw);
+  width: max-content;
+  min-width: 0;
+  max-width: calc(100vw - 32px);
 }
 
 .old-codes-modal .modal-body {
   overflow: hidden;
+}
+
+.old-codes-modal .modal-actions {
+  justify-content: flex-end;
+}
+
+.old-codes-modal #close-old-codes-cta {
+  padding-left: 14px;
+  padding-right: 14px;
+  width: auto;
 }
 
 .old-codes-table-wrap {
@@ -5842,7 +6364,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   overflow-y: auto;
   border: 1px solid #9eb4d8;
 }
-
+dr 
 .old-codes-table {
   width: auto;
   min-width: 100%;
@@ -5869,7 +6391,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 .old-codes-table th:nth-child(3),
 .old-codes-table td:nth-child(3) {
   width: auto;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .old-codes-table thead th {
@@ -6305,6 +6827,23 @@ body.completed-mode .completed:hover::after {
   display: flex;
 }
 
+#alert-modal.alert-from-course-map {
+  z-index: 14070;
+}
+
+#folder-shortcuts-modal,
+#email-scripts-access-modal,
+#course-map-remaining-info-modal,
+#course-map-full-student-details-modal,
+#course-map-student-note-modal,
+#course-map-triage-comment-modal {
+  z-index: 14060;
+}
+
+#course-map-triage-comment-modal {
+  z-index: 14080;
+}
+
 #container-popout-modal {
   align-items: flex-start;
   justify-content: center;
@@ -6470,7 +7009,6 @@ body.completed-mode .completed:hover::after {
 .course-map-modal .modal-body {
   flex: 1 1 auto;
   overflow: hidden;
-  font-size: .9rem;
   display: flex;
   flex-direction: column;
 }
@@ -6489,12 +7027,16 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal .course-map-load-files-top {
-  width: auto;
+  width: auto !important;
   flex: 0 0 auto;
   align-self: center;
-  margin-right: 8px;
+  margin-right: 0;
   min-width: 0;
-  padding: 3px 12px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: inherit;
+  line-height: 1;
   position: relative;
 }
 
@@ -6524,8 +7066,34 @@ body.completed-mode .completed:hover::after {
   gap: 8px;
 }
 
+#course-map-modal .course-map-alert-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+#course-map-modal .course-map-alert-buttons .title-btn {
+  min-height: 28px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
 #course-map-modal .course-map-header-strip[hidden] {
   display: none !important;
+}
+
+#course-map-modal .course-map-folder-shortcuts {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 0;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: inherit;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 #course-map-modal .course-map-header-search-wrap {
@@ -6637,6 +7205,38 @@ body.completed-mode .completed:hover::after {
   font-size: 0.88rem;
   line-height: 1.15;
   white-space: nowrap;
+}
+
+#course-map-modal .course-map-info-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: #1f1f1f;
+  font-size: 0.88rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+#course-map-modal button.course-map-info-text {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+#course-map-modal .course-map-info-dialog-button {
+  border-color: var(--btn-primary-border);
+  background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
+  color: #f7f9ff;
+  cursor: pointer;
+}
+
+#course-map-modal .course-map-info-dialog-button:hover,
+#course-map-modal .course-map-info-dialog-button:focus-visible {
+  background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end));
+  color: #fff;
 }
 
 #course-map-modal .course-map-info-empty {
@@ -6773,6 +7373,10 @@ body.completed-mode .completed:hover::after {
   cursor: default;
 }
 
+#course-map-modal button.course-map-info-triage {
+  cursor: pointer;
+}
+
 #course-map-modal button.course-map-info-triage-open {
   cursor: pointer;
 }
@@ -6800,6 +7404,7 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal .course-map-info-remaining {
   margin-left: auto;
+  margin-right: 14px;
   font-weight: 700;
 }
 
@@ -6815,10 +7420,95 @@ body.completed-mode .completed:hover::after {
   background: #edf3ff;
 }
 
+#course-map-modal button.course-map-info-details:hover,
+#course-map-modal button.course-map-info-details:focus-visible {
+  border-color: #9fb2d6;
+  background: #edf3ff;
+}
+
+#course-map-full-student-details-modal .course-map-full-student-details-modal {
+  width: min(720px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+}
+
+#course-map-full-student-details-modal {
+  z-index: 14060;
+}
+
+#course-map-full-student-details-modal .modal-body {
+  overflow: auto;
+}
+
+#course-map-full-student-details-modal .course-map-full-student-details-content {
+  margin-top: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #111;
+}
+
+#course-map-full-student-details-modal .course-map-full-student-details-content a,
+#course-map-full-student-details-modal .course-map-full-student-details-content .student-email-link,
+#course-map-full-student-details-modal .course-map-full-student-details-content .student-email-all {
+  color: #005a9c;
+}
+
+#course-map-full-student-details-modal .course-map-full-student-details-content .student-summary-copy-personals {
+  display: none;
+}
+
+#course-map-full-student-details-modal .modal-actions {
+  justify-content: flex-end;
+}
+
+#course-map-full-student-details-modal .modal-actions .clear-button {
+  width: auto;
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+#course-map-student-note-modal {
+  z-index: 14060;
+}
+
+#course-map-student-note-modal .course-map-student-note-modal {
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+}
+
+#course-map-student-note-modal .modal-body {
+  overflow: auto;
+}
+
+.course-map-student-note-content {
+  white-space: pre-wrap;
+  line-height: 1.35;
+  color: #111;
+}
+
+.course-map-student-note-content.is-html {
+  white-space: normal;
+}
+
+#course-map-student-note-modal .modal-actions {
+  justify-content: flex-end;
+}
+
+#course-map-student-note-modal .modal-actions .clear-button {
+  width: auto;
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 #course-map-remaining-info-modal .course-map-remaining-info-modal {
-  width: min(max-content, 96vw);
+  width: 260px;
   max-width: 96vw;
   min-width: 0;
+  height: auto;
+  max-height: calc(100vh - 24px);
 }
 
 #course-map-remaining-info-modal .modal-body {
@@ -7077,16 +7767,17 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-remaining-info-actions {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #b9dcff;
 }
 
 #course-map-remaining-info-modal #copy-course-map-remaining-info {
-  grid-column: 2;
-  justify-self: center;
+  flex: 0 0 auto;
   width: 34px;
   height: 32px;
   min-width: 0;
@@ -7094,12 +7785,11 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-remaining-info-modal #close-course-map-remaining-info-cta {
-  grid-column: 3;
-  justify-self: end;
+  flex: 0 0 auto;
   width: auto;
   min-width: 0;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 #course-map-modal .modal-title {
@@ -7120,6 +7810,7 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-content {
+  --course-map-col-width: calc((100% - 12px) / 7);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -7147,12 +7838,11 @@ body.completed-mode .completed:hover::after {
   gap: 6px;
   background: transparent;
   position: relative;
-  --course-map-col-width: calc((100% - 140px) / 7);
 }
 
 .course-map-core-block {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, var(--course-map-col-width)));
   gap: 2px;
   border: none;
   background: transparent;
@@ -7198,7 +7888,7 @@ body.completed-mode .completed:hover::after {
 .course-map-cell .course-map-code {
   font-weight: 600;
   /* Force code/name to scale with the cell font size (some rules elsewhere use fixed units). */
-  font-size: 1em !important;
+  font-size: 1.1em !important;
   line-height: 1.1;
 }
 
@@ -7400,6 +8090,17 @@ body.completed-mode .completed:hover::after {
   border: 2px solid color-mix(in srgb, #0b3d91 80%, #1b5eff 20%) !important;
 }
 
+#course-map-modal.course-map-pass-current-on .course-map-status-current {
+  background: #cfe8ff !important;
+  background-color: #cfe8ff !important;
+  color: #111 !important;
+  border: 2px solid color-mix(in srgb, #cfe8ff 80%, #1b5eff 20%) !important;
+}
+
+#course-map-modal.course-map-pass-current-on .course-map-status-current .course-map-prereqs {
+  color: #111 !important;
+}
+
 .course-map-status-selected {
   background: #0b3d91 !important;
   color: #fff !important;
@@ -7491,7 +8192,7 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-prereqs {
-  margin-top: 0;
+  margin: auto 0 0;
   padding-top: 0.1em;
   font-size: 0.9em !important;
   line-height: 0.9;
@@ -7510,14 +8211,17 @@ body.completed-mode .completed:hover::after {
 
 .course-map-font-size-control {
   display: inline-flex;
+  flex-direction: row-reverse;
   align-items: center;
+  align-self: flex-start;
   gap: 6px;
   font-size: 1em;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
 #course-map-font-size {
-  width: 120px;
+  width: 60px;
   margin: 0;
 }
 
@@ -7527,6 +8231,7 @@ body.completed-mode .completed:hover::after {
   background: transparent;
   color: inherit;
   font: inherit;
+  font-size: 1em;
   cursor: pointer;
 }
 
@@ -7536,7 +8241,7 @@ body.completed-mode .completed:hover::after {
 
 .course-map-stream {
   display: grid;
-  grid-template-columns: 140px repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, var(--course-map-col-width)));
   align-items: center;
   gap: 4px;
   border: none;
@@ -7742,11 +8447,11 @@ body.completed-mode .completed:hover::after {
 .course-map-stream-grid {
   grid-column: 4 / span 3;
   gap: 2px;
-  width: max(0px, calc(100% - 100px));
+  width: 100%;
   max-width: 100%;
   justify-self: start;
-  grid-template-columns: repeat(3, minmax(0, 1.2fr));
-  margin-left: 100px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-left: 0;
   border: 3px solid #cfcfcf;
   border-radius: 6px;
   padding: 3px;
@@ -7869,7 +8574,7 @@ body.completed-mode .completed:hover::after {
   padding: 16px 18px;
   color: #0b3d91;
   position: absolute;
-  top: 260px;
+  top: 160px;
   z-index: 6;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   height: auto;
@@ -7879,15 +8584,15 @@ body.completed-mode .completed:hover::after {
 
 .course-map-staff-panel {
   --course-map-staff-action-height: 28px;
-  width: 356px;
+  width: calc((var(--course-map-col-width) * 2) - 16px);
   max-width: 500px;
   max-height: calc(100% - 16px);
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   position: absolute;
   left: 0;
-  top: 260px;
-  z-index: 5;
+  top: 160px;
+  z-index: 40;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -7895,6 +8600,18 @@ body.completed-mode .completed:hover::after {
 
 .course-map-staff-panel[hidden] {
   display: none !important;
+}
+
+.course-map-staff-alert-buttons-host {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  position: relative;
+  z-index: 45;
+}
+
+.course-map-staff-alert-buttons-host .course-map-alert-buttons {
+  gap: 6px;
 }
 
 .course-map-staff-selected-list-host {
@@ -8007,9 +8724,27 @@ body.completed-mode .completed:hover::after {
   z-index: 1;
 }
 
+.course-map-staff-info-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.course-map-staff-info-actions .clear-button {
+  width: auto;
+  min-width: 0;
+  height: var(--course-map-staff-action-height);
+  padding: 4px 12px;
+  margin: 0;
+}
+
 .course-map-staff-actions .course-map-staff-open-window,
 .course-map-staff-actions .course-map-staff-open-selected,
-.course-map-staff-actions .course-map-staff-clear {
+.course-map-staff-actions .course-map-staff-clear,
+.course-map-staff-actions .course-map-staff-full-timetable {
   height: var(--course-map-staff-action-height);
   width: auto;
   min-width: 0;
@@ -8028,6 +8763,7 @@ body.completed-mode .completed:hover::after {
 .course-map-staff-actions .course-map-staff-open-window,
 .course-map-staff-actions .course-map-staff-open-selected,
 .course-map-staff-actions .course-map-staff-clear,
+.course-map-staff-actions .course-map-staff-full-timetable,
 .course-map-staff-actions .course-map-staff-copy-timetable {
   display: inline-flex;
   align-items: center;
@@ -8157,7 +8893,16 @@ body.completed-mode .completed:hover::after {
 }
 
 #close-course-map-cta {
+  margin-left: 0;
+}
+
+#course-map-modal .course-map-full-semester-timetable {
   margin-left: auto;
+  margin-right: auto;
+}
+
+#course-map-modal .modal-actions .course-map-mode-actions {
+  margin-left: 0;
 }
 
 #course-map-modal .modal-actions .course-map-ai-toggle {
@@ -8227,12 +8972,14 @@ body.completed-mode .completed:hover::after {
   color: #111;
 }
 
-#course-map-modal .modal-actions .course-map-show-hide-actions {
+#course-map-modal .modal-actions .course-map-show-hide-actions,
+#course-map-modal .modal-actions .course-map-mode-actions {
   position: relative;
   display: inline-flex;
 }
 
-#course-map-modal .course-map-show-hide-dialog {
+#course-map-modal .course-map-show-hide-dialog,
+#course-map-modal .course-map-mode-dialog {
   position: absolute;
   left: 0;
   bottom: calc(100% + 8px);
@@ -8249,18 +8996,21 @@ body.completed-mode .completed:hover::after {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
-#course-map-modal .course-map-show-hide-dialog[aria-hidden="true"] {
+#course-map-modal .course-map-show-hide-dialog[aria-hidden="true"],
+#course-map-modal .course-map-mode-dialog[aria-hidden="true"] {
   display: none;
 }
 
-#course-map-modal .course-map-show-hide-dialog h3 {
+#course-map-modal .course-map-show-hide-dialog h3,
+#course-map-modal .course-map-mode-dialog h3 {
   margin: 0;
   font-size: 1.12rem;
   line-height: 1.2;
   color: #111;
 }
 
-#course-map-modal .course-map-show-hide-row {
+#course-map-modal .course-map-show-hide-row,
+#course-map-modal .course-map-mode-row {
   align-items: center;
   gap: 8px;
   padding: 0;
@@ -8270,17 +9020,26 @@ body.completed-mode .completed:hover::after {
   border: 0;
 }
 
-#course-map-modal .course-map-show-hide-row .switch-label {
+#course-map-modal .course-map-show-hide-row .switch-label,
+#course-map-modal .course-map-mode-row .switch-label {
   color: #111;
-  font-size: 1.05rem;
+  font-size: 1em;
   line-height: 1.15;
   white-space: normal;
   font-weight: 400;
 }
 
-#course-map-modal .course-map-show-hide-row .switch-label.active {
+#course-map-modal .course-map-show-hide-row .switch-label.active,
+#course-map-modal .course-map-mode-row .switch-label.active {
   color: #111;
   font-weight: 400;
+}
+
+#course-map-modal .course-map-mode-row .load-button {
+  width: 34px;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 8px;
 }
 
 #course-map-modal .modal-actions .course-map-image-actions {
@@ -8290,7 +9049,7 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal .course-map-image-dialog {
   position: absolute;
-  right: 0;
+  left: 0;
   bottom: calc(100% + 8px);
   z-index: 20;
   display: flex;
@@ -8401,7 +9160,10 @@ body.completed-mode .completed:hover::after {
 #course-map-modal .modal-actions .clear-button {
   width: auto;
   min-width: 0;
-  padding: 0 16px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 10px;
+  line-height: 1;
 }
 
 #course-map-modal .modal-actions .clear-button.course-map-ai-toggle {
@@ -8430,8 +9192,6 @@ body.completed-mode .completed:hover::after {
   max-height: calc(100vh - 48px);
   overflow: hidden;
 }
-
-#instructions-modal .modal-header {}
 
 #instructions-modal .modal-title {
   font-size: 1.2em;
@@ -8562,6 +9322,12 @@ body.completed-mode .completed:hover::after {
   align-items: flex-start;
   overflow: auto;
   padding-top: 0;
+  z-index: 14080;
+}
+
+#history-modal,
+#remaining-modal {
+  z-index: 14080;
 }
 
 #semester-timetable-modal .semester-timetable-modal {
@@ -9575,40 +10341,6 @@ body.completed-mode #clear-selections {
 }
 
 @media (max-width: 1500px) and (min-resolution: 2dppx) {
-  body {
-    font-size: 0.78rem;
-  }
-
-  button,
-  input,
-  select,
-  textarea,
-  .sidebar-heading,
-  .sidebar-section-descriptor,
-  .major-toggle,
-  .major-options li,
-  .switch-label,
-  .clear-button,
-  .title-btn,
-  .available-heading,
-  .available-list,
-  .available-list li,
-  #selected-list,
-  #selected-list li,
-  table,
-  th,
-  td,
-  .subject-note,
-  .prerequsites-note,
-  .modal,
-  .modal * {
-    font-size: 0.78rem;
-  }
-
-  .modal-title {
-    font-size: 1.2rem !important;
-  }
-
   .page {
     padding: 6px 26px 6px 6px;
     gap: 8px;
@@ -9627,40 +10359,6 @@ body.completed-mode #clear-selections {
 
 @media (max-width: 1400px),
 (max-height: 820px) {
-  body {
-    font-size: 0.82rem;
-  }
-
-  button,
-  input,
-  select,
-  textarea,
-  .sidebar-heading,
-  .sidebar-section-descriptor,
-  .major-toggle,
-  .major-options li,
-  .switch-label,
-  .clear-button,
-  .title-btn,
-  .available-heading,
-  .available-list,
-  .available-list li,
-  #selected-list,
-  #selected-list li,
-  table,
-  th,
-  td,
-  .subject-note,
-  .prerequsites-note,
-  .modal,
-  .modal * {
-    font-size: 0.82rem;
-  }
-
-  .modal-title {
-    font-size: 1.1rem !important;
-  }
-
   .page {
     padding: 6px 26px 6px 6px;
     gap: 10px;
@@ -9679,41 +10377,12 @@ body.completed-mode #clear-selections {
 
 @media (max-width: 1380px),
 (max-height: 802px) {
-
-  body,
-  button,
-  input,
-  select,
-  textarea,
-  .sidebar-heading,
-  .sidebar-section-descriptor,
-  .major-toggle,
-  .major-options li,
-  .switch-label,
-  .clear-button,
-  .title-btn,
-  .available-heading,
-  .available-list,
-  .available-list li,
-  #selected-list,
-  #selected-list li,
-  table,
-  th,
-  td,
-  .subject-note,
-  .prerequsites-note,
-  .modal,
-  .modal * {
-    font-size: 0.72rem;
-  }
-
-
   .sheet {
     width: 100%;
   }
 
   .sidebar {
-    width: 270px;
+    width: 241px;
   }
 }
 
@@ -9764,4 +10433,263 @@ body.completed-mode #clear-selections {
   display: block;
   margin-top: 6px;
   margin-left: 24px;
+}
+
+.modal,
+.modal * {
+  font-size: 1rem;
+}
+
+.modal-title {
+  font-size: 1.2rem !important;
+}
+
+#course-map-modal .modal * {
+  font-size: inherit;
+}
+
+#course-map-modal .modal-title,
+#course-map-modal .course-map-show-hide-dialog h3,
+#course-map-modal .course-map-mode-dialog h3 {
+  font-size: 1.1rem !important;
+}
+
+#course-map-modal .course-map-prereqs {
+  font-size: 0.95em !important;
+}
+
+.course-map-triage-actions {
+  margin-right: auto;
+}
+
+.course-map-triage-edit-form {
+  --course-map-triage-label-width: 150px;
+  --course-map-triage-row-gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--course-map-triage-row-gap);
+}
+
+.course-map-triage-static {
+  display: grid;
+  grid-template-columns: var(--course-map-triage-label-width) minmax(0, 1fr);
+  gap: var(--course-map-triage-row-gap) 12px;
+  align-items: center;
+}
+
+.course-map-triage-static>div:not(.course-map-triage-id-line) {
+  display: contents;
+}
+
+.course-map-triage-static .course-map-triage-id-line {
+  grid-column: 1 / -1;
+  font-weight: 600;
+}
+
+.course-map-triage-static strong::after,
+.course-map-triage-inline-field span::after {
+  content: ' ';
+}
+
+.course-map-triage-temp-note {
+  border: 2px solid #2b7bd8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #eef6ff;
+  color: #111;
+}
+
+.course-map-triage-edit-form.is-temp-hidden .course-map-triage-edit-grid,
+.course-map-triage-edit-form.is-temp-hidden .course-map-triage-block-field {
+  display: none;
+}
+
+.course-map-triage-edit-form:not(.is-temp-hidden) .course-map-triage-temp-note {
+  display: none;
+}
+
+.course-map-triage-static strong,
+.course-map-triage-inline-field span,
+.course-map-triage-block-field {
+  font-weight: 700;
+}
+
+.course-map-triage-edit-grid {
+  display: grid;
+  grid-template-columns: var(--course-map-triage-label-width) minmax(160px, 1fr);
+  gap: var(--course-map-triage-row-gap) 12px;
+  align-items: center;
+}
+
+.course-map-triage-inline-field {
+  display: contents;
+}
+
+.course-map-triage-student-id-field {
+  grid-column: 1 / -1;
+}
+
+.course-map-triage-inline-field input,
+.course-map-triage-inline-field select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #b8b8b8;
+  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.course-map-triage-block-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.course-map-triage-block-field textarea {
+  width: 100%;
+  resize: vertical;
+  overflow: auto;
+  border: 1px solid #b8b8b8;
+  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.course-map-triage-add-temporary {
+  align-self: flex-end;
+  width: auto;
+  min-width: 0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.course-map-triage-comment-modal {
+  width: min(520px, calc(100vw - 40px));
+}
+
+.course-map-triage-comment-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.course-map-triage-comment-text {
+  width: 100%;
+  min-height: calc(4lh + 12px);
+  resize: vertical;
+  overflow: auto;
+}
+
+:root[data-appearance="dark"] .major-toggle,
+:root[data-appearance="dark"] .major-options,
+:root[data-appearance="dark"] .major-options li,
+:root[data-appearance="dark"] .available-list,
+:root[data-appearance="dark"] #selected-list,
+:root[data-appearance="dark"] .available-list .available-item,
+:root[data-appearance="dark"] #selected-list .available-item,
+:root[data-appearance="dark"] #selected-list li,
+:root[data-appearance="dark"] .semester-timetable-item,
+:root[data-appearance="dark"] .semester-timetable-not-running-item {
+  background: var(--dark-card-bg) !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+:root[data-appearance="dark"] .major-toggle *,
+:root[data-appearance="dark"] .major-options *,
+:root[data-appearance="dark"] .available-list *,
+:root[data-appearance="dark"] #selected-list *,
+:root[data-appearance="dark"] .semester-timetable-item *,
+:root[data-appearance="dark"] .semester-timetable-not-running-item * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .modal-body,
+:root[data-appearance="dark"] .modal-actions,
+:root[data-appearance="dark"] .subject-table-actions,
+:root[data-appearance="dark"] .timetable-actions,
+:root[data-appearance="dark"] .timetable-table-wrapper,
+:root[data-appearance="dark"] .semester-timetable-content,
+:root[data-appearance="dark"] .semester-timetable-section,
+:root[data-appearance="dark"] .semester-timetable-not-running,
+:root[data-appearance="dark"] .old-codes-table-wrap {
+  background: #101316 !important;
+  color: #fff !important;
+  border-color: #3b4652 !important;
+}
+
+:root[data-appearance="dark"] table,
+:root[data-appearance="dark"] thead,
+:root[data-appearance="dark"] tbody,
+:root[data-appearance="dark"] tr,
+:root[data-appearance="dark"] th,
+:root[data-appearance="dark"] td,
+:root[data-appearance="dark"] .subject-table th,
+:root[data-appearance="dark"] .subject-table td,
+:root[data-appearance="dark"] #timetable-table th,
+:root[data-appearance="dark"] #timetable-table td,
+:root[data-appearance="dark"] .old-codes-table th,
+:root[data-appearance="dark"] .old-codes-table td,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table th,
+:root[data-appearance="dark"] .semester-timetable-content .semester-timetable-table td {
+  background: #151a20 !important;
+  color: #fff !important;
+  border-color: #46515f !important;
+}
+
+:root[data-appearance="dark"] .subject-card,
+:root[data-appearance="dark"] .subject-card.completed,
+:root[data-appearance="dark"] .subject-card.toggled,
+:root[data-appearance="dark"] .subject-card.current-enrolment,
+:root[data-appearance="dark"] .subject-card.use-credit,
+:root[data-appearance="dark"] .course-map-cell,
+:root[data-appearance="dark"] .course-map-cell.course-map-status-passed,
+:root[data-appearance="dark"] .course-map-cell.course-map-status-current,
+:root[data-appearance="dark"] .course-map-cell.course-map-status-selected,
+:root[data-appearance="dark"] .course-map-cell.course-map-status-next,
+:root[data-appearance="dark"] .course-map-cell.course-map-status-later {
+  background: var(--dark-card-bg) !important;
+  background-color: var(--dark-card-bg) !important;
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .subject-card *,
+:root[data-appearance="dark"] .subject-card.completed *,
+:root[data-appearance="dark"] .subject-card.toggled *,
+:root[data-appearance="dark"] .subject-card.current-enrolment *,
+:root[data-appearance="dark"] .subject-card.use-credit *,
+:root[data-appearance="dark"] .course-map-cell *,
+:root[data-appearance="dark"] .modal,
+:root[data-appearance="dark"] .modal * {
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] .alternate-semester-label,
+:root[data-appearance="dark"] .sem-count,
+:root[data-appearance="dark"] .course-map-sem-count,
+:root[data-appearance="dark"] .course-map-alt-indicator {
+  background: var(--dark-pill-bg) !important;
+  color: #fff !important;
+  border-color: #777 !important;
+}
+
+:root[data-appearance="dark"] .sem-count.final-sem-pill,
+:root[data-appearance="dark"] #course-map-modal .course-map-sem-count.final-sem-pill {
+  background: var(--dark-longest-pill-bg) !important;
+  color: #fff !important;
+  border-color: #333 !important;
+}
+
+:root[data-appearance="dark"] button,
+:root[data-appearance="dark"] .clear-button,
+:root[data-appearance="dark"] .clear-button.secondary,
+:root[data-appearance="dark"] .folder-shortcut-btn,
+:root[data-appearance="dark"] .load-button,
+:root[data-appearance="dark"] .title-btn,
+:root[data-appearance="dark"] .title-settings-button,
+:root[data-appearance="dark"] .title-help-button,
+:root[data-appearance="dark"] .semester-timetable-toggle,
+:root[data-appearance="dark"] .subject-table-sort-button,
+:root[data-appearance="dark"] .course-map-remaining-info-sort-button {
+  color: #fff !important;
 }

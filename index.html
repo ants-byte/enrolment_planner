@@ -63,8 +63,10 @@ Created: December 30, 2025
         </div>
       </div>
       <div id="drop-zone" class="drop-zone">
-        <div class="drop-zone-text">Drop students workbook here (plus Email Scripts and Triage if you wish).<br><br>Or
-          click to auto-load by providing your local Enrolments folder.</div>
+        <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
+          data-tooltip-html="Select the folder that contains these 3 files: 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. It will probably be the &quot;Enrolment System&quot; folder.">Load from folder</button>
+        <div class="drop-zone-text">(or for lesser functionality: drag-and-drop the files here: 'Triage 2026 S2.xlsx',
+          'Source.xlsx', and 'Email Scripts.htm'.<br>Depending on your setup, clicking the zone will auto-load those 3 files too.)</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
@@ -149,7 +151,8 @@ Created: December 30, 2025
           </div>
           <div id="selected-list" class="available-list" role="list"></div>
           <div class="selected-list-actions">
-            <button id="main-grid-details" class="clear-button secondary" type="button">Details</button>
+            <button id="main-grid-details" class="clear-button secondary" type="button"
+              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Available subjects details</button>
             <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
           </div>
           <div class="toggle-row"
@@ -175,7 +178,7 @@ Created: December 30, 2025
               A Student Visa condition is that students must study a full load where possible.<br>
               <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
               <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
-              This website uses this count to determine when you've selected your full complement of subjects">How many subjects will study?</span>
+              This website uses this count to determine when you've selected your full complement of subjects">Subjects this semester?</span>
           </div>
           <div class="toggle-row hidden-initial" id="live-prereq-row">
             <label class="switch">
@@ -211,7 +214,7 @@ Created: December 30, 2025
       <div class="sidebar-section semester-timetable-section dim-when-complete">
         <button id="show-semester-timetable" class="clear-button secondary" type="button"
           data-tooltip="See the complete semester offering from our school.">Full semester timetable</button>
-        <button id="open-old-codes" class="clear-button secondary" type="button">Old Codes</button>
+        <button id="open-old-codes" class="clear-button secondary" type="button">Old codes</button>
       </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
@@ -252,21 +255,53 @@ Created: December 30, 2025
                     <input id="settings-course-map-default" type="checkbox" />
                     <span id="settings-course-map-label">Course map mode (is off)</span>
                   </label>
-                  <div class="title-settings-field title-settings-font-field"
-                    data-tooltip="Set the base font size for the whole site (html font-size). This setting is bookmarkable.">
-                    <span>Font size</span>
-                    <div class="title-settings-radio-group" role="radiogroup" aria-label="Site font size">
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="">Default</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="12">12</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="14">14</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="15">15</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="16">16</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="17">17</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="18">18</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="20">20</label>
-                      <label class="title-settings-radio"><input type="radio" name="settings-root-font-size" value="22">22</label>
-                    </div>
+                  <label class="title-settings-field title-settings-font-field"
+                    data-tooltip="Set the base font size for the whole site.">
+                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
+                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
+                      min="10" max="32" step="1" value="16" />
+                  </label>
+                  <div class="title-settings-icon-row" role="group" aria-label="Colour and display settings">
+                    <button id="settings-light-mode" class="title-settings-icon-action" type="button"
+                      aria-label="Use light mode"
+                      data-tooltip="Use light mode. This keeps the current light page setup with dark sidebars.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6.76 4.84 4.96 3.05 3.55 4.46l1.79 1.8 1.42-1.42ZM1 13h3v-2H1v2Zm10-12v3h2V1h-2Zm9.04 2.05-1.41-1.41-1.8 1.79 1.42 1.42 1.79-1.8ZM17.24 19.16l1.79 1.8 1.42-1.42-1.8-1.79-1.41 1.41ZM20 11v2h3v-2h-3ZM4.96 20.95l1.8-1.79-1.42-1.42-1.79 1.8 1.41 1.41ZM11 20v3h2v-3h-2Zm1-14a6 6 0 1 0 0 12A6 6 0 0 0 12 6Z" />
+                      </svg>
+                    </button>
+                    <button id="settings-dark-mode" class="title-settings-icon-action" type="button"
+                      aria-label="Use dark mode"
+                      data-tooltip="Use dark mode for the main grid, Course Map, dialogs, and text.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M21 14.6A8.6 8.6 0 0 1 9.4 3a7 7 0 1 0 11.6 11.6Z" />
+                      </svg>
+                    </button>
+                    <span class="title-settings-separator" aria-hidden="true">|</span>
+                    <button id="settings-accessible-colours" class="title-settings-icon-action" type="button"
+                      aria-label="Use colour-blind safe colours"
+                      data-tooltip="Use a colour-blind safe palette: blues, greys, and soft orange with black text.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 3a9 9 0 0 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a1.5 1.5 0 0 1 0-3h2a7 7 0 0 0-2-10Zm-4 8.5A1.5 1.5 0 1 1 8 8.5a1.5 1.5 0 0 1 0 3Zm3-4A1.5 1.5 0 1 1 11 4.5a1.5 1.5 0 0 1 0 3Zm4 1A1.5 1.5 0 1 1 15 5.5a1.5 1.5 0 0 1 0 3Zm1 4A1.5 1.5 0 1 1 16 9.5a1.5 1.5 0 0 1 0 3Z" />
+                      </svg>
+                    </button>
+                    <button id="settings-greyscale-colours" class="title-settings-icon-action" type="button"
+                      aria-label="Use greyscale colours"
+                      data-tooltip="Use greyscale colours for users who prefer no colour coding.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 2a10 10 0 1 0 0 20V2Zm0 2.25v15.5a7.75 7.75 0 0 1 0-15.5Z" />
+                      </svg>
+                    </button>
+                    <span class="title-settings-separator" aria-hidden="true">|</span>
+                    <button id="settings-reset-colours" class="title-settings-icon-action" type="button"
+                      aria-label="Reset colour settings"
+                      data-tooltip="Return colour mode and colour palette to the default settings.">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 5V2L7 7l5 5V8a5 5 0 1 1-4.58 7H4.26A8 8 0 1 0 12 5Z" />
+                      </svg>
+                    </button>
                   </div>
+                  <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
+                    data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
                 </div>
               </div>
               <button id="open-instructions-help" class="title-settings-button title-help-button" type="button"
@@ -308,7 +343,7 @@ Created: December 30, 2025
             </div>
             <div class="subject-card info-card" data-slot="r1c5">
               <div class="hover-zone"></div>
-              <div class="info-tooltip">Complete all 24 subjects in this grid to graduate:
+              <div class="info-tooltip">Complete all 24 subjects in this top grid to graduate.  That is:
                 <ul>
                   <li>14 Core subjects</li>
                   <li>6 major subjects</li>
@@ -554,6 +589,16 @@ Created: December 30, 2025
           aria-label="Close folder shortcuts">X</button>
       </div>
       <div class="modal-body">
+        <div class="folder-shortcuts-modal-section">
+          <h3>Main locations</h3>
+          <div id="folder-shortcuts-main-host" class="folder-shortcuts-modal-buttons">
+            <button id="folder-shortcut-semester-dialog" class="folder-shortcut-btn hidden-initial" type="button"></button>
+            <button id="folder-shortcut-student-forms-date-main-dialog"
+              class="folder-shortcut-btn hidden-initial" type="button"></button>
+            <button id="folder-shortcut-teacher-main-dialog" class="folder-shortcut-btn hidden-initial"
+              type="button"></button>
+          </div>
+        </div>
         <div class="folder-shortcuts-modal-section">
           <h3>Student Forms</h3>
           <div id="folder-shortcuts-student-forms-host" class="folder-shortcuts-modal-buttons"></div>
@@ -999,6 +1044,13 @@ Created: December 30, 2025
       <div class="modal-header">
         <button id="course-map-load-files" class="clear-button secondary course-map-load-files-top" type="button" hidden>Load</button>
         <div class="modal-title" id="course-map-title">Course Map</div>
+        <div id="course-map-alert-buttons" class="course-map-alert-buttons">
+          <button id="course-map-btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
+          <button id="course-map-btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
+          <button id="course-map-btn-error" class="title-btn btn-error hidden" aria-expanded="false">Alert</button>
+          <button id="course-map-btn-data-error" class="title-btn btn-error hidden" aria-expanded="false">Data Error?</button>
+          <button id="course-map-btn-codes" class="title-btn btn-codes hidden" aria-expanded="false">Codes</button>
+        </div>
         <div id="course-map-header-strip" class="course-map-header-strip" hidden>
           <div class="course-map-header-search-wrap">
             <input id="course-map-student-search" class="course-map-student-search" type="text"
@@ -1013,26 +1065,27 @@ Created: December 30, 2025
         <div id="course-map-content" class="course-map-content"></div>
       </div>
       <div class="modal-actions">
-        <div class="course-map-left-actions">
-          <button id="toggle-course-map-mode" class="clear-button secondary" type="button">Student mode</button>
-          <div class="toggle-row course-map-pass-enrolments-toggle pass-enrolments-tooltip"
-            id="course-map-pass-for-enrolments-row"
-            data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;"
-            hidden>
-            <label class="switch">
-              <input type="checkbox" id="course-map-pass-for-enrolments"
-                aria-label="Pass current enrolments in course map">
-              <span class="slider"></span>
-            </label>
-            <span class="switch-label">Pass the current enrolments</span>
-          </div>
-        </div>
         <div class="course-map-show-hide-actions">
           <button id="open-course-map-show-hide" class="clear-button secondary" type="button"
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-show-hide-dialog">Show/Hide</button>
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-show-hide-dialog"
+            data-tooltip-html="Open display options for the Course Map, including font size, notes, colours, and prerequisite display.">View</button>
           <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
-            <h3 id="course-map-show-hide-dialog-title">Show/Hide</h3>
+            <h3 id="course-map-show-hide-dialog-title">View</h3>
+            <div class="course-map-font-size-control">
+              <button id="reset-course-map-font-size" class="course-map-font-size-reset" type="button">Font</button>
+              <input id="course-map-font-size" type="range" min="0.75" max="2" step="0.05" value="1"
+                aria-label="Course map font size">
+            </div>
+            <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row" id="course-map-sem-count-toggle-row"
+              data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
+              <br>Each subject will get a little semester count at right border.">
+              <label class="switch">
+                <input type="checkbox" id="course-map-sem-count-toggle" aria-label="Show semesters to complete in course map">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">Show semesters to complete</span>
+            </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
                 <input type="checkbox" id="open-course-map-key" aria-label="Show colour key" checked>
@@ -1046,6 +1099,13 @@ Created: December 30, 2025
                 <span class="slider"></span>
               </label>
               <span class="switch-label" id="course-map-notes-toggle-label">Notes (showing)</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-list-colours" aria-label="Show selected list colours">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-list-colours-toggle-label">Selected list colours (turned off)</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
@@ -1068,15 +1128,6 @@ Created: December 30, 2025
               </label>
               <span class="switch-label" id="course-map-indicators-toggle-label">Text below stream headings (showing)</span>
             </div>
-            <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row" id="course-map-sem-count-toggle-row"
-              data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
-              <br>Each subject will get a little semester count at right border.">
-              <label class="switch">
-                <input type="checkbox" id="course-map-sem-count-toggle" aria-label="Show semesters to complete in course map">
-                  <span class="slider"></span>
-                </label>
-              <span class="switch-label">Show semesters to complete</span>
-            </div>
             <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
@@ -1086,14 +1137,54 @@ Created: December 30, 2025
             </div>
           </div>
         </div>
-        <div class="course-map-font-size-control">
-          <button id="reset-course-map-font-size" class="course-map-font-size-reset" type="button">Font</button>
-          <input id="course-map-font-size" type="range" min="0.6" max="1.6" step="0.05" value="1"
-            aria-label="Course map font size">
+        <div class="course-map-mode-actions">
+          <button id="open-course-map-mode" class="clear-button secondary" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-mode-dialog"
+            data-tooltip-html="Open Course Map mode options, including prerequisite override, current-enrolment handling, study load, and staff mode.">Mode</button>
+          <div id="course-map-mode-dialog" class="course-map-mode-dialog" role="dialog" aria-modal="false"
+            aria-hidden="true" aria-labelledby="course-map-mode-dialog-title">
+            <h3 id="course-map-mode-dialog-title">Mode</h3>
+            <div class="toggle-row course-map-mode-row">
+              <label class="switch">
+                <input type="checkbox" id="course-map-override-toggle" aria-label="Override prerequisites">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-override-label">Override prerequisites</span>
+            </div>
+            <div class="toggle-row course-map-mode-row pass-enrolments-tooltip"
+              id="course-map-pass-for-enrolments-row"
+              data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;"
+              hidden>
+              <label class="switch">
+                <input type="checkbox" id="course-map-pass-for-enrolments"
+                  aria-label="Pass current enrolments in course map">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">Pass any current enrolments</span>
+            </div>
+            <div class="toggle-row course-map-mode-row">
+              <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
+              <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
+            </div>
+            <div class="toggle-row course-map-mode-row">
+              <label class="switch">
+                <input type="checkbox" id="course-map-staff-mode-toggle" aria-label="Staff mode">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
+            </div>
+          </div>
         </div>
+        <button id="course-map-history" class="clear-button secondary" type="button"
+          data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your history</button>
+        <button id="course-map-remaining" class="clear-button secondary" type="button"
+          data-tooltip-html="Show the subjects still needed and the estimated remaining semesters.">Remaining subjects</button>
+        <button id="course-map-next-semester" class="clear-button secondary hidden-initial" type="button"
+          data-tooltip-html="Show subjects that should become available next semester based on the current selections.">Next semester options</button>
         <div class="course-map-image-actions">
           <button id="open-course-map-image-actions" class="clear-button secondary" type="button"
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-image-dialog">Image</button>
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-image-dialog"
+            data-tooltip-html="Copy or download an image of the Course Map.">Image</button>
           <div id="course-map-image-dialog" class="course-map-image-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-image-dialog-title">
             <h3 id="course-map-image-dialog-title">Grab an image of the map, showing selections</h3>
@@ -1101,7 +1192,16 @@ Created: December 30, 2025
             <button id="download-course-map-image" class="clear-button secondary" type="button">Download image</button>
           </div>
         </div>
-        <button id="close-course-map-cta" class="clear-button secondary" type="button">Close</button>
+        <button id="course-map-email-tools" class="clear-button secondary course-map-email-tools hidden-initial"
+          type="button" hidden data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
+        <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
+          type="button" data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders &amp; Files</button>
+        <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes"
+          type="button" data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
+        <button id="course-map-full-semester-timetable" class="clear-button secondary course-map-full-semester-timetable"
+          type="button" data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Full Semester Timetable</button>
+        <button id="close-course-map-cta" class="clear-button secondary" type="button"
+          data-tooltip-html="Close the Course Map.">Close</button>
       </div>
       <div id="course-map-key-modal" class="course-map-key-panel" role="dialog" aria-modal="false"
         aria-labelledby="course-map-key-title" aria-hidden="true">
@@ -1135,6 +1235,41 @@ Created: December 30, 2025
           </span>
         </button>
         <button id="close-course-map-remaining-info-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="course-map-student-note-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal course-map-student-note-modal" role="dialog" aria-modal="true"
+      aria-labelledby="course-map-student-note-title">
+      <div class="modal-header">
+        <div class="modal-title" id="course-map-student-note-title">Student details</div>
+        <button class="modal-close" id="close-course-map-student-note" aria-label="Close student details">X</button>
+      </div>
+      <div class="modal-body">
+        <div id="course-map-student-note-content" class="course-map-student-note-content"></div>
+      </div>
+      <div class="modal-actions">
+        <div id="course-map-triage-actions" class="modal-action-group course-map-triage-actions" hidden>
+          <button id="course-map-triage-edit" class="clear-button secondary" type="button">Save</button>
+        </div>
+        <button id="close-course-map-student-note-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="course-map-triage-comment-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal course-map-triage-comment-modal" role="dialog" aria-modal="true"
+      aria-labelledby="course-map-triage-comment-title">
+      <div class="modal-header">
+        <div class="modal-title" id="course-map-triage-comment-title">Add triage comment</div>
+        <button class="modal-close" id="close-course-map-triage-comment" aria-label="Close triage comment">X</button>
+      </div>
+      <div class="modal-body">
+        <label class="course-map-triage-comment-label" for="course-map-triage-comment-text">Provide a new comment:</label>
+        <textarea id="course-map-triage-comment-text" class="course-map-triage-comment-text" rows="4"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-course-map-triage-comment" class="clear-button secondary" type="button">Cancel</button>
+        <button id="save-course-map-triage-comment" class="clear-button secondary" type="button">Save</button>
       </div>
     </div>
   </div>
@@ -1233,7 +1368,7 @@ Created: December 30, 2025
               Copy
             </button>
             <button id="timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
-              aria-pressed="false" hidden>Colours On</button>
+              aria-pressed="false" hidden>Show Colours</button>
             <button id="copy-student-declaration" class="clear-button secondary" type="button">
               StudDec
             </button>
