@@ -13,6 +13,9 @@ Created: December 30, 2025
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Timetable Planner. Bachelor of IT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
@@ -70,14 +73,14 @@ Created: December 30, 2025
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
-        <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
+        <div class="student-search-input-wrap">
+          <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
+          <button id="clear-student" class="clear-button secondary student-search-clear" type="button" hidden
+            data-tooltip="Clear the student search and remove loaded student history.">Clear</button>
+        </div>
         <div id="student-search-empty" class="student-search-empty" aria-live="polite"></div>
         <div id="student-search-dropdown" class="student-search-dropdown" hidden></div>
         <div id="student-data-preview" class="student-data-preview" aria-live="polite"></div>
-        <div class="student-clear-row">
-          <button id="clear-student" class="clear-button secondary" type="button"
-            data-tooltip="Clear the student search and remove loaded student history.">Clear</button>
-        </div>
       </div>
     </aside>
     <aside class="sidebar">
@@ -103,10 +106,10 @@ Created: December 30, 2025
             <span class="major-caret">?</span>
           </button>
           <ul class="major-options" role="listbox">
-            <li role="option" data-value="undecided" class="selected">Undecided</li>
             <li role="option" data-value="network">Network Security</li>
             <li role="option" data-value="ba">Business Analytics</li>
             <li role="option" data-value="sd">Software Development</li>
+            <li role="option" data-value="undecided" class="selected">Unsure (use Network Security)</li>
           </ul>
         </div>
       </div>
@@ -152,7 +155,7 @@ Created: December 30, 2025
           <div id="selected-list" class="available-list" role="list"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
-              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Available subjects details</button>
+              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Subjects details</button>
             <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
           </div>
           <div class="toggle-row"
@@ -245,21 +248,15 @@ Created: December 30, 2025
                   </svg>
                 </button>
                 <div id="settings-menu" class="title-settings-menu" role="menu" hidden>
-                  <label class="title-settings-check title-settings-card-theme-check" role="menuitemcheckbox"
-                    data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
-                    <input id="settings-card-theme-colours" type="checkbox" />
-                    <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
-                  </label>
-                  <label class="title-settings-check" role="menuitemcheckbox"
+                  <label class="title-settings-check title-settings-separator-after" role="menuitemcheckbox"
                     data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
                     <input id="settings-course-map-default" type="checkbox" />
                     <span id="settings-course-map-label">Course map mode (is off)</span>
                   </label>
-                  <label class="title-settings-field title-settings-font-field"
-                    data-tooltip="Set the base font size for the whole site.">
-                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
-                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
-                      min="10" max="32" step="1" value="16" />
+                  <label class="title-settings-check title-settings-card-theme-check" role="menuitemcheckbox"
+                    data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
+                    <input id="settings-card-theme-colours" type="checkbox" />
+                    <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
                   </label>
                   <div class="title-settings-icon-row" role="group" aria-label="Colour and display settings">
                     <button id="settings-light-mode" class="title-settings-icon-action" type="button"
@@ -272,8 +269,16 @@ Created: December 30, 2025
                     <button id="settings-dark-mode" class="title-settings-icon-action" type="button"
                       aria-label="Use dark mode"
                       data-tooltip="Use dark mode for the main grid, Course Map, dialogs, and text.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M21 14.6A8.6 8.6 0 0 1 9.4 3a7 7 0 1 0 11.6 11.6Z" />
+                      <svg class="title-settings-moon-icon" viewBox="0 0 680 680" aria-hidden="true" focusable="false">
+                        <g transform="translate(340, 340) rotate(135)">
+                          <path d="M -80 -130 A 140 140 0 1 1 -80 130 A 100 100 0 1 0 -80 -130 Z" />
+                          <g transform="rotate(-135) translate(100, -60) scale(2)">
+                            <path d="M 0 -14 L 5 -5 L 14 0 L 5 5 L 0 14 L -5 5 L -14 0 L -5 -5 Z" />
+                          </g>
+                          <g transform="rotate(-135) translate(72, 28) scale(2)">
+                            <path d="M 0 -9 L 3.5 -3.5 L 9 0 L 3.5 3.5 L 0 9 L -3.5 3.5 L -9 0 L -3.5 -3.5 Z" />
+                          </g>
+                        </g>
                       </svg>
                     </button>
                     <span class="title-settings-separator" aria-hidden="true">|</span>
@@ -284,11 +289,21 @@ Created: December 30, 2025
                         <path d="M12 3a9 9 0 0 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a1.5 1.5 0 0 1 0-3h2a7 7 0 0 0-2-10Zm-4 8.5A1.5 1.5 0 1 1 8 8.5a1.5 1.5 0 0 1 0 3Zm3-4A1.5 1.5 0 1 1 11 4.5a1.5 1.5 0 0 1 0 3Zm4 1A1.5 1.5 0 1 1 15 5.5a1.5 1.5 0 0 1 0 3Zm1 4A1.5 1.5 0 1 1 16 9.5a1.5 1.5 0 0 1 0 3Z" />
                       </svg>
                     </button>
+                    <span class="title-settings-separator" aria-hidden="true">|</span>
                     <button id="settings-greyscale-colours" class="title-settings-icon-action" type="button"
                       aria-label="Use greyscale colours"
                       data-tooltip="Use greyscale colours for users who prefer no colour coding.">
                       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 2a10 10 0 1 0 0 20V2Zm0 2.25v15.5a7.75 7.75 0 0 1 0-15.5Z" />
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="1" />
+                        <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+                        <path d="M12 3a9 9 0 0 1 6.36 2.64L13.55 10.45A2.15 2.15 0 0 0 12 9.8Z" fill="#d8d8d8" />
+                        <path d="M18.36 5.64A9 9 0 0 1 21 12h-6.8a2.15 2.15 0 0 0-.65-1.55Z" fill="#bdbdbd" />
+                        <path d="M21 12a9 9 0 0 1-2.64 6.36l-4.81-4.81A2.15 2.15 0 0 0 14.2 12Z" fill="#8f8f8f" />
+                        <path d="M18.36 18.36A9 9 0 0 1 12 21v-6.8a2.15 2.15 0 0 0 1.55-.65Z" fill="#6f6f6f" />
+                        <path d="M12 21a9 9 0 0 1-6.36-2.64l4.81-4.81A2.15 2.15 0 0 0 12 14.2Z" fill="#555" />
+                        <path d="M5.64 18.36A9 9 0 0 1 3 12h6.8c0 .6.25 1.15.65 1.55Z" fill="#3d3d3d" />
+                        <path d="M3 12a9 9 0 0 1 2.64-6.36l4.81 4.81A2.15 2.15 0 0 0 9.8 12Z" fill="#252525" />
+                        <path d="M5.64 5.64A9 9 0 0 1 12 3v6.8c-.6 0-1.15.25-1.55.65Z" fill="#111" />
                       </svg>
                     </button>
                     <span class="title-settings-separator" aria-hidden="true">|</span>
@@ -300,7 +315,22 @@ Created: December 30, 2025
                       </svg>
                     </button>
                   </div>
-                  <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
+                  <label class="title-settings-field title-settings-font-field title-settings-separator-before"
+                    data-tooltip="Set the base font size for the whole site.">
+                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
+                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
+                      min="10" max="32" step="1" value="16" />
+                  </label>
+                  <div class="title-settings-font-family-row" role="group" aria-label="Font family settings">
+                    <button class="title-settings-font-family" type="button" data-font-family="segoe">Segoe UI</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="calibri">Calibri</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="roboto">Roboto</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="mono">Typewriter</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
+                    <button id="settings-reset-font-family" class="title-settings-font-family" type="button" data-font-family="default">Default</button>
+                  </div>
+                  <button id="settings-default-sidebar-widths" class="title-settings-action title-settings-separator-before" type="button"
                     data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
                 </div>
               </div>
@@ -504,7 +534,7 @@ Created: December 30, 2025
             <div class="subject-card software elective-stream clickable" data-slot="r3c1" data-subject="BIT235">
               <span class="subject-code">BIT235</span>
               <span class="subject-note subject-title">Object Oriented Programming</span>
-              <span class="prerequsites-note">Prerequisites: BIT245</span>
+              <span class="prerequsites-note">Co-requisite: BIT245</span>
             </div>
             <div class="subject-card software elective-stream clickable" data-slot="r3c2" data-subject="BIT246">
               <span class="subject-code">BIT246</span>
@@ -775,7 +805,10 @@ Created: December 30, 2025
           type="button" aria-pressed="false">List</button>
         <button id="semester-timetable-grid" class="clear-button secondary semester-timetable-toggle" type="button"
           aria-pressed="true" disabled>Grid</button>
-        <button id="copy-semester-timetable" class="clear-button secondary semester-timetable-copy" type="button">
+        <button id="semester-timetable-teacher-copy"
+          class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
+          aria-label="Copy as a table. Format #1"
+          data-tooltip="Copy as a table. Format #1 with the columns Subject Code, Subject Name, Day, Rooms, Start, End, Staff, Note">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
               <path
@@ -783,11 +816,47 @@ Created: December 30, 2025
                 fill="currentColor" />
             </svg>
           </span>
-          Copy to clipboard
         </button>
-        <button id="semester-timetable-teacher-copy"
-          class="clear-button secondary semester-timetable-copy semester-timetable-teacher-copy" type="button"
-          aria-label="Copy timetable for Word" title="Copy timetable for Word">
+        <button id="semester-timetable-site-settings-copy"
+          class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
+          aria-label="Copy for Settings for site document"
+          data-tooltip="Copy for pasting into this site's 'Setting for site' document">
+          <span class="clipboard-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+        <button id="semester-timetable-format2-copy"
+          class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
+          aria-label="Copy as table. Format #2"
+          data-tooltip="Copy as table. Format #2 with columns Time, Code, Subject Name, Staff, Room">
+          <span class="clipboard-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+        <button id="semester-timetable-celcat-copy"
+          class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
+          aria-label="Copy for pasting into Celcat sheet"
+          data-tooltip="Copy for pasting into Celcat sheet in the Source workbook (so that can copy and paste from the Source 'AllClasses_Store' sheet to other workbooks)">
+          <span class="clipboard-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false">
+              <path
+                d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+        <button id="copy-semester-timetable"
+          class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
+          aria-label="Copy alternative"
+          data-tooltip="Copy alternative (different result when in Grid and List view too)">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
               <path
@@ -804,7 +873,10 @@ Created: December 30, 2025
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">Paste or type subject codes (Shift+Enter for new line)</div>
-        <button class="modal-close" id="close-code-modal" aria-label="Close modal">X</button>
+        <button class="modal-close" id="close-code-modal" type="button" aria-label="Close modal"
+          onpointerdown="event.preventDefault(); event.stopPropagation(); const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }"
+          onmousedown="event.preventDefault(); event.stopPropagation(); const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }"
+          onclick="const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }">X</button>
       </div>
       <div class="modal-body">
         <p>Paste block of text and subject codes will be extracted. Or type them in.</p>
@@ -823,8 +895,11 @@ Created: December 30, 2025
           </div>
         </div>
         <div class="code-modal-actions-right">
-          <button id="cancel-code-modal" class="clear-button secondary">Cancel</button>
-          <button id="apply-code-modal" class="clear-button">Apply subjects</button>
+          <button id="cancel-code-modal" class="clear-button secondary" type="button"
+            onpointerdown="event.preventDefault(); event.stopPropagation(); const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }"
+            onmousedown="event.preventDefault(); event.stopPropagation(); const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }"
+            onclick="const m=this.closest('.modal-overlay'); if (m) { m.classList.remove('show'); m.style.display='none'; m.setAttribute('aria-hidden','true'); }">Cancel</button>
+          <button id="apply-code-modal" class="clear-button" type="button">Apply subjects</button>
         </div>
       </div>
     </div>
@@ -1635,7 +1710,7 @@ Created: December 30, 2025
   </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260208-20"></script>
+  <script src="script.js?v=20260208-21"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 12 Jan 2026</div>

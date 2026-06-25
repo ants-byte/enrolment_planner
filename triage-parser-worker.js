@@ -805,6 +805,33 @@ const getZipEntryText = (cfb, path) => {
   const entry = getZipEntry(cfb, path);
   return entry?.content ? decodeUtf8(entry.content) : '';
 };
+const removeZipEntry = (cfb, path) => {
+  const cleanPath = String(path || '').replace(/^\/+/, '');
+  const matches = (value) => String(value || '').replace(/^Root Entry\/?/, '').replace(/^\/+/, '') === cleanPath;
+  if (Array.isArray(cfb?.FileIndex)) cfb.FileIndex = cfb.FileIndex.filter((entry) => !matches(entry?.name));
+  if (Array.isArray(cfb?.FullPaths)) cfb.FullPaths = cfb.FullPaths.filter((entryPath) => !matches(entryPath));
+};
+const removeCalcChainFromWorkbookPackage = (cfb) => {
+  removeZipEntry(cfb, 'xl/calcChain.xml');
+  const relsEntry = getZipEntry(cfb, 'xl/_rels/workbook.xml.rels');
+  if (relsEntry?.content) {
+    const xml = decodeUtf8(relsEntry.content).replace(
+      /<Relationship\b[^>]*(?:Type="[^"]*\/calcChain"|Target="calcChain\.xml")[^>]*\/>/g,
+      ''
+    );
+    relsEntry.content = encodeUtf8(xml);
+    relsEntry.size = relsEntry.content.length;
+  }
+  const contentTypesEntry = getZipEntry(cfb, '[Content_Types].xml');
+  if (contentTypesEntry?.content) {
+    const xml = decodeUtf8(contentTypesEntry.content).replace(
+      /<Override\b[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/g,
+      ''
+    );
+    contentTypesEntry.content = encodeUtf8(xml);
+    contentTypesEntry.size = contentTypesEntry.content.length;
+  }
+};
 const resolveWorkbookTarget = (target) => {
   const clean = String(target || '').replace(/^\/+/, '');
   return clean.startsWith('xl/') ? clean : `xl/${clean}`;
@@ -1022,6 +1049,7 @@ const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parse
   const newRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
   sheetEntry.content = encodeUtf8(sheetXml);
   sheetEntry.size = sheetEntry.content.length;
+  removeCalcChainFromWorkbookPackage(cfb);
   const output = XLSX.CFB.write(cfb, { fileType: 'zip', type: 'array', compression: true });
   console.info('[Triage save worker] package written', { outputBytes: output?.byteLength || null, sheetCount });
   return { ok: true, output, next: nextValues.comments, values: nextValues, oldRow, newRow, sheetCount };
@@ -1077,7 +1105,12 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
 
   const familyName = cleanValues.familyName || '-';
   const givenName = cleanValues.givenName || '-';
-  const rowValues = { ...cleanValues, familyName, givenName, studentId: cleanStudentId };
+  const rowValues = {
+    ...cleanValues,
+    familyName,
+    givenName,
+    studentId: cleanStudentId,
+  };
   const columns = { ...fieldCols, studentId: 5 };
   const maxCol = getMaxUsedColInSheetXml(sheetXml);
   const oldRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
@@ -1092,6 +1125,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
   const newRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
   sheetEntry.content = encodeUtf8(sheetXml);
   sheetEntry.size = sheetEntry.content.length;
+  removeCalcChainFromWorkbookPackage(cfb);
   const output = XLSX.CFB.write(cfb, { fileType: 'zip', type: 'array', compression: true });
   return { ok: true, output, values: rowValues, oldRow, newRow, targetRow, sheetCount };
 };

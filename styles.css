@@ -178,29 +178,29 @@ Created: December 30, 2025
 }
 
 :root[data-colour-palette="accessible"] {
-  --core: #f6d3b3;
-  --network: #dbe9f6;
-  --software: #e2e2e2;
-  --ba: #a9c8e8;
-  --dual: #6fa8dc;
+  --core: #f4b183;
+  --network: #b7d7f0;
+  --software: #d9d9d9;
+  --ba: #5b9bd5;
+  --dual: #ffd54f;
   --text: #000;
   --note: #222;
-  --core-band: #f6d3b3;
-  --network-band: #6fa8dc;
-  --software-band: #9e9e9e;
-  --ba-band: #a9c8e8;
-  --dual-band: #6fa8dc;
-  --elective-band: #9e9e9e;
+  --core-band: #c55a11;
+  --network-band: #1f5f99;
+  --software-band: #404040;
+  --ba-band: #5b9bd5;
+  --dual-band: #ffcc33;
+  --elective-band: #8c8c8c;
   --network-text: #000;
   --sd-text: #000;
   --ba-text: #000;
-  --course-map-separator-color: #9e9e9e;
-  --completed-core-bg: #e2e2e2;
-  --completed-network-bg: #e2e2e2;
-  --completed-software-bg: #e2e2e2;
-  --completed-ba-bg: #e2e2e2;
-  --completed-dual-bg: #e2e2e2;
-  --completed-elective-bg: #e2e2e2;
+  --course-map-separator-color: #404040;
+  --completed-core-bg: #d9d9d9;
+  --completed-network-bg: #d9d9d9;
+  --completed-software-bg: #d9d9d9;
+  --completed-ba-bg: #d9d9d9;
+  --completed-dual-bg: #d9d9d9;
+  --completed-elective-bg: #d9d9d9;
 }
 
 :root[data-colour-palette="greyscale"] {
@@ -561,7 +561,7 @@ html {
 body {
   margin: 0;
   background: var(--bg);
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: var(--app-font-family, "Segoe UI", Arial, sans-serif);
   color: var(--text);
   font-size: 1rem;
   max-width: 100vw;
@@ -570,6 +570,8 @@ body {
 
 button {
   padding: 4px 2px;
+  font-size: inherit;
+  font-family: inherit;
 }
 
 .skip-link {
@@ -653,7 +655,7 @@ button {
   padding: 6px 26px 6px 6px;
   display: flex;
   flex-wrap: nowrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   align-items: flex-start;
   overflow: visible;
@@ -663,9 +665,10 @@ button {
   /* Fill remaining space beside sidebars and allow grid to resize with viewport. */
   order: 3;
   /* Default to the ideal grid width when there is room after the sidebars. */
-  flex: 0 1 1245px;
-  width: min(1245px, 100%);
+  flex: 1 1 0;
+  width: auto;
   min-width: 0;
+  max-width: none;
   background: var(--sidebar-bg);
   padding: 6px 12px;
   border-radius: 8px;
@@ -822,7 +825,6 @@ button {
   color: var(--folder-shortcut-text);
   cursor: pointer;
   white-space: nowrap;
- font-size: 1em;
 }
 
 .folder-shortcut-btn:hover {
@@ -1165,9 +1167,30 @@ button {
   width: 100%;
   border-radius: 4px;
   border: 1px solid #888;
-  padding: 6px 8px;
+  padding: 6px 58px 6px 8px;
   background: #1b1b1b;
   color: #f7f7f7;
+}
+
+.student-search-input-wrap {
+  position: relative;
+}
+
+.student-search-input-wrap .student-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  transform: translateY(-50%);
+  width: auto;
+  min-width: 48px;
+  height: calc(100% - 6px);
+  padding: 0 8px;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.student-search-input-wrap .clear-button.student-search-clear:active {
+  transform: translateY(-50%);
 }
 
 #student-id-input::placeholder {
@@ -1178,14 +1201,6 @@ button {
   font-weight: 500;
   animation: matchPulse 0.7s ease;
   box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7), 0 0 0 0 rgba(76, 175, 80, 0.35);
-}
-
-.student-clear-row {
-  margin-top: 6px;
-}
-
-.student-clear-row .clear-button {
-  width: 100%;
 }
 
 @keyframes matchPulse {
@@ -1426,12 +1441,10 @@ button {
 .sidebar .available-heading,
 .sidebar .major-toggle {
   font-weight: inherit;
-  font-size: 1em;
 }
 
 .sidebar .clear-button {
   font-weight: 700;
-  font-size: 1em;
   font-family: inherit;
 }
 
@@ -1487,24 +1500,28 @@ body.staff-mode .drop-sidebar.is-active {
   }
 
   body.staff-mode .main-content {
-    flex: 0 1 865px;
-    width: 865px;
-    min-width: 739px;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 }
 
 @media (min-width: 1080px) and (max-width: 1276px) and (min-resolution: 1.2dppx) and (max-resolution: 1.3dppx) {
 
-  body.staff-mode .drop-sidebar.is-active,
+  body.staff-mode .drop-sidebar.is-active {
+    flex: 0 0 251px;
+    width: 251px;
+  }
+
   body.staff-mode .sidebar {
-    flex: 0 1 calc((100vw - 32px - 24px - 739px) / 2);
-    width: calc((100vw - 32px - 24px - 739px) / 2);
+    flex: 0 0 231px;
+    width: 231px;
   }
 
   body.staff-mode .main-content {
-    flex: 0 0 739px;
-    width: 739px;
-    min-width: 739px;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 }
 
@@ -1520,24 +1537,28 @@ body.staff-mode .drop-sidebar.is-active {
   }
 
   body.staff-mode .main-content {
-    flex: 0 1 829.344px;
-    width: 829.344px;
-    min-width: 743px;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 }
 
 @media (min-width: 1080px) and (max-width: 1294px) and (min-resolution: 1.9dppx) {
 
-  body.staff-mode .drop-sidebar.is-active,
+  body.staff-mode .drop-sidebar.is-active {
+    flex: 0 0 248.836px;
+    width: 248.836px;
+  }
+
   body.staff-mode .sidebar {
-    flex: 0 1 calc((100vw - 32px - 24px - 743px) / 2);
-    width: calc((100vw - 32px - 24px - 743px) / 2);
+    flex: 0 0 246.82px;
+    width: 246.82px;
   }
 
   body.staff-mode .main-content {
-    flex: 0 0 743px;
-    width: 743px;
-    min-width: 743px;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 }
 
@@ -1663,7 +1684,6 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .sidebar-heading {
-  font-size: 1em;
   font-weight: 400;
   margin-bottom: 2px;
   color: var(--sidebar-heading-color);
@@ -1681,16 +1701,11 @@ body.staff-mode .drop-sidebar.is-active {
 
 .sidebar-section-descriptor {
   display: inline-block;
-  font-size: 1em;
   font-weight: 400;
 }
 
 .sidebar-section-descriptor .inline-strong {
   font-weight: 700;
-}
-
-.sidebar .inline-heading {
-  font-size: 1em;
 }
 
 .accepted-offered.is-offered {
@@ -1835,7 +1850,6 @@ body.staff-mode .drop-sidebar.is-active {
   border: 1px solid #444;
   background: #1c1c1c;
   color: #000;
-  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1844,30 +1858,30 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .major-dropdown.major-network .major-toggle {
-  background: #c8e6c9;
+  background: var(--network, #c8e6c9);
   color: #000;
-  border-color: #0d7a3d;
+  border-color: var(--network-text, #0d7a3d);
   border-left-color: var(--network-band);
 }
 
 .major-dropdown.major-ba .major-toggle {
-  background: #e0f7fa;
+  background: var(--ba, #e0f7fa);
   color: #000;
-  border-color: #0539c9;
+  border-color: var(--ba-text, #0539c9);
   border-left-color: var(--ba-band);
 }
 
 .major-dropdown.major-sd .major-toggle {
-  background: #f3e5f5;
+  background: var(--software, #f3e5f5);
   color: #000;
-  border-color: #6507da;
+  border-color: var(--sd-text, #6507da);
   border-left-color: var(--software-band);
 }
 
 .major-dropdown.major-undecided .major-toggle {
-  background: #d9ead3;
+  background: var(--network, #d9ead3);
   color: #000;
-  border-color: #0d7a3d;
+  border-color: var(--network-text, #0d7a3d);
 }
 
 .major-caret {
@@ -1930,6 +1944,8 @@ body.staff-mode .drop-sidebar.is-active {
 .major-options li[data-value='undecided'] {
   background: var(--network, #9fe4a4);
   border-color: var(--network-text);
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .major-options li:last-child {
@@ -1960,6 +1976,44 @@ body.staff-mode .drop-sidebar.is-active {
   font-weight: 700;
 }
 
+:root[data-colour-palette="accessible"] .major-dropdown.major-network .major-toggle,
+:root[data-colour-palette="accessible"] .major-options li[data-value='network'] {
+  background: var(--network);
+  border-color: var(--network-band);
+  border-left-color: var(--network-band);
+  color: #000;
+}
+
+:root[data-colour-palette="accessible"] .major-dropdown.major-ba .major-toggle,
+:root[data-colour-palette="accessible"] .major-options li[data-value='ba'] {
+  background: var(--ba);
+  border-color: var(--ba-band);
+  border-left-color: var(--ba-band);
+  color: #000;
+}
+
+:root[data-colour-palette="accessible"] .major-dropdown.major-sd .major-toggle,
+:root[data-colour-palette="accessible"] .major-options li[data-value='sd'] {
+  background: var(--software);
+  border-color: var(--software-band);
+  border-left-color: var(--software-band);
+  color: #000;
+}
+
+:root[data-colour-palette="accessible"] .major-dropdown.major-undecided .major-toggle,
+:root[data-colour-palette="accessible"] .major-options li[data-value='undecided'] {
+  background: var(--network);
+  border-color: var(--network-band);
+  border-left-color: var(--network-band);
+  color: #000;
+}
+
+:root[data-colour-palette="accessible"] .major-options li.selected {
+  outline: 2px solid #000;
+  outline-offset: -2px;
+  font-weight: 700;
+}
+
 .major-warning {
   color: #ff4a4a;
   font-weight: 700;
@@ -1971,7 +2025,6 @@ body.staff-mode .drop-sidebar.is-active {
   margin: 6px 0 0px;
   padding: 5px 5px 8px 5px;
   color: #111111;
-  font-size: 0.95rem;
   line-height: 1.4;
   border: rgba(161, 160, 160, 0.5) 1px solid;
   border-radius: 4px;
@@ -1985,7 +2038,6 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .available-heading {
-  font-size: 1em;
   font-weight: 700;
   font-family: inherit;
   color: #f5f5f5;
@@ -2676,8 +2728,17 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .student-summary-triage-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 4px;
+  background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
+  color: #fff;
   font-weight: 700;
   margin-bottom: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
 }
 
 .student-summary-triage-body {
@@ -2690,6 +2751,9 @@ body.staff-mode .drop-sidebar.is-active {
   min-width: 0;
   margin: 0px 0 6px 14px;
   padding: 4px 12px;
+  background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
+  color: #fff;
+  border-color: var(--btn-primary-border);
 }
 
 .student-summary-triage .triage-comment {
@@ -2988,7 +3052,6 @@ input:checked+.slider:before {
 
 .switch-label {
   color: #f5f5f5;
-  font-size: 14px;
 }
 
 .switch-label.active {
@@ -3011,7 +3074,7 @@ input:checked+.slider:before {
   line-height: 1.25;
   white-space: pre-line;
   pointer-events: none;
-  z-index: 14000;
+  z-index: 14100;
   display: none;
 }
 
@@ -3479,20 +3542,9 @@ input:checked+.slider:before {
   padding-bottom: 8px;
 }
 
-.title-settings-card-theme-check::before,
-.title-settings-card-theme-check::after {
-  display: none;
-}
-
 .title-settings-check::before,
 .title-settings-check::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.18);
-  pointer-events: none;
+  display: none;
 }
 
 .title-settings-check::before {
@@ -3501,6 +3553,14 @@ input:checked+.slider:before {
 
 .title-settings-check::after {
   bottom: 0;
+}
+
+.title-settings-separator-before {
+  border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.title-settings-separator-after {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .title-settings-check:hover {
@@ -3570,8 +3630,20 @@ input:checked+.slider:before {
 }
 
 .title-settings-font-field {
+  position: relative;
+  border-top: 0 !important;
   padding: 10px 16px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.title-settings-font-field::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
 }
 
 .title-settings-font-slider {
@@ -3594,8 +3666,7 @@ input:checked+.slider:before {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0 16px 8px;
 }
 
 .title-settings-icon-action {
@@ -3618,6 +3689,11 @@ input:checked+.slider:before {
   fill: currentColor;
 }
 
+.title-settings-icon-action .title-settings-moon-icon {
+  width: 24px;
+  height: 24px;
+}
+
 .title-settings-icon-action:hover,
 .title-settings-icon-action:focus-visible {
   background: rgba(146, 221, 255, 0.18);
@@ -3628,6 +3704,11 @@ input:checked+.slider:before {
   background: #92ddff;
   border-color: #92ddff;
   color: #111;
+}
+
+.title-settings-icon-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .title-settings-separator {
@@ -3667,6 +3748,31 @@ input:checked+.slider:before {
   padding-right: 14px !important;
   font-size: 15px !important;
   line-height: 1.2;
+}
+
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before {
+  position: relative;
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::before,
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: calc(380px - 32px);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::before {
+  top: -14px;
+}
+
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::after {
+  bottom: -14px;
 }
 
 .title-btn {
@@ -3858,8 +3964,7 @@ body.graduate-highlight .key {
   min-width: 0;
   max-width: 100%;
   overflow: visible;
-  /* Let cards be content-height instead of row-stretching to the tallest item. */
-  align-items: start;
+  align-items: stretch;
 }
 
 body.graduate-highlight .main-grid .subject-card,
@@ -3934,7 +4039,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
   min-width: 0;
   max-width: 100%;
   overflow: visible;
-  align-items: start;
+  align-items: stretch;
 }
 
 .elective-spacer {
@@ -3956,7 +4061,11 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 body:has(#course-map-modal.show) .main-grid .hover-active,
 body:has(#course-map-modal.show) .main-grid .show-tooltip,
 body:has(#course-map-modal.show) .electives-grid .hover-active,
-body:has(#course-map-modal.show) .electives-grid .show-tooltip {
+body:has(#course-map-modal.show) .electives-grid .show-tooltip,
+body:has(.modal-overlay.show) .main-grid .hover-active,
+body:has(.modal-overlay.show) .main-grid .show-tooltip,
+body:has(.modal-overlay.show) .electives-grid .hover-active,
+body:has(.modal-overlay.show) .electives-grid .show-tooltip {
   z-index: auto !important;
 }
 
@@ -3964,7 +4073,12 @@ body:has(#course-map-modal.show) .main-grid .subject-tooltip,
 body:has(#course-map-modal.show) .electives-grid .subject-tooltip,
 body:has(#course-map-modal.show) .main-grid .hover-zone,
 body:has(#course-map-modal.show) .electives-grid .hover-zone,
-body:has(#course-map-modal.show) .not-running-tooltip {
+body:has(#course-map-modal.show) .not-running-tooltip,
+body:has(.modal-overlay.show) .main-grid .subject-tooltip,
+body:has(.modal-overlay.show) .electives-grid .subject-tooltip,
+body:has(.modal-overlay.show) .main-grid .hover-zone,
+body:has(.modal-overlay.show) .electives-grid .hover-zone,
+body:has(.modal-overlay.show) .not-running-tooltip {
   display: none !important;
 }
 
@@ -4418,6 +4532,38 @@ body:has(#course-map-modal.show) .not-running-tooltip {
   opacity: 1;
 }
 
+.title-settings-font-family-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 10px;
+}
+
+.title-settings-font-family {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f5;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.title-settings-font-family:hover,
+.title-settings-font-family:focus-visible {
+  background: rgba(146, 221, 255, 0.18);
+  border-color: rgba(146, 221, 255, 0.7);
+}
+
+.title-settings-font-family.is-active {
+  background: #92ddff;
+  border-color: #92ddff;
+  color: #111;
+}
+
 :root[data-appearance="dark"] .sas,
 :root[data-appearance="dark"] .sas-inline,
 :root[data-appearance="dark"] .sas-key-badge,
@@ -4427,18 +4573,17 @@ body:has(#course-map-modal.show) .not-running-tooltip {
 
 .electives-label {
   margin: 20px 0 8px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .inline-electives-heading {
   display: inline;
   margin: 0;
-  font-size: 0.95rem;
+  font-size: inherit;
   font-weight: 700;
 }
 
 .info-card {
-  font-size: 1em;
   cursor: default;
   padding-left: 10px;
   padding-top: 4px;
@@ -4481,7 +4626,7 @@ body:has(#course-map-modal.show) .not-running-tooltip {
 }
 
 .stream-label-mid {
-  font-size: 1rem;
+  font-size: inherit;
 }
 
 .stream-network {
@@ -4676,6 +4821,11 @@ body.student-mode #select-by-typing-button {
 }
 
 #show-timetable {
+  border-radius: 8px;
+  border: 3px solid white;
+}
+
+#main-grid-details.is-my-times {
   border-radius: 8px;
   border: 3px solid white;
 }
@@ -5356,11 +5506,11 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   border-radius: 4px;
 }
 
-/* Keep staff + student behaviour consistent: table is content-sized, modal clamps to viewport. */
+/* Keep staff + student behaviour consistent: table is content-sized, modal grows to fit it. */
 #timetable-modal .modal {
   display: inline-block;
   width: auto;
-  max-width: 98vw;
+  max-width: none;
   min-width: 360px;
   overflow: visible;
 }
@@ -5368,13 +5518,13 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 #timetable-modal .modal-body {
   overflow: visible;
   width: auto;
-  max-width: 98vw;
+  max-width: none;
 }
 
 #timetable-modal .timetable-table-wrapper {
   width: auto;
-  max-width: 100%;
-  overflow-x: auto;
+  max-width: none;
+  overflow: visible;
   margin-top:16px;margin-bottom: 16px;
 }
 
@@ -5430,6 +5580,22 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 .hover-tooltip .remove {
   color: #ffd54f;
   font-weight: 700;
+}
+
+.selected-list-tooltip {
+  padding: 10px 12px;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1.25;
+  white-space: normal;
+  max-width: 320px;
+  z-index: 12000;
+}
+
+.selected-list-tooltip-action {
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .elective-full-popup {
@@ -6820,7 +6986,7 @@ body.completed-mode .completed:hover::after {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  z-index: 4000;
+  z-index: 14000;
 }
 
 .modal-overlay.show {
@@ -6838,6 +7004,10 @@ body.completed-mode .completed:hover::after {
 #course-map-student-note-modal,
 #course-map-triage-comment-modal {
   z-index: 14060;
+}
+
+#old-codes-modal {
+  z-index: 14090;
 }
 
 #course-map-triage-comment-modal {
@@ -7377,12 +7547,12 @@ body.completed-mode .completed:hover::after {
   cursor: pointer;
 }
 
-#course-map-modal button.course-map-info-triage-open {
+#course-map-modal button.course-map-info-triage-add {
   cursor: pointer;
 }
 
-#course-map-modal button.course-map-info-triage-open:hover,
-#course-map-modal button.course-map-info-triage-open:focus-visible {
+#course-map-modal button.course-map-info-triage-add:hover,
+#course-map-modal button.course-map-info-triage-add:focus-visible {
   border-color: #9fb2d6;
   background: #edf3ff;
 }
@@ -7504,7 +7674,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-remaining-info-modal .course-map-remaining-info-modal {
-  width: 260px;
+  width: 312px;
   max-width: 96vw;
   min-width: 0;
   height: auto;
@@ -8215,7 +8385,6 @@ body.completed-mode .completed:hover::after {
   align-items: center;
   align-self: flex-start;
   gap: 6px;
-  font-size: 1em;
   line-height: 1.15;
   white-space: nowrap;
 }
@@ -8231,7 +8400,6 @@ body.completed-mode .completed:hover::after {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1em;
   cursor: pointer;
 }
 
@@ -9023,7 +9191,6 @@ body.completed-mode .completed:hover::after {
 #course-map-modal .course-map-show-hide-row .switch-label,
 #course-map-modal .course-map-mode-row .switch-label {
   color: #111;
-  font-size: 1em;
   line-height: 1.15;
   white-space: normal;
   font-weight: 400;
@@ -9474,7 +9641,7 @@ body.completed-mode .completed:hover::after {
   padding: 0 12px;
 }
 
-.semester-timetable-teacher-copy {
+.semester-timetable-copy-icon {
   width: 32px;
   min-width: 32px;
   padding: 0;
@@ -9581,6 +9748,7 @@ body.completed-mode .completed:hover::after {
 #semester-timetable-modal.semester-timetable-colours-off .semester-timetable-item,
 #semester-timetable-modal.semester-timetable-colours-off .semester-timetable-not-running-item {
   background: #fff;
+  border-left-color: #cfcfcf;
 }
 
 .semester-timetable-item-row {
@@ -10085,7 +10253,6 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 
 #instructions-modal .instructions-step-heading {
   margin: 0 0 10px;
-  font-size: 1em;
   font-weight: 700;
   line-height: 1.1;
   color: #111;
@@ -10486,9 +10653,23 @@ body.completed-mode #clear-selections {
   font-weight: 600;
 }
 
+.course-map-triage-static .course-map-triage-institute-email {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
 .course-map-triage-static strong::after,
 .course-map-triage-inline-field span::after {
   content: ' ';
+}
+
+.course-map-triage-inline-field .triage-required-mark {
+  color: #d32f2f;
+  font-weight: 700;
+}
+
+.course-map-triage-inline-field .triage-required-mark::after {
+  content: '';
 }
 
 .course-map-triage-temp-note {
@@ -10692,4 +10873,54 @@ body.completed-mode #clear-selections {
 :root[data-appearance="dark"] .subject-table-sort-button,
 :root[data-appearance="dark"] .course-map-remaining-info-sort-button {
   color: #fff !important;
+}
+
+:root[data-colour-palette="accessible"] .btn-caution {
+  background: linear-gradient(to bottom, #ffd54f, #ffcc33);
+  border-color: #8a6500;
+  color: #111 !important;
+}
+
+:root[data-colour-palette="accessible"] .btn-error {
+  background: linear-gradient(to bottom, #a92b2b, #7c1f1f);
+  border-color: #4f1111;
+  color: #fff !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal.semester-timetable-colours-off .semester-timetable-item,
+:root[data-appearance="dark"] #semester-timetable-modal.semester-timetable-colours-off .semester-timetable-not-running-item {
+  background: var(--dark-card-bg) !important;
+  border-left-color: #555 !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.core,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.core {
+  border-left-color: var(--core-band) !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.network,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.network {
+  border-left-color: var(--network-band) !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.ba,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.ba {
+  border-left-color: var(--ba-band) !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.software,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.software {
+  border-left-color: var(--software-band) !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.dual,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.dual-split,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.dual,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.dual-split {
+  border-left-color: var(--dual-band) !important;
+}
+
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.elective,
+:root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.elective {
+  border-left-color: var(--elective-band) !important;
 }

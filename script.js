@@ -75,7 +75,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT231: ['BIT111'],
     BIT233: ['BIT121'],
     BIT236: ['BIT231', 'BIT106'],
-    BIT235: ['BIT245'],
+    BIT235: [],
     BIT241: ['BIT106', 'BIT105'],
     BIT242: ['BIT230'],
     BIT213: [],
@@ -99,6 +99,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const corequisites = {
     BIT213: ['BIT121'],
+    BIT235: ['BIT245'],
   };
   const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let currentMajorKey = 'ns';
@@ -167,36 +168,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const timetable = {
-    BIT106: { day: 'Thursday', slot: 'Afternoon', room: 'PK206', teacher: 'Sarang Hashemi' },
-    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
-    BIT121: { day: 'Monday', slot: 'Afternoon', room: 'PE226', teacher: 'Russul Al-Anni' },
-    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE302', teacher: 'Sazia, Sita, Tony, TBA' },
-    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
+    BIT121: { day: 'Monday', slot: 'Morning', room: 'PA113', teacher: 'Russul Al-Anni' },
+    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE110', teacher: 'Tony, Sita, TBA' },
+    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE110', teacher: 'Tony, Sita, TBA' },
+    BIT112: { day: 'Monday', slot: 'Afternoon', room: 'PA113', teacher: 'Dominic Mammone' },
+    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PE227', teacher: 'Shzaa Niazi' },
     BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Anthony Overmars' },
     BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye' },
-    BIT111: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Uchenna Enwereonye' },
-    BIT230: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Sarang Hashemi' },
-    BIT245: { day: 'Tuesday', slot: 'Morning', room: 'PE328', teacher: 'Antony Di Serio' },
-    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PF340', teacher: 'Anthony Overmars' },
-    BIT112: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Dominic Mammone' },
+    BIT230: { day: 'Tuesday', slot: 'Morning', room: 'xxxxx', teacher: 'Sarang Hashemi' },
+    BIT106: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Sarang Hashemi' },
+    BIT241: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Dominic Mammone' },
+    BIT246: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Kamal' },
+    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars' },
+    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'xxxxx', teacher: 'Promise' },
     BIT214: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
-    BIT233: { day: 'Tuesday', slot: 'Morning', room: 'PF340', teacher: 'Yaona Zhao' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Antony Di Serio' },
-    BIT241: { day: 'Wednesday', slot: 'Afternoon', room: 'PF306', teacher: 'Dominic Mammone' },
-    BIT362: { day: 'Wednesday', slot: 'Afternoon', room: 'PE327', teacher: 'Nikki Wan' },
-    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Shzaa Niazi' },
-    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Nidha Qazi' },
-    BIT357: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Ye Wei (Silva)' },
-    BIT213: { day: 'Thursday', slot: 'Afternoon', room: 'PE226', teacher: 'Xiaodong Wang (Tony)' },
-    BIT358: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Nidha Qazi' },
-    BIT355: { day: 'Thursday', slot: 'Afternoon', room: 'PE303', teacher: 'Ye Wei (Silva)' },
-    BIT242: { day: 'Friday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)' },
-    BIT352: { day: 'Friday', slot: 'Morning', room: 'PE226', teacher: 'David Robinson' },
-    BIT314: { day: 'Friday', slot: 'Afternoon', room: 'PA113', teacher: 'David Robinson' },
-    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'Ye Wei (Silva)' },
+    BIT213: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Tony' },
+    BIT111: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Promise' },
+    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Kamal' },
+    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
+    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE227', teacher: 'Nidha Qazi' },
+    BIT233: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Nikki' },
+    BIT356: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Silva' },
+    BIT242: { day: 'Thursday', slot: 'Afternoon', room: 'PE227', teacher: 'David' },
+    BIT362: { day: 'Thursday', slot: 'Afternoon', room: 'PA114', teacher: 'Nikki Wan' },
+    BIT363: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Silva' },
+    BIT364: { day: 'Thursday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Nidha' },
+    BIT314: { day: 'Friday', slot: 'Morning', room: 'PA113', teacher: 'David Robinson' },
+    BIT352: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'David Robinson' },
+    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Ye Wei (Silva)' },
   };
 
-  const semester1OnlyIds = new Set(['BIT351', 'BIT358', 'BIT357', 'BIT355']);
+  const semester1OnlyIds = new Set(['BIT351', 'BIT355', 'BIT357', 'BIT358']);
   const semester2OnlyIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
   const getCurrentSemesterKey = (date = new Date()) => {
     const month = date instanceof Date && !Number.isNaN(date.getTime()) ? date.getMonth() : 0;
@@ -275,6 +277,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsCourseMapDefaultLabel = document.getElementById('settings-course-map-label');
   const settingsRootFontSizeSlider = document.getElementById('settings-root-font-size');
   const settingsRootFontSizeLabel = document.getElementById('settings-font-size-label');
+  const settingsFontFamilyButtons = Array.from(document.querySelectorAll('.title-settings-font-family'));
+  const settingsResetFontFamilyButton = document.getElementById('settings-reset-font-family');
   const settingsDefaultSidebarWidthsButton = document.getElementById('settings-default-sidebar-widths');
   const settingsLightModeButton = document.getElementById('settings-light-mode');
   const settingsDarkModeButton = document.getElementById('settings-dark-mode');
@@ -355,11 +359,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const CARD_THEME_STORAGE_KEY = 'subjectPlannerCardTheme';
   const ROOT_FONT_SIZE_STORAGE_KEY = 'subjectPlannerRootFontSizePx';
+  const FONT_FAMILY_STORAGE_KEY = 'subjectPlannerFontFamily';
   const APPEARANCE_STORAGE_KEY = 'subjectPlannerAppearance';
   const COLOUR_PALETTE_STORAGE_KEY = 'subjectPlannerColourPalette';
   const SETTINGS_QUERY_CARDS_KEY = 'cards';
   const SETTINGS_QUERY_START_KEY = 'start';
   const SETTINGS_QUERY_FONT_KEY = 'font';
+  const SETTINGS_QUERY_FONT_FAMILY_KEY = 'family';
   const SETTINGS_QUERY_COURSE_MAP_FONT_KEY = 'courseMapFont';
   const SETTINGS_QUERY_APPEARANCE_KEY = 'mode';
   const SETTINGS_QUERY_COLOUR_PALETTE_KEY = 'palette';
@@ -375,6 +381,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const MIN_ROOT_FONT_SIZE_PX = 10;
   const MAX_ROOT_FONT_SIZE_PX = 32;
   const DEFAULT_ROOT_FONT_SIZE_PX = 16;
+  const DEFAULT_FONT_FAMILY = 'segoe';
+  const FONT_FAMILY_OPTIONS = {
+    segoe: '"Segoe UI", Arial, sans-serif',
+    calibri: 'Calibri, "Segoe UI", Arial, sans-serif',
+    roboto: 'Roboto, "Segoe UI", Arial, sans-serif',
+    mono: '"Roboto Mono", Consolas, "Courier New", monospace',
+    'noto-serif': '"Noto Serif", Georgia, "Times New Roman", serif',
+    merriweather: 'Merriweather, Georgia, "Times New Roman", serif',
+  };
   const MIN_COURSE_MAP_FONT_SCALE = 0.75;
   const MAX_COURSE_MAP_FONT_SCALE = 2;
   const DEFAULT_COURSE_MAP_FONT_SCALE = 1;
@@ -420,6 +435,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const parsed = parseRootFontSizeToken(raw);
     return Number.isFinite(parsed) ? normalizeRootFontSizePx(parsed) : '';
   };
+  const normalizeFontFamily = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw || raw === 'default') return DEFAULT_FONT_FAMILY;
+    if (['segoe', 'segoe-ui', 'segoeui'].includes(raw)) return 'segoe';
+    if (['calibri'].includes(raw)) return 'calibri';
+    if (['roboto'].includes(raw)) return 'roboto';
+    if (['mono', 'monospace', 'roboto-mono', 'robotomono'].includes(raw)) return 'mono';
+    if (['serif', 'noto-serif', 'notoserif'].includes(raw)) return 'noto-serif';
+    if (['merriweather', 'merri'].includes(raw)) return 'merriweather';
+    return DEFAULT_FONT_FAMILY;
+  };
+  const getFontFamilyFromQuery = () => {
+    const raw = getQueryParamLower(SETTINGS_QUERY_FONT_FAMILY_KEY);
+    return raw ? normalizeFontFamily(raw) : '';
+  };
   const normalizeCourseMapFontScale = (value) => {
     const parsed = Number.parseFloat(String(value ?? '').trim());
     if (!Number.isFinite(parsed)) return DEFAULT_COURSE_MAP_FONT_SCALE;
@@ -449,6 +479,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let openCourseMapByDefault = getCourseMapDefaultOpenFromQuery();
   let activeCardTheme = DEFAULT_CARD_THEME;
   let activeRootFontSizePx = DEFAULT_ROOT_FONT_SIZE_PX;
+  let activeFontFamily = DEFAULT_FONT_FAMILY;
   let courseMapFontScaleEm = getCourseMapFontScaleFromQuery();
   let activeAppearance = DEFAULT_APPEARANCE;
   let activeColourPalette = DEFAULT_COLOUR_PALETTE;
@@ -458,6 +489,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     normalizeCardTheme(theme) === COLOURED_CARD_THEME ? 'coloured' : 'default';
   const getRootFontSizeQueryValue = (sizePx = activeRootFontSizePx) =>
     String(normalizeRootFontSizePx(sizePx));
+  const getFontFamilyQueryValue = (fontFamily = activeFontFamily) => normalizeFontFamily(fontFamily);
   const getPanelWidthFromQuery = (key) => {
     const param = SETTINGS_QUERY_PANEL_WIDTH_KEYS[key];
     if (!param || typeof URLSearchParams === 'undefined') return null;
@@ -483,6 +515,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         params.delete(SETTINGS_QUERY_FONT_KEY);
       } else {
         params.set(SETTINGS_QUERY_FONT_KEY, getRootFontSizeQueryValue(activeRootFontSizePx));
+      }
+      if (activeFontFamily === DEFAULT_FONT_FAMILY) {
+        params.delete(SETTINGS_QUERY_FONT_FAMILY_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_FONT_FAMILY_KEY, getFontFamilyQueryValue(activeFontFamily));
       }
       if (courseMapFontScaleEm === DEFAULT_COURSE_MAP_FONT_SCALE) {
         params.delete(SETTINGS_QUERY_COURSE_MAP_FONT_KEY);
@@ -551,10 +588,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (settingsRootFontSizeLabel) {
       settingsRootFontSizeLabel.textContent = `Font size: ${normalizeRootFontSizePx(activeRootFontSizePx)}px`;
     }
+    settingsFontFamilyButtons.forEach((button) => {
+      const raw = String(button.dataset.fontFamily || '').trim().toLowerCase();
+      const key = normalizeFontFamily(raw);
+      button.classList.toggle('is-active', raw !== 'default' && key === activeFontFamily);
+    });
     settingsLightModeButton?.classList.toggle('is-active', activeAppearance === DEFAULT_APPEARANCE);
     settingsDarkModeButton?.classList.toggle('is-active', activeAppearance === DARK_APPEARANCE);
     settingsAccessibleColoursButton?.classList.toggle('is-active', activeColourPalette === ACCESSIBLE_COLOUR_PALETTE);
     settingsGreyscaleColoursButton?.classList.toggle('is-active', activeColourPalette === GREYSCALE_COLOUR_PALETTE);
+    if (settingsAccessibleColoursButton) settingsAccessibleColoursButton.disabled = activeAppearance === DARK_APPEARANCE;
+    if (settingsGreyscaleColoursButton) settingsGreyscaleColoursButton.disabled = activeAppearance === DARK_APPEARANCE;
   };
   const updateMainGridKeyThemeUi = () => {
     if (mainKeyCompletedLabel) {
@@ -608,6 +652,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     } catch { }
   };
+  const applyFontFamily = (fontFamily, { persist = true } = {}) => {
+    activeFontFamily = normalizeFontFamily(fontFamily);
+    if (document?.documentElement) {
+      document.documentElement.style.setProperty(
+        '--app-font-family',
+        FONT_FAMILY_OPTIONS[activeFontFamily] || FONT_FAMILY_OPTIONS[DEFAULT_FONT_FAMILY]
+      );
+      document.documentElement.setAttribute('data-font-family', activeFontFamily);
+    }
+    updateSettingsMenuUi();
+    updateBookmarkableSettingsUrl();
+    if (!persist) return;
+    try {
+      if (activeFontFamily === DEFAULT_FONT_FAMILY) {
+        localStorage.removeItem(FONT_FAMILY_STORAGE_KEY);
+      } else {
+        localStorage.setItem(FONT_FAMILY_STORAGE_KEY, activeFontFamily);
+      }
+    } catch { }
+  };
   const applyAppearance = (appearance, { persist = true } = {}) => {
     activeAppearance = normalizeAppearance(appearance);
     if (document?.documentElement) {
@@ -649,9 +713,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? document.querySelector('.sidebar')
           : document.getElementById(key) || document.querySelector(`.${key}`);
       if (panel) {
-        panel.style.width = '';
+        if (key === 'sidebar') {
+          panel.style.width = '260px';
+          panel.style.flex = '0 0 260px';
+          activePanelWidthPx[key] = 260;
+        } else {
+          panel.style.width = '';
+          panel.style.flex = '';
+        }
         panel.style.height = '';
-        panel.style.flex = '';
       }
     });
     try {
@@ -667,6 +737,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const loadInitialSettingsPreferences = () => {
     const queryTheme = getCardThemeFromQuery();
     const queryRootFontSize = getRootFontSizeFromQuery();
+    const queryFontFamily = getFontFamilyFromQuery();
     const queryAppearance = getAppearanceFromQuery();
     const queryColourPalette = getColourPaletteFromQuery();
     let initialTheme = DEFAULT_CARD_THEME;
@@ -687,6 +758,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         initialRootFontSize = localStorage.getItem(ROOT_FONT_SIZE_STORAGE_KEY) || DEFAULT_ROOT_FONT_SIZE_PX;
       } catch {
         initialRootFontSize = DEFAULT_ROOT_FONT_SIZE_PX;
+      }
+    }
+    let initialFontFamily = DEFAULT_FONT_FAMILY;
+    if (queryFontFamily) {
+      initialFontFamily = queryFontFamily;
+    } else {
+      try {
+        initialFontFamily = localStorage.getItem(FONT_FAMILY_STORAGE_KEY) || DEFAULT_FONT_FAMILY;
+      } catch {
+        initialFontFamily = DEFAULT_FONT_FAMILY;
       }
     }
     let initialAppearance = DEFAULT_APPEARANCE;
@@ -711,6 +792,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     applyCardTheme(initialTheme, { persist: false });
     applyRootFontSize(initialRootFontSize, { persist: false });
+    applyFontFamily(initialFontFamily, { persist: false });
     applyAppearance(initialAppearance, { persist: false });
     applyColourPalette(initialColourPalette, { persist: false });
     updateSettingsMenuUi();
@@ -1144,9 +1226,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260622-3';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260625-2';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260622-3';
+      return 'triage-parser-worker.js?v=triage-20260625-2';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1610,6 +1692,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseTimetableColoursButton = document.getElementById('semester-timetable-colours');
   const copyCourseTimetableButton = document.getElementById('copy-semester-timetable');
   const courseTimetableTeacherCopyButton = document.getElementById('semester-timetable-teacher-copy');
+  const courseTimetableSiteSettingsCopyButton = document.getElementById('semester-timetable-site-settings-copy');
+  const courseTimetableFormat2CopyButton = document.getElementById('semester-timetable-format2-copy');
+  const courseTimetableCelcatCopyButton = document.getElementById('semester-timetable-celcat-copy');
   const instructionsModal = document.getElementById('instructions-modal');
   const closeInstructionsModal = document.getElementById('close-instructions-modal');
   const closeInstructionsCta = document.getElementById('close-instructions-cta');
@@ -1803,6 +1888,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getTriageParseMode = () => 'fast';
   const clipboardBlockedTitle = 'Copy to clipboard requires HTTPS (or localhost).';
   const clipboardAvailable = window.isSecureContext && !!navigator.clipboard;
+  const sanitizeClipboardText = (value = '') => String(value ?? '').trim();
+  let clipboardWritesPatched = false;
+  const patchClipboardWrites = () => {
+    if (!navigator.clipboard || clipboardWritesPatched) return;
+    const nativeWriteText = navigator.clipboard.writeText?.bind(navigator.clipboard);
+    const nativeWrite = navigator.clipboard.write?.bind(navigator.clipboard);
+    try {
+      if (nativeWriteText) {
+        navigator.clipboard.writeText = (value) => nativeWriteText(sanitizeClipboardText(value));
+      }
+      if (nativeWrite && window.ClipboardItem) {
+        navigator.clipboard.write = (items) => {
+          const trimmedItems = Array.from(items || []).map((item) => {
+            const next = {};
+            item.types.forEach((type) => {
+              next[type] = item.getType(type).then(async (blob) => {
+                if (!String(type).startsWith('text/')) return blob;
+                return new Blob([sanitizeClipboardText(await blob.text())], { type });
+              });
+            });
+            return new ClipboardItem(next);
+          });
+          return nativeWrite(trimmedItems);
+        };
+      }
+      clipboardWritesPatched = true;
+    } catch (_) {
+      clipboardWritesPatched = true;
+    }
+  };
+  patchClipboardWrites();
   const setClipboardButtonState = (button, enabled) => {
     if (!button) return;
     button.disabled = !enabled;
@@ -1830,6 +1946,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyTimetableCodes,
       copyCourseTimetableButton,
       courseTimetableTeacherCopyButton,
+      courseTimetableSiteSettingsCopyButton,
+      courseTimetableFormat2CopyButton,
+      courseTimetableCelcatCopyButton,
       copyHistory,
       copyHistoryCodes,
       copyRemaining,
@@ -1857,6 +1976,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyRemainingCodes,
       copyCourseTimetableButton,
       courseTimetableTeacherCopyButton,
+      courseTimetableSiteSettingsCopyButton,
+      courseTimetableFormat2CopyButton,
+      courseTimetableCelcatCopyButton,
     ].forEach((button) => {
       if (!button) return;
       button.hidden = true;
@@ -1903,7 +2025,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT230: { name: 'System Analysis & Design', note: 'Prerequisites: BIT106, BIT111', classes: ['core'] },
     BIT231: { name: 'Database Systems', note: 'Prerequisite: BIT111', classes: ['core', 'sas'] },
     BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
-    BIT235: { name: 'Object Oriented Programming', note: 'Prerequisites: BIT245', classes: ['software'] },
+    BIT235: { name: 'Object Oriented Programming', note: 'Co-requisite: BIT245', classes: ['software'] },
     BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
     BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisite: BIT105, BIT106', classes: ['core'] },
     BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
@@ -2471,7 +2593,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return bestIndex;
   };
   const sidebarTooltip = document.createElement('div');
-  sidebarTooltip.className = 'hover-tooltip';
+  sidebarTooltip.className = 'hover-tooltip selected-list-tooltip';
   document.body.appendChild(sidebarTooltip);
   let sidebarTooltipTimer = null;
 
@@ -2842,7 +2964,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     pushRow('Friendly name', triage.friendlyName);
     pushRow('Handled by', triage.handledBy);
     pushRow('Status', triage.statusLabel);
-    pushRow('Altered Status', triage.alteredStatus);
+    pushRow('Enrolment change', triage.alteredStatus);
     pushRow('On SharePoint', triage.onSharePoint);
     if (triage.inStrata) {
       const strataCodes = parseInStrataCodes(triage.inStrata);
@@ -2957,10 +3079,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       '<div class="course-map-triage-static">',
       notInSource
         ? '<label class="course-map-triage-inline-field course-map-triage-student-id-field"><span>Student ID:</span>' +
-          `<input id="course-map-triage-student-id" type="text" value="${escapeHtml(studentId)}" />` +
-          '</label>'
+        `<input id="course-map-triage-student-id" type="text" value="${escapeHtml(studentId)}" />` +
+        '</label>'
         : `<div class="course-map-triage-id-line">${escapeHtml([givenName, familyName, studentId].filter(Boolean).join(' '))}</div>`,
-      instituteEmail ? `<div class="course-map-triage-id-line">${escapeHtml(instituteEmail)}</div>` : '',
+      instituteEmail ? `<div class="course-map-triage-id-line course-map-triage-institute-email">${escapeHtml(instituteEmail)}</div>` : '',
       notInSource ? '' : `<div><strong>Suspended:</strong><span>${escapeHtml(String(record?.Suspended || '').trim() || 'N')}</span></div>`,
       notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${getPassedSubjectCountForRecord(record)}</span></div>`,
       notInSource ? '' : `<div><strong>Status:</strong><span>${escapeHtml(triage.statusLabel || '')}</span></div>`,
@@ -2987,11 +3109,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       '<label class="course-map-triage-inline-field"><span>Handled By</span>',
       `<select id="course-map-triage-handled-by">${optionHtml(TRIAGE_HANDLED_BY_OPTIONS, handledByValue)}</select>`,
       '</label>',
-      '<label class="course-map-triage-inline-field"><span>Altered Status</span>',
-      `<select id="course-map-triage-altered-status">${optionHtml(TRIAGE_ALTERED_STATUS_OPTIONS, triage.alteredStatus)}</select>`,
-      '</label>',
-      '<label class="course-map-triage-inline-field"><span>Status details</span>',
+      '<label class="course-map-triage-inline-field"><span>Enrolment type <span class="triage-required-mark" aria-hidden="true">*</span></span>',
       `<select id="course-map-triage-status-details">${optionHtml(TRIAGE_STATUS_DETAILS_OPTIONS, triage.statusDetails)}</select>`,
+      '</label>',
+      '<label class="course-map-triage-inline-field"><span>Enrolment change</span>',
+      `<select id="course-map-triage-altered-status">${optionHtml(TRIAGE_ALTERED_STATUS_OPTIONS, triage.alteredStatus)}</select>`,
       '</label>',
       '</div>',
       '<label class="course-map-triage-block-field">New Comment',
@@ -3888,13 +4010,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       courseMapStudentInfoStrip.appendChild(triageChip);
     } else {
-      const triageMissingButton = document.createElement('button');
-      triageMissingButton.type = 'button';
-      triageMissingButton.className =
-        'course-map-info-chip course-map-info-dialog-button course-map-info-triage course-map-info-triage-open';
-      triageMissingButton.textContent = 'Not in Triage';
-      triageMissingButton.setAttribute('title', 'Not in Triage');
-      courseMapStudentInfoStrip.appendChild(triageMissingButton);
+      const triageAddButton = document.createElement('button');
+      triageAddButton.type = 'button';
+      triageAddButton.className =
+        'course-map-info-chip course-map-info-dialog-button course-map-info-triage course-map-info-triage-add';
+      triageAddButton.textContent = 'Add to Triage';
+      triageAddButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        showCourseMapStudentNoteModal('Add to Triage', buildCourseMapTriageEditFormHtml(record), {
+          html: true,
+          triage: true,
+          triageEdit: true,
+        });
+      });
+      courseMapStudentInfoStrip.appendChild(triageAddButton);
     }
 
     appendEmailButton(
@@ -4585,6 +4715,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
 
     window.addEventListener('resize', schedule, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', schedule, { passive: true });
+    }
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(schedule).catch(() => { });
+    }
 
     try {
       const container = document.getElementById('container') || document.body;
@@ -4802,6 +4938,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let remainingConfirmed = false;
   let electiveError = null;
   let prereqError = null;
+  let strataPrereqInfo = null;
   let chainDelayError = null;
   let aprAppError = null;
   let acceptedOfferedError = null;
@@ -6145,8 +6282,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const currentCodes = passForEnrolmentsEnabled
       ? []
       : Array.from(currentEnrolmentStudentRecord.values()).filter(
-          (code) => !withdrawnCurrentEnrolments.has(code)
-        );
+        (code) => !withdrawnCurrentEnrolments.has(code)
+      );
     return new Set([...plannedCodes, ...currentCodes]);
   };
 
@@ -6341,6 +6478,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (lateEnrolmentInfo) {
       infoMessages.push(lateEnrolmentInfo);
     }
+    if (strataPrereqInfo) {
+      infoMessages.push(strataPrereqInfo);
+    }
     const remainingCount = getRemainingSubjectsCount();
     if (shouldShowRemainingNotice(remainingCount)) {
       const medianGradePastYear = getMedianGradeLabelPastYear(manualEntryResults);
@@ -6477,6 +6617,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         title: 'Domestic visa caveats',
         html: domesticCaveatHtml,
       });
+    }
+    const visaGuideIndex = infoMessages.findIndex((message) => message?.title === 'Visa fee guide');
+    if (visaGuideIndex >= 0) {
+      const [visaGuideMessage] = infoMessages.splice(visaGuideIndex, 1);
+      infoMessages.push(visaGuideMessage);
     }
     return infoMessages;
   };
@@ -7763,8 +7908,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const passCurrentCodes =
       passForEnrolmentsEnabled
         ? Array.from(passForEnrolmentsOverrides)
-            .filter((code) => validSubjectCodes.has(code) && !withdrawnCurrentEnrolments.has(code))
-            .sort((a, b) => a.localeCompare(b))
+          .filter((code) => validSubjectCodes.has(code) && !withdrawnCurrentEnrolments.has(code))
+          .sort((a, b) => a.localeCompare(b))
         : [];
     const activeRecord = getActiveStudentRecord();
     // Only use student-record Credit Points Earned for mismatch checks.
@@ -8043,22 +8188,40 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     clearButton.style.display = hasAny ? '' : 'none';
     const threshold = getLoadThreshold();
     const hasSelected = selectedCount >= threshold && threshold > 0;
+    if (mainGridDetailsButton) {
+      mainGridDetailsButton.textContent = hasSelected ? 'My times' : 'Subject details';
+      mainGridDetailsButton.dataset.mode = hasSelected ? 'selected' : 'available';
+      mainGridDetailsButton.classList.toggle('is-my-times', hasSelected);
+      mainGridDetailsButton.setAttribute(
+        'data-tooltip-html',
+        hasSelected
+          ? 'Show the timetable for the subjects currently selected.'
+          : 'Show the available subjects table with subject codes, names, streams, and availability.'
+      );
+    }
     if (showTimetableButton) {
       showTimetableButton.textContent = 'My times';
-      // Ensure inline display overrides the hidden-initial class when we have selections.
-      showTimetableButton.style.display = hasSelected ? '' : 'none';
-      showTimetableButton.classList.toggle('hidden-initial', !hasSelected);
+      showTimetableButton.style.display = 'none';
+      showTimetableButton.classList.add('hidden-initial');
       if (livePrereqRow) {
         livePrereqRow.style.display = hasSelected ? 'flex' : 'none';
         livePrereqRow.classList.toggle('hidden-initial', !hasSelected);
       }
     }
     if (hasSelected) {
+      const currentEnrolmentCodes = new Set([
+        ...Array.from(currentEnrolmentStudentRecord.values()),
+        ...Array.from(currentEnrolmentsPlannedOverrides.values()),
+        ...Array.from(workbookCurrent.keys()),
+        ...Array.from(manualEntryCurrent.keys()),
+      ]);
+      const isCurrentEnrolmentFullLoad =
+        currentEnrolmentCodes.size > 0 &&
+        selectedCodes.length === currentEnrolmentCodes.size &&
+        selectedCodes.every((code) => currentEnrolmentCodes.has(code));
       const isOnlyAutoCurrentEnrolments =
-        suppressNextFullLoadAutoModal &&
-        selectedCodes.length > 0 &&
-        currentEnrolmentsPlannedOverrides.size > 0 &&
-        selectedCodes.every((code) => currentEnrolmentsPlannedOverrides.has(code));
+        (suppressNextFullLoadAutoModal || !mainGridFullLoadModalOpened) &&
+        isCurrentEnrolmentFullLoad;
       if (isOnlyAutoCurrentEnrolments) {
         mainGridFullLoadModalOpened = true;
         suppressNextFullLoadAutoModal = false;
@@ -8224,7 +8387,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
     if (semCountsLabel) {
       semCountsLabel.textContent = showSemCounts
-        ? 'Show semesters to complete (active)'
+        ? 'Showing semesters to complete'
         : 'Show semesters to complete';
       semCountsLabel.classList.toggle('active', showSemCounts);
     }
@@ -8929,6 +9092,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
     const issues = [];
+    const strataIssues = [];
     plannedSet.forEach((id) => {
       const prereqsList = prerequisites[id] || [];
       const missing = prereqsList.filter((code) => !completedSet.has(code));
@@ -8947,7 +9111,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
       }
       if (missing.length) {
-        issues.push({ id, name: getSubjectName(id), missing });
+        const issue = { id, name: getSubjectName(id), missing };
+        if (currentEnrolmentStudentRecord.has(id)) {
+          strataIssues.push(issue);
+        } else {
+          issues.push(issue);
+        }
       }
     });
 
@@ -8977,6 +9146,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       };
     } else {
       prereqError = null;
+    }
+    if (strataIssues.length) {
+      const detailList = strataIssues
+        .map((item) => {
+          const missingList = item.missing
+            .map((code) => `${code} - ${getSubjectName(code)}`)
+            .join(', ');
+          return `<li><strong>${item.id}</strong> - ${item.name}<div class="tight-lead">Strata has this as a current enrolment even though prerequisite requirements appear not to be satisfied: ${escapeHtml(missingList)}.</div></li>`;
+        })
+        .join('');
+      strataPrereqInfo = {
+        title: 'Strata prerequisite override',
+        html: `<p><strong class="alert-inline-title alert-title-info">Strata prerequisite override</strong> <span class="alert-inline-text">A current enrolment has been entered into Strata even though prerequisite requirements appear not to be satisfied.</span></p><ul class="alert-inline-list">${detailList}</ul>`,
+      };
+    } else {
+      strataPrereqInfo = null;
+    }
+    const record = staffWorkbookState.getStudentRecord();
+    if (record) {
+      const feeDetails = getFeeStatusDetails(record);
+      const { codes, info } = splitInfoMessages(buildInfoMessages(record, feeDetails));
+      setAlertMessages('info', info);
+      setAlertMessages('codes', codes);
     }
     refreshErrorAlerts();
   };
@@ -9781,6 +9973,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showCodeModal = () => {
     if (!codeModal) return;
+    codeModal.style.display = '';
     codeModal.classList.add('show');
     codeModal.setAttribute('aria-hidden', 'false');
     if (openCodeModal) openCodeModal.setAttribute('aria-expanded', 'true');
@@ -9790,8 +9983,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const hideCodeModal = () => {
     if (!codeModal) return;
     codeModal.classList.remove('show');
+    codeModal.style.display = 'none';
     codeModal.setAttribute('aria-hidden', 'true');
     if (openCodeModal) openCodeModal.setAttribute('aria-expanded', 'false');
+  };
+
+  const bindModalCloseControl = (control, hideFn) => {
+    if (!control || typeof hideFn !== 'function') return;
+    const close = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideFn();
+    };
+    control.addEventListener('pointerdown', close, true);
+    control.addEventListener('click', close, true);
   };
 
   const isContainerWhitespaceTarget = (target) => {
@@ -10644,12 +10849,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return a.code.localeCompare(b.code);
       });
 
-    const header = ['Subject Code', 'Day', 'Rooms', 'Start', 'End', 'Staff', 'Note', 'Subject Name'];
+    const header = ['Subject Code', 'Subject Name', 'Day', 'Rooms', 'Start', 'End', 'Staff', 'Note'];
     const textRows = [header];
     rows.forEach((row) => {
-      textRows.push([row.code, row.day, row.room, row.start, row.end, row.staff, row.note, row.name]);
+      textRows.push([row.code, row.name, row.day, row.room, row.start, row.end, row.staff, row.note]);
     });
-    const text = textRows.map((row) => row.join('\t')).join('\n');
+    const notRunning = buildCourseTimetableNotRunningClipboardSection();
+    const text = `${textRows.map((row) => row.join('\t')).join('\n')}${notRunning.text}`;
 
     const table = document.createElement('table');
     table.style.fontFamily = 'Calibri, Arial, sans-serif';
@@ -10674,7 +10880,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const tbody = document.createElement('tbody');
     rows.forEach((row) => {
       const tr = document.createElement('tr');
-      [row.code, row.day, row.room, row.start, row.end, row.staff, row.note, row.name].forEach((value) => {
+      [row.code, row.name, row.day, row.room, row.start, row.end, row.staff, row.note].forEach((value) => {
         const td = document.createElement('td');
         td.textContent = value;
         td.style.border = '1px solid #ccc';
@@ -10686,8 +10892,97 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
-    const html = table.outerHTML;
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(table);
+    if (notRunning.html) {
+      const container = document.createElement('div');
+      container.innerHTML = notRunning.html;
+      if (container.firstElementChild) wrapper.appendChild(container.firstElementChild);
+    }
+    const html = wrapper.innerHTML;
 
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const copyCourseTimetableForSiteSettingsDoc = () => {
+    if (!clipboardAvailable) return;
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const dayShort = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
+    const slotOrder = { Morning: 0, Afternoon: 1 };
+    const rows = Object.entries(timetable)
+      .filter(([id]) => isRunningThisSemester(id))
+      .map(([id, data]) => ({
+        day: data.day || 'TBA',
+        time: data.slot === 'Morning' ? 'AM' : data.slot === 'Afternoon' ? 'PM' : data.slot || 'TBA',
+        room: data.room || 'TBA',
+        code: id,
+        name: getSubjectName(id),
+        staff: data.teacher || 'TBA',
+        slot: data.slot || '',
+      }))
+      .sort((a, b) => {
+        const dayA = dayOrder.indexOf(a.day);
+        const dayB = dayOrder.indexOf(b.day);
+        const dayIndexA = dayA === -1 ? 99 : dayA;
+        const dayIndexB = dayB === -1 ? 99 : dayB;
+        if (dayIndexA !== dayIndexB) return dayIndexA - dayIndexB;
+        const slotIndexA = slotOrder[a.slot] ?? 99;
+        const slotIndexB = slotOrder[b.slot] ?? 99;
+        if (slotIndexA !== slotIndexB) return slotIndexA - slotIndexB;
+        return a.code.localeCompare(b.code);
+      });
+    const header = ['Day', 'Time', 'Room', 'Code', 'Subject Name', 'Staff'];
+    const textRows = [header, ...rows.map((row) => [dayShort[row.day] || row.day, row.time, row.room, row.code, row.name, row.staff])];
+    const text = textRows.map((row) => row.join('\t')).join('\n');
+    const table = document.createElement('table');
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '11pt';
+    table.style.borderCollapse = 'collapse';
+    table.style.border = '1px solid #7fb3f0';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    header.forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      th.style.background = '#1b6f80';
+      th.style.color = '#fff';
+      th.style.border = '1px solid #7fb3f0';
+      th.style.padding = '4px 6px';
+      th.style.textAlign = 'left';
+      th.style.fontFamily = 'Calibri, Arial, sans-serif';
+      th.style.fontSize = '11pt';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      [dayShort[row.day] || row.day, row.time, row.room, row.code, row.name, row.staff].forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        td.style.border = '1px solid #7fb3f0';
+        td.style.padding = '4px 6px';
+        td.style.fontFamily = 'Calibri, Arial, sans-serif';
+        td.style.fontSize = '11pt';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(table);
+    const html = wrapper.innerHTML;
     if (window.ClipboardItem) {
       const blobInput = {
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -10723,15 +11018,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // Fallback when the list isn't in the DOM for some reason.
     if (!items.length) items.push({ code: '', name: 'None' });
 
-    const headingText = 'Not running this semester (these subjects will run next semester):';
+    const headingText = 'These subjects are NOT running this semester.  They will run next semester:';
     const textLines = ['', headingText];
     items.forEach(({ code, name }) => {
       if (!code) {
         textLines.push(name || 'None');
       } else if (name) {
-        textLines.push(`- ${code} - ${name}`);
+        textLines.push(`\u2022\t${code} - ${name}`);
       } else {
-        textLines.push(`- ${code}`);
+        textLines.push(`\u2022\t${code}`);
       }
     });
 
@@ -10978,9 +11273,212 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const copyCourseTimetableFormat2ForWord = () => {
+    if (!clipboardAvailable) return;
+    const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
+    const heading = `${getTimetableLabel(new Date())}. Bachelor of IT Full Semester Timetable`;
+    const header = ['Time', 'Code', 'Subject Name', 'Staff', 'Room'];
+    const textRows = [heading, header.join('\t')];
+
+    const table = document.createElement('table');
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '9pt';
+    table.style.borderCollapse = 'collapse';
+    table.style.border = '1px solid #8bbce8';
+    table.style.width = '100%';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    header.forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      th.style.border = '1px solid #8bbce8';
+      th.style.padding = '3px 5px';
+      th.style.background = '#15677f';
+      th.style.color = '#fff';
+      th.style.fontWeight = '700';
+      th.style.textAlign = 'left';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    dayNames.forEach((day) => {
+      const dayLabel = day.slice(0, 3);
+      textRows.push(dayLabel);
+      const dayRow = document.createElement('tr');
+      const dayCell = document.createElement('td');
+      dayCell.textContent = dayLabel;
+      dayCell.colSpan = header.length;
+      dayCell.style.border = '1px solid #8bbce8';
+      dayCell.style.padding = '3px 5px';
+      dayCell.style.background = '#d9d9d9';
+      dayCell.style.fontWeight = '700';
+      dayRow.appendChild(dayCell);
+      tbody.appendChild(dayRow);
+
+      slotNames.forEach((slot) => {
+        const slotLabel = getSlotAbbreviation(slot);
+        const entries = (grid.get(day)?.get(slot) || []).slice().sort((a, b) => a.id.localeCompare(b.id));
+        entries.forEach(({ id, data }) => {
+          const row = [
+            slotLabel,
+            id,
+            getSubjectName(id),
+            data.teacher || 'TBA',
+            data.room || 'TBA',
+          ];
+          textRows.push(row.join('\t'));
+
+          const tr = document.createElement('tr');
+          row.forEach((value, index) => {
+            const td = document.createElement('td');
+            td.textContent = value;
+            td.style.border = '1px solid #8bbce8';
+            td.style.padding = '3px 5px';
+            td.style.fontWeight = index === 0 ? '700' : '400';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      });
+    });
+    table.appendChild(tbody);
+
+    const notRunning = buildCourseTimetableNotRunningClipboardSection();
+    const text = `${textRows.join('\n')}${notRunning.text}`;
+    const wrapper = document.createElement('div');
+    const title = document.createElement('div');
+    title.textContent = heading;
+    title.style.fontFamily = 'Calibri, Arial, sans-serif';
+    title.style.fontSize = '11pt';
+    title.style.fontWeight = '700';
+    title.style.marginBottom = '6px';
+    wrapper.appendChild(title);
+    wrapper.appendChild(table);
+    if (notRunning.html) {
+      const container = document.createElement('div');
+      container.innerHTML = notRunning.html;
+      if (container.firstElementChild) wrapper.appendChild(container.firstElementChild);
+    }
+
+    const html = wrapper.innerHTML;
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
+  const copyCourseTimetableForCelcatSheet = () => {
+    if (!clipboardAvailable) return;
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const slotOrder = { Morning: 0, Afternoon: 1 };
+    const noteValue = getSemesterNote();
+    const header = ['Module Code', 'Day', 'Rooms', 'Start', 'End', 'Staff', 'Notes', 'Subject', 'Column1', 'Column2'];
+    const rows = Object.entries(timetable)
+      .filter(([id]) => isRunningThisSemester(id))
+      .map(([id, data]) => {
+        const { start, end } = getSlotStartEnd(data.slot || '');
+        return {
+          code: id,
+          day: data.day || 'TBA',
+          slot: data.slot || '',
+          cells: [
+            id,
+            data.day || 'TBA',
+            data.room || 'TBA',
+            start,
+            end,
+            data.teacher || 'TBA',
+            noteValue,
+            getSubjectName(id),
+            '',
+            '',
+          ],
+        };
+      })
+      .sort((a, b) => {
+        const dayIndexA = dayOrder.indexOf(a.day);
+        const dayIndexB = dayOrder.indexOf(b.day);
+        const safeDayA = dayIndexA === -1 ? 99 : dayIndexA;
+        const safeDayB = dayIndexB === -1 ? 99 : dayIndexB;
+        if (safeDayA !== safeDayB) return safeDayA - safeDayB;
+        const slotIndexA = slotOrder[a.slot] ?? 99;
+        const slotIndexB = slotOrder[b.slot] ?? 99;
+        if (slotIndexA !== slotIndexB) return slotIndexA - slotIndexB;
+        return a.code.localeCompare(b.code);
+      })
+      .map((row) => row.cells);
+    const text = [header, ...rows].map((row) => row.join('\t')).join('\n');
+
+    const table = document.createElement('table');
+    table.style.fontFamily = 'Calibri, Arial, sans-serif';
+    table.style.fontSize = '10pt';
+    table.style.borderCollapse = 'collapse';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    header.forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      th.style.border = '1px solid #5b9bd5';
+      th.style.padding = '2px 4px';
+      th.style.background = '#0070c0';
+      th.style.color = '#fff';
+      th.style.fontWeight = '700';
+      th.style.textAlign = 'left';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      row.forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        td.style.border = '1px solid #9dc3e6';
+        td.style.padding = '2px 4px';
+        td.style.background = index % 2 ? '#ddebf7' : '#fff';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    const html = table.outerHTML;
+    if (window.ClipboardItem) {
+      const blobInput = {
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      };
+      navigator.clipboard.write([new ClipboardItem(blobInput)]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
   const updateCourseTimetableTeacherCopyButton = () => {
-    if (!courseTimetableTeacherCopyButton) return;
-    courseTimetableTeacherCopyButton.hidden = !shouldShowTeacherCopy;
+    [
+      courseTimetableTeacherCopyButton,
+      courseTimetableSiteSettingsCopyButton,
+      courseTimetableFormat2CopyButton,
+      courseTimetableCelcatCopyButton,
+      copyCourseTimetableButton,
+    ].forEach((button) => {
+      if (!button) return;
+      button.hidden = !shouldShowTeacherCopy;
+    });
   };
 
   const showCourseTimetableModal = () => {
@@ -11237,13 +11735,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         resultEntries.push({ id: mapped, result: normalizedGrade, date: date || '' });
       }
     });
-
-    if (currentEntries.size && resultEntries.length) {
-      const resultsByCode = new Set(resultEntries.map((entry) => entry.id));
-      currentEntries.forEach((_meta, code) => {
-        if (resultsByCode.has(code)) currentEntries.delete(code);
-      });
-    }
 
     return {
       resolvedSubjectCodes,
@@ -12026,7 +12517,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (openCodeModal.disabled) return;
     showCodeModal();
   });
-  if (closeCodeModal) closeCodeModal.addEventListener('click', hideCodeModal);
+  bindModalCloseControl(closeCodeModal, hideCodeModal);
   if (closeContainerPopoutTop) closeContainerPopoutTop.addEventListener('click', hideContainerPopoutModal);
   if (closeContainerPopoutBottom) closeContainerPopoutBottom.addEventListener('click', hideContainerPopoutModal);
   if (plannerContainer) {
@@ -12107,15 +12598,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideContainerPopoutModal();
     });
   }
-  if (cancelCodeModal) cancelCodeModal.addEventListener('click', hideCodeModal);
+  bindModalCloseControl(cancelCodeModal, hideCodeModal);
   if (selectByTypingButton) {
     selectByTypingButton.addEventListener('click', () => {
       if (selectByTypingButton.disabled || selectByTypingButton.hidden) return;
       showSelectByTypingModal();
     });
   }
-  if (closeSelectByTypingModal) closeSelectByTypingModal.addEventListener('click', hideSelectByTypingModal);
-  if (cancelSelectByTypingModal) cancelSelectByTypingModal.addEventListener('click', hideSelectByTypingModal);
+  bindModalCloseControl(closeSelectByTypingModal, hideSelectByTypingModal);
+  bindModalCloseControl(cancelSelectByTypingModal, hideSelectByTypingModal);
   if (applySelectByTypingModal) applySelectByTypingModal.addEventListener('click', applyTypedSemesterSelections);
   if (closeEmailScriptsAccessModal) closeEmailScriptsAccessModal.addEventListener('click', hideEmailScriptsAccessModal);
   if (closeEmailScriptsAccessCta) closeEmailScriptsAccessCta.addEventListener('click', hideEmailScriptsAccessModal);
@@ -12155,13 +12646,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (!copied) return;
           triggerFlash(idRowTarget);
         });
-        return;
-      }
-      const triageOpenTarget = event.target?.closest?.('.course-map-info-triage-open');
-      if (triageOpenTarget) {
-        event.preventDefault();
-        showCourseMapStudentNoteModal('Not in Triage', 'Still under construction');
-        triggerFlash(triageOpenTarget);
         return;
       }
       const emailTarget = event.target?.closest?.('.course-map-strip-email');
@@ -12212,6 +12696,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateCourseMapFontScale();
       });
     }
+    settingsFontFamilyButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const requested = button === settingsResetFontFamilyButton ? DEFAULT_FONT_FAMILY : button.dataset.fontFamily;
+        applyFontFamily(requested);
+      });
+    });
     if (settingsDefaultSidebarWidthsButton) {
       settingsDefaultSidebarWidthsButton.addEventListener('click', () => {
         resetSidebarWidthsToDefault();
@@ -12219,8 +12709,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     settingsLightModeButton?.addEventListener('click', () => applyAppearance(DEFAULT_APPEARANCE));
     settingsDarkModeButton?.addEventListener('click', () => applyAppearance(DARK_APPEARANCE));
-    settingsAccessibleColoursButton?.addEventListener('click', () => applyColourPalette(ACCESSIBLE_COLOUR_PALETTE));
-    settingsGreyscaleColoursButton?.addEventListener('click', () => applyColourPalette(GREYSCALE_COLOUR_PALETTE));
+    settingsAccessibleColoursButton?.addEventListener('click', () => {
+      applyColourPalette(
+        activeColourPalette === ACCESSIBLE_COLOUR_PALETTE
+          ? DEFAULT_COLOUR_PALETTE
+          : ACCESSIBLE_COLOUR_PALETTE
+      );
+    });
+    settingsGreyscaleColoursButton?.addEventListener('click', () => {
+      applyColourPalette(
+        activeColourPalette === GREYSCALE_COLOUR_PALETTE
+          ? DEFAULT_COLOUR_PALETTE
+          : GREYSCALE_COLOUR_PALETTE
+      );
+    });
     settingsResetColoursButton?.addEventListener('click', resetColourSettings);
     settingsMenu.addEventListener('click', (event) => event.stopPropagation());
     document.addEventListener('click', (event) => {
@@ -12270,6 +12772,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         copyCourseTimetableToClipboard();
       }
     });
+    copyCourseTimetableButton.hidden = !shouldShowTeacherCopy;
   }
   if (courseTimetableTeacherCopyButton) {
     courseTimetableTeacherCopyButton.addEventListener('click', () => {
@@ -12277,6 +12780,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyCourseTimetableForWord();
     });
     courseTimetableTeacherCopyButton.hidden = !shouldShowTeacherCopy;
+  }
+  if (courseTimetableSiteSettingsCopyButton) {
+    courseTimetableSiteSettingsCopyButton.addEventListener('click', () => {
+      flashCopyButton(courseTimetableSiteSettingsCopyButton);
+      copyCourseTimetableForSiteSettingsDoc();
+    });
+    courseTimetableSiteSettingsCopyButton.hidden = !shouldShowTeacherCopy;
+  }
+  if (courseTimetableFormat2CopyButton) {
+    courseTimetableFormat2CopyButton.addEventListener('click', () => {
+      flashCopyButton(courseTimetableFormat2CopyButton);
+      copyCourseTimetableFormat2ForWord();
+    });
+    courseTimetableFormat2CopyButton.hidden = !shouldShowTeacherCopy;
+  }
+  if (courseTimetableCelcatCopyButton) {
+    courseTimetableCelcatCopyButton.addEventListener('click', () => {
+      flashCopyButton(courseTimetableCelcatCopyButton);
+      copyCourseTimetableForCelcatSheet();
+    });
+    courseTimetableCelcatCopyButton.hidden = !shouldShowTeacherCopy;
   }
   if (codeInput) {
     codeInput.addEventListener('keydown', (event) => {
@@ -13276,7 +13800,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
         if (triage.alteredStatus) {
           triageLines.push(
-            `<div><span class="triage-subheading">Altered Status:</span> ${escapeHtml(triage.alteredStatus)}</div>`
+            `<div><span class="triage-subheading">Enrolment change:</span> ${escapeHtml(triage.alteredStatus)}</div>`
           );
         }
         if (triage.onSharePoint) {
@@ -13447,7 +13971,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? `<span class="student-visa-strong">${escapeHtml(feeDetails.visaType)}</span>`
         : escapeHtml(feeDetails.visaType);
       const visaSuffix = hasVisa
-        ? ` (Visa: ${visaDisplay})`
+        ? ` Visa: ${visaDisplay}`
         : '';
       const scheduleLink = feeDetails.domesticFees
         ? ' <a class="fee-schedule-link" href="https://www.melbournepolytechnic.edu.au/study/fees/local-student-fees/fees-for-local-higher-education-students/schedule-of-higher-education-tuition-fees/" target="_blank" rel="noopener">schedule</a>'
@@ -14773,13 +15297,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const passedParsed = parseManualEntriesFromText(passedRaw);
     const resultsParsed = parseManualEntriesFromText(resultsRaw);
     const resultsCurrent = parseCurrentEntriesFromResults(resultsRaw);
-    if (resultsCurrent.size && resultsParsed.resultEntries?.length) {
-      const resultsByCode = new Set(resultsParsed.resultEntries.map((entry) => entry.id));
-      passedParsed.resolvedSubjectCodes.forEach((code) => resultsByCode.add(code));
-      resultsCurrent.forEach((_meta, code) => {
-        if (resultsByCode.has(code)) resultsCurrent.delete(code);
-      });
-    }
 
     deferredInfo = null;
     if (isWorkbookFlag(record.In_Deferred)) {
@@ -15052,6 +15569,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateCourseMapStatuses();
       scheduleCourseMapRelayout();
     }
+    updateClearStudentButtonVisibility();
+  };
+
+  const updateClearStudentButtonVisibility = () => {
+    if (!clearStudentButton) return;
+    const hasInput = !!String(studentIdInput?.value || '').trim();
+    const hasPreview = !!String(studentDataPreview?.textContent || '').trim();
+    const hasState = !!(activeStudentId || extractedStudentId);
+    clearStudentButton.hidden = !(hasInput || hasPreview || hasState);
   };
 
   const renderStudentSearchDropdown = (records, includeEmail = false) => {
@@ -15227,6 +15753,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     studentIdInput.classList.remove('student-match-found');
     const rawValue = studentIdInput.value || '';
     const trimmedValue = rawValue.trim();
+    updateClearStudentButtonVisibility();
     if (!trimmedValue) {
       clearActiveStudentState();
       return;
@@ -15900,9 +16427,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let currentSection = '';
     const readSection = (line = '') => {
       const match = String(line || '').match(/^\[([^\]]+)\]$/);
-      if (!match || !match[1]) return '';
-      const sectionRaw = match[1].trim();
+      const sectionRaw = match && match[1] ? match[1].trim() : String(line || '').trim();
       const sectionNormalized = normalizeHeadingText(sectionRaw);
+      if (sectionNormalized === 'communicationsdefault' || sectionNormalized === 'communicationdefault') {
+        return 'defaults';
+      }
+      if (sectionNormalized === 'communications' || sectionNormalized === 'communication') {
+        const profileKey = normalizeSettingsProfileKey(fileLocationsProfileOverride);
+        return profileKey ? `profile:${profileKey}` : 'profile:';
+      }
+      if (!match || !match[1]) return '';
       if (sectionNormalized === 'defaults' || sectionNormalized === 'default') {
         return 'defaults';
       }
@@ -15925,6 +16459,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (profileMatch && profileMatch[1]) {
         const profileValue = normalizeSettingValue(profileMatch[1]);
         if (profileValue) fileLocationsProfileOverride = profileValue;
+        if (currentSection === 'profile:') {
+          currentSection = `profile:${normalizeSettingsProfileKey(profileValue)}`;
+        }
         return;
       }
       const intakeMatch = normalized.match(/^intake\s*=\s*(.+?)\s*$/i);
@@ -16829,90 +17366,90 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const handleFolderShortcutClick = async (event) => {
-      const target = event.target?.closest?.('.folder-shortcut-btn');
-      if (!target) return;
-      if (target.id === 'open-folder-shortcuts-modal') return;
-      event.preventDefault();
-      if (target.id === 'folder-shortcut-help') {
-        const os = getClientOs();
-        if (os !== 'windows') {
-          window.alert('Windows only.');
-          return;
-        }
-        showFolderShortcutHelpPopup();
+    const target = event.target?.closest?.('.folder-shortcut-btn');
+    if (!target) return;
+    if (target.id === 'open-folder-shortcuts-modal') return;
+    event.preventDefault();
+    if (target.id === 'folder-shortcut-help') {
+      const os = getClientOs();
+      if (os !== 'windows') {
+        window.alert('Windows only.');
         return;
       }
-      if (target.id === 'folder-shortcut-copy-personals') {
-        await copyActiveStudentPersonalsSequence(target);
-        return;
-      }
-      if (
-        target.id === 'folder-shortcut-student-forms-date' ||
-        target.id === 'folder-shortcut-student-forms-date-dialog' ||
-        target.id === 'folder-shortcut-student-forms-date-main-dialog'
-      ) {
-        let studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
-        if (!studentFormsRootPath) {
-          await renderFolderShortcutPanel();
-          studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
-        }
-        if (!studentFormsRootPath) {
-          window.alert('Could not resolve Student Forms path yet. Check settings.txt.');
-          return;
-        }
-        const dateFolderName = formatStudentFormsDateFolderName(new Date());
-        const datedFolderPath = dateFolderName
-          ? joinPath(studentFormsRootPath, dateFolderName)
-          : studentFormsRootPath;
-        if (
-          getClientOs() === 'windows' &&
-          isAbsoluteFsPath(datedFolderPath) &&
-          isEnrolProtocolEnabled() &&
-          launchEnrolProtocol(datedFolderPath, {
-            mkdirPath: datedFolderPath,
-            protocolHost: 'run',
-          })
-        ) {
-          triggerFlash(target);
-          return;
-        }
-        const copiedDatedPath = await copyPlainText(datedFolderPath);
-        if (copiedDatedPath) {
-          triggerFlash(target);
-        }
-        void openFolderShortcutPath(
-          datedFolderPath,
-          dateFolderName ? `Student Forms (${dateFolderName})` : 'Student Forms'
-        );
-        return;
-      }
-      if (target.id === 'folder-shortcut-credit-crt') {
-        let templatePath = String(target.getAttribute('data-path') || '').trim();
-        if (!templatePath) {
-          await renderFolderShortcutPanel();
-          templatePath = String(target.getAttribute('data-path') || '').trim();
-        }
-        if (templatePath && launchCreditFormAutomation(templatePath)) {
-          void copyActiveStudentPersonalsSequence();
-          triggerFlash(target);
-          return;
-        }
-      }
-      let path = String(target.getAttribute('data-path') || '').trim();
-      const label = String(target.textContent || '').trim() || 'Folder';
-      if (!path) {
+      showFolderShortcutHelpPopup();
+      return;
+    }
+    if (target.id === 'folder-shortcut-copy-personals') {
+      await copyActiveStudentPersonalsSequence(target);
+      return;
+    }
+    if (
+      target.id === 'folder-shortcut-student-forms-date' ||
+      target.id === 'folder-shortcut-student-forms-date-dialog' ||
+      target.id === 'folder-shortcut-student-forms-date-main-dialog'
+    ) {
+      let studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
+      if (!studentFormsRootPath) {
         await renderFolderShortcutPanel();
-        path = String(target.getAttribute('data-path') || '').trim();
+        studentFormsRootPath = String(target.getAttribute('data-path') || '').trim();
       }
-      if (!path) {
-        window.alert(`Could not resolve ${label} path yet. Check settings.txt.`);
+      if (!studentFormsRootPath) {
+        window.alert('Could not resolve Student Forms path yet. Check settings.txt.');
         return;
       }
-      const copiedPath = await copyPlainText(path);
-      if (copiedPath) {
+      const dateFolderName = formatStudentFormsDateFolderName(new Date());
+      const datedFolderPath = dateFolderName
+        ? joinPath(studentFormsRootPath, dateFolderName)
+        : studentFormsRootPath;
+      if (
+        getClientOs() === 'windows' &&
+        isAbsoluteFsPath(datedFolderPath) &&
+        isEnrolProtocolEnabled() &&
+        launchEnrolProtocol(datedFolderPath, {
+          mkdirPath: datedFolderPath,
+          protocolHost: 'run',
+        })
+      ) {
+        triggerFlash(target);
+        return;
+      }
+      const copiedDatedPath = await copyPlainText(datedFolderPath);
+      if (copiedDatedPath) {
         triggerFlash(target);
       }
-      void openFolderShortcutPath(path, label);
+      void openFolderShortcutPath(
+        datedFolderPath,
+        dateFolderName ? `Student Forms (${dateFolderName})` : 'Student Forms'
+      );
+      return;
+    }
+    if (target.id === 'folder-shortcut-credit-crt') {
+      let templatePath = String(target.getAttribute('data-path') || '').trim();
+      if (!templatePath) {
+        await renderFolderShortcutPanel();
+        templatePath = String(target.getAttribute('data-path') || '').trim();
+      }
+      if (templatePath && launchCreditFormAutomation(templatePath)) {
+        void copyActiveStudentPersonalsSequence();
+        triggerFlash(target);
+        return;
+      }
+    }
+    let path = String(target.getAttribute('data-path') || '').trim();
+    const label = String(target.textContent || '').trim() || 'Folder';
+    if (!path) {
+      await renderFolderShortcutPanel();
+      path = String(target.getAttribute('data-path') || '').trim();
+    }
+    if (!path) {
+      window.alert(`Could not resolve ${label} path yet. Check settings.txt.`);
+      return;
+    }
+    const copiedPath = await copyPlainText(path);
+    if (copiedPath) {
+      triggerFlash(target);
+    }
+    void openFolderShortcutPath(path, label);
   };
   if (folderShortcutsPanel) {
     folderShortcutsPanel.addEventListener('click', handleFolderShortcutClick);
@@ -18031,7 +18568,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapSemCountsToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     if (courseMapSemCountsLabel) {
       courseMapSemCountsLabel.textContent = active
-        ? 'Show semesters to complete (active)'
+        ? 'Showing semesters to complete'
         : 'Show semesters to complete';
       courseMapSemCountsLabel.classList.toggle('active', active);
     }
@@ -20608,8 +21145,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const borderLeft = parseFloat(modalStyle.borderLeftWidth) || 0;
     const borderRight = parseFloat(modalStyle.borderRightWidth) || 0;
     const chrome = padLeft + padRight + borderLeft + borderRight + 8;
-    const viewportWidth = Math.floor(window.innerWidth * 0.98);
-    const targetWidth = Math.min(viewportWidth, contentWidth + chrome);
+    const targetWidth = contentWidth + chrome;
     modalEl.style.width = `${targetWidth}px`;
     modalEl.style.maxWidth = `${targetWidth}px`;
     modalEl.style.minWidth = `${targetWidth}px`;
@@ -20640,6 +21176,46 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setTimeout(() => {
       adjustTimetableSizing();
     }, 60);
+  };
+
+  const positionTimetableModalForContext = () => {
+    if (!timetableModal?.classList.contains('show')) return;
+    const modalEl = timetableModal.querySelector('.modal');
+    if (!modalEl) return;
+    const modalRect = modalEl.getBoundingClientRect();
+    const courseMapOpen = !!(courseMapModal?.classList.contains('show'));
+    const hostRect =
+      (courseMapOpen
+        ? (courseMapContent || courseMapModal?.querySelector('.course-map-modal'))
+        : plannerContainer
+      )?.getBoundingClientRect?.() || {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        height: window.innerHeight,
+      };
+    const margin = 8;
+    const rightInset = courseMapOpen ? 48 : 8;
+    const width = modalRect.width || modalEl.offsetWidth || 0;
+    const height = modalRect.height || modalEl.offsetHeight || 0;
+    const left = clampValue(hostRect.right - rightInset - width, margin, Math.max(margin, window.innerWidth - width - margin));
+    const top = clampValue(
+      hostRect.top + hostRect.height / 3 - height / 2,
+      margin,
+      Math.max(margin, window.innerHeight - height - margin)
+    );
+    modalEl.style.position = 'fixed';
+    modalEl.style.left = `${Math.round(left)}px`;
+    modalEl.style.top = `${Math.round(top)}px`;
+    modalEl.style.margin = '0';
+    modalEl.style.transform = 'none';
+  };
+
+  const schedulePositionTimetableModalForContext = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(positionTimetableModalForContext);
+    });
+    setTimeout(positionTimetableModalForContext, 90);
   };
 
   const resetTimetableModalHeightToContent = () => {
@@ -20679,9 +21255,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(timetableTable);
-    lockModalPosition();
     resetTimetableModalHeightToContent();
     scheduleAdjustTimetable();
+    schedulePositionTimetableModalForContext();
   };
 
   const renderTimetableModalRowsForMode = ({ forceAvailable = false } = {}) => {
@@ -20711,9 +21287,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(timetableTable);
-    lockModalPosition();
     resetTimetableModalHeightToContent();
     scheduleAdjustTimetable();
+    schedulePositionTimetableModalForContext();
   };
 
   const showSelectedReadOnlyModal = () => {
@@ -20731,9 +21307,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetableModal.classList.add('show');
     timetableModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(timetableTable);
-    lockModalPosition();
     resetTimetableModalHeightToContent();
     scheduleAdjustTimetable();
+    schedulePositionTimetableModalForContext();
   };
 
   const showHistoryModal = () => {
@@ -21116,11 +21692,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!form || !courseMapTriageEditButton) return;
     if (form.classList.contains('is-temp-hidden')) {
       courseMapTriageEditButton.hidden = false;
+      courseMapTriageEditButton.disabled = false;
+      courseMapTriageEditButton.classList.remove('disabled');
+      courseMapTriageEditButton.setAttribute('aria-disabled', 'false');
       courseMapTriageEditButton.textContent = 'Add a new row to Triage';
       return;
     }
     courseMapTriageEditButton.textContent = 'Save';
     const changedValues = getCourseMapTriageChangedValues(form);
+    const hasEnrolmentType = !!String(getCourseMapTriageFormValues(form).statusDetails || '').trim();
+    courseMapTriageEditButton.disabled = !hasEnrolmentType;
+    courseMapTriageEditButton.classList.toggle('disabled', !hasEnrolmentType);
+    courseMapTriageEditButton.setAttribute('aria-disabled', hasEnrolmentType ? 'false' : 'true');
     if (form.dataset.newTriageRow === 'true') {
       const values = getCourseMapTriageFormValues(form);
       const hasName = !!String(values.givenName || '').trim() || !!String(values.familyName || '').trim();
@@ -21164,7 +21747,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const appendTriageUpdateBackup = async (result) => {
-    if (!result?.oldRow || !result?.newRow || !triageWorkbookDirectoryHandle || typeof XLSX === 'undefined') return;
+    if (!result?.newRow || !triageWorkbookDirectoryHandle || typeof XLSX === 'undefined') return;
     try {
       const allowed = await ensureHandlePermission(triageWorkbookDirectoryHandle);
       if (!allowed) return;
@@ -21180,15 +21763,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       if (!workbook) {
         workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([]), 'Updates');
+        XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([]), 'Triage updates');
       }
-      const sheetName = workbook.SheetNames[0] || 'Updates';
+      const sheetName =
+        workbook.SheetNames.find((name) => String(name || '').toLowerCase() === 'triage updates') ||
+        'Triage updates';
+      if (!workbook.SheetNames.includes(sheetName)) {
+        XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([]), sheetName);
+      }
       if (!workbook.Sheets[sheetName]) workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet([]);
       const sheet = workbook.Sheets[sheetName];
       const existing = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       const timestamp = new Date().toLocaleString('en-AU', { hour12: false });
       const teacher = getCurrentTeacherNameForTriage() || '';
-      existing.push([timestamp, teacher, ...result.oldRow]);
+      if (result.oldRow) existing.push([timestamp, teacher, ...result.oldRow]);
       existing.push([timestamp, teacher, ...result.newRow]);
       workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(existing);
       const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -21278,6 +21866,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const changedValues = getCourseMapTriageChangedValues(form);
     if (!Object.keys(changedValues).length) return true;
+    if (!String(formValues.statusDetails || '').trim()) {
+      window.alert('Select an Enrolment type before saving to Triage.');
+      return false;
+    }
     let result = null;
     let savedValues = changedValues;
     if (isNewTriageRow) {
@@ -23291,11 +23883,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (id === 'BIT371' && subjectState.get('BIT372')?.toggled) return false;
         if (id === 'BIT372' && subjectState.get('BIT371')?.toggled) return false;
         if (completedSet.has(id)) return false;
-        if (!isRunningThisSemester(id)) return false;
         const st = subjectState.get(id);
-        if (areElectivesFull() && isElectivesGridCell(cell)) return false;
         const isChosen = !!st?.toggled;
         if (isChosen) return true;
+        if (!isRunningThisSemester(id)) return false;
+        if (areElectivesFull() && isElectivesGridCell(cell)) return false;
         const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
           id,
           completedSet,
@@ -23541,8 +24133,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const subjectNameDisplay = abbreviateSelectedListSubjectName(subjectName);
         const dayLabel = item.dayShort || 'N/A';
         const timeLabel = getSlotAbbreviation(item.slot || 'N/A');
-        const leftTitle = `${item.id}${subjectName ? ` ${subjectName}` : ''}`;
-        li.innerHTML = `<span class="avail-main" title="${escapeHtml(leftTitle)}"><span class="avail-code">${escapeHtml(
+        li.innerHTML = `<span class="avail-main"><span class="avail-code">${escapeHtml(
           item.id
         )}</span><span class="avail-name">${escapeHtml(subjectNameDisplay)}</span></span><span class="avail-slot">${escapeHtml(
           `${dayLabel} ${timeLabel}`
@@ -23579,7 +24170,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         const showSidebarTooltip = (e) => {
           const willRemove = item.isChosen;
-          sidebarTooltip.textContent = willRemove ? 'Remove from timetable.' : 'Add to timetable.';
+          const hasFullLoad = getPlannedCount() >= getLoadThreshold();
+          const actionText = willRemove
+            ? 'Remove this selection from my timetable'
+            : hasFullLoad
+              ? 'Already selected a full load. Remove a subject if you want to add this one'
+              : 'Add this subject to my timetable';
+          const data = item.data || timetable[item.id] || {};
+          const fullDay = item.dayFull || data.day || 'N/A';
+          const timeRange = formatTimeRange(timeSlots[item.slot] || timeSlots[data.slot] || '');
+          const timeText = timeRange ? timeRange.replace(' - ', ' to ') : 'N/A';
+          const roomText = data.room || 'N/A';
+          const teacherText = data.teacher || 'N/A';
+          sidebarTooltip.innerHTML = `<div class="selected-list-tooltip-action">${escapeHtml(actionText)}</div>
+            <div>${escapeHtml(item.id)} - ${escapeHtml(subjectName || '')}</div>
+            <div>${escapeHtml(fullDay)} ${escapeHtml(timeText)}</div>
+            <div>${escapeHtml(roomText)}</div>
+            <div>Teacher: ${escapeHtml(teacherText)}</div>`;
           sidebarTooltip.style.left = `${(e?.clientX || 0) + 18}px`;
           sidebarTooltip.style.top = `${(e?.clientY || 0) + 6}px`;
           sidebarTooltip.style.display = 'block';
@@ -23612,6 +24219,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const clearAlertState = () => {
     electiveError = null;
     prereqError = null;
+    strataPrereqInfo = null;
     chainDelayError = null;
     aprAppError = null;
     acceptedOfferedError = null;
@@ -23645,7 +24253,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     renderAlertButton('data');
   };
 
-  if (mainGridDetailsButton) mainGridDetailsButton.addEventListener('click', () => showAvailableModal());
+  if (mainGridDetailsButton) {
+    mainGridDetailsButton.addEventListener('click', () => {
+      if (mainGridDetailsButton.dataset.mode === 'selected') {
+        showSelectedReadOnlyModal();
+        return;
+      }
+      showAvailableModal({ forceAvailable: true });
+    });
+  }
   if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
   if (availableHeading) {
     const activateAvailable = () => showAvailableModal();
@@ -23689,7 +24305,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       refreshTimetableModalState();
     });
   }
-  if (closeTimetable) closeTimetable.addEventListener('click', hideTimetableModal);
+  bindModalCloseControl(closeTimetable, hideTimetableModal);
   if (timetableColoursButton) {
     timetableColoursButton.addEventListener('click', () => {
       timetableAvailableColoursOn = !timetableAvailableColoursOn;
@@ -23724,7 +24340,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeElectiveFullPopup();
   });
-  if (hideTimetable) hideTimetable.addEventListener('click', hideTimetableModal);
+  bindModalCloseControl(hideTimetable, hideTimetableModal);
   if (copyTimetable) {
     copyTimetable.addEventListener('click', () => {
       flashCopyButton(copyTimetable);
@@ -24257,17 +24873,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCourseMapNotesToggle();
   }
   const setCourseMapStaffModeFromControl = (staffMode) => {
-      if (!allowCourseMapModeToggle) return;
-      courseMapStaffMode = !!staffMode;
-      if (courseMapStaffMode) courseMapNotesOn = false;
-      courseMapTooltipTarget = null;
-      if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
-      hideCourseMapTooltip();
-      updateCourseMapModeUi();
-      if (courseMapModal?.classList.contains('show')) {
-        renderCourseMapModal();
-        syncCourseMapKeyPanelBottomOffset();
-      }
+    if (!allowCourseMapModeToggle) return;
+    courseMapStaffMode = !!staffMode;
+    if (courseMapStaffMode) courseMapNotesOn = false;
+    courseMapTooltipTarget = null;
+    if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
+    hideCourseMapTooltip();
+    updateCourseMapModeUi();
+    if (courseMapModal?.classList.contains('show')) {
+      renderCourseMapModal();
+      syncCourseMapKeyPanelBottomOffset();
+    }
   };
   if (courseMapModeToggleButton) {
     courseMapModeToggleButton.addEventListener('click', () => {
@@ -24412,7 +25028,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapImageActions) {
     courseMapImageActions.addEventListener('click', (event) => {
-      event.stopPropagation();
+      if (event.target?.closest?.('#course-map-image-dialog, #open-course-map-image-actions')) {
+        event.stopPropagation();
+      }
     });
   }
   document.addEventListener('click', (event) => {
@@ -24582,6 +25200,58 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const closeModalFromCloseButton = (button) => {
+    if (button?.id === 'close-code-modal') {
+      hideCodeModal();
+      return true;
+    }
+    const overlay = button?.closest?.('.modal-overlay');
+    if (!overlay) return false;
+    const closeMap = new Map([
+      [folderShortcutsModal, hideFolderShortcutsModal],
+      [instructionsModal, hideInstructionsModal],
+      [helpModal, hideHelpModal],
+      [courseTimetableModal, hideCourseTimetableModal],
+      [codeModal, hideCodeModal],
+      [selectByTypingModal, hideSelectByTypingModal],
+      [alertModal, hideAlertModal],
+      [oldCodesModal, hideOldCodesModal],
+      [historyModal, hideHistoryModal],
+      [remainingModal, hideRemainingModal],
+      [courseMapModal, hideCourseMapModal],
+      [courseMapKeyModal, hideCourseMapKeyModal],
+      [courseMapRemainingInfoModal, hideCourseMapRemainingInfoModal],
+      [courseMapFullStudentDetailsModal, hideCourseMapFullStudentDetailsModal],
+      [courseMapStudentNoteModal, hideCourseMapStudentNoteModal],
+      [courseMapTriageCommentModal, hideCourseMapTriageCommentModal],
+      [nextSemesterModal, hideNextSemesterModal],
+      [timetableModal, hideTimetableModal],
+      [emailScriptsAccessModal, hideEmailScriptsAccessModal],
+      [loadModal, hideLoadModal],
+      [containerPopoutModal, hideContainerPopoutModal],
+    ]);
+    const hideFn = closeMap.get(overlay);
+    if (!hideFn) return false;
+    hideFn();
+    return true;
+  };
+
+  document.addEventListener('click', (event) => {
+    const closeButton = event.target?.closest?.('.modal-close');
+    if (!closeButton) return;
+    if (!closeModalFromCloseButton(closeButton)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    const control = event.target?.closest?.('#close-code-modal, #cancel-code-modal');
+    if (!control) return;
+    event.preventDefault();
+    event.stopPropagation();
+    hideCodeModal();
+  }, true);
+
   const installModalScrollScrim = (modalEl) => {
     const body = modalEl?.querySelector?.('.modal-body');
     if (!body) return;
@@ -24624,12 +25294,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(codeModal, hideCodeModal);
   enableOutsideClickClose(selectByTypingModal, hideSelectByTypingModal);
   enableOutsideClickClose(emailScriptsAccessModal, hideEmailScriptsAccessModal);
+  enableOutsideClickClose(folderShortcutsModal, hideFolderShortcutsModal);
   enableOutsideClickClose(loadModal, hideLoadModal);
   enableOutsideClickClose(timetableModal, hideTimetableModal);
   enableOutsideClickClose(courseTimetableModal, hideCourseTimetableModal);
   enableOutsideClickClose(historyModal, hideHistoryModal);
   enableOutsideClickClose(remainingModal, hideRemainingModal);
-enableOutsideClickClose(oldCodesModal, hideOldCodesModal);
+  enableOutsideClickClose(oldCodesModal, hideOldCodesModal);
   if (oldCodesModal) {
     oldCodesModal.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') hideOldCodesModal();
@@ -24999,8 +25670,7 @@ enableOutsideClickClose(oldCodesModal, hideOldCodesModal);
     });
   } catch { }
 
-  // Keep subject cards uniform-height, with a slight deduction to reduce visible bottom slack.
-  enableUniformSubjectCardHeights();
+  // CSS Grid keeps subject cards row-aligned; avoid fixed JS heights so zoom changes reflow naturally.
   // Move some per-card overlays when the grid itself (not viewport) gets tight.
   updateMainGridNarrowClass();
   requestAnimationFrame(updateMainGridNarrowClass);
