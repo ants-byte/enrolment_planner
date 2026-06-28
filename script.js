@@ -25875,14 +25875,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const shouldRegisterServiceWorker = () => {
     if (!window.isSecureContext || !("serviceWorker" in navigator)) return false;
-    const host = window.location.hostname || '';
-    const isLocal =
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '[::1]';
     const params = new URLSearchParams(window.location.search);
     if (params.get('sw') === '0') return false;
-    return !isLocal;
+    return true;
   };
   if (shouldRegisterServiceWorker()) {
     window.addEventListener("load", () => {
