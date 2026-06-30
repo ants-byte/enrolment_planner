@@ -808,8 +808,21 @@ const getZipEntryText = (cfb, path) => {
 const removeZipEntry = (cfb, path) => {
   const cleanPath = String(path || '').replace(/^\/+/, '');
   const matches = (value) => String(value || '').replace(/^Root Entry\/?/, '').replace(/^\/+/, '') === cleanPath;
-  if (Array.isArray(cfb?.FileIndex)) cfb.FileIndex = cfb.FileIndex.filter((entry) => !matches(entry?.name));
-  if (Array.isArray(cfb?.FullPaths)) cfb.FullPaths = cfb.FullPaths.filter((entryPath) => !matches(entryPath));
+  if (
+    Array.isArray(cfb?.FileIndex) &&
+    Array.isArray(cfb?.FullPaths) &&
+    cfb.FileIndex.length === cfb.FullPaths.length
+  ) {
+    const nextFileIndex = [];
+    const nextFullPaths = [];
+    cfb.FileIndex.forEach((entry, index) => {
+      if (matches(cfb.FullPaths[index]) || matches(entry?.name)) return;
+      nextFileIndex.push(entry);
+      nextFullPaths.push(cfb.FullPaths[index]);
+    });
+    cfb.FileIndex = nextFileIndex;
+    cfb.FullPaths = nextFullPaths;
+  }
 };
 const removeCalcChainFromWorkbookPackage = (cfb) => {
   removeZipEntry(cfb, 'xl/calcChain.xml');
@@ -977,6 +990,19 @@ const getRowValuesFromSheetXml = (sheetXml, rowNumber, sharedStrings, maxCol) =>
   return values;
 };
 
+const getColumnHeadingKeyFromSheetXml = (sheetXml, sharedStrings, colIndex) => {
+  const colName = XLSX.utils.encode_col(colIndex);
+  const rows = Array.from(String(sheetXml || '').matchAll(/<row\b[^>]*>[\s\S]*?<\/row>/g)).slice(0, 200);
+  for (const row of rows) {
+    const rowNumber = row[0].match(/\br="(\d+)"/)?.[1];
+    if (!rowNumber) continue;
+    const cell = row[0].match(new RegExp(`<c\\b[^>]*\\br="${colName}${rowNumber}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
+    const heading = normalizeHeader(getCellTextFromXml(cell, sharedStrings));
+    if (heading) return heading;
+  }
+  return '';
+};
+
 const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = null) => {
   const values = updateTriageFieldValuesInWorkbook(buffer, studentId, { comments: comment }, parseInfo, {
     prependComment: true,
@@ -1058,7 +1084,7 @@ const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parse
 const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null) => {
   const cleanStudentId = normalizeStudentId(studentId || values.studentId);
   const cleanValues = {};
-  ['friendlyName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments', 'familyName', 'givenName', 'primaryEmail'].forEach((key) => {
+  ['friendlyName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments', 'familyName', 'givenName'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
       cleanValues[key] = String(values[key] ?? '').trim();
     }
@@ -1117,6 +1143,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
   for (const [key, value] of Object.entries(rowValues)) {
     const col = columns[key];
     if (col === null || col === undefined) continue;
+    if (['fullname', 'email'].includes(getColumnHeadingKeyFromSheetXml(sheetXml, sharedStrings, col))) continue;
     const updated = updateCellInSheetXml(sheetXml, `${XLSX.utils.encode_col(col)}${targetRow}`, value);
     if (!updated.ok) return { ok: false, error: updated.error || 'Could not add Triage row.', sheetCount };
     sheetXml = updated.xml;

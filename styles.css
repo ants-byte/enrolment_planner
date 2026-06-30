@@ -3508,6 +3508,7 @@ input:checked+.slider:before {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(16, 16, 16, 0.97);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
+  font-size: 1rem;
   z-index: 13050;
   pointer-events: auto;
 }
@@ -3530,7 +3531,6 @@ input:checked+.slider:before {
   padding: 12px 16px;
   margin: 4px 0;
   font: inherit;
-  font-size: 15px;
   line-height: 1.2;
   user-select: none;
   white-space: nowrap;
@@ -3538,7 +3538,7 @@ input:checked+.slider:before {
 
 .title-settings-card-theme-check {
   margin: 0;
-  padding-top: 4px;
+  padding-top: 12px;
   padding-bottom: 8px;
 }
 
@@ -3614,7 +3614,6 @@ input:checked+.slider:before {
   cursor: default;
   padding: 6px 10px 0;
   font: inherit;
-  font-size: 15px;
   line-height: 1.15;
   user-select: none;
   white-space: nowrap;
@@ -3632,6 +3631,8 @@ input:checked+.slider:before {
 .title-settings-font-field {
   position: relative;
   border-top: 0 !important;
+  flex-direction: row;
+  align-items: center;
   padding: 10px 16px 12px;
 }
 
@@ -3646,8 +3647,12 @@ input:checked+.slider:before {
   pointer-events: none;
 }
 
+.title-settings-menu > .title-settings-font-field:first-child::before {
+  display: none;
+}
+
 .title-settings-font-slider {
-  width: 50%;
+  width: 55%;
   min-width: 0;
   cursor: pointer;
 }
@@ -3728,7 +3733,6 @@ input:checked+.slider:before {
   background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
   color: #f5f5f5;
   font: inherit;
-  font-size: 1rem;
   cursor: pointer;
 }
 
@@ -3746,7 +3750,6 @@ input:checked+.slider:before {
   min-width: 0 !important;
   padding-left: 14px !important;
   padding-right: 14px !important;
-  font-size: 15px !important;
   line-height: 1.2;
 }
 
@@ -4536,7 +4539,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 0 16px 10px;
+  padding: 12px 16px 10px;
 }
 
 .title-settings-font-family {
@@ -4546,7 +4549,6 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   background: rgba(255, 255, 255, 0.08);
   color: #f5f5f5;
   font: inherit;
-  font-size: 0.9rem;
   line-height: 1;
   padding: 6px 8px;
   cursor: pointer;

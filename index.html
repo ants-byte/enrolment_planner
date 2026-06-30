@@ -248,12 +248,13 @@ Created: December 30, 2025
                   </svg>
                 </button>
                 <div id="settings-menu" class="title-settings-menu" role="menu" hidden>
-                  <label class="title-settings-check title-settings-separator-after" role="menuitemcheckbox"
-                    data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
-                    <input id="settings-course-map-default" type="checkbox" />
-                    <span id="settings-course-map-label">Course map mode (is off)</span>
+                  <label class="title-settings-field title-settings-font-field"
+                    data-tooltip="Set the base font size for the whole site.">
+                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
+                      min="10" max="32" step="1" value="16" />
+                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
                   </label>
-                  <label class="title-settings-check title-settings-card-theme-check" role="menuitemcheckbox"
+                  <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before" role="menuitemcheckbox"
                     data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
                     <input id="settings-card-theme-colours" type="checkbox" />
                     <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
@@ -315,13 +316,7 @@ Created: December 30, 2025
                       </svg>
                     </button>
                   </div>
-                  <label class="title-settings-field title-settings-font-field title-settings-separator-before"
-                    data-tooltip="Set the base font size for the whole site.">
-                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
-                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
-                      min="10" max="32" step="1" value="16" />
-                  </label>
-                  <div class="title-settings-font-family-row" role="group" aria-label="Font family settings">
+                  <div class="title-settings-font-family-row title-settings-separator-before" role="group" aria-label="Font family settings">
                     <button class="title-settings-font-family" type="button" data-font-family="segoe">Segoe UI</button>
                     <button class="title-settings-font-family" type="button" data-font-family="calibri">Calibri</button>
                     <button class="title-settings-font-family" type="button" data-font-family="roboto">Roboto</button>
@@ -330,8 +325,13 @@ Created: December 30, 2025
                     <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
                     <button id="settings-reset-font-family" class="title-settings-font-family" type="button" data-font-family="default">Default</button>
                   </div>
-                  <button id="settings-default-sidebar-widths" class="title-settings-action title-settings-separator-before" type="button"
+                  <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
                     data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
+                  <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
+                    data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
+                    <input id="settings-course-map-default" type="checkbox" />
+                    <span id="settings-course-map-label">Course map mode (is off)</span>
+                  </label>
                 </div>
               </div>
               <button id="open-instructions-help" class="title-settings-button title-help-button" type="button"
@@ -1046,7 +1046,6 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
-  </div>
   <div id="remaining-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal subject-list-modal" role="dialog" aria-modal="true" aria-labelledby="remaining-title">
       <div class="modal-header">
@@ -1112,7 +1111,6 @@ Created: December 30, 2025
         </div>
       </div>
     </div>
-  </div>
   </div>
   <div id="course-map-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal course-map-modal" role="dialog" aria-modal="true" aria-labelledby="course-map-title">
@@ -1395,7 +1393,6 @@ Created: December 30, 2025
       </div>
     </div>
   </div>
-  </div>
   <div id="timetable-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
       <div class="modal-header">
@@ -1506,8 +1503,6 @@ Created: December 30, 2025
         </div>
       </div>
     </div>
-  </div>
-  </main>
   </div>
   <div id="email-scripts-access-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal email-scripts-access-modal" role="dialog" aria-modal="true"
