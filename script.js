@@ -4290,6 +4290,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     enrolmentOfficersHelpSection.classList.toggle('hidden-initial', !staffFacing);
   }
   if (selectByTypingButton) selectByTypingButton.hidden = !staffFacing;
+  if (presetMpDip) {
+    presetMpDip.disabled = !staffFacing;
+    presetMpDip.setAttribute('aria-disabled', staffFacing ? 'false' : 'true');
+  }
   if (staffFacing) {
     if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
     if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter History';
@@ -23168,18 +23172,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     });
 
-  const openTimetableEmailDraft = (recipients, body) => {
+  const DEFAULT_EMAIL_SUBJECT = 'Bachelor of IT enrolment';
+
+  const openTimetableEmailDraft = (recipients, body, subjectLine = DEFAULT_EMAIL_SUBJECT) => {
     if (!recipients) return;
-    const subject = 'Bachelor of IT enrolment';
+    const subject = String(subjectLine || DEFAULT_EMAIL_SUBJECT).trim() || DEFAULT_EMAIL_SUBJECT;
     const mailto = `mailto:${encodeURIComponent(recipients)}?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
     window.location.href = mailto;
   };
 
-  const openTimetableEmailDraftSafe = (recipients, body, fallbackBody) => {
+  const openTimetableEmailDraftSafe = (recipients, body, fallbackBody, subjectLine = DEFAULT_EMAIL_SUBJECT) => {
     if (!recipients) return false;
-    const subject = 'Bachelor of IT enrolment';
+    const subject = String(subjectLine || DEFAULT_EMAIL_SUBJECT).trim() || DEFAULT_EMAIL_SUBJECT;
     const encodedBody = encodeURIComponent(body || '');
     const maxMailtoBodyLength = 1800;
     if (encodedBody.length > maxMailtoBodyLength) {
@@ -23234,7 +23240,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!ok) {
         window.alert('Could not copy Student Declaration to clipboard.');
       }
-      openTimetableEmailDraftSafe(recipientList, baseBody, baseBody);
+      openTimetableEmailDraftSafe(recipientList, baseBody, baseBody, getCourseMapEmailSubject());
     } finally {
       emailInProgress = false;
     }
@@ -23254,9 +23260,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('No email address available for this student.');
         return;
       }
+      await parseEmailScripts();
       const firstName = getStudentFirstName(record);
       const baseBody = buildTimetableEmailBodySync(firstName);
       const copyFn = typeof options.copyFn === 'function' ? options.copyFn : copyStudentDeclaration;
+      const subjectLine = String(options.subjectLine || DEFAULT_EMAIL_SUBJECT).trim() || DEFAULT_EMAIL_SUBJECT;
       const copyFailMessage =
         typeof options.copyFailMessage === 'string' && options.copyFailMessage
           ? options.copyFailMessage
@@ -23265,7 +23273,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!ok) {
         window.alert(copyFailMessage);
       }
-      openTimetableEmailDraftSafe(recipientList, baseBody, baseBody);
+      openTimetableEmailDraftSafe(recipientList, baseBody, baseBody, subjectLine);
     } finally {
       emailInProgress = false;
     }
@@ -24426,7 +24434,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('Load Email Scripts (html/htm/docx) first, then click email again.');
         return;
       }
-      await sendDeclarationEmail('both');
+      await sendDeclarationEmail('both', {
+        subjectLine: 'Student Declaration for ongoing students',
+      });
     });
   }
   if (emailScriptsOnlineProgressionCopyButton) {
@@ -24453,6 +24463,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       await sendDeclarationEmail('both', {
         copyFn: () => copyEmailScriptsSectionByKey('online-progression-classes-entered'),
+        subjectLine: 'Online progression - classes entered',
         copyFailMessage:
           'Could not copy "Online progression - classes entered" text. Check the matching heading in Email Scripts and try again.',
       });
@@ -24485,6 +24496,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await sendDeclarationEmail('both', {
         copyFn: () =>
           copyEmailScriptsSectionByKey('online-progress-selections-look-good-classes-entered'),
+        subjectLine: 'Online progress - selections look good. classes entered',
         copyFailMessage:
           'Could not copy "Online progress - selections look good. classes entered" text. Check the matching heading in Email Scripts and try again.',
       });
@@ -24525,6 +24537,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const sectionLabel = String(button.dataset.sectionLabel || sectionKey || 'section');
         await sendDeclarationEmail('both', {
           copyFn: () => copyEmailScriptsSectionByKey(sectionKey),
+          subjectLine: sectionLabel,
           copyFailMessage: `Could not copy "${sectionLabel}" text. Check the matching heading in Email Scripts and try again.`,
         });
       });

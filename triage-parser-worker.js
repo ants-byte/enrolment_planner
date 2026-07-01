@@ -1003,6 +1003,24 @@ const getColumnHeadingKeyFromSheetXml = (sheetXml, sharedStrings, colIndex) => {
   return '';
 };
 
+const getProtectedTriageWriteColumns = (sheetXml, sharedStrings) => {
+  const protectedColumns = new Set();
+  const rows = Array.from(String(sheetXml || '').matchAll(/<row\b[^>]*>[\s\S]*?<\/row>/g)).slice(0, 200);
+  for (const row of rows) {
+    const cells = row[0].matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>[\s\S]*?<\/c>/g);
+    for (const cell of cells) {
+      const heading = normalizeHeader(getCellTextFromXml(cell[0], sharedStrings));
+      if (heading === 'fullname' || heading === 'email') {
+        protectedColumns.add(colIndexFromCellRef(cell[1]));
+      }
+    }
+  }
+  return protectedColumns;
+};
+
+const getCellXmlFromSheetXml = (sheetXml, cellRef) =>
+  String(sheetXml || '').match(new RegExp(`<c\\b[^>]*\\br="${cellRef}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
+
 const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = null) => {
   const values = updateTriageFieldValuesInWorkbook(buffer, studentId, { comments: comment }, parseInfo, {
     prependComment: true,
@@ -1138,13 +1156,16 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
     studentId: cleanStudentId,
   };
   const columns = { ...fieldCols, studentId: 5 };
+  const protectedColumns = getProtectedTriageWriteColumns(sheetXml, sharedStrings);
   const maxCol = getMaxUsedColInSheetXml(sheetXml);
   const oldRow = getRowValuesFromSheetXml(sheetXml, targetRow, sharedStrings, maxCol);
   for (const [key, value] of Object.entries(rowValues)) {
     const col = columns[key];
     if (col === null || col === undefined) continue;
-    if (['fullname', 'email'].includes(getColumnHeadingKeyFromSheetXml(sheetXml, sharedStrings, col))) continue;
-    const updated = updateCellInSheetXml(sheetXml, `${XLSX.utils.encode_col(col)}${targetRow}`, value);
+    const cellRef = `${XLSX.utils.encode_col(col)}${targetRow}`;
+    const existingCell = getCellXmlFromSheetXml(sheetXml, cellRef);
+    if (protectedColumns.has(col) || /<f\b/i.test(existingCell)) continue;
+    const updated = updateCellInSheetXml(sheetXml, cellRef, value);
     if (!updated.ok) return { ok: false, error: updated.error || 'Could not add Triage row.', sheetCount };
     sheetXml = updated.xml;
   }
