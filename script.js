@@ -174,28 +174,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT112: { day: 'Monday', slot: 'Afternoon', room: 'PA113', teacher: 'Dominic Mammone' },
     BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PE227', teacher: 'Shzaa Niazi' },
     BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Anthony Overmars' },
-    BIT351: { day: 'Tuesday', slot: 'Morning', room: 'PA114', teacher: 'Uchenna Enwereonye' },
-    BIT230: { day: 'Tuesday', slot: 'Morning', room: 'xxxxx', teacher: 'Sarang Hashemi' },
+    BIT230: { day: 'Tuesday', slot: 'Morning', room: 'TBA', teacher: 'Sarang Hashemi' },
     BIT106: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Sarang Hashemi' },
     BIT241: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Dominic Mammone' },
-    BIT246: { day: 'Tuesday', slot: 'Afternoon', room: 'PE226', teacher: 'Kamal' },
     BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars' },
-    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'xxxxx', teacher: 'Promise' },
+    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'TBA', teacher: 'Promise Enwereonye' },
     BIT214: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
-    BIT213: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Tony' },
-    BIT111: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Promise' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Kamal' },
+    BIT213: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Xiaodong Wang (Tony)' },
+    BIT111: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Promise Enwereonye' },
+    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'TBA', teacher: 'Md Sarwar Kama' },
     BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
     BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE227', teacher: 'Nidha Qazi' },
-    BIT233: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Nikki' },
-    BIT356: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Silva' },
-    BIT242: { day: 'Thursday', slot: 'Afternoon', room: 'PE227', teacher: 'David' },
+    BIT233: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Nikki Wan' },
+    BIT356: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)' },
+    BIT242: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'David Robinson' },
     BIT362: { day: 'Thursday', slot: 'Afternoon', room: 'PA114', teacher: 'Nikki Wan' },
-    BIT363: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Silva' },
-    BIT364: { day: 'Thursday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Nidha' },
+    BIT363: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Ye Wei (Silva)' },
+    BIT364: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'Nidha Qazi' },
+    BIT246: { day: 'Friday', slot: 'Morning', room: 'TBA', teacher: 'Md Sarwar Kama' },
     BIT314: { day: 'Friday', slot: 'Morning', room: 'PA113', teacher: 'David Robinson' },
     BIT352: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'David Robinson' },
-    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'xxxxx', teacher: 'Ye Wei (Silva)' },
+    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'TBA', teacher: 'Ye Wei (Silva)' },
   };
 
   const semester1OnlyIds = new Set(['BIT351', 'BIT355', 'BIT357', 'BIT358']);
@@ -22090,8 +22089,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (courseMapPrereqToggleLabel) {
       courseMapPrereqToggleLabel.textContent = courseMapPrereqColoursOn
-        ? 'Light and Dark Grey prerequisite colouring in subject cards (showing)'
-        : 'Light and Dark Grey prerequisite colouring in subject cards (turned off)';
+        ? 'Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more (showing):'
+        : 'Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more (turned off):';
       courseMapPrereqToggleLabel.classList.toggle('active', courseMapPrereqColoursOn);
     }
     updateCourseMapStreamLabels();
@@ -24904,7 +24903,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     updateCourseMapAiNamesToggle();
   }
-  if (closeCourseMapKey) closeCourseMapKey.addEventListener('click', hideCourseMapKeyModal);
+  if (closeCourseMapKey) {
+    closeCourseMapKey.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideCourseMapKeyModal();
+    });
+  }
   // Do not close the colour key modal on backdrop click; only via X.
   if (toggleCourseMapPrereqButton) {
     toggleCourseMapPrereqButton.addEventListener('change', () => {

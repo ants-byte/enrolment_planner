@@ -3961,6 +3961,7 @@ body.graduate-highlight .key {
 .main-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 8px;
   margin-bottom: 18px;
   width: 100%;
@@ -4036,6 +4037,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 .electives-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 8px;
   margin-top: 8px;
   width: 100%;
@@ -4099,6 +4101,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   position: relative;
   padding: 8px 4px 4px 4px;
   min-width: 0;
+  min-height: var(--card-min-height);
   border-radius: var(--card-radius);
   border: 2px rgb(237, 235, 235) solid;
   box-shadow: var(--card-shadow);
@@ -6711,6 +6714,14 @@ body:not(.graduate-highlight) .subject-card.completed.electives-full {
 
 .subject-card.completed .prerequsites-note {
   display: none;
+}
+
+.subject-card.completed[data-subject="BIT245"] {
+  transform: none;
+}
+
+.subject-card.completed[data-subject="BIT245"] .prerequsites-note {
+  display: block;
 }
 
 .subject-card.completed.core {

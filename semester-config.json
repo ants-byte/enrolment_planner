@@ -91,18 +91,18 @@
     {
       "day": "Tue",
       "time": "AM",
-      "room": "xxxxx",
-      "code": "BIT230",
-      "subjectName": "System Analysis & Design",
-      "staff": "Sarang Hashemi"
-    },
-    {
-      "day": "Tue",
-      "time": "AM",
       "room": "PE226",
       "code": "BIT313",
       "subjectName": "Cyber Vulnerability & Hardening",
       "staff": "Anthony Overmars"
+    },
+    {
+      "day": "Tue",
+      "time": "AM",
+      "room": "TBA",
+      "code": "BIT230",
+      "subjectName": "System Analysis & Design",
+      "staff": "Sarang Hashemi"
     },
     {
       "day": "Tue",
@@ -123,14 +123,6 @@
     {
       "day": "Tue",
       "time": "PM",
-      "room": "PE226",
-      "code": "BIT246",
-      "subjectName": "Object Oriented RAD",
-      "staff": "Kamal"
-    },
-    {
-      "day": "Tue",
-      "time": "PM",
       "room": "PE227",
       "code": "BIT353",
       "subjectName": "Network Architecture & Protocols",
@@ -147,10 +139,10 @@
     {
       "day": "Wed",
       "time": "AM",
-      "room": "xxxxx",
+      "room": "TBA",
       "code": "BIT245",
       "subjectName": "Web Development",
-      "staff": "Promise"
+      "staff": "Promise Enwereonye"
     },
     {
       "day": "Wed",
@@ -158,7 +150,7 @@
       "room": "PA113",
       "code": "BIT111",
       "subjectName": "Programming Concepts",
-      "staff": "Promise"
+      "staff": "Promise Enwereonye"
     },
     {
       "day": "Wed",
@@ -166,15 +158,15 @@
       "room": "PE226",
       "code": "BIT213",
       "subjectName": "Network & Cyber Security Essentials",
-      "staff": "Tony"
+      "staff": "Xiaodong Wang (Tony)"
     },
     {
       "day": "Wed",
       "time": "PM",
-      "room": "xxxxx",
+      "room": "TBA",
       "code": "BIT235",
       "subjectName": "Object Oriented Programming",
-      "staff": "Kamal"
+      "staff": "Md Sarwar Kama"
     },
     {
       "day": "Thu",
@@ -198,7 +190,7 @@
       "room": "PE226",
       "code": "BIT233",
       "subjectName": "Network Design",
-      "staff": "Nikki"
+      "staff": "Nikki Wan"
     },
     {
       "day": "Thu",
@@ -206,15 +198,15 @@
       "room": "PA114",
       "code": "BIT356",
       "subjectName": "Knowledge Management Systems",
-      "staff": "Silva"
+      "staff": "Ye Wei (Silva)"
     },
     {
       "day": "Thu",
       "time": "PM",
-      "room": "PE227",
+      "room": "TBA",
       "code": "BIT242",
       "subjectName": "IT Project Management",
-      "staff": "David"
+      "staff": "David Robinson"
     },
     {
       "day": "Thu",
@@ -230,15 +222,23 @@
       "room": "PA113",
       "code": "BIT363",
       "subjectName": "E-Business Systems",
-      "staff": "Silva"
+      "staff": "Ye Wei (Silva)"
     },
     {
       "day": "Thu",
       "time": "PM",
-      "room": "xxxxx",
+      "room": "TBA",
       "code": "BIT364",
-      "subjectName": "Non-Relational Database Management",
-      "staff": "Nidha"
+      "subjectName": "Non-relational Database Management",
+      "staff": "Nidha Qazi"
+    },
+    {
+      "day": "Fri",
+      "time": "AM",
+      "room": "TBA",
+      "code": "BIT246",
+      "subjectName": "Object Oriented RAD",
+      "staff": "Md Sarwar Kama"
     },
     {
       "day": "Fri",
@@ -251,7 +251,7 @@
     {
       "day": "Fri",
       "time": "PM",
-      "room": "xxxxx",
+      "room": "TBA",
       "code": "BIT236",
       "subjectName": "Enterprise Resources Planning",
       "staff": "Ye Wei (Silva)"
