@@ -191,7 +191,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT362: { day: 'Thursday', slot: 'Afternoon', room: 'PA114', teacher: 'Nikki Wan' },
     BIT363: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Ye Wei (Silva)' },
     BIT364: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'Nidha Qazi' },
-    BIT246: { day: 'Friday', slot: 'Morning', room: 'TBA', teacher: 'Md Sarwar Kama' },
+    BIT246: { day: 'Thursday', slot: 'Morning', room: 'TBA', teacher: 'Md Sarwar Kama' },
     BIT314: { day: 'Friday', slot: 'Morning', room: 'PA113', teacher: 'David Robinson' },
     BIT352: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'David Robinson' },
     BIT236: { day: 'Friday', slot: 'Afternoon', room: 'TBA', teacher: 'Ye Wei (Silva)' },
@@ -7010,8 +7010,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const record = getActiveStudentRecord();
     const studentId = record ? normalizeStudentId(record.Student_IDs_Unique) : '';
-    const name = record ? getStudentDisplayName(record) : '';
-    const studentText = [studentId, name].filter(Boolean).join(' ').trim();
+    const givenName = record ? toProperCase(record.Given_Name || '') : '';
+    const familyName = record ? String(record.Family_Name || '').trim().toUpperCase() : '';
+    const name = [givenName, familyName].filter(Boolean).join(' ').trim();
+    const studentCopyText = [studentId, [familyName, givenName].filter(Boolean).join(', ')].filter(Boolean).join(' ');
     const strongText = `Timetable for ${label}`;
     timetableTitleEl.textContent = '';
     const strongEl = document.createElement('span');
@@ -7026,8 +7028,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     dateSpan.textContent = prepared;
     timetablePreparedEl = dateSpan;
     preparedLine.appendChild(dateSpan);
-    if (studentText) {
-      preparedLine.appendChild(document.createTextNode(`, for ${studentText}`));
+    if (studentId || name) {
+      preparedLine.appendChild(document.createTextNode(', for '));
+      if (studentId) {
+        const idSpan = document.createElement('span');
+        idSpan.className = 'timetable-title-student-id';
+        idSpan.textContent = studentId;
+        idSpan.addEventListener('dblclick', () => {
+          void copyPlainText(studentId);
+        });
+        preparedLine.appendChild(idSpan);
+      }
+      if (studentId && name) preparedLine.appendChild(document.createTextNode(' '));
+      if (name) {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'timetable-title-student-name';
+        nameSpan.textContent = name;
+        nameSpan.addEventListener('dblclick', () => {
+          void copyPlainText(studentCopyText);
+        });
+        preparedLine.appendChild(nameSpan);
+      }
     }
     timetableTitleEl.appendChild(preparedLine);
     applyTimetableDateHighlight();
@@ -22911,7 +22932,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .map((line) => (line ? `\t${line}` : line))
         .join('\n');
     const textCore = includeHeading
-      ? `\n${heading}\n${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`
+      ? `${heading}\n${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`
       : `${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`;
     const text = indentPlainTextBlock(textCore);
 
@@ -22941,7 +22962,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .join('');
     const htmlIndentStyle = 'margin-left:1.27cm;mso-margin-left-alt:1.27cm;';
     const headingHtml = includeHeading
-      ? `<p style="margin:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${escapeHtml(heading)}</p>`
+      ? `<p style="margin-top:0;margin-right:0;margin-bottom:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${escapeHtml(heading)}</p>`
       : '';
     const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
@@ -22967,7 +22988,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(Boolean)
       .map(
         (line) =>
-          `<p style="margin:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
+          `<p style="margin-top:0;margin-right:0;margin-bottom:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
             line
           )}</p>`
       )
@@ -22976,8 +22997,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (feesHtml && timetableFees) {
       const feeStyle = window.getComputedStyle(timetableFees);
       const feeBoxStyle = [
-        `margin:0 0 0 1.27cm`,
-        'mso-margin-left-alt:1.27cm',
+        'margin:0',
         'mso-margin-top-alt:0',
         'mso-margin-bottom-alt:0',
         'font-family:Calibri, Arial, sans-serif',
@@ -22992,7 +23012,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
     const htmlSpacer = `<p style="margin:0 0 10pt 0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
-    const htmlCore = `${includeHeading ? htmlSpacer : ''}${headingHtml}<table style="${htmlIndentStyle}border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${htmlSpacer}${feesHtml}`;
+    const htmlCore = `${headingHtml}<table style="${htmlIndentStyle}border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
     const html = htmlCore;
 
     if (window.ClipboardItem) {
@@ -26053,7 +26073,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const mainContent = document.querySelector('.main-content');
     enablePanelResize(primarySidebar, { key: 'sidebar', fixFlexOnResize: true });
     enablePanelResize(dropSidebar, { key: 'drop-sidebar', fixFlexOnResize: true });
-    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true, respectCssMax: true });
+    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true });
   } catch { }
 
   try {

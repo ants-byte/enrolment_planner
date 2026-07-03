@@ -665,10 +665,10 @@ button {
   /* Fill remaining space beside sidebars and allow grid to resize with viewport. */
   order: 3;
   /* Default to the ideal grid width when there is room after the sidebars. */
-  flex: 1 1 0;
+  flex: 1 1 1284px;
   width: auto;
   min-width: 0;
-  max-width: min(1284px, 100%);
+  max-width: none;
   background: var(--sidebar-bg);
   padding: 6px 12px;
   border-radius: 8px;
@@ -3757,7 +3757,7 @@ input:checked+.slider:before {
   pointer-events: none;
 }
 
-.title-settings-menu > .title-settings-font-field:first-child::before {
+.title-settings-menu>.title-settings-font-field:first-child::before {
   display: none;
 }
 
@@ -5648,7 +5648,8 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   width: auto;
   max-width: none;
   overflow: visible;
-  margin-top:16px;margin-bottom: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
 }
 
 #timetable-modal #timetable-table {
@@ -6217,11 +6218,13 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   overflow-wrap: anywhere;
   word-break: normal;
 }
-#timetable-fees{
-  margin-left:16px;
-  width: calc(100% - 24px)!important;
-  
+
+#timetable-fees {
+  margin-left: 16px;
+  width: calc(100% - 24px) !important;
+
 }
+
 /* Ensure fee lines/paragraphs wrap even if some other rule introduces nowrap. */
 #timetable-fees .timetable-fee-line,
 #timetable-fees .timetable-fee-paragraph,
@@ -6677,7 +6680,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   overflow-y: auto;
   border: 1px solid #9eb4d8;
 }
-dr 
+
 .old-codes-table {
   width: auto;
   min-width: 100%;
@@ -10299,6 +10302,11 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   font-size: 1rem;
 }
 
+#timetable-title .timetable-title-student-id,
+#timetable-title .timetable-title-student-name {
+  cursor: copy;
+}
+
 #alert-modal .modal {
   padding-top: 10px;
   width: 90%;
@@ -10681,7 +10689,7 @@ body.completed-mode #clear-selections {
   min-width: 34px;
   flex: 0 0 34px;
   font-weight: 500;
-  padding:0px;
+  padding: 0px;
 }
 
 .load-row.load-row-nonstandard .load-button {
