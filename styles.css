@@ -668,7 +668,7 @@ button {
   flex: 1 1 0;
   width: auto;
   min-width: 0;
-  max-width: none;
+  max-width: min(1284px, 100%);
   background: var(--sidebar-bg);
   padding: 6px 12px;
   border-radius: 8px;
@@ -1128,6 +1128,15 @@ button {
 
 .drop-zone-action:hover {
   background: linear-gradient(to bottom, #3a8bf0, #245fa4);
+}
+
+.drop-zone-action.is-disabled,
+.drop-zone-action.is-disabled:hover {
+  background: #67758a;
+  border-color: #566174;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .drop-zone-action:active {
@@ -2651,20 +2660,19 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .student-summary-copy-seq {
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid #2f7de1;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4f7ff;
-  padding: 1px 6px;
+  background: #1f6fd1;
+  color: #fff;
+  padding: 4px 8px;
   font: inherit;
-  font-size: 11px;
-  line-height: 1.2;
+  line-height: 1.3;
   cursor: pointer;
 }
 
 .student-summary-copy-seq:hover,
 .student-summary-copy-seq:focus-visible {
-  background: rgba(255, 255, 255, 0.16);
+  background: #185bb0;
 }
 
 .student-summary-copy-seq.copy-flash {
@@ -2699,10 +2707,6 @@ body.staff-mode .drop-sidebar.is-active {
   color: color-mix(in srgb, var(--alert-error) 50%, #ff6884 50%);
 }
 
-.sidebar .student-summary-warning .alert-inline-title.alert-title-warning {
-  color: var(--alert-caution);
-}
-
 .student-data-preview .allow-enrol-blocked,
 .sidebar .allow-enrol-blocked {
   color: #ff6cba;
@@ -2731,14 +2735,24 @@ body.staff-mode .drop-sidebar.is-active {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   border: 1px solid var(--btn-primary-border);
   border-radius: 4px;
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #fff;
   font-weight: 700;
-  margin-bottom: 4px;
-  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: normal;
+  margin: 4px 0 0 12px;
+  padding: 3px 12px;
   cursor: pointer;
+}
+
+.student-summary-triage-heading {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 4px;
 }
 
 .student-summary-triage-body {
@@ -2754,6 +2768,29 @@ body.staff-mode .drop-sidebar.is-active {
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #fff;
   border-color: var(--btn-primary-border);
+}
+
+.student-summary-triage-missing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  width: 100%;
+}
+
+.student-summary-triage-missing .student-summary-warning {
+  min-width: 0;
+  margin: 0;
+}
+
+.student-summary-triage-missing .student-summary-triage-add {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.student-summary-triage-missing .alert-inline-title.alert-title-warning {
+  color: #ffb454 !important;
 }
 
 .student-summary-triage .triage-comment {
@@ -2830,9 +2867,12 @@ body.staff-mode .drop-sidebar.is-active {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  cursor: pointer;
   position: relative;
-  padding-right: 24px;
+}
+
+.triage-comment.is-expandable .triage-comment-preview {
+  cursor: pointer;
+  padding-right: 52px;
 }
 
 .triage-comment {
@@ -2843,12 +2883,28 @@ body.staff-mode .drop-sidebar.is-active {
   position: absolute;
   right: 0;
   bottom: -2px;
-  font-size: 18px;
+  width: auto;
+  min-width: 48px;
+  height: calc(1em + 6px);
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 4px;
+  background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
+  color: #f7f9ff;
+  font: inherit;
+  font-size: 0.8rem;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
   user-select: none;
-  padding: 0 2px;
+  padding: 0 8px;
+  box-shadow: -14px 0 12px 4px rgba(0, 0, 0, 0.92);
+}
+
+.triage-comment-menu:hover,
+.triage-comment-menu:focus-visible {
+  background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
+  outline: 1px solid #93c5fd;
+  outline-offset: 1px;
 }
 
 .triage-comment-full {
@@ -2858,16 +2914,70 @@ body.staff-mode .drop-sidebar.is-active {
   top: 0;
   margin-top: 0;
   white-space: pre-wrap;
-  background: rgba(12, 12, 12, 0.98);
-  border: 1px solid #cfcfcf;
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #6b7280;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 0;
   width: max-content;
+  min-width: 160px;
   max-width: 120ch;
   word-break: break-word;
-  line-height: 1.15;
+  line-height: 1.25;
   overflow: auto;
   max-height: 300px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.triage-comment-full-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #d1d5db;
+  color: #111 !important;
+  background: #fff !important;
+}
+
+.triage-comment-full-header strong {
+  color: #111 !important;
+  flex: 1 1 auto;
+}
+
+.triage-comment-full-close {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #111 !important;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.triage-comment-full-close:hover,
+.triage-comment-full-close:focus-visible {
+  background: #e5e7eb;
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.triage-comment-full-body {
+  padding: 8px 10px;
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.triage-comment-full,
+.triage-comment-full * {
+  color: #111 !important;
+}
+
+.triage-comment-full-body .triage-comment-line {
+  color: #111 !important;
 }
 
 .triage-comment-line+.triage-comment-line {
@@ -3802,6 +3912,14 @@ input:checked+.slider:before {
   transform: translateY(1px);
 }
 
+.title-btn.alert-viewed {
+  box-sizing: border-box;
+  padding: 3px 12px !important;
+  font-size: 1rem !important;
+  line-height: normal !important;
+  font-weight: 700;
+}
+
 .btn-error {
   background: linear-gradient(to bottom, #dc3545, #b02a37);
   border-color: #f5d742;
@@ -4649,7 +4767,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 .key {
   border: 1px solid #bababa;
   margin-top: 12px;
-  padding: 4px 12px;
+  padding: 3px 12px;
   display: grid;
   grid-template-columns: 55% 45%;
   gap: 0px 12px;
@@ -6303,18 +6421,42 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .email-scripts-access-icon {
-  width: 22px;
-  padding-top: 1px;
-  padding-bottom: 0px;
+  width: 24px;
+  min-width: 24px;
+  height: 20px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 .email-scripts-access-icon .clipboard-icon svg,
 .email-scripts-access-icon .email-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+}
+
+#email-scripts-access-modal .email-scripts-access-icon .email-icon svg {
+  width: 16px;
+  height: 16px;
+  color: #fff;
+  fill: none;
+}
+
+#email-scripts-access-modal .email-scripts-access-icon .email-icon .email-outline,
+#email-scripts-access-modal .email-scripts-access-icon .email-icon .email-fold {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+#email-scripts-access-modal .email-scripts-access-icon .email-icon .email-flap {
+  fill: #fff;
+  stroke: none;
 }
 
 #email-scripts-access-modal .modal-actions {
@@ -7684,6 +7826,32 @@ body.completed-mode .completed:hover::after {
   min-width: 0;
   padding-left: 14px;
   padding-right: 14px;
+}
+
+#course-map-triage-edit:focus-visible {
+  outline: 3px solid #1f6fd1;
+  outline-offset: 3px;
+}
+
+#course-map-triage-edit.save-ring-pulse {
+  animation: triageSaveRingPulse 0.45s ease;
+}
+
+@keyframes triageSaveRingPulse {
+  0% {
+    outline: 3px solid rgba(31, 111, 209, 0.95);
+    outline-offset: 2px;
+  }
+
+  70% {
+    outline: 3px solid rgba(31, 111, 209, 0.55);
+    outline-offset: 8px;
+  }
+
+  100% {
+    outline: 3px solid rgba(31, 111, 209, 0);
+    outline-offset: 10px;
+  }
 }
 
 #course-map-remaining-info-modal .course-map-remaining-info-modal {

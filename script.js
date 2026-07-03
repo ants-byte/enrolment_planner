@@ -206,10 +206,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return 'S1';
   };
   const currentSemesterKey = getCurrentSemesterKey();
-  const semesterSequence = ['S1', 'S2', 'SS'];
+  const semesterSequence = ['S1', 'S2'];
+  const getPlanningSemesterKey = (semester) => (semester === 'SS' ? 'S1' : semester);
   const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
   const getSemesterKeyForOffset = (offset) => {
-    const startIndex = semesterSequence.indexOf(currentSemesterKey);
+    const startIndex = semesterSequence.indexOf(getPlanningSemesterKey(currentSemesterKey));
     const safeStartIndex = startIndex >= 0 ? startIndex : 0;
     return semesterSequence[(safeStartIndex + Math.max(0, offset)) % semesterSequence.length];
   };
@@ -1225,9 +1226,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260625-2';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260702-1';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260625-2';
+      return 'triage-parser-worker.js?v=triage-20260702-1';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1297,19 +1298,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       let actionRight = 3;
       lineActions.forEach((action, idx) => {
-        const { key, label, fileName, path, tooltip } = action || {};
+        const { key, label, fileName, path, tooltip, disabled } = action || {};
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'drop-zone-action';
+        if (disabled) {
+          btn.classList.add('is-disabled');
+          btn.setAttribute('aria-disabled', 'true');
+        }
         if (key === 'email-actions') {
           btn.classList.add('drop-zone-action-dots');
           btn.classList.add('drop-zone-action-email-tools');
           btn.innerHTML =
-            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-            '<path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"></path>' +
-            '</svg>' +
-            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-            '<path d="M8 3h8a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1V5a2 2 0 0 1 2-2zm0 3h8V5H8v1zm-3 2v11h14V8H5z"></path>' +
+            EMAIL_SCRIPTS_DROP_ZONE_CLIPBOARD_ICON_SVG +
+            '<svg class="drop-zone-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none">' +
+            '<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2" />' +
+            '<polygon points="4.25,5 12,14.25 19.75,5" fill="currentColor" />' +
+            '<path d="M4 5l8 9.5L20 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
             '</svg>';
           btn.setAttribute('aria-label', 'Open email and clipboard actions');
         } else {
@@ -1330,6 +1335,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         btn.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
+          if (disabled) return;
           if (!key) return;
           handleDropZoneActionClick(key);
         });
@@ -2220,6 +2226,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let settingsSignOffProfiles = new Map();
   let triageWorkbookBuffer = null;
   let triageWorkbookFileName = '';
+  let triageOpenCooldownUntil = 0;
+  let triageOpenCooldownTimer = null;
   let fileLocationsCache = null;
   let staffFolderHandle = null;
   let folderShortcutSearchFallbackNotified = false;
@@ -3067,6 +3075,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       givenName,
       familyName,
     ].map((value) => String(value || '').trim()).filter(Boolean).join(' ');
+    const triageStudentCopyName = [familyName.toUpperCase(), givenName].filter(Boolean).join(', ');
+    const triageStudentCopy = [studentId, triageStudentCopyName].filter(Boolean).join(' ');
     const feeDetails = getFeeStatusDetails(record);
     const remainingCount = getRemainingSubjectsCount();
     const showPastYearMedian = [9, 7, 6, 5].includes(remainingCount);
@@ -3080,12 +3090,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? '<label class="course-map-triage-inline-field course-map-triage-student-id-field"><span>Student ID:</span>' +
         `<input id="course-map-triage-student-id" type="text" value="${escapeHtml(studentId)}" />` +
         '</label>'
-        : `<div class="course-map-triage-id-line">${escapeHtml([givenName, familyName, studentId].filter(Boolean).join(' '))}</div>`,
+        : `<div class="course-map-triage-id-line" data-triage-copy="${escapeHtml(triageStudentCopy)}">${escapeHtml([givenName, familyName, studentId].filter(Boolean).join(' '))}</div>`,
       instituteEmail ? `<div class="course-map-triage-id-line course-map-triage-institute-email">${escapeHtml(instituteEmail)}</div>` : '',
       notInSource ? '' : `<div><strong>Suspended:</strong><span>${escapeHtml(String(record?.Suspended || '').trim() || 'N')}</span></div>`,
       notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${getPassedSubjectCountForRecord(record)}</span></div>`,
       notInSource ? '' : `<div><strong>Status:</strong><span>${escapeHtml(triage.statusLabel || '')}</span></div>`,
-      !notInSource && feeDetails.feeLabel ? `<div><strong>Fee Type:</strong><span>${escapeHtml(feeDetails.domesticFees ? 'Domestic Student' : 'International Student')}${feeDetails.fundingSource ? ` ${escapeHtml(feeDetails.fundingSource)}` : ''}</span></div>` : '',
+      !notInSource && feeDetails.feeLabel ? `<div><strong>Fee Type:</strong><span>${escapeHtml(feeDetails.feeStatus === 'unknown' ? '? unknown' : feeDetails.domesticFees ? 'Domestic Student' : 'International Student')}${feeDetails.fundingSource ? ` ${escapeHtml(feeDetails.fundingSource)}` : ''}</span></div>` : '',
       notInSource ? '' : `<div><strong>Median grade:</strong><span>${escapeHtml(getMedianGradeLabel(manualEntryResults))}</span></div>`,
       !notInSource && showPastYearMedian ? `<div><strong>Median grade past year:</strong><span>${escapeHtml(getMedianGradeLabelPastYear(manualEntryResults))}</span></div>` : '',
       '</div>',
@@ -6853,6 +6863,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const fundingSourceRaw = String(record.Funding_Source || '').trim();
     const fundingSourceUpper = fundingSourceRaw.toUpperCase();
     const fundingSourcePrefix = fundingSourceUpper.charAt(0);
+    const nationality = String(record.Nationality || '').trim();
     const applicationType = String(record.Application_Type || '').trim();
     const applicationTypeUpper = applicationType.toUpperCase();
     const applicationStatus = String(record.Application_Status || '').trim();
@@ -6878,25 +6889,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         status = 'international_sv';
       } else if (applicationTypeUpper.includes('OE INTERNATIONAL') || applicationStatusUpper.includes('INTERNATIONAL')) {
         status = 'international_sv';
-      } else if (fundingSourceUpper === 'SHD') {
+      } else if (applicationTypeUpper.includes('OE DOMESTIC')) {
+        status = 'domestic_normal';
+      } else if (fundingSourceUpper === 'SHD' || fundingSourceUpper === 'S') {
         status = 'domestic_normal';
       } else if (fundingSourceUpper === 'CSP') {
         status = 'domestic_csp';
       } else if (isSpecialVisa) {
         status = 'international_special';
-      } else {
+      } else if (nationality) {
         status = 'international_sv';
+      } else {
+        status = 'unknown';
       }
     } else if (isSpecialVisa) {
       status = 'international_special';
-    } else if (fundingSourceUpper === 'SHD') {
+    } else if (fundingSourceUpper === 'SHD' || fundingSourceUpper === 'S') {
       status = 'domestic_normal';
     } else if (fundingSourceUpper === 'CSP') {
       status = 'domestic_csp';
     } else if (applicationTypeUpper.includes('OE INTERNATIONAL')) {
       status = 'international_sv';
-    } else {
+    } else if (applicationTypeUpper.includes('OE DOMESTIC')) {
+      status = 'domestic_normal';
+    } else if (nationality) {
       status = 'international_sv';
+    } else {
+      status = 'unknown';
     }
     const domesticFees =
       status === 'domestic_normal' ||
@@ -6913,7 +6932,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? 'Fee Type: Domestic student paying CSP rates'
           : status === 'international_special'
             ? `Fee Type: International student on ${visaTypeDisplay || 'special visa'} paying domestic fees`
-            : 'Fee Type: International student rates';
+            : status === 'international_sv'
+              ? 'Fee Type: International student rates'
+              : 'Fee Type: ? unknown';
     return {
       feeStatus: status,
       domesticFees,
@@ -6931,6 +6952,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const isInternationalStudent = (record) => {
     const details = getFeeStatusDetails(record);
+    if (details.feeStatus === 'unknown') {
+      return !!(
+        record &&
+        (record.In_AllInternationals ||
+          record.In_InternationalsAccepted ||
+          record.In_AllInternationals === 'Yes' ||
+          record.In_InternationalsAccepted === 'Yes')
+      );
+    }
     if (details.feeStatus) return !details.domesticFees;
     return !!(
       record &&
@@ -9254,6 +9284,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateVaryLoadLabel();
   };
 
+  const resetLoadToFullLoad = () => {
+    studentType = domesticLoad ? 'domestic' : 'international';
+    exceptionalLoadApproved = false;
+    fullLoadCap = 4;
+    setLoadError('');
+    hideLoadModal();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateResetState();
+    updateSelectedList();
+    syncLoadFormState();
+    updateVaryLoadLabel();
+  };
+
   const runPrimarySourceLoadFlow = async ({ sourceOnly = false } = {}) => {
     if (!dropZoneEnabled) return { loaded: false, pickerUsed: false, pickerSelected: false };
     if (isStudentModeParam) return { loaded: false, pickerUsed: false, pickerSelected: false };
@@ -10223,7 +10266,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const EMAIL_SCRIPTS_EXTRA_ROWS = [
     { key: 'credit-transfer-sign-return', label: 'Credit Transfer - Please sign and return' },
     { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
-    { key: 'suspended-students', label: 'Suspended students', dividerAfter: true },
+    { key: 'suspended-students', label: 'Suspended students' },
+    { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner - instructions and Zoom offer' },
+    { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner - not sure about what to do' },
+    { key: 'not-in-oe-dashboard-enrolment-applications', label: 'Not in OE Dashboard but in Enrolment Applications' },
+    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications - image free' },
+    { key: 'need-to-start-an-application', label: 'Need to start an application' },
+    { key: 'online-progression-classes-entered', label: 'Online progression - classes entered' },
+    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress - selections look good. classes entered', dividerAfter: true },
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
     { key: 'bit121-for-ns-major', label: 'BIT121 for NS major' },
@@ -10242,25 +10292,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'alternating-subjects-sd', label: 'Alternating subjects - SD' },
     { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects - SD & BA' },
     { key: '4-uses-your-major', label: '4 USEs - your major?' },
+    { key: 'use-unspecified-elective-explained-short', label: 'USE Unspecified Elective explained - short' },
+    { key: 'use-unspecified-elective-explained-long', label: 'USE Unspecified Elective explained - long' },
     { key: 'bit106-bit230-bit242-bit371-bit372-to-4-semesters', label: 'BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters' },
-    { key: 'enrolling-late-bit111', label: 'Enrolling late – BIT111', dividerAfter: true },
-    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers', startNewColumn: true },
+    { key: 'enrolling-late-bit111', label: 'Enrolling late – BIT111' },
+    { key: '12-subjects-remaining', label: '12 subjects remaining' },
+    { key: '6-credits', label: '6 credits' },
+    { key: 'usi-information', label: 'USI - information' },
+    { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course - how to' },
+    { key: 'amendment-to-enrolment', label: 'Amendment to enrolment' },
+    { key: 'amendment-to-enrolment-when-late-enrolment', label: 'Amendment to enrolment when late enrolment', dividerAfter: true },
+    { key: 'student-hub', label: 'Student Hub', startNewColumn: true },
+    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers' },
     { key: 'mp-outlook-email', label: 'MP outlook email' },
     { key: 'supports-at-risk', label: 'Supports (at risk) - Counselling etc.' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
-    { key: 'transcript-mid-course-student-request', label: 'Transcript - mid course. Student request' },
-    { key: 'personal-details-change-your-details', label: 'Personal Details - change your details', dividerAfter: true },
-    { key: 'new-students-1-of-3-general-information', label: '1. New Students 1 of 3 - General Information' },
-    { key: 'new-students-2-of-3-non-fmp-choosing-subjects', label: '2. New Students 2 of 3 - Non-FMP - Choosing subjects' },
-    { key: 'new-students-2-of-3-fmp-choosing-subjects', label: '3. New Students 2 of 3 - FMP - Choosing subjects' },
-    { key: 'new-students-3-of-3-faqs', label: '4. New students 3 of 3 - FAQs' },
-    { key: 'new-students-fyi-hold-onto-me', label: '5. New students - FYI. Hold onto me' },
-    { key: 'mp-diploma-1-semesters-1-and-2', label: 'MP Diploma 1 - Semesters 1 and 2' },
-    { key: 'mp-diploma-2-course-structure', label: 'MP Diploma 2 - Course Structure' },
-    { key: 'mp-diploma-3-class-options-semesters-1-and-2', label: 'MP Diploma 3 - Class Options. Semesters 1 & 2' },
-    { key: 'mp-diploma-4-revising-bit-course-structure', label: 'MP Diploma 4 - Revising the BIT course structure' },
-    { key: 'deferred-and-returning-students', label: 'Deferred and returning students' },
-    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications - image free' },
+    { key: 'personal-details-change-your-details', label: 'Personal Details — change your details' },
+    { key: 'proof-that-are-on-break', label: 'Proof that are on break (holiday, semester break, work fulltime)' },
+    { key: 'student-results-where-to-find', label: 'Student results — where to find' },
+    { key: 'transcript-mid-course-where-to-find', label: 'Transcript mid-course — where to find' },
+    { key: 'transcripts-for-graduate-where-to-find', label: 'Transcripts for graduate — where to find' },
+    { key: 'transcripts-for-graduate-was-lost-where-to-find', label: 'Transcripts for graduate was lost — where to find' },
+    { key: 'application-for-refund-where-to-find', label: 'Application for refund — where to find' },
+    { key: 'make-a-suggestion-where-to-find', label: 'Make a suggestion — where to find' },
+    { key: 'lodge-a-complaint-where-to-find', label: 'Lodge a complaint — where to find', dividerAfter: true },
   ];
 
   const EMAIL_SCRIPTS_SECTION_HEADINGS = {
@@ -10320,57 +10375,127 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Alternating subjects – SD & BA',
     ],
     '4-uses-your-major': ['4 USEs - your major?', '4 USEs – your major?'],
+    'use-unspecified-elective-explained-short': [
+      'USE Unspecified Elective explained - short',
+      'USE Unspecified Elective explained – short',
+    ],
+    'use-unspecified-elective-explained-long': [
+      'USE Unspecified Elective explained - long',
+      'USE Unspecified Elective explained – long',
+    ],
     'bit106-bit230-bit242-bit371-bit372-to-4-semesters': ['BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters'],
     'enrolling-late-bit111': ['Enrolling late - BIT111', 'Enrolling late – BIT111'],
-    'transcript-mid-course-student-request': ['Transcript - mid course. Student request'],
-    'personal-details-change-your-details': ['Personal Details'],
+    '12-subjects-remaining': ['12 subjects remaining'],
+    '6-credits': ['6 credits'],
+    'usi-information': ['USI - information', 'USI – information'],
+    'withdrawal-from-course-how-to': [
+      'Withdrawal from course - how to',
+      'Withdrawal from course – how to',
+    ],
+    'amendment-to-enrolment': ['Amendment to enrolment'],
+    'amendment-to-enrolment-when-late-enrolment': [
+      'Amendment to enrolment when late enrolment',
+    ],
+    'student-hub': ['Student Hub'],
+    'personal-details-change-your-details': [
+      'Personal Details - change your details',
+      'Personal Details – change your details',
+      'Personal Details — change your details',
+      'Personal Details',
+    ],
+    'proof-that-are-on-break': ['Proof that are on break (holiday, semester break, work fulltime)'],
+    'student-results-where-to-find': [
+      'Student results - where to find',
+      'Student results – where to find',
+      'Student results — where to find',
+    ],
+    'transcript-mid-course-where-to-find': [
+      'Transcript mid-course - where to find',
+      'Transcript mid-course – where to find',
+      'Transcript mid-course — where to find',
+    ],
+    'transcripts-for-graduate-where-to-find': [
+      'Transcripts for graduate - where to find',
+      'Transcripts for graduate – where to find',
+      'Transcripts for graduate — where to find',
+    ],
+    'transcripts-for-graduate-was-lost-where-to-find': [
+      'Transcripts for graduate was lost - where to find',
+      'Transcripts for graduate was lost – where to find',
+      'Transcripts for graduate was lost — where to find',
+    ],
+    'application-for-refund-where-to-find': [
+      'Application for refund - where to find',
+      'Application for refund – where to find',
+      'Application for refund — where to find',
+    ],
+    'make-a-suggestion-where-to-find': [
+      'Make a suggestion - where to find',
+      'Make a suggestion – where to find',
+      'Make a suggestion — where to find',
+    ],
+    'lodge-a-complaint-where-to-find': [
+      'Lodge a complaint - where to find',
+      'Lodge a complaint – where to find',
+      'Lodge a complaint — where to find',
+    ],
     'username-password-wifi-outlook-moodle-computers': [
       'Username and Password - W-Fi, Outlook, Moodle, computers',
       'Username and Password - Wi-Fi, Outlook, Moodle, computers',
     ],
     'mp-outlook-email': ['MP outlook email'],
     'who-to-contact-for-help': ['Who to contact for help?'],
+    'not-in-oe-dashboard-enrolment-applications': [
+      'Not in OE Dashboard but in Enrolment Applications',
+    ],
     'not-in-oe-dashboard-enrolment-applications-image-free': [
       'Not in OE Dashboard but in Enrolment Applications - image free',
+      'Not in OE Dashboard but in Enrolment Applications – image free',
     ],
+    'need-to-start-an-application': ['Need to start an application'],
     'suspended-students': ['Suspended students'],
-    'new-students-1-of-3-general-information': [
-      'New Students 1 of 3 - General Information',
-      '1. New Students 1 of 3 - General Information',
+    'not-using-timetableplanner-instructions-and-zoom-offer': [
+      'Not using TimetablePlanner - instructions and Zoom offer',
+      'Not using TimetablePlanner – instructions and Zoom offer',
     ],
-    'new-students-2-of-3-non-fmp-choosing-subjects': [
-      'New Students 2 of 3 - Non-FMP - Choosing subjects',
-      '2. New Students 2 of 3 - Non-FMP - Choosing subjects',
+    'not-using-timetableplanner-not-sure-about-what-to-do': [
+      'Not using TimetablePlanner - not sure about what to do',
+      'Not using TimetablePlanner – not sure about what to do',
     ],
-    'new-students-2-of-3-fmp-choosing-subjects': [
-      'New Students 2 of 3 - FMP - Choosing subjects',
-      '3. New Students 2 of 3 - FMP - Choosing subjects',
-    ],
-    'new-students-3-of-3-faqs': [
-      'New students 3 of 3 - FAQs',
-      '4. New students 3 of 3 - FAQs',
-    ],
-    'new-students-fyi-hold-onto-me': [
-      'New students - FYI. Hold onto me',
-      '5. New students - FYI. Hold onto me',
-    ],
-    'mp-diploma-1-semesters-1-and-2': ['MP Diploma 1 - Semesters 1 and 2'],
-    'mp-diploma-2-course-structure': ['MP Diploma 2 - Course Structure'],
-    'mp-diploma-3-class-options-semesters-1-and-2': ['MP Diploma 3 - Class Options. Semesters 1 & 2'],
-    'mp-diploma-4-revising-bit-course-structure': ['MP Diploma 4 - Revising the BIT course structure'],
-    'deferred-and-returning-students': ['Deferred and returning students'],
   };
+
+  const EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG =
+    '<svg viewBox="0 0 24 24" role="img" focusable="false">' +
+    '<path d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z" fill="currentColor" />' +
+    '</svg>';
+  const EMAIL_SCRIPTS_DROP_ZONE_CLIPBOARD_ICON_SVG =
+    EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG.replace('<svg ', '<svg class="drop-zone-action-icon" ');
+  const EMAIL_SCRIPTS_EMAIL_ICON_SVG =
+    '<svg viewBox="0 0 24 24" role="img" focusable="false" fill="none">' +
+    '<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="#fff" stroke-width="2" />' +
+    '<polygon points="4.25,5 12,14.25 19.75,5" fill="#fff" />' +
+    '<path d="M4 5l8 9.5L20 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+    '</svg>';
 
   const createEmailScriptsActionIcon = (kind) => {
     const span = document.createElement('span');
     span.className = kind === 'copy' ? 'clipboard-icon' : 'email-icon';
     span.setAttribute('aria-hidden', 'true');
     if (kind === 'copy') {
-      span.innerHTML = '<svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z" fill="currentColor" /></svg>';
+      span.innerHTML = EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG;
     } else {
-      span.innerHTML = '<svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" /></svg>';
+      span.innerHTML = EMAIL_SCRIPTS_EMAIL_ICON_SVG;
     }
     return span;
+  };
+
+  const installEmailScriptsActionIcons = () => {
+    document.querySelectorAll('#email-scripts-access-modal .clipboard-icon').forEach((icon) => {
+      icon.innerHTML = EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG;
+    });
+    document.querySelectorAll('#email-scripts-access-modal .email-icon').forEach((icon) => {
+      icon.innerHTML = EMAIL_SCRIPTS_EMAIL_ICON_SVG;
+    });
   };
 
   let emailScriptsAccessResizeObserver = null;
@@ -10518,6 +10643,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
   renderEmailScriptsExtraRows();
+  installEmailScriptsActionIcons();
   scheduleEmailScriptsAccessColumnLayout();
 
   const getSlotAbbreviation = (slot = '') => {
@@ -12340,7 +12466,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     void el.offsetWidth;
     el.classList.add('copy-flash');
   };
-  const buildStudentMailto = async (emails, firstName, subjectLine = 'Student Declaration') => {
+  const getDefaultStudentEmailSubject = (date = new Date()) => {
+    const semesterKey = getCurrentSemesterKey(date);
+    const semester = semesterKey === 'S1' ? '1' : semesterKey === 'S2' ? '2' : 'Summer';
+    return `Enrolment ${date.getFullYear()} Semester ${semester}`;
+  };
+  const buildStudentMailto = async (emails, firstName, subjectLine = '') => {
     const list = (emails || []).map((email) => email.trim()).filter(Boolean);
     if (!list.length) return '';
     let body = '';
@@ -12353,12 +12484,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const fallbackName = (firstName || '').trim();
       body = fallbackName ? `Hello ${fallbackName}` : 'Hello';
     }
-    const subject = encodeURIComponent(subjectLine || 'Student Declaration');
+    const subject = encodeURIComponent(subjectLine || getDefaultStudentEmailSubject());
     const recipients = encodeURIComponent(list.join(','));
     const encodedBody = encodeURIComponent(body);
     return `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
   };
-  const openStudentEmail = async (emails, firstName, subjectLine = 'Student Declaration') => {
+  const openStudentEmail = async (emails, firstName, subjectLine = '') => {
     const mailto = await buildStudentMailto(emails, firstName, subjectLine);
     if (!mailto) return;
     window.location.href = mailto;
@@ -12368,6 +12499,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (copyPersonalsTarget) {
       event.preventDefault();
       void copyActiveStudentPersonalsSequence(copyPersonalsTarget);
+      return;
+    }
+    const copySeqTarget = event.target?.closest?.('.student-summary-copy-seq');
+    if (copySeqTarget) {
+      event.preventDefault();
+      void copyActiveStudentPersonalsSequence(copySeqTarget);
       return;
     }
     const idCopyTarget = event.target?.closest?.('.student-summary-id-value');
@@ -12414,6 +12551,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (triageComment) {
       event.preventDefault();
       toggleTriageComment(triageComment);
+      return;
+    }
+    const triageCommentClose = event.target?.closest?.('.triage-comment-full-close');
+    if (triageCommentClose) {
+      event.preventDefault();
+      closeAllTriageComments();
       return;
     }
     const emailTarget = event.target?.closest?.('.student-email-link');
@@ -12625,6 +12768,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (presetMpDipOld) {
     presetMpDipOld.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.mpDipOld));
+  }
+  if (courseMapStudentNoteContent) {
+    courseMapStudentNoteContent.addEventListener('dblclick', (event) => {
+      const copyTarget = event.target?.closest?.('.course-map-triage-id-line[data-triage-copy]');
+      if (!copyTarget || !courseMapStudentNoteContent.contains(copyTarget)) return;
+      const text = (copyTarget.getAttribute('data-triage-copy') || '').trim();
+      if (!text) return;
+      event.preventDefault();
+      void copyPlainText(text).then((copied) => {
+        if (!copied) return;
+        triggerFlash(copyTarget);
+      });
+    });
   }
   if (courseMapStudentInfoStrip) {
     courseMapStudentInfoStrip.addEventListener('click', (event) => {
@@ -13455,7 +13611,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const formatStudentIdForCopy = (value = '') => {
     const normalized = normalizeStudentId(value || '');
     if (!normalized) return '';
-    return `S${normalized}`;
+    return normalized;
   };
   const getPreferredStudentEmailForCopy = (record = null) => {
     if (!record) return '';
@@ -13508,7 +13664,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       values.email,
     ].map((value) => String(value || '').trim());
     const multilineSummary = orderedSingles.join('\n');
-    return [...orderedSingles, multilineSummary];
+    return [...orderedSingles.slice().reverse(), multilineSummary];
   };
   const PERSONALS_CLIPBOARD_STEP_DELAY_MS = 520;
   const PERSONALS_CLIPBOARD_RETRY_DELAY_MS = 180;
@@ -13916,23 +14072,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const commentText = escapeHtml(rawComment);
           const commentWithBreaks = rawComment.replace(/(\d{2}\/\d{2}\/\d{4})/g, '\n$1');
           const commentLines = commentWithBreaks.split(/\r?\n/).filter((line) => line.trim().length);
+          const showAllComments = rawComment.length > 30 || commentLines.length > 1;
           const commentFull = commentLines.length
             ? commentLines.map((line) => `<div class="triage-comment-line">${escapeHtml(line)}</div>`).join('')
             : `<div class="triage-comment-line">${commentText}</div>`;
           triageLines.push(
-            `<div class="triage-comment"><span class="triage-subheading">Comments:</span> <span class="triage-comment-preview" role="button" tabindex="0">${commentText}</span><span class="triage-comment-menu" aria-hidden="true">⋯</span><div class="triage-comment-full hidden-initial">${commentFull}</div></div>`
+            `<div class="triage-comment${showAllComments ? ' is-expandable' : ''}"><span class="triage-subheading">Comments:</span> <span class="triage-comment-preview"${showAllComments ? ' role="button" tabindex="0"' : ''}>${commentText}</span>${showAllComments ? `<button type="button" class="triage-comment-menu">show all</button><div class="triage-comment-full hidden-initial" role="dialog" aria-modal="false" aria-label="All Comments"><div class="triage-comment-full-header"><strong>All Comments</strong><button type="button" class="triage-comment-full-close" aria-label="Close all comments">X</button></div><div class="triage-comment-full-body">${commentFull}</div></div>` : ''}</div>`
           );
         }
         if (triageLines.length) {
           lines.push(
-            `<div class="student-summary-triage"><button type="button" class="student-summary-triage-title student-summary-triage-action" data-triage-action="open">Triage</button><div class="student-summary-triage-body">${triageLines.join(
+            `<div class="student-summary-triage"><div class="student-summary-triage-heading">Triage details:</div><div class="student-summary-triage-body">${triageLines.join(
               ''
-            )}</div></div>`
+            )}</div><button type="button" class="student-summary-triage-title student-summary-triage-action" data-triage-action="open">Update Triage</button></div>`
           );
         }
       } else if (triageFileInfo?.fileName) {
         lines.push(
-          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Triage: not in Triage by ID or email</strong></div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add" data-triage-action="add">Add to Triage</button>`
+          `<div class="student-summary-triage-missing"><div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Not in Triage by ID or email</strong></div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add" data-triage-action="add">Add to Triage</button></div>`
         );
       }
     }
@@ -13979,11 +14136,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const scheduleLink = feeDetails.domesticFees
         ? ' <a class="fee-schedule-link" href="https://www.melbournepolytechnic.edu.au/study/fees/local-student-fees/fees-for-local-higher-education-students/schedule-of-higher-education-tuition-fees/" target="_blank" rel="noopener">schedule</a>'
         : '';
-      const feeTypeLabelHtml = `<span class="student-summary-lead">Fee Type:</span> ${feeDetails.domesticFees ? 'Domestic Student' : 'International Student'}`;
+      const feeTypeLabelHtml = `<span class="student-summary-lead">Fee Type:</span> ${feeDetails.feeStatus === 'unknown' ? '? unknown' : feeDetails.domesticFees ? 'Domestic Student' : 'International Student'}`;
       lines.push(
         `${feeTypeLabelHtml}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
       );
-      if (!feeDetails.domesticFees) {
+      if (!feeDetails.domesticFees && feeDetails.feeStatus !== 'unknown') {
         const unitPriceValue = parseCreditPoints(courseInfo?.Price_per_Unit || '');
         const unitPrice = unitPriceValue && unitPriceValue > 0 ? formatCurrency(unitPriceValue) : '';
         if (unitPrice) {
@@ -14078,6 +14235,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const crtClass = creditTransferWarningActive ? 'crt-form-link crt-form-link-warning' : 'crt-form-link';
       lines.push(
         `<a class="${crtClass}" href="${escapeHtml(crtLocation)}" target="_blank" rel="noopener noreferrer">CRT form</a>`
+      );
+    }
+    if (!hasHistory) {
+      lines.push(
+        '<button type="button" class="student-summary-copy-seq" title="Copy: Student ID, DOB, international flag, family name, given name, mobile, personal email, then multiline summary">Details for Credit Form</button>'
       );
     }
     return lines.filter(Boolean).map((line) => (line.startsWith('<div') ? line : `<div>${line}</div>`)).join('');
@@ -14193,6 +14355,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } catch {
         // ignore storage issues
       }
+    }
+    if (!profilePref && settingsSignOffProfiles instanceof Map && settingsSignOffProfiles.size === 1) {
+      profilePref = Array.from(settingsSignOffProfiles.values())[0] || null;
     }
     const merged = createEmptySignOffPrefs();
     if (defaults) {
@@ -14926,16 +15091,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       return false;
     };
-    const findHeadingEl = (label) => {
-      const normalized = normalizeText(label);
-      const headingTags = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,h6'));
-      const direct = headingTags.find((el) => normalizeText(el.textContent) === normalized);
+      const findHeadingEl = (label) => {
+        const normalized = normalizeText(label);
+        const headingTags = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+        const direct = headingTags.find((el) => normalizeText(el.textContent) === normalized);
       if (direct) return direct;
       const candidates = Array.from(doc.querySelectorAll('p,div,span'));
       return (
         candidates.find((el) => normalizeText(el.textContent) === normalized) ||
         null
-      );
+        );
+      };
+    const classStyleMap = new Map();
+    Array.from(doc.querySelectorAll('style')).forEach((styleEl) => {
+      const css = styleEl.textContent || '';
+      const rules = css.matchAll(/([^{}]+)\{([^{}]+)\}/g);
+      for (const rule of rules) {
+        const selectors = String(rule[1] || '').split(',');
+        const declarations = String(rule[2] || '').trim();
+        selectors.forEach((selector) => {
+          const match = selector.match(/\.([A-Za-z_][\w-]*)/);
+          if (!match || !declarations) return;
+          const key = match[1].toLowerCase();
+          classStyleMap.set(key, `${classStyleMap.get(key) || ''}${declarations};`);
+        });
+      }
+    });
+    const inlineClassStyles = (root) => {
+      if (!classStyleMap.size || !root?.querySelectorAll) return root;
+      [root, ...Array.from(root.querySelectorAll('*'))].forEach((el) => {
+        const declarations = Array.from(el.classList || [])
+          .map((className) => classStyleMap.get(String(className || '').toLowerCase()) || '')
+          .filter(Boolean)
+          .join('');
+        if (!declarations) return;
+        const existing = el.getAttribute('style') || '';
+        el.setAttribute('style', `${declarations}${existing ? `;${existing}` : ''}`);
+      });
+      return root;
     };
     const startEl = findHeadingEl(startLabel);
     if (!startEl) return { html: '', text: '' };
@@ -14978,7 +15171,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           break;
         }
         if (!hasCollectedAncestor(node)) {
-          htmlParts.push(node.outerHTML);
+          htmlParts.push(inlineClassStyles(node.cloneNode(true)).outerHTML);
           collectedNodes.add(node);
         }
       }
@@ -15255,11 +15448,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     closeAllTriageComments();
     if (!willShow) return;
     full.classList.remove('hidden-initial');
-    const title = wrapper.querySelector('strong');
-    const anchor = title || wrapper;
+    const anchor = target?.closest?.('.triage-comment-menu') || wrapper.querySelector('.triage-comment-menu') || wrapper;
     const rect = anchor.getBoundingClientRect();
-    full.style.left = `${Math.round(rect.left + 6)}px`;
+    full.style.left = `${Math.round(rect.left)}px`;
     full.style.top = `${Math.round(rect.bottom + 6)}px`;
+    full.querySelector('.triage-comment-full-close')?.focus();
   };
 
   const closeAllTriageComments = () => {
@@ -15427,7 +15620,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           title: 'Intake Start',
           html: `<p><strong class="alert-inline-title alert-title-error">Intake Start</strong> <span class="alert-inline-text">${escapeHtml(
             displayIntake
-          )}</span></p>`,
+          )}. Strata shows student intends enrolling ${escapeHtml(
+            displayIntake
+          )}. Confirm that student has a current CoE and CoE states that enrolment will begin this semester.</span></p>`,
         };
       } else {
         intakeStartError = null;
@@ -15742,7 +15937,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         `<div class="student-summary-id">${escapeHtml(matchId)} ${escapeHtml(fallbackName)}</div>`,
         fallbackEmail ? `<div class="student-email-row">${escapeHtml(fallbackEmail)}</div>` : '',
         triageFileInfo?.fileName
-          ? '<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Triage: not in Triage by ID or email</strong></div>'
+          ? '<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Not in Triage by ID or email</strong></div>'
           : '',
       ].filter(Boolean).join(''));
     }
@@ -16432,15 +16627,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const match = String(line || '').match(/^\[([^\]]+)\]$/);
       const sectionRaw = match && match[1] ? match[1].trim() : String(line || '').trim();
       const sectionNormalized = normalizeHeadingText(sectionRaw);
-      if (sectionNormalized === 'communicationsdefault' || sectionNormalized === 'communicationdefault') {
+      const compactSection = normalizeHeader(sectionNormalized);
+      if (compactSection === 'communicationsdefault' || compactSection === 'communicationdefault') {
         return 'defaults';
       }
-      if (sectionNormalized === 'communications' || sectionNormalized === 'communication') {
+      if (compactSection === 'communications' || compactSection === 'communication') {
         const profileKey = normalizeSettingsProfileKey(fileLocationsProfileOverride);
         return profileKey ? `profile:${profileKey}` : 'profile:';
       }
       if (!match || !match[1]) return '';
-      if (sectionNormalized === 'defaults' || sectionNormalized === 'default') {
+      if (compactSection === 'defaults' || compactSection === 'default') {
         return 'defaults';
       }
       if (sectionNormalized.startsWith('profile:')) {
@@ -17865,6 +18061,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return null;
   };
 
+  const TRIAGE_OPEN_COOLDOWN_MS = 7000;
+  const getTriageOpenCooldownRemainingMs = () =>
+    Math.max(0, triageOpenCooldownUntil - Date.now());
+  const getTriageOpenCooldownTooltip = () => {
+    const seconds = Math.ceil(getTriageOpenCooldownRemainingMs() / 1000);
+    return `Triage was just saved. Waiting ${seconds || 1}s for OneDrive/SharePoint to finish syncing before opening in Excel.`;
+  };
+  const refreshTriageOpenCooldownUi = () => {
+    renderDropZoneStatus(buildDropZoneStatusLines());
+  };
+  const startTriageOpenCooldown = () => {
+    triageOpenCooldownUntil = Date.now() + TRIAGE_OPEN_COOLDOWN_MS;
+    if (triageOpenCooldownTimer) clearTimeout(triageOpenCooldownTimer);
+    refreshTriageOpenCooldownUi();
+    triageOpenCooldownTimer = setTimeout(() => {
+      triageOpenCooldownTimer = null;
+      refreshTriageOpenCooldownUi();
+    }, TRIAGE_OPEN_COOLDOWN_MS + 100);
+  };
+
   const toOriginalHref = (rawValue) => {
     const raw = String(rawValue || '').trim();
     if (!raw) return '';
@@ -17962,6 +18178,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
     if (!['source', 'email', 'triage'].includes(key)) return;
+    if ((key === 'source' || key === 'triage') && getTriageOpenCooldownRemainingMs() > 0) {
+      window.alert(getTriageOpenCooldownTooltip());
+      return;
+    }
     openLoadedFile(key).then((opened) => {
       if (!opened) showEmailScriptsOpenError(key);
     });
@@ -21704,7 +21924,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapTriageEditButton.textContent = 'Save';
     const changedValues = getCourseMapTriageChangedValues(form);
     const hasEnrolmentType = !!String(getCourseMapTriageFormValues(form).statusDetails || '').trim();
-    courseMapTriageEditButton.disabled = !hasEnrolmentType;
+    courseMapTriageEditButton.disabled = false;
     courseMapTriageEditButton.classList.toggle('disabled', !hasEnrolmentType);
     courseMapTriageEditButton.setAttribute('aria-disabled', hasEnrolmentType ? 'false' : 'true');
     if (form.dataset.newTriageRow === 'true') {
@@ -21742,9 +21962,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await writable.write(result.output);
       await writable.close();
       triageWorkbookBuffer = result.output;
+      startTriageOpenCooldown();
       return true;
     } catch {
       window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
+      return false;
+    }
+  };
+
+  const ensureTriageWorkbookClosedForWrite = async () => {
+    if (!triageWorkbookFileHandle || typeof triageWorkbookFileHandle.createWritable !== 'function') return true;
+    try {
+      const writable = await triageWorkbookFileHandle.createWritable({ keepExistingData: true });
+      await writable.close();
+      return true;
+    } catch {
+      window.alert('Triage appears to be open or locked by Excel/OneDrive. Close Triage in Excel, wait for sync to finish, then try saving again.');
       return false;
     }
   };
@@ -21811,6 +22044,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.alert('Could not save to Triage workbook. Write permission was not granted.');
       return false;
     }
+    if (!(await ensureTriageWorkbookClosedForWrite())) return false;
     const result = await prependTriageCommentInWorker(triageWorkbookBuffer, studentId, cleanComment);
     if (!result?.ok || !result.output) {
       console.warn('[Triage save] worker returned failure', result);
@@ -21830,6 +22064,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const writable = await triageWorkbookFileHandle.createWritable();
       await writable.write(result.output);
       await writable.close();
+      startTriageOpenCooldown();
       const savedFile = await triageWorkbookFileHandle.getFile();
       console.info('[Triage save] write complete', { savedBytes: savedFile?.size || null });
       if (!savedFile?.size) {
@@ -21867,6 +22102,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.alert('Could not save to Triage workbook. Write permission was not granted.');
       return false;
     }
+    if (!(await ensureTriageWorkbookClosedForWrite())) return false;
     const changedValues = getCourseMapTriageChangedValues(form);
     if (!Object.keys(changedValues).length) return true;
     if (!String(formValues.statusDetails || '').trim()) {
@@ -22477,12 +22713,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const content = alertContent[type] || [];
     const count = content.length;
     const hasUnread = content.some((p) => !p.seen);
+    const isViewed = count > 0 && !hasUnread;
     const signature = content.map((p) => alertId(p)).join('|');
     const contentChanged = signature !== alertPrevSignatures[type];
     const isCountless = type === 'codes';
     if (count > 0) {
       buttons.forEach((button) => {
         button.classList.remove('hidden');
+        button.classList.toggle('alert-viewed', isViewed);
         if (isCountless || !hasUnread) {
           button.textContent = labels[type] || type;
           button.classList.remove('has-unread');
@@ -22527,7 +22765,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } else {
       buttons.forEach((button) => {
         button.classList.add('hidden');
-        button.classList.remove('has-unread');
+        button.classList.remove('has-unread', 'alert-viewed');
         button.textContent = labels[type] || type;
         button.classList.remove('alert-pending', 'alert-flash', 'alert-open');
       });
@@ -22667,9 +22905,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       feeLines.push(feesText);
     }
     const feeTextLines = feeLines.filter(Boolean).join('\n');
-    const text = includeHeading
-      ? `${heading}\n\n\n${textBody}${feeTextLines ? `\n\n\n${feeTextLines}` : ''}`
-      : `${textBody}${feeTextLines ? `\n\n\n${feeTextLines}` : ''}`;
+    const indentPlainTextBlock = (value) =>
+      String(value || '')
+        .split('\n')
+        .map((line) => (line ? `\t${line}` : line))
+        .join('\n');
+    const textCore = includeHeading
+      ? `\n${heading}\n${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`
+      : `${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`;
+    const text = indentPlainTextBlock(textCore);
 
     const headerSample = timetableTable.querySelector('thead th');
     const headerStyle = headerSample ? window.getComputedStyle(headerSample) : null;
@@ -22695,8 +22939,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
+    const htmlIndentStyle = 'margin-left:1.27cm;mso-margin-left-alt:1.27cm;';
     const headingHtml = includeHeading
-      ? `<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${heading}</p>`
+      ? `<p style="margin:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${escapeHtml(heading)}</p>`
       : '';
     const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
@@ -22722,7 +22967,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(Boolean)
       .map(
         (line) =>
-          `<p style="margin:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
+          `<p style="margin:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
             line
           )}</p>`
       )
@@ -22731,7 +22976,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (feesHtml && timetableFees) {
       const feeStyle = window.getComputedStyle(timetableFees);
       const feeBoxStyle = [
-        'margin:0',
+        `margin:0 0 0 1.27cm`,
+        'mso-margin-left-alt:1.27cm',
         'mso-margin-top-alt:0',
         'mso-margin-bottom-alt:0',
         'font-family:Calibri, Arial, sans-serif',
@@ -22745,11 +22991,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ].join(';');
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
-    const htmlSpacer = '<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>';
-    const htmlCore = `${headingHtml}${htmlSpacer}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${htmlSpacer}${feesHtml}`;
-    const html = isAvailableSubjectsClip
-      ? `<div style="margin-left:1.27cm;">${htmlCore}</div>`
-      : htmlCore;
+    const htmlSpacer = `<p style="margin:0 0 10pt 0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
+    const htmlCore = `${includeHeading ? htmlSpacer : ''}${headingHtml}<table style="${htmlIndentStyle}border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${htmlSpacer}${feesHtml}`;
+    const html = htmlCore;
 
     if (window.ClipboardItem) {
       const blobInput = {
@@ -22914,6 +23158,72 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return false;
   };
 
+  const normalizeEmailScriptHtmlSpacing = (sourceHtml) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = sourceHtml || '';
+      const getInlineStyleValue = (styleText, name) => {
+        const match = String(styleText || '').match(new RegExp(`${name}\\s*:\\s*([^;]+)`, 'i'));
+        return match ? match[1].trim() : '';
+      };
+      const preserveLineHeight = (el, styleText) => {
+        const lineHeight = el.style.lineHeight || getInlineStyleValue(styleText, 'line-height') || '1.15';
+        el.style.lineHeight = lineHeight;
+        el.style.setProperty('mso-line-height-alt', lineHeight);
+      };
+      const getSourceSpacing = (el, styleText) => ({
+        top:
+          el.style.marginTop ||
+          getInlineStyleValue(styleText, 'mso-margin-top-alt') ||
+          getInlineStyleValue(styleText, 'mso-para-margin-top') ||
+          '0',
+        bottom:
+          el.style.marginBottom ||
+          getInlineStyleValue(styleText, 'mso-margin-bottom-alt') ||
+          getInlineStyleValue(styleText, 'mso-para-margin-bottom') ||
+          '0',
+      });
+      tmp.querySelectorAll('p').forEach((el) => {
+        const className = String(el.className || '').toLowerCase();
+        const styleText = String(el.getAttribute('style') || '').toLowerCase();
+        const isListParagraph =
+          className.includes('msolist') ||
+          styleText.includes('mso-list') ||
+          /^[\s\u00a0]*(?:[•·o]\s+|\d+[.)]\s+)/.test(el.textContent || '');
+        const spacing = getSourceSpacing(el, styleText);
+        if (isListParagraph) {
+          const marginLeft = el.style.marginLeft || '36pt';
+          const textIndent = el.style.textIndent || '-18pt';
+          el.style.margin = `${spacing.top} 0 ${spacing.bottom} ${marginLeft}`;
+          el.style.textIndent = textIndent;
+          preserveLineHeight(el, styleText);
+          el.style.setProperty('mso-margin-top-alt', spacing.top);
+          el.style.setProperty('mso-margin-bottom-alt', spacing.bottom);
+          el.style.setProperty('mso-para-margin', `${spacing.top} 0 ${spacing.bottom} ${marginLeft}`);
+          return;
+        }
+        el.style.margin = `${spacing.top} 0 ${spacing.bottom} 0`;
+        preserveLineHeight(el, styleText);
+        el.style.setProperty('mso-margin-top-alt', spacing.top);
+        el.style.setProperty('mso-margin-bottom-alt', spacing.bottom);
+        el.style.setProperty('mso-para-margin', `${spacing.top} 0 ${spacing.bottom} 0`);
+      });
+      tmp.querySelectorAll('ul, ol').forEach((el) => {
+        el.style.marginTop = '0';
+        el.style.marginBottom = '0';
+        el.style.paddingLeft = el.style.paddingLeft || '24pt';
+      });
+      tmp.querySelectorAll('li').forEach((el) => {
+        const styleText = String(el.getAttribute('style') || '').toLowerCase();
+        const spacing = getSourceSpacing(el, styleText);
+        el.style.margin = `${spacing.top} 0 ${spacing.bottom} 0`;
+        preserveLineHeight(el, styleText);
+        el.style.setProperty('mso-margin-top-alt', spacing.top);
+        el.style.setProperty('mso-margin-bottom-alt', spacing.bottom);
+        el.style.setProperty('mso-para-margin', `${spacing.top} 0 ${spacing.bottom} 0`);
+      });
+      return tmp.innerHTML;
+  };
+
   const copyHtmlPlainToClipboard = async (html, plain) => {
     if (!plain) return false;
     const fallbackHtmlFromText = plain
@@ -22921,7 +23231,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((block) => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
       .join('');
     const richHtml = html || fallbackHtmlFromText;
-    const styledHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.35;">${richHtml}</div>`;
+    const styledHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.15;">${normalizeEmailScriptHtmlSpacing(richHtml)}</div>`;
     if (copyRichHtmlLegacy(styledHtml, plain)) return true;
     const copyViaExecCommand = () => {
       try {
@@ -23031,7 +23341,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let richHtml = html || fallbackHtmlFromText;
     if (richHtml) {
       const tmp = document.createElement('div');
-      tmp.innerHTML = richHtml;
+      tmp.innerHTML = normalizeEmailScriptHtmlSpacing(richHtml);
       tmp.querySelectorAll('table, th, td').forEach((el) => {
         el.style.fontSize = '11pt';
         el.style.fontFamily = 'Calibri, Arial, sans-serif';
@@ -23074,7 +23384,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       richHtml = tmp.innerHTML;
     }
-    const styledHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.35;">${richHtml}</div>`;
+    const styledHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.15;">${richHtml}</div>`;
     if (copyRichHtmlLegacy(styledHtml, plain)) return true;
     const copyViaExecCommand = () => {
       try {
@@ -23138,7 +23448,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
     const finalPlain = insertedText ? plainWithTable : plain;
     const finalHtml = insertedHtml ? htmlWithTable : html;
-    const wrappedHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.35;">${finalHtml}</div>`;
+    const wrappedHtml = `<div style="font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.15;">${normalizeEmailScriptHtmlSpacing(finalHtml)}</div>`;
     if (copyRichHtmlLegacy(wrappedHtml, finalPlain)) return true;
     if (window.ClipboardItem && navigator.clipboard?.write && window.isSecureContext) {
       const items = {
@@ -23230,6 +23540,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('No email address available for this student.');
         return;
       }
+      await ensureSettingsSignOffPrefsLoaded();
       const scripts = await parseEmailScripts();
       console.info('[Email prefs] cache ready:', !!scripts);
       const firstName = getStudentFirstName(record);
@@ -23260,9 +23571,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('No email address available for this student.');
         return;
       }
-      await parseEmailScripts();
-      const firstName = getStudentFirstName(record);
-      const baseBody = buildTimetableEmailBodySync(firstName);
       const copyFn = typeof options.copyFn === 'function' ? options.copyFn : copyStudentDeclaration;
       const subjectLine = String(options.subjectLine || DEFAULT_EMAIL_SUBJECT).trim() || DEFAULT_EMAIL_SUBJECT;
       const copyFailMessage =
@@ -23273,6 +23581,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!ok) {
         window.alert(copyFailMessage);
       }
+      await ensureSettingsSignOffPrefsLoaded();
+      const firstName = getStudentFirstName(record);
+      const baseBody = buildTimetableEmailBodySync(firstName);
       openTimetableEmailDraftSafe(recipientList, baseBody, baseBody, subjectLine);
     } finally {
       emailInProgress = false;
@@ -23749,6 +24060,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             label: 's',
             fileName: lastDroppedFileInfo.fileName,
             path: getBestKnownActionPath('source', lastDroppedFileInfo.path),
+            disabled: getTriageOpenCooldownRemainingMs() > 0,
+            tooltip: getTriageOpenCooldownRemainingMs() > 0 ? getTriageOpenCooldownTooltip() : '',
           },
         ],
       });
@@ -23801,6 +24114,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               label: 't',
               fileName: triageFileInfo.fileName,
               path: getBestKnownActionPath('triage', triageFileInfo.path),
+              disabled: getTriageOpenCooldownRemainingMs() > 0,
+              tooltip: getTriageOpenCooldownRemainingMs() > 0 ? getTriageOpenCooldownTooltip() : '',
             },
           ],
         });
@@ -24748,28 +25063,89 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeCourseMapStudentNoteCta) {
     closeCourseMapStudentNoteCta.addEventListener('click', hideCourseMapStudentNoteModal);
   }
-  if (courseMapTriageEditButton) {
-    courseMapTriageEditButton.addEventListener('click', async () => {
+  const pulseCourseMapTriageSaveButton = () => {
+    if (!courseMapTriageEditButton) return;
+    courseMapTriageEditButton.classList.remove('save-ring-pulse');
+    void courseMapTriageEditButton.offsetWidth;
+    courseMapTriageEditButton.classList.add('save-ring-pulse');
+  };
+  const runCourseMapTriageSaveButton = async () => {
+    if (!courseMapTriageEditButton || courseMapTriageEditButton.hidden) return;
+    courseMapTriageEditButton.focus();
+    pulseCourseMapTriageSaveButton();
+    if (courseMapTriageEditButton.getAttribute('aria-disabled') === 'true') return;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const form = document.getElementById('course-map-triage-edit-form');
+    if (form?.classList.contains('is-temp-hidden')) {
+      form.classList.remove('is-temp-hidden');
+      updateCourseMapTriageSaveVisibility();
+      return;
+    }
+    const originalText = courseMapTriageEditButton.textContent;
+    courseMapTriageEditButton.disabled = true;
+    courseMapTriageEditButton.classList.add('is-saving');
+    courseMapTriageEditButton.textContent = 'Saving...';
+    courseMapTriageEditButton.setAttribute('aria-busy', 'true');
+    try {
+      const saved = await saveCourseMapTriageEditForm();
+      if (saved) hideCourseMapStudentNoteModal();
+    } finally {
+      courseMapTriageEditButton.disabled = false;
+      courseMapTriageEditButton.classList.remove('is-saving');
+      courseMapTriageEditButton.textContent = originalText || 'Save';
+      courseMapTriageEditButton.setAttribute('aria-busy', 'false');
+      updateCourseMapTriageSaveVisibility();
+    }
+  };
+  const insertTextareaLineBreak = (textarea) => {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? start;
+    if (typeof textarea.setRangeText === 'function') {
+      textarea.setRangeText('\n', start, end, 'end');
+    } else {
+      textarea.value = `${textarea.value.slice(0, start)}\n${textarea.value.slice(end)}`;
+      textarea.selectionStart = textarea.selectionEnd = start + 1;
+    }
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  if (courseMapStudentNoteModal) {
+    courseMapStudentNoteModal.addEventListener('keydown', (event) => {
       const form = document.getElementById('course-map-triage-edit-form');
-      if (form?.classList.contains('is-temp-hidden')) {
-        form.classList.remove('is-temp-hidden');
-        updateCourseMapTriageSaveVisibility();
+      if (!form || !courseMapStudentNoteModal.classList.contains('show')) return;
+      const target = event.target;
+      if (event.key === 'Enter' && target?.tagName === 'TEXTAREA') {
+        event.preventDefault();
+        event.stopPropagation();
+        insertTextareaLineBreak(target);
         return;
       }
-      const originalText = courseMapTriageEditButton.textContent;
-      courseMapTriageEditButton.disabled = true;
-      courseMapTriageEditButton.classList.add('is-saving');
-      courseMapTriageEditButton.textContent = 'Saving...';
-      courseMapTriageEditButton.setAttribute('aria-busy', 'true');
-      try {
-        const saved = await saveCourseMapTriageEditForm();
-        if (saved) hideCourseMapStudentNoteModal();
-      } finally {
-        courseMapTriageEditButton.disabled = false;
-        courseMapTriageEditButton.classList.remove('is-saving');
-        courseMapTriageEditButton.textContent = originalText || 'Save';
-        courseMapTriageEditButton.setAttribute('aria-busy', 'false');
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void runCourseMapTriageSaveButton();
+        return;
       }
+      if (event.key !== 'Tab' || event.shiftKey) return;
+      const newCommentField = document.getElementById('course-map-triage-new-comment');
+      if (target === newCommentField && courseMapTriageEditButton && !courseMapTriageEditButton.hidden) {
+        event.preventDefault();
+        courseMapTriageEditButton.focus();
+        return;
+      }
+      if (target === courseMapTriageEditButton && closeCourseMapStudentNoteCta) {
+        event.preventDefault();
+        closeCourseMapStudentNoteCta.focus();
+        return;
+      }
+      if (target === closeCourseMapStudentNoteCta && newCommentField) {
+        event.preventDefault();
+        newCommentField.focus();
+      }
+    });
+  }
+  if (courseMapTriageEditButton) {
+    courseMapTriageEditButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      void runCourseMapTriageSaveButton();
     });
   }
   if (courseMapTriageAddCommentButton) {
@@ -25677,7 +26053,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const mainContent = document.querySelector('.main-content');
     enablePanelResize(primarySidebar, { key: 'sidebar', fixFlexOnResize: true });
     enablePanelResize(dropSidebar, { key: 'drop-sidebar', fixFlexOnResize: true });
-    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true });
+    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true, respectCssMax: true });
   } catch { }
 
   try {
@@ -25767,6 +26143,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       syncLoadFormState();
     });
   if (applyLoadModal) applyLoadModal.addEventListener('click', applyLoadSettings);
+  document.getElementById('load-label')?.addEventListener('dblclick', resetLoadToFullLoad);
+  courseMapLoadLabel?.addEventListener('dblclick', resetLoadToFullLoad);
   if (loadValueInput)
     loadValueInput.addEventListener('click', () => {
       if (loadLockMsg) {
