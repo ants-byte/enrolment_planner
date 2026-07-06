@@ -1667,6 +1667,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
   const emailBothButton = document.getElementById('email-both');
+  const copyStudentEmailsButton = document.getElementById('copy-student-emails');
   const openSupportingDocsFolderButton = document.getElementById('open-supporting-docs-folder');
   const openTeacherTempFolderButton = document.getElementById('open-teacher-temp-folder');
   const copyStudentDeclarationButton = document.getElementById('copy-student-declaration');
@@ -1966,6 +1967,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyNextSemester,
       copyNextSemesterCodes,
       copyCourseMapRemainingInfo,
+      copyStudentEmailsButton,
     ].forEach((button) => setClipboardButtonState(button, enabled));
   };
   updateClipboardUI();
@@ -2127,6 +2129,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const passGrades = new Set(['CRT', 'PA', 'CR', 'D', 'HD', 'RPL', 'PS', 'SP', 'UP']);
   const creditGradeTokens = new Set(['CRT', 'RPL', 'CR']);
   const failGrades = new Set(['W', 'WNA', 'N', 'WE', 'H', 'SC', 'SAH', 'CNI', 'WN']);
+  const currentEnrolmentGradeTokens = new Set(['H', 'XH']);
   const legacySubjectPairs = [
     ['BIT102', 'BIT121'],
     ['BIT103', 'BIT108'],
@@ -2337,6 +2340,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     tokens.forEach((token) => {
       const cleaned = token.replace(/[^A-Z0-9/]/g, '');
       if (!cleaned) return;
+      if (currentEnrolmentGradeTokens.has(cleaned)) return;
       if (passGrades.has(cleaned)) {
         hasPass = true;
       } else if (failGrades.has(cleaned) || cleaned.startsWith('WN/')) {
@@ -2347,10 +2351,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (hasFail) return 'fail';
     return '';
   };
+  const isCurrentEnrolmentGrade = (value) => {
+    const tokens = (value || '').toUpperCase().match(/[A-Z0-9/]+/g) || [];
+    return tokens.some((token) => currentEnrolmentGradeTokens.has(token.replace(/[^A-Z0-9/]/g, '')));
+  };
   const extractGradeToken = (value) => {
     const tokens = (value || '').toUpperCase().match(/[A-Z0-9/]+/g) || [];
     for (const token of tokens) {
-      if (passGrades.has(token) || failGrades.has(token) || token.startsWith('WN/')) {
+      if (currentEnrolmentGradeTokens.has(token) || passGrades.has(token) || failGrades.has(token) || token.startsWith('WN/')) {
         return token;
       }
     }
@@ -2450,6 +2458,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!token) return '';
     return isFailGradeToken(token) ? `x${token}` : token;
   };
+  const getCurrentHoldEnrolmentCodes = () =>
+    Array.from(new Set([
+      ...Array.from(workbookCurrent.entries()),
+      ...Array.from(manualEntryCurrent.entries()),
+    ]
+      .filter(([code, meta]) =>
+        validSubjectCodes.has(code) &&
+        !withdrawnCurrentEnrolments.has(code) &&
+        normalizeGradeToken(meta?.result || '') === 'H'
+      )
+      .map(([code]) => code)))
+      .sort((a, b) => a.localeCompare(b));
   const getHistoryDateSortValue = (value) => {
     const text = String(value || '').trim();
     if (!text) return Number.MAX_SAFE_INTEGER;
@@ -5981,7 +6001,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!id || isPlaceholder(cell)) return;
       const st = subjectState.get(id);
       const isCurrentInRecord = currentEnrolmentStudentRecord.has(id);
-      const isPassOverride = passForEnrolmentsOverrides.has(id);
       cell.classList.remove('completed', 'toggled', 'completed-pending', 'current-enrolment', 'current-enrolment-withdrawn');
       cell.removeAttribute('data-withdrawal-ribbon-label');
       cell.setAttribute('aria-pressed', 'false');
@@ -5996,7 +6015,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!st?.completed && withdrawnCurrentEnrolments.has(id)) {
         cell.classList.add('current-enrolment-withdrawn');
         cell.setAttribute('data-withdrawal-ribbon-label', withdrawalRibbonLabel);
-      } else if (isCurrentInRecord && (st?.toggled || isPassOverride)) {
+      } else if (isCurrentInRecord) {
         cell.classList.add('current-enrolment');
       }
       const isNotThisSem = !isRunningThisSemester(id);
@@ -7310,6 +7329,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         both || 'Both email addresses required.'
       );
     }
+    if (copyStudentEmailsButton) {
+      const emails = [primary, institute].filter(Boolean).join('; ');
+      copyStudentEmailsButton.hidden = !shouldShow;
+      setActionButtonDisabledState(copyStudentEmailsButton, !hasAnyEmail);
+      copyStudentEmailsButton.setAttribute(
+        'title',
+        emails || 'No student email address loaded.'
+      );
+    }
     if (openSupportingDocsFolderButton) {
       openSupportingDocsFolderButton.hidden = !shouldShow;
       const canOpen = !!supportingDocsPath;
@@ -7557,6 +7585,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         html: `<strong class="alert-inline-title alert-title-warning">Software Development caution</strong> <span class="alert-inline-text">${escapeHtml(
           sdCaution
         )}</span>`,
+      });
+    }
+    const currentHoldCodes = getCurrentHoldEnrolmentCodes();
+    if (currentHoldCodes.length) {
+      const subjectLabel = currentHoldCodes.length === 1 ? 'subject' : 'subjects';
+      warnings.push({
+        title: 'Current H enrolment',
+        html: `<strong class="alert-inline-title alert-title-warning">Current H enrolment</strong> <span class="alert-inline-text">${escapeHtml(
+          currentHoldCodes.join(', ')
+        )} ${currentHoldCodes.length === 1 ? 'has' : 'have'} an H/hold result and ${currentHoldCodes.length === 1 ? 'is' : 'are'} still being treated as current ${subjectLabel}. Check this before confirming enrolment choices.</span>`,
       });
     }
     const summerSchoolAlert = getSummerSchoolOpportunityAlert();
@@ -7982,6 +8020,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           .filter((code) => validSubjectCodes.has(code) && !withdrawnCurrentEnrolments.has(code))
           .sort((a, b) => a.localeCompare(b))
         : [];
+    const currentHoldCodes = getCurrentHoldEnrolmentCodes();
     const activeRecord = getActiveStudentRecord();
     // Only use student-record Credit Points Earned for mismatch checks.
     // `creditPointsEarned` is sourced from course info and can be present even when no student record is loaded.
@@ -8000,7 +8039,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const creditMismatch = creditMismatchRaw && !creditMismatchExplainedByPassCurrent;
     const formatCountValue = (value) =>
       Number.isInteger(value) ? value.toString() : value.toFixed(1);
-    const hasAny = completedTotal > 0 || selected > 0;
+    const hasAny = completedTotal > 0 || selected > 0 || currentHoldCodes.length > 0;
     if (!hasAny) {
       subjectCountsEl.innerHTML = '';
       subjectCountsEl.classList.remove('is-visible', 'all-complete');
@@ -8062,6 +8101,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       : '';
     const completedTooltip = `${formatListHtml('Completed', completedCodesList)}${useTooltipNote}`;
     const selectedTooltip = formatListHtml('Selected', selectedCodes);
+    const currentHoldTooltip = formatListHtml('Current H enrolments', currentHoldCodes);
     const remainingTooltip = [
       formatListHtml('Core and Major remaining', remainingCoreMajorCodes),
       '<div class="ui-tooltip-separator"></div>',
@@ -8093,6 +8133,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     lineTwo.appendChild(selectedSpan);
     lineTwo.appendChild(document.createTextNode(', '));
     lineTwo.appendChild(remainingSpan);
+    if (currentHoldCodes.length) {
+      const currentHoldSpan = document.createElement('span');
+      currentHoldSpan.className = 'subject-counts-item';
+      currentHoldSpan.textContent = `${currentHoldCodes.length} current H`;
+      currentHoldSpan.setAttribute('data-tooltip-html', currentHoldTooltip);
+      lineTwo.appendChild(document.createTextNode(', '));
+      lineTwo.appendChild(currentHoldSpan);
+    }
 
     subjectCountsEl.appendChild(lineOne);
     subjectCountsEl.appendChild(lineTwo);
@@ -9821,7 +9869,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     manualEntryCurrent: new Map(
       Array.from(manualEntryCurrent.entries()).map(([code, meta]) => [
         code,
-        { date: meta?.date || '' },
+        { result: meta?.result || '', date: meta?.date || '' },
       ])
     ),
     manualEntryUnknown: manualEntryUnknown.map((entry) => ({ ...entry })),
@@ -9851,18 +9899,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     workbookCurrent.clear();
     if (snapshot.workbookCurrent) {
       snapshot.workbookCurrent.forEach((meta, code) =>
-        workbookCurrent.set(code, { date: meta?.date || '' })
+        workbookCurrent.set(code, { result: meta?.result || '', date: meta?.date || '' })
       );
     }
     workbookCurrent.clear();
     if (snapshot.workbookCurrent) {
       snapshot.workbookCurrent.forEach((meta, code) =>
-        workbookCurrent.set(code, { date: meta?.date || '' })
+        workbookCurrent.set(code, { result: meta?.result || '', date: meta?.date || '' })
       );
     }
     manualEntryCurrent.clear();
     snapshot.manualEntryCurrent.forEach((meta, code) =>
-      manualEntryCurrent.set(code, { date: meta?.date || '' })
+      manualEntryCurrent.set(code, { result: meta?.result || '', date: meta?.date || '' })
     );
     manualEntryUnknown.length = 0;
     snapshot.manualEntryUnknown.forEach((entry) => manualEntryUnknown.push({ ...entry }));
@@ -9890,9 +9938,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return true;
   };
 
+  const resetModeOptionsToDefault = () => {
+    overrideMode = false;
+    fullLoadCap = 4;
+    showSemCounts = true;
+    courseMapStudentSemCountsOn = true;
+    refreshCurrentEnrolmentStudentRecord();
+    passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
+    exceptionalLoadApproved = false;
+    remainingConfirmed = false;
+    setLoadError('');
+    hideLoadModal();
+    updateOverrideUI();
+    syncLoadFormState();
+    updateVaryLoadLabel();
+    updateSemCountUI();
+    updateCourseMapSemCountToggleUi();
+    applyPassForEnrolmentsState();
+    updatePassForEnrolmentsAvailability();
+    updatePassForEnrolmentsIndicator();
+  };
+
   const resetStudentSelections = () => {
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
-      if (restoreStudentSnapshot(loadedStudentSnapshot)) return;
+      if (restoreStudentSnapshot(loadedStudentSnapshot)) {
+        resetModeOptionsToDefault();
+        conditionalRecompute({ force: true, usePlanned: false });
+        updateResetState();
+        updateSelectedList();
+        updateWarnings();
+        return;
+      }
     }
     resetAvailableListSnapshot();
     currentEnrolmentStudentRecord.clear();
@@ -9923,6 +9999,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setElectiveCredits([], true);
 
     setLivePrereqEnabled(true);
+    resetModeOptionsToDefault();
     conditionalRecompute({ force: true, usePlanned: false });
     updateResetState();
     updateElectiveWarning();
@@ -11820,7 +11897,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let extractedEntries = [];
     let useTranscriptParsing = false;
     let canIdentifyCurrent = false;
-    const resultListPattern = /([A-Z]{3,4}\d{3})\s+([A-Z0-9/]+)\s+(\d{4})\s+(\d{1,2})\s+(\d{1,2})/g;
+    const resultListPattern = /([A-Z]{3,4}\d{3})\s+([A-Z0-9/]+)\s+(\d{4})\s+(\d{1,2})\s+(\d{1,2})/gi;
     const resultListEntries = [];
     if (safeRaw.includes(',') && resultListPattern.test(safeRaw)) {
       resultListPattern.lastIndex = 0;
@@ -11832,7 +11909,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const month = parseInt(match[4], 10);
         const day = parseInt(match[5], 10);
         const dateToken = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const status = getGradeStatus(grade);
+        const status = isCurrentEnrolmentGrade(grade) ? 'current' : getGradeStatus(grade);
         resultListEntries.push({ rawCode, grade, date: dateToken, status });
         match = resultListPattern.exec(safeRaw);
       }
@@ -11841,6 +11918,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (resultListEntries.length) {
       extractedEntries = resultListEntries;
       useTranscriptParsing = true;
+      canIdentifyCurrent = true;
     } else if (lines.length > 1) {
       const gradeHeader = findGradeColumnFromHeader(lines);
       const dateHeader = findDateColumnFromHeader(lines);
@@ -11869,7 +11947,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       useTranscriptParsing = gradeColIndex !== -1;
 
       if (useTranscriptParsing) {
-        const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
+        const hasResults = rowData.some(({ columns }) => {
+          const gradeCell = columns[gradeColIndex] || '';
+          return getGradeStatus(gradeCell) || isCurrentEnrolmentGrade(gradeCell);
+        });
         const hasDates =
           dateColIndex !== -1 && rowData.some(({ columns }) => extractDateToken(columns[dateColIndex] || ''));
         // Some pasted tables contain a "Credit Points" column, not grade results.
@@ -11884,7 +11965,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               const matchedCode = getFirstManualCodeToken(upper);
               if (!matchedCode) return null;
               const gradeCell = columns[gradeColIndex] || '';
-              const status = getGradeStatus(gradeCell);
+              const status = isCurrentEnrolmentGrade(gradeCell) ? 'current' : getGradeStatus(gradeCell);
               const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
               const dateToken = extractDateToken(dateCell);
               if (!status) {
@@ -11920,6 +12001,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           for (let i = tokenIdx + 1; i < tokens.length; i += 1) {
             const token = tokens[i];
             if (manualCodeRegex.test(token)) break;
+            if (isCurrentEnrolmentGrade(token)) {
+              gradeToken = token;
+              break;
+            }
             const normalized = normalizeGradeToken(token);
             if (!normalized) continue;
             if (passGrades.has(normalized) || failGrades.has(normalized) || normalized.startsWith('WN/')) {
@@ -11928,7 +12013,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             }
           }
           if (!gradeToken) return { rawCode: code, grade: '', date: '', status: 'current' };
-          const status = passGrades.has(gradeToken) ? 'pass' : 'fail';
+          const status = isCurrentEnrolmentGrade(gradeToken)
+            ? 'current'
+            : passGrades.has(gradeToken) ? 'pass' : 'fail';
           return { rawCode: code, grade: gradeToken, date: '', status };
         });
       });
@@ -11963,7 +12050,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const aliasSet = aliasEntries.get(mapped) || new Set();
           if (original && mapped !== original) aliasSet.add(original);
           if (aliasSet.size) aliasEntries.set(mapped, aliasSet);
-          currentEntries.set(mapped, { date: date || '' });
+          currentEntries.set(mapped, { date: date || '', result: normalizedGrade || '' });
         }
         return;
       }
@@ -12027,7 +12114,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .split(',')
         .map((segment) => segment.trim())
         .filter(Boolean);
-      const hasAnyGradeToken = segments.some((segment) => !!getGradeStatus(segment));
+      const hasAnyGradeToken = segments.some((segment) => !!getGradeStatus(segment) || isCurrentEnrolmentGrade(segment));
       if (hasAnyGradeToken) {
         const currentEntries = new Map();
         segments.forEach((segment) => {
@@ -12037,7 +12124,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const { mapped } = resolveLegacyCode(matchedCode);
           if (!mapped) return;
           const dateToken = extractDateToken(segment);
-          currentEntries.set(mapped, { date: dateToken || '' });
+          currentEntries.set(mapped, {
+            date: dateToken || '',
+            result: isCurrentEnrolmentGrade(segment) ? normalizeGradeToken(segment) : '',
+          });
         });
         if (currentEntries.size) return currentEntries;
       }
@@ -12069,7 +12159,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     if (gradeColIndex === -1) return new Map();
-    const hasResults = rowData.some(({ columns }) => getGradeStatus(columns[gradeColIndex] || ''));
+    const hasResults = rowData.some(({ columns }) => {
+      const gradeCell = columns[gradeColIndex] || '';
+      return getGradeStatus(gradeCell) || isCurrentEnrolmentGrade(gradeCell);
+    });
     if (!hasResults) return new Map();
 
     const currentEntries = new Map();
@@ -12079,17 +12172,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!matchedCode) return;
       const gradeCell = columns[gradeColIndex] || '';
       const status = getGradeStatus(gradeCell);
+      const isCurrentGrade = isCurrentEnrolmentGrade(gradeCell);
       if (status) return;
       const dateCell = dateColIndex !== -1 ? columns[dateColIndex] || '' : '';
       const dateToken = extractDateToken(dateCell);
       const { mapped } = resolveLegacyCode(matchedCode);
       if (!mapped) return;
-      currentEntries.set(mapped, { date: dateToken || '' });
+      currentEntries.set(mapped, {
+        date: dateToken || '',
+        result: isCurrentGrade ? normalizeGradeToken(gradeCell) : '',
+      });
     });
     if (currentEntries.size) return currentEntries;
 
     // Fallback: if any grades exist in the text, treat code-only lines as current.
-    const hasAnyGradeToken = lines.some((line) => !!getGradeStatus(line));
+    const hasAnyGradeToken = lines.some((line) => !!getGradeStatus(line) || isCurrentEnrolmentGrade(line));
     if (!hasAnyGradeToken) return currentEntries;
     lines.forEach((line) => {
       const upper = line.toUpperCase();
@@ -12098,7 +12195,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (getGradeStatus(line)) return;
       const { mapped } = resolveLegacyCode(matchedCode);
       if (!mapped) return;
-      currentEntries.set(mapped, { date: '' });
+      currentEntries.set(mapped, {
+        date: '',
+        result: isCurrentEnrolmentGrade(line) ? normalizeGradeToken(line) : '',
+      });
     });
     return currentEntries;
   };
@@ -12730,6 +12830,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (triageCommentClose) {
       event.preventDefault();
       closeAllTriageComments();
+      return;
+    }
+    const emailCopyTarget = event.target?.closest?.('.student-email-copy');
+    if (emailCopyTarget) {
+      event.preventDefault();
+      const emails = (emailCopyTarget.getAttribute('data-emails') || '')
+        .split(',')
+        .map((email) => email.trim())
+        .filter(Boolean);
+      void copyPlainText(emails.join('; ')).then((copied) => {
+        if (copied) triggerFlash(emailCopyTarget);
+      });
       return;
     }
     const emailTarget = event.target?.closest?.('.student-email-link');
@@ -14081,6 +14193,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (mpEmail || primaryEmail) {
       const emailList = [mpEmail, primaryEmail].filter(Boolean);
       const emailIconHtml = '<span class="email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" /></svg></span>';
+      const copyIconHtml = `<span class="clipboard-icon" aria-hidden="true">${EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG}</span>`;
       const emailLinks = emailList
         .map(
           (email) =>
@@ -14088,11 +14201,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         )
         .join('<span class="student-email-sep">; </span>');
       const allEmails = emailList.join(',');
-      const multiIcon =
+      const emailAllIcon =
         emailList.length > 1
           ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">${emailIconHtml}</button>`
           : '';
-      lines.push(`<div class="student-email-row">${emailLinks}${multiIcon ? ` ${multiIcon}` : ''}</div>`);
+      const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="Copy student emails">${copyIconHtml}</button>`;
+      lines.push(`<div class="student-email-row">${emailLinks}${emailAllIcon ? ` ${emailAllIcon}` : ''} ${copyEmailsIcon}</div>`);
     }
     if (deferredInfo?.isDeferred) {
       const deferredMessage = buildDeferredNoticeText(deferredInfo);
@@ -20505,10 +20619,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cell.classList.toggle('course-map-in-major', isMajorSubjectPending);
       const isCurrentInRecord = currentEnrolmentStudentRecord.has(code);
       const isCurrentWithdrawn = isCurrentInRecord && withdrawnCurrentEnrolments.has(code);
-      const isCurrentRecordRibbon =
-        isCurrentInRecord &&
-        !isCurrentWithdrawn &&
-        (!!st?.toggled || passForEnrolmentsOverrides.has(code));
+      const isCurrentRecordRibbon = isCurrentInRecord && !isCurrentWithdrawn;
       cell.classList.toggle('course-map-current-record', isCurrentRecordRibbon);
       cell.classList.toggle('course-map-current-withdrawn', isCurrentWithdrawn);
       if (isCurrentWithdrawn) {
@@ -23782,14 +23893,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const htmlOuterIndentStyle = 'margin-left:1.27cm;mso-margin-left-alt:1.27cm;';
+    const htmlIndentStyle = 'margin-left:36pt;mso-margin-left-alt:36pt;mso-para-margin-left:36pt;';
+    const tableIndentStyle = 'margin-left:36pt;mso-table-lspace:36pt;mso-table-rspace:0pt;';
     const headingContentHtml = isTimetableOptionsClip
       ? escapeHtml(heading)
       : studentHeading
         ? `${escapeHtml(headingPrefix)}, for <span style="font-weight:700;">${escapeHtml(studentHeading)}</span>`
         : escapeHtml(headingPrefix);
     const headingHtml = includeHeading
-      ? `<p style="margin-top:0;margin-right:0;margin-bottom:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:400;line-height:1.2;">${headingContentHtml}</p>`
+      ? `<p style="${htmlIndentStyle}margin-top:0;margin-right:0;margin-bottom:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:400;line-height:1.2;">${headingContentHtml}</p>`
       : '';
     const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
@@ -23824,9 +23936,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (feesHtml && timetableFees) {
       const feeStyle = window.getComputedStyle(timetableFees);
       const feeBoxStyle = [
-        'margin:0',
-        'mso-margin-left-alt:0',
-        'mso-para-margin-left:0',
+        'margin:0 0 0 36pt',
+        'mso-margin-left-alt:36pt',
+        'mso-para-margin-left:36pt',
         'mso-margin-top-alt:0',
         'mso-margin-bottom-alt:0',
         'font-family:Calibri, Arial, sans-serif',
@@ -23840,8 +23952,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ].join(';');
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
-    const htmlSpacer = '<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>';
-    const htmlCore = `<p style="margin:0;line-height:1;">&nbsp;</p><div style="${htmlOuterIndentStyle}">${headingHtml}<table style="border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}</div>`;
+    const htmlSpacer = `<p style="${htmlIndentStyle}margin-top:0;margin-right:0;margin-bottom:10pt;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
+    const htmlCore = `<p style="margin:0;line-height:1;">&nbsp;</p>${headingHtml}<table style="${tableIndentStyle}border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
     const html = htmlCore;
 
     if (window.ClipboardItem) {
@@ -24580,6 +24692,66 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const buildHistoryRowsCopyData = (rows, headingText = '') => {
+    const columns = ['code', 'name', 'result', 'date', 'stream'];
+    const labels = ['Code', 'Name', 'Result', 'Date', 'Stream'];
+    const values = (rows || []).map((row) => ({
+      code: row.displayCode || formatHistoryCode(row.id),
+      name: row.displayName ?? getSubjectName(row.id),
+      result: row.result || '',
+      date: row.date || '',
+      stream: row.displayStream ?? buildStreamLabel(row.id),
+    }));
+    const textBody = [
+      labels.join('\t'),
+      ...values.map((row) => columns.map((col) => row[col] || '').join('\t')),
+    ].join('\n');
+    const heading = headingText ? headingText.trim() : '';
+    const text = heading ? `${heading}\n${textBody}` : textBody;
+    const cellStyle = 'border:1px solid #ccc;text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;';
+    const headerHtml = `<tr>${labels
+      .map((label) => `<th style="${cellStyle}padding:6pt 8px;font-weight:700;">${escapeHtml(label)}</th>`)
+      .join('')}</tr>`;
+    const rowsHtml = values
+      .map(
+        (row) =>
+          `<tr>${columns
+            .map((col) => `<td style="${cellStyle}padding:0 8px;font-weight:400;">${escapeHtml(row[col] || '')}</td>`)
+            .join('')}</tr>`
+      )
+      .join('');
+    const headingHtml = heading ? `<div style="margin-bottom:6px;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${escapeHtml(heading)}</div>` : '';
+    const html = `${headingHtml}<table style="border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${headerHtml}${rowsHtml}</table>`;
+    return { text, html };
+  };
+
+  const copyHistoryToClipboard = () => {
+    if (!clipboardAvailable) return;
+    let rows = sortHistoryRows(getHistoryRows());
+    if (historyOnlyPassed) rows = rows.filter((row) => !isWithdrawOrFailGrade(row.result));
+    const parts = [];
+    if (currentEnrolmentsSection && !currentEnrolmentsSection.hidden && currentEnrolmentsTable) {
+      parts.push(buildSimpleTableCopyData(currentEnrolmentsTable, 'Current Enrolments in your student record:'));
+    }
+    parts.push(buildHistoryRowsCopyData(rows, historyTitleEl?.textContent || 'History'));
+    const filteredParts = parts.filter((part) => part.text);
+    if (!filteredParts.length) return;
+    const text = filteredParts.map((part) => part.text).join('\n\n');
+    const html = filteredParts.map((part) => part.html).join('<br><br>');
+    if (window.ClipboardItem) {
+      navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        }),
+      ]).catch(() => {
+        navigator.clipboard.writeText(text).catch(() => { });
+      });
+    } else {
+      navigator.clipboard.writeText(text).catch(() => { });
+    }
+  };
+
   const copySubjectCodesFromTable = (tableEl) => {
     if (!tableEl || !clipboardAvailable) return;
     const rows = Array.from(tableEl.querySelectorAll('tbody tr'));
@@ -24819,14 +24991,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }, new Map());
     const listRows = Array.from(rows.entries())
       .filter(([id]) => validSubjectCodes.has(id) && !subjectState.get(id)?.completed)
-      .map(([id, meta]) => ({ id, date: meta?.date || '' }))
+      .map(([id, meta]) => ({ id, result: formatHistoryResult(meta?.result || ''), date: meta?.date || '' }))
       .sort((a, b) => a.id.localeCompare(b.id));
     if (!listRows.length) {
       currentEnrolmentsSection.hidden = true;
       if (historyGradedHeading) historyGradedHeading.hidden = true;
       return;
     }
-    listRows.forEach(({ id, date }) => {
+    listRows.forEach(({ id, result, date }) => {
       const row = document.createElement('tr');
       row.dataset.subject = id;
       applyDisplayTypeClass(row, id);
@@ -24835,7 +25007,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const valueMap = {
         code: formatHistoryCode(id),
         name,
-        result: '',
+        result,
         date,
         stream,
       };
@@ -25569,6 +25741,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       sendTimetableEmail('both');
     });
   }
+  if (copyStudentEmailsButton) {
+    copyStudentEmailsButton.addEventListener('click', () => {
+      const emails = buildRecipientListFromTarget(getActiveStudentRecord(), 'both')
+        .split(',')
+        .map((email) => email.trim())
+        .filter(Boolean)
+        .join('; ');
+      if (!emails) return;
+      void copyPlainText(emails).then((copied) => {
+        if (copied) flashCopyButton(copyStudentEmailsButton);
+      });
+    });
+  }
   if (openSupportingDocsFolderButton) {
     openSupportingDocsFolderButton.addEventListener('click', () => {
       const semesterPath = getSemesterFolderPath();
@@ -25774,13 +25959,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (copyHistory) {
     copyHistory.addEventListener('click', () => {
       flashCopyButton(copyHistory);
-      const tables = [historyTable];
-      const headings = [historyTitleEl?.textContent || 'History'];
-      if (currentEnrolmentsSection && !currentEnrolmentsSection.hidden && currentEnrolmentsTable) {
-        tables.unshift(currentEnrolmentsTable);
-        headings.unshift('Current Enrolments in your student record:');
-      }
-      copySimpleTablesToClipboard(tables, headings);
+      copyHistoryToClipboard();
     });
   }
   if (historyColoursButton) {

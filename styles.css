@@ -1422,8 +1422,7 @@ button {
   flex-wrap: wrap;
 }
 
-.student-email-link,
-.student-email-all {
+.student-email-link {
   color: #66c2ff;
   text-decoration: none;
   font-weight: 400;
@@ -1432,7 +1431,9 @@ button {
 .student-email-link:hover,
 .student-email-link:focus-visible,
 .student-email-all:hover,
-.student-email-all:focus-visible {
+.student-email-all:focus-visible,
+.student-email-copy:hover,
+.student-email-copy:focus-visible {
   text-decoration: none;
 }
 
@@ -1441,30 +1442,35 @@ button {
   color: #66c2ff;
 }
 
-.student-email-all {
+.student-email-all,
+.student-email-copy {
   margin-left: 6px;
-  width: 22px;
-  height: 20px;
-  min-width: 22px;
+  width: 32px;
+  height: 24px;
+  min-width: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--btn-primary-border);
   border-radius: 6px;
   background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
+  color: #fff;
   padding: 0;
   cursor: pointer;
 }
 
 .student-email-all .email-icon,
-.student-email-all .email-icon svg {
-  width: 13px;
-  height: 13px;
+.student-email-all .email-icon svg,
+.student-email-copy .clipboard-icon,
+.student-email-copy .clipboard-icon svg {
+  width: 16px;
+  height: 16px;
   display: block;
 }
 
 .student-email-link.copy-flash,
-.student-email-all.copy-flash {
+.student-email-all.copy-flash,
+.student-email-copy.copy-flash {
   animation: copyFlash 0.55s ease;
 }
 
@@ -6655,7 +6661,6 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   grid-column: 1;
   justify-self: center;
   min-width: 0;
-  width: 34px;
   height: 32px;
   padding: 0;
 }

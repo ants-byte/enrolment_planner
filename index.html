@@ -1435,6 +1435,7 @@ Created: December 30, 2025
                   fill="currentColor" />
               </svg>
             </span>
+            Codes
           </button>
           <div class="modal-action-group">
             <button id="copy-timetable" class="clear-button secondary" type="button">
@@ -1445,14 +1446,30 @@ Created: December 30, 2025
                     fill="currentColor" />
                 </svg>
               </span>
-              Copy
+              Copy all
             </button>
-            <button id="timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
-              aria-pressed="false" hidden>Show Colours</button>
             <button id="copy-student-declaration" class="clear-button secondary" type="button">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
               StudDec
             </button>
             <div class="timetable-email-actions">
+              <button id="copy-student-emails" class="clear-button secondary timetable-email" type="button" hidden
+                aria-label="Copy student emails" title="Copy student emails">
+                <span class="clipboard-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path
+                      d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                      fill="currentColor" />
+                  </svg>
+                </span>
+                Emails
+              </button>
               <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
@@ -1505,6 +1522,8 @@ Created: December 30, 2025
                 </span>
                 t
               </button>
+              <button id="timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
+                aria-pressed="false" hidden>Show Colours</button>
             </div>
           </div>
           <button id="hide-timetable" class="clear-button secondary" type="button">Close</button>
