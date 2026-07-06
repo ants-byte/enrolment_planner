@@ -8,7 +8,7 @@ PROFILE=addve
 # Change INTAKE each semester to the semester folder name under the BIT Operations SharePoint General folder.
 # (If you ever create this folder, note that spaces are OK)
 # Do not add quote marks or slashes.
-INTAKE=Enrol 26_S1
+INTAKE=Enrol 26_S2
 
 # Usually do not change this path structure.
 # Keep {PROFILE} and {INTAKE}; the site replaces them with the values above.

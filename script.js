@@ -836,6 +836,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const folderShortcutCreditSuggestionsButton = document.getElementById('folder-shortcut-credit-sugg');
   const folderShortcutCreditStrategyButton = document.getElementById('folder-shortcut-credit-strat');
   const folderShortcutCreditFormButton = document.getElementById('folder-shortcut-credit-crt');
+  const folderShortcutCtTempButton = document.getElementById('folder-shortcut-ct-temp');
   const folderShortcutCopyPersonalsButton = document.getElementById('folder-shortcut-copy-personals');
   const folderShortcutCreditMpArticulationButton = document.getElementById('folder-shortcut-credit-mp');
   const folderShortcutCreditFmpArticulationButton = document.getElementById('folder-shortcut-credit-fmp');
@@ -885,9 +886,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const isEnrolProtocolEnabled = () => {
     try {
-      return window.localStorage?.getItem(ENROL_PROTOCOL_ENABLED_KEY) === '1';
+      const stored = window.localStorage?.getItem(ENROL_PROTOCOL_ENABLED_KEY);
+      if (stored === '0') return false;
+      if (stored === '1') return true;
+      return getClientOs() === 'windows';
     } catch {
-      return false;
+      return getClientOs() === 'windows';
     }
   };
   const setEnrolProtocolEnabled = (enabled) => {
@@ -895,7 +899,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (enabled) {
         window.localStorage?.setItem(ENROL_PROTOCOL_ENABLED_KEY, '1');
       } else {
-        window.localStorage?.removeItem(ENROL_PROTOCOL_ENABLED_KEY);
+        window.localStorage?.setItem(ENROL_PROTOCOL_ENABLED_KEY, '0');
       }
       folderShortcutProtocolUnavailableNotified = false;
     } catch {
@@ -1803,6 +1807,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapTriageCommentText = document.getElementById('course-map-triage-comment-text');
   const courseMapHeaderStrip = document.getElementById('course-map-header-strip');
   const courseMapOpenFolderShortcutsButton = document.getElementById('course-map-open-folder-shortcuts');
+  const courseMapCtTempButton = document.getElementById('course-map-ct-temp');
   const courseMapStudentInfoStrip = document.getElementById('course-map-student-info-strip');
   const courseMapStudentSearchInput = document.getElementById('course-map-student-search');
   const courseMapStudentSearchDropdown = document.getElementById('course-map-student-search-dropdown');
@@ -2229,6 +2234,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let triageOpenCooldownUntil = 0;
   let triageOpenCooldownTimer = null;
   let fileLocationsCache = null;
+  let settingsSemesterFolderPath = '';
+  let settingsIntakeWarningShown = false;
   let staffFolderHandle = null;
   let folderShortcutSearchFallbackNotified = false;
   let otherLoadedFilesInfo = [];
@@ -2773,6 +2780,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const showStaffHeaderControls = shouldShowCourseMapLoadFilesButton();
     if (courseMapOpenFolderShortcutsButton) {
       courseMapOpenFolderShortcutsButton.hidden = !showStaffHeaderControls;
+    }
+    if (courseMapCtTempButton) {
+      courseMapCtTempButton.hidden = !showStaffHeaderControls;
+      courseMapCtTempButton.classList.toggle('hidden-initial', !showStaffHeaderControls);
     }
     if (courseMapLoadFilesButton) {
       const show = showStaffHeaderControls;
@@ -7034,8 +7045,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const idSpan = document.createElement('span');
         idSpan.className = 'timetable-title-student-id';
         idSpan.textContent = studentId;
-        idSpan.addEventListener('dblclick', () => {
-          void copyPlainText(studentId);
+        idSpan.title = 'Copy student ID';
+        idSpan.addEventListener('click', () => {
+          void copyPlainText(studentId).then((copied) => {
+            if (copied) triggerFlash(idSpan);
+          });
         });
         preparedLine.appendChild(idSpan);
       }
@@ -7044,8 +7058,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const nameSpan = document.createElement('span');
         nameSpan.className = 'timetable-title-student-name';
         nameSpan.textContent = name;
-        nameSpan.addEventListener('dblclick', () => {
-          void copyPlainText(studentCopyText);
+        nameSpan.title = 'Copy student ID and name';
+        nameSpan.addEventListener('click', () => {
+          void copyPlainText(studentCopyText).then((copied) => {
+            if (copied) triggerFlash(nameSpan);
+          });
         });
         preparedLine.appendChild(nameSpan);
       }
@@ -10001,7 +10018,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showFolderShortcutsModal = () => {
     if (!folderShortcutsModal) return;
-    void renderFolderShortcutPanel();
+    void renderFolderShortcutPanel().then(() => {
+      const currentDialogSemesterButton = folderShortcutsModal.querySelector('#folder-shortcut-semester-dialog');
+      if (folderShortcutSemesterButton && currentDialogSemesterButton?.parentElement) {
+        const clone = folderShortcutSemesterButton.cloneNode(true);
+        clone.id = 'folder-shortcut-semester-dialog';
+        clone.textContent = folderShortcutSemesterButton.textContent || clone.textContent;
+        clone.setAttribute('title', folderShortcutSemesterButton.getAttribute('title') || '');
+        clone.setAttribute('data-path', folderShortcutSemesterButton.getAttribute('data-path') || '');
+        currentDialogSemesterButton.parentElement.replaceChild(clone, currentDialogSemesterButton);
+      }
+      folderShortcutsModal.querySelectorAll('.folder-shortcut-btn').forEach((button) => {
+        if (button.dataset.directModalClick === '1') return;
+        button.dataset.directModalClick = '1';
+        button.addEventListener('click', (event) => {
+          event.stopPropagation();
+          void handleFolderShortcutClick(event);
+        });
+      });
+    });
     const modalBox = folderShortcutsModal.querySelector('.folder-shortcuts-modal');
     if (modalBox) {
       modalBox.style.position = '';
@@ -10285,16 +10320,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const EMAIL_SCRIPTS_EXTRA_ROWS = [
-    { key: 'credit-transfer-sign-return', label: 'Credit Transfer - Please sign and return' },
-    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
-    { key: 'suspended-students', label: 'Suspended students' },
-    { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner - instructions and Zoom offer' },
-    { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner - not sure about what to do' },
-    { key: 'not-in-oe-dashboard-enrolment-applications', label: 'Not in OE Dashboard but in Enrolment Applications' },
-    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications - image free' },
-    { key: 'need-to-start-an-application', label: 'Need to start an application' },
-    { key: 'online-progression-classes-entered', label: 'Online progression - classes entered' },
-    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress - selections look good. classes entered', dividerAfter: true },
+    { key: 'student-declaration', label: 'Student Declaration for ongoing students' },
+    { key: 'student-dec-returned', label: 'Student Dec returned' },
+    { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner – instructions and Zoom offer' },
+    { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner – not sure about what to do', dividerAfter: true },
+    { key: 'enrolling-late-bit111', label: 'BIT111 – Enrolling late' },
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
     { key: 'bit121-for-ns-major', label: 'BIT121 for NS major' },
@@ -10302,45 +10332,90 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'bit111-and-bit106-then-bit231-and-bit245-for-ba-major', label: 'BIT111 & BIT106, then BIT231 & BIT245 for BA major' },
     { key: 'bit111-for-sd-major', label: 'BIT111 for SD major' },
     { key: 'bit111-then-bit231-and-bit245-sd-major', label: 'BIT111, then BIT231 & BIT245. SD major' },
-    { key: 'ba-or-sd-major-you-should-choose', label: 'BA or SD major? You should choose' },
-    { key: 'ba-major-you-should-choose', label: 'BA major? You should choose' },
-    { key: 'sd-major-you-should-choose', label: 'SD major? You should choose' },
-    { key: 'bit213-as-co-requisite', label: 'BIT213 as co-requisite' },
-    { key: 'major-subjects-for-capstone', label: 'Major subjects for Capstone' },
-    { key: 'major-stream-must-choose-now', label: 'Major stream - must choose now' },
-    { key: 'fmp-associate-degree-bit371-and-major', label: 'FMP Associate Degree - BIT371 and major.' },
-    { key: 'alternating-subjects-ba-major', label: 'Alternating subjects - BA major' },
-    { key: 'alternating-subjects-sd', label: 'Alternating subjects - SD' },
-    { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects - SD & BA' },
-    { key: '4-uses-your-major', label: '4 USEs - your major?' },
-    { key: 'use-unspecified-elective-explained-short', label: 'USE Unspecified Elective explained - short' },
-    { key: 'use-unspecified-elective-explained-long', label: 'USE Unspecified Elective explained - long' },
-    { key: 'bit106-bit230-bit242-bit371-bit372-to-4-semesters', label: 'BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters' },
-    { key: 'enrolling-late-bit111', label: 'Enrolling late – BIT111' },
-    { key: '12-subjects-remaining', label: '12 subjects remaining' },
+    { key: 'bit213-as-co-requisite', label: 'BIT213 as co–requisite' },
+    { key: 'bit106-bit230-bit242-bit371-bit372-to-4-semesters', label: 'BIT106–BIT230–BIT242–BIT371–BIT372 to 4 semesters' },
+    { key: 'bit245-is-ba-and-sd', label: 'BIT245 is BA and SD' },
+    { key: 'ba-or-sd-major-you-should-choose', label: 'Major – BA or SD major? Should choose' },
+    { key: 'ba-major-you-should-choose', label: 'Major – BA? Should choose' },
+    { key: 'sd-major-you-should-choose', label: 'Major – SD? Should choose' },
+    { key: 'major-subjects-for-capstone', label: 'Major – 3 semesters and Capstone' },
+    { key: 'major-stream-must-choose-now', label: 'Major – must choose now' },
+    { key: 'fmp-associate-degree-bit371-and-major', label: 'Major – BIT371 for FMP students' },
+    { key: '4-uses-your-major', label: 'Major – 4 USEs so which major?' },
+    { key: 'alternating-subjects-ba-major', label: 'Alternating subjects – BA' },
+    { key: 'alternating-subjects-sd', label: 'Alternating subjects – SD' },
+    { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects – SD & BA' },
+    { key: 'capstone-explained', label: 'Capstone Explained' },
+    { key: 'completing-the-course-early', label: 'Completing The Course Early' },
+    { key: 'summer-school-explained', label: 'Summer School Explained', dividerAfter: true },
+    { key: 'link-to-start-application', label: 'Link to Start Application' },
+    { key: 'applying-from-os', label: 'Applying from os' },
+    { key: 'in-australia-now-completed-eform-but-no-usi', label: 'In Australia now – completed eForm but no USI' },
+    { key: 'are-you-in-aust-or-studied', label: 'Are you in Aust or studied?' },
+    { key: 'usi-get-or-create-one', label: 'USI – get or create one' },
+    { key: 'usi-incorrect-details-entered', label: 'USI – incorrect details entered' },
+    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications – Welcome!' },
+    { key: 'online-progression-classes-entered', label: 'Online progression – classes entered' },
+    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress – selections look good. classes entered' },
+    { key: 'credit-transfer-sign-return', label: 'Credit Transfer – Please sign and return' },
+    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
+    { key: 'electives-use-credits-explained', label: 'Electives (USE credits) explained' },
     { key: '6-credits', label: '6 credits' },
-    { key: 'usi-information', label: 'USI - information' },
-    { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course - how to' },
-    { key: 'amendment-to-enrolment', label: 'Amendment to enrolment' },
-    { key: 'amendment-to-enrolment-when-late-enrolment', label: 'Amendment to enrolment when late enrolment', dividerAfter: true },
-    { key: 'student-hub', label: 'Student Hub', startNewColumn: true },
-    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password - W-Fi, Outlook, Moodle, computers' },
-    { key: 'mp-outlook-email', label: 'MP outlook email' },
-    { key: 'supports-at-risk', label: 'Supports (at risk) - Counselling etc.' },
+    { key: '12-credits-post-bachelor-visa-concern', label: '12 credits. Post–bachelor visa concern' },
+    { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
+    { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to', dividerAfter: true },
+    { key: 'student-hub', label: 'Student Hub' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
-    { key: 'personal-details-change-your-details', label: 'Personal Details — change your details' },
-    { key: 'proof-that-are-on-break', label: 'Proof that are on break (holiday, semester break, work fulltime)' },
-    { key: 'student-results-where-to-find', label: 'Student results — where to find' },
-    { key: 'transcript-mid-course-where-to-find', label: 'Transcript mid-course — where to find' },
-    { key: 'transcripts-for-graduate-where-to-find', label: 'Transcripts for graduate — where to find' },
-    { key: 'transcripts-for-graduate-was-lost-where-to-find', label: 'Transcripts for graduate was lost — where to find' },
-    { key: 'application-for-refund-where-to-find', label: 'Application for refund — where to find' },
-    { key: 'make-a-suggestion-where-to-find', label: 'Make a suggestion — where to find' },
-    { key: 'lodge-a-complaint-where-to-find', label: 'Lodge a complaint — where to find', dividerAfter: true },
+    { key: 'personal-details-change-your-details', label: 'Personal Details – change your details' },
+    { key: 'username-password-wifi-outlook-moodle-computers', label: 'Username and Password – W–Fi, Outlook, Moodle, computers' },
+    { key: 'mp-outlook-email', label: 'MP outlook email' },
+    { key: 'technical-problems-student-logging-in-moodle', label: 'Technical problems – logging in, Moodle' },
+    { key: 'supports-at-risk', label: 'Supports (at risk) – Counselling etc.' },
+    { key: 'mr-ms-sir-etc', label: 'Mr/Ms/Sir/etc', dividerAfter: true },
+    { key: 'proof-that-are-on-break', label: 'Employer wants proof that are on break' },
+    { key: 'student-results-where-to-find', label: "Student's results – are on student portal" },
+    { key: 'transcript-mid-course-where-to-find', label: 'Transcript request – mid–course – where to find' },
+    { key: 'transcripts-for-graduate-where-to-find', label: 'Transcript request – for graduate – where to find' },
+    { key: 'transcripts-for-graduate-was-lost-where-to-find', label: 'Transcript request – replacement for graduate' },
+    { key: 'application-for-refund-where-to-find', label: 'Refund application – how to' },
+    { key: 'make-a-suggestion-where-to-find', label: 'Make a Suggestion – where to find' },
+    { key: 'lodge-a-complaint-where-to-find', label: 'Lodge a complaint – where to find' },
   ];
+  const EMAIL_SCRIPTS_EMAIL_SUBJECTS = {
+    'not-using-timetableplanner-instructions-and-zoom-offer': 'Help using TimetablePlanner',
+    'not-using-timetableplanner-not-sure-about-what-to-do': 'Help using TimetablePlanner',
+    'online-progression-classes-entered': 'Classes entered.  Back to you',
+    'online-progress-selections-look-good-classes-entered': 'Classes entered.  Back to you',
+    'not-in-oe-dashboard-enrolment-applications-image-free': 'Enrolment application progress',
+    'need-to-start-an-application': 'Starting a new application',
+    'bit106-bit230-bit242-bit371-bit372-to-4-semesters': '5 semester chain in 4 semesters',
+    'ba-or-sd-major-you-should-choose': 'Major - Should choose',
+    'ba-major-you-should-choose': 'Major - Should choose',
+    'sd-major-you-should-choose': 'Major - Should choose',
+    'major-subjects-for-capstone': 'Major - Should choose',
+    'major-stream-must-choose-now': 'Major - Should choose',
+    '4-uses-your-major': 'Major - Should choose',
+    'alternating-subjects-ba-major': 'Subjects run alternate semesters',
+    'alternating-subjects-sd': 'Subjects run alternate semesters',
+    'alternating-subjects-sd-and-ba': 'Subjects run alternate semesters',
+    'electives-use-credits-explained': 'USE101, USE201, etc. Unspecified Electives explained',
+    'amendment-to-enrolment-when-late-enrolment': 'Amendment to enrolment. Late enrolment',
+    'supports-at-risk': 'Melbourne Polytechnic Supports',
+    'proof-that-are-on-break': 'Employer proof',
+    'student-results-where-to-find': 'Your results',
+    'transcript-mid-course-where-to-find': 'Transcript request',
+    'transcripts-for-graduate-where-to-find': 'Transcript request',
+    'transcripts-for-graduate-was-lost-where-to-find': 'Transcript request',
+    'mr-ms-sir-etc': 'Try sticking with first names only',
+  };
 
   const EMAIL_SCRIPTS_SECTION_HEADINGS = {
+    'student-declaration': [
+      'Student Declaration for ongoing students',
+      'Student Declaration',
+    ],
     'student-dec-returned': [
+      'Student Declaration returned',
       'Student Dec returned',
       'Student Dec Returned',
     ],
@@ -10348,6 +10423,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Link to Start Application',
       'Link to start application',
     ],
+    'applying-from-os': ['Applying from os'],
+    'in-australia-now-completed-eform-but-no-usi': [
+      'In Australia now - completed eForm but no USI',
+      'In Australia now – completed eForm but no USI',
+    ],
+    'are-you-in-aust-or-studied': ['Are you in Aust or studied?'],
+    'usi-get-or-create-one': ['USI - get or create one', 'USI – get or create one'],
+    'usi-incorrect-details-entered': ['USI - incorrect details entered', 'USI – incorrect details entered'],
     'supports-at-risk': [
       'Supports (at risk)',
       'Supports (at risk) - Counselling etc.',
@@ -10369,21 +10452,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'bit111-and-bit106-for-ba-major': ['BIT111 & BIT106 for BA major'],
     'bit111-and-bit106-then-bit231-and-bit245-for-ba-major': ['BIT111 & BIT106, then BIT231 & BIT245 for BA major'],
     'bit111-for-sd-major': ['BIT111 for SD major'],
-    'bit111-then-bit231-and-bit245-sd-major': ['BIT111, then BIT231 & BIT245. SD major'],
-    'ba-or-sd-major-you-should-choose': ['BA or SD major? You should choose'],
-    'ba-major-you-should-choose': ['BA major? You should choose'],
-    'sd-major-you-should-choose': ['SD major? You should choose'],
+    'bit111-then-bit231-and-bit245-sd-major': [
+      'BIT111, then BIT231 & BIT245. SD major',
+      'BIT111, then BIT231 & BT245. SD major',
+    ],
+    'ba-or-sd-major-you-should-choose': ['Major - BA or SD major? Should choose', 'BA or SD major? You should choose'],
+    'ba-major-you-should-choose': ['Major - BA? Should choose', 'BA major? You should choose'],
+    'sd-major-you-should-choose': ['Major - SD? Should choose', 'SD major? You should choose'],
     'bit213-as-co-requisite': ['BIT213 as co-requisite'],
-    'major-subjects-for-capstone': ['Major subjects for Capstone'],
+    'major-subjects-for-capstone': [
+      'Major - 3 semesters and Capstone',
+      'Major - get subjects for Capstone',
+      'Major subjects for Capstone – 12 subjects remaining',
+      'Major subjects for Capstone',
+    ],
     'major-stream-must-choose-now': [
+      'Major - must choose now',
       'Major stream - must choose now',
       'Major stream – must choose now',
     ],
     'fmp-associate-degree-bit371-and-major': [
+      'Major - BIT371 for FMP students',
+      'Major and BIT371 for FMP students',
+      'FMP Associate Degree - BIT371 and major',
+      'FMP Associate Degree – BIT371 and major',
       'FMP Associate Degree - BIT371 and major.',
       'FMP Associate Degree – BIT371 and major.',
     ],
     'alternating-subjects-ba-major': [
+      'Alternating subjects - BA',
       'Alternating subjects - BA major',
       'Alternating subjects – BA major',
     ],
@@ -10395,19 +10492,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Alternating subjects - SD & BA',
       'Alternating subjects – SD & BA',
     ],
-    '4-uses-your-major': ['4 USEs - your major?', '4 USEs – your major?'],
-    'use-unspecified-elective-explained-short': [
+    '4-uses-your-major': ['Major - 4 USEs so which major?', '4 USEs - your major?', '4 USEs – your major?'],
+    'electives-use-credits-explained': [
+      'Electives (USE credits) explained',
+      'USE (Unspecified Electives) explained - short',
+      'USE (Unspecified Electives) explained – short',
       'USE Unspecified Elective explained - short',
       'USE Unspecified Elective explained – short',
-    ],
-    'use-unspecified-elective-explained-long': [
+      'USE (Unspecified Electives) explained - long',
+      'USE (Unspecified Electives) explained – long',
       'USE Unspecified Elective explained - long',
       'USE Unspecified Elective explained – long',
     ],
     'bit106-bit230-bit242-bit371-bit372-to-4-semesters': ['BIT106-BIT230-BIT242-BIT371-BIT372 to 4 semesters'],
-    'enrolling-late-bit111': ['Enrolling late - BIT111', 'Enrolling late – BIT111'],
+    'bit245-is-ba-and-sd': ['BIT245 is BA and SD'],
+    'enrolling-late-bit111': ['BIT111 - Enrolling late', 'Enrolling late - BIT111', 'Enrolling late – BIT111'],
     '12-subjects-remaining': ['12 subjects remaining'],
     '6-credits': ['6 credits'],
+    '12-credits-post-bachelor-visa-concern': ['12 credits. Post-bachelor visa concern'],
+    'enrolment-cutoff-dates': ['Enrolment cutoff dates'],
+    'capstone-explained': ['Capstone Explained'],
+    'completing-the-course-early': ['Completing The Course Early'],
+    'summer-school-explained': ['Summer School Explained'],
     'usi-information': ['USI - information', 'USI – information'],
     'withdrawal-from-course-how-to': [
       'Withdrawal from course - how to',
@@ -10424,58 +10530,73 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Personal Details — change your details',
       'Personal Details',
     ],
-    'proof-that-are-on-break': ['Proof that are on break (holiday, semester break, work fulltime)'],
+    'proof-that-are-on-break': ['Employer wants proof that are on break', 'Proof that are on break (holiday, semester break, work fulltime)'],
     'student-results-where-to-find': [
+      "Student's results - are on student portal",
       'Student results - where to find',
       'Student results – where to find',
       'Student results — where to find',
     ],
     'transcript-mid-course-where-to-find': [
+      'Transcript request - mid-course — where to find',
       'Transcript mid-course - where to find',
       'Transcript mid-course – where to find',
       'Transcript mid-course — where to find',
     ],
     'transcripts-for-graduate-where-to-find': [
+      'Transcript request - for graduate — where to find',
       'Transcripts for graduate - where to find',
       'Transcripts for graduate – where to find',
       'Transcripts for graduate — where to find',
     ],
     'transcripts-for-graduate-was-lost-where-to-find': [
+      'Transcript request - replacement for graduate',
       'Transcripts for graduate was lost - where to find',
       'Transcripts for graduate was lost – where to find',
       'Transcripts for graduate was lost — where to find',
     ],
     'application-for-refund-where-to-find': [
+      'Refund application - how to',
       'Application for refund - where to find',
       'Application for refund – where to find',
       'Application for refund — where to find',
     ],
     'make-a-suggestion-where-to-find': [
+      'Make a Suggestion — where to find',
+      'Suggestions by student - how to lodge them',
       'Make a suggestion - where to find',
       'Make a suggestion – where to find',
       'Make a suggestion — where to find',
     ],
     'lodge-a-complaint-where-to-find': [
+      'Complaints by student - how to lodge them',
       'Lodge a complaint - where to find',
       'Lodge a complaint – where to find',
       'Lodge a complaint — where to find',
     ],
+    'mr-ms-sir-etc': ['Mr/Ms/Sir/etc'],
     'username-password-wifi-outlook-moodle-computers': [
       'Username and Password - W-Fi, Outlook, Moodle, computers',
       'Username and Password - Wi-Fi, Outlook, Moodle, computers',
     ],
     'mp-outlook-email': ['MP outlook email'],
-    'who-to-contact-for-help': ['Who to contact for help?'],
-    'not-in-oe-dashboard-enrolment-applications': [
-      'Not in OE Dashboard but in Enrolment Applications',
+    'technical-problems-student-logging-in-moodle': [
+      'Technical problems - logging in, Moodle',
+      'Technical problems – logging in, Moodle',
+      'Technical problems - student logging in, Moodle',
+      'Technical problems – student logging in, Moodle',
     ],
+    'who-to-contact-for-help': ['Who to contact for help?'],
     'not-in-oe-dashboard-enrolment-applications-image-free': [
+      'Not in OE Dashboard but in Enrolment Applications - Welcome!',
+      'Not in OE Dashboard but in Enrolment Applications – Welcome!',
       'Not in OE Dashboard but in Enrolment Applications - image free',
       'Not in OE Dashboard but in Enrolment Applications – image free',
     ],
     'need-to-start-an-application': ['Need to start an application'],
-    'suspended-students': ['Suspended students'],
     'not-using-timetableplanner-instructions-and-zoom-offer': [
+      'Not using TimetablePlanner - not helping themselves',
+      'Not using TimetablePlanner – not helping themselves',
       'Not using TimetablePlanner - instructions and Zoom offer',
       'Not using TimetablePlanner – instructions and Zoom offer',
     ],
@@ -10656,6 +10777,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       emailBtn.className = 'clear-button secondary email-scripts-access-icon email-scripts-section-email';
       emailBtn.dataset.sectionKey = rowConfig.key;
       emailBtn.dataset.sectionLabel = rowConfig.label;
+      emailBtn.dataset.emailSubject = EMAIL_SCRIPTS_EMAIL_SUBJECTS[rowConfig.key] || rowConfig.label;
       emailBtn.setAttribute('aria-label', `Email ${rowConfig.label} text`);
       emailBtn.appendChild(createEmailScriptsActionIcon('email'));
       row.appendChild(emailBtn);
@@ -12528,6 +12650,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       void copyActiveStudentPersonalsSequence(copySeqTarget);
       return;
     }
+    const ctTempTarget = event.target?.closest?.('.student-summary-ct-temp');
+    if (ctTempTarget) {
+      event.preventDefault();
+      void launchCreditTransferTempWorkflow(ctTempTarget);
+      return;
+    }
+    const ctLocationTarget = event.target?.closest?.('.student-summary-ct-location-link');
+    if (ctLocationTarget) {
+      event.preventDefault();
+      const folderPath = ctLocationTarget.getAttribute('data-path') || '';
+      if (folderPath) launchEnrolProtocol(folderPath);
+      return;
+    }
+    const ctOpenTarget = event.target?.closest?.('.student-summary-ct-open');
+    if (ctOpenTarget) {
+      event.preventDefault();
+      if (ctOpenTarget.hasAttribute('data-ct-open-workflow')) {
+        void launchCreditTransferOpenWorkflow(ctOpenTarget);
+        return;
+      }
+      const folderPath = ctOpenTarget.getAttribute('data-path') || '';
+      if (folderPath && ctOpenTarget.hasAttribute('data-protocol-open')) {
+        launchEnrolProtocol(folderPath);
+        if (getActiveStudentRecord()) void copyActiveStudentPersonalsSequence(ctOpenTarget);
+      } else if (folderPath) {
+        void openFolderShortcutPath(folderPath, 'Credit transfer folder');
+        if (getActiveStudentRecord()) void copyActiveStudentPersonalsSequence(ctOpenTarget);
+      }
+      return;
+    }
     const idCopyTarget = event.target?.closest?.('.student-summary-id-value');
     if (idCopyTarget) {
       event.preventDefault();
@@ -12656,6 +12808,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (courseMapOpenFolderShortcutsButton) {
     courseMapOpenFolderShortcutsButton.addEventListener('click', () => {
       showFolderShortcutsModal();
+    });
+  }
+  if (courseMapCtTempButton) {
+    courseMapCtTempButton.addEventListener('click', () => {
+      void launchCreditTransferTempWorkflow(courseMapCtTempButton);
     });
   }
   if (closeFolderShortcutsModal) closeFolderShortcutsModal.addEventListener('click', hideFolderShortcutsModal);
@@ -14256,6 +14413,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const crtClass = creditTransferWarningActive ? 'crt-form-link crt-form-link-warning' : 'crt-form-link';
       lines.push(
         `<a class="${crtClass}" href="${escapeHtml(crtLocation)}" target="_blank" rel="noopener noreferrer">CRT form</a>`
+      );
+    }
+    if (record) {
+      lines.push(
+        '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Find or prepare this student credit transfer working folder.">ct -&gt; temp</button>'
       );
     }
     if (!hasHistory) {
@@ -15919,10 +16081,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!record) {
       const entered = String(studentIdInput?.value || '').trim();
       if (entered && triageFileInfo?.fileName) {
+        const enteredId = normalizeStudentId(entered);
         renderStudentPreviewHtml(
-          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Student not found.</strong> Only started applying? Enquiry only? You can add still add the student's information to Triage:</div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add" data-triage-action="add-temp">Add to Triage</button>`
+          `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Student not found.</strong> Only started applying? Enquiry only? You can add still add the student's information to Triage:</div><div class="student-summary-ct-found" data-ct-student-id="${escapeHtml(enteredId)}"></div><button type="button" class="clear-button secondary student-summary-triage-action student-summary-triage-add student-summary-triage-add-no-history" data-triage-action="add-temp">Add to Triage</button>`
         );
         setStudentPreviewVisible(true);
+        void refreshMissingStudentCreditTransferNotice(enteredId);
       } else {
         renderStudentPreview('');
         setStudentPreviewVisible(false);
@@ -16618,6 +16782,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return /(settings|file[_-]?locations)\.(txt|text)$/i.test(cleaned);
   };
 
+  const getExpectedSettingsIntake = (date = new Date()) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const month = date.getMonth() + 1;
+    const yy = String(date.getFullYear()).slice(-2);
+    const suffix = month >= 9 ? 'SS' : month >= 5 ? 'S2' : 'S1';
+    return `Enrol ${yy}_${suffix}`;
+  };
+
+  const warnIfSettingsIntakeLooksOutOfDate = (intakeValue = '') => {
+    if (settingsIntakeWarningShown) return;
+    const actualMatch = String(intakeValue || '').trim().match(/enrol\s*(\d{2})\s*[_-]?\s*(s1|s2|ss)\b/i);
+    const expected = getExpectedSettingsIntake(new Date());
+    const expectedMatch = expected.match(/enrol\s*(\d{2})\s*[_-]?\s*(s1|s2|ss)\b/i);
+    if (!actualMatch || !expectedMatch) return;
+    const actualKey = `${actualMatch[1]}_${actualMatch[2].toUpperCase()}`;
+    const expectedKey = `${expectedMatch[1]}_${expectedMatch[2].toUpperCase()}`;
+    if (actualKey === expectedKey) return;
+    settingsIntakeWarningShown = true;
+    window.setTimeout(() => {
+      window.alert(
+        `settings.txt may be out of date.\n\nINTAKE is set to "${intakeValue}", but based on today's date it should usually be "${expected}".\n\nExpected cycle: Jan-Apr S1, May-Aug S2, Sep-Dec SS.`
+      );
+    }, 0);
+  };
+
   const parseFileLocationsText = (text = '') => {
     const rawLines = text
       .split(/\r?\n/)
@@ -16625,6 +16814,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(Boolean);
     fileLocationsProfileOverride = '';
     fileLocationsIntakeOverride = '';
+    settingsSemesterFolderPath = '';
     settingsSignOffDefaults = null;
     settingsSignOffProfiles = new Map();
     const valueLines = [];
@@ -16687,7 +16877,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const intakeMatch = normalized.match(/^intake\s*=\s*(.+?)\s*$/i);
       if (intakeMatch && intakeMatch[1]) {
         const intakeValue = normalizeSettingValue(intakeMatch[1]);
-        if (intakeValue) fileLocationsIntakeOverride = intakeValue;
+        if (intakeValue) {
+          fileLocationsIntakeOverride = intakeValue;
+          warnIfSettingsIntakeLooksOutOfDate(intakeValue);
+        }
         return;
       }
       const keyValueMatch = normalized.match(/^([A-Za-z0-9_.-]+)\s*=\s*(.*?)\s*$/);
@@ -16695,7 +16888,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const keyName = keyValueMatch[1];
         const keyValue = normalizeSettingValue(keyValueMatch[2]);
         if (isRootPathSettingsKey(keyName)) {
-          if (keyValue) valueLines.push(keyValue);
+          if (keyValue) {
+            settingsSemesterFolderPath = keyValue;
+            valueLines.push(keyValue);
+          }
           return;
         }
         const prefField = normalizeSignOffSettingsKey(keyValueMatch[1]);
@@ -16975,6 +17171,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     addEnrolProtocolPathQuery(queryParts, 'renameFrom', options?.renameFromPath || '');
     addEnrolProtocolPathQuery(queryParts, 'renameTo', options?.renameToPath || '');
     addEnrolProtocolPathQuery(queryParts, 'selectFallback', options?.selectFallbackPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'semester', options?.semesterPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'creditRoot', options?.creditTransfersRootPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'tempRoot', options?.tempRootPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'teacherTemp', options?.teacherTempPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'supportRoot', options?.supportingCreditRootPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'template1', options?.templatePath || '');
+    addEnrolProtocolPathQuery(queryParts, 'template2', options?.templateFallbackPath || '');
+    addEnrolProtocolPathQuery(queryParts, 'statusPath', options?.statusPath || '');
     addEnrolProtocolTextQuery(queryParts, 'sid', options?.studentIdText);
     addEnrolProtocolTextQuery(queryParts, 'dob', options?.dobText);
     addEnrolProtocolTextQuery(queryParts, 'intl', options?.internationalText);
@@ -16982,6 +17186,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     addEnrolProtocolTextQuery(queryParts, 'given', options?.givenNameText);
     addEnrolProtocolTextQuery(queryParts, 'email', options?.emailText);
     addEnrolProtocolTextQuery(queryParts, 'mobile', options?.mobileText);
+    addEnrolProtocolTextQuery(queryParts, 'teacher', options?.teacherName);
+    addEnrolProtocolTextQuery(queryParts, 'folderName', options?.studentFolderName);
+    addEnrolProtocolTextQuery(queryParts, 'creditFileName', options?.creditFileName);
+    addEnrolProtocolTextQuery(queryParts, 'to', options?.emailTo);
+    addEnrolProtocolTextQuery(queryParts, 'subject', options?.emailSubject);
+    addEnrolProtocolTextQuery(queryParts, 'salutation', options?.emailSalutation);
+    addEnrolProtocolTextQuery(queryParts, 'signoff', options?.emailSignoff);
+    if (options?.ctTemp) queryParts.push('ctTemp=1');
+    if (options?.ctOpen) queryParts.push('ctOpen=1');
+    if (options?.ctStatus) queryParts.push('ctStatus=1');
+    if (options?.emailDraft) queryParts.push('emailDraft=1');
     if (options?.overwrite) queryParts.push('overwrite=1');
     if (options?.openFile) queryParts.push('openFile=1');
     if (!queryParts.length) return '';
@@ -17099,6 +17314,170 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const day = dayNames[date.getDay()] || '';
     return `${yy} ${mm} ${dd} ${day}`.trim();
   };
+
+  const CT_TEMP_HELPER_MESSAGE =
+    'This workflow depends on the local Windows enrol:// helper and locally synced OneDrive/SharePoint folders.\n\n' +
+    'It will not work from a SharePoint web URL, an unsynced/cloud-only folder, or a computer where the helper is not installed/enabled.\n\n' +
+    'If it cannot run, open the locally synced site folder or complete the folder movement manually in File Explorer.';
+
+  const truncateCtLabel = (value = '', maxLength = 50) => {
+    const text = String(value || '').trim();
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, Math.max(0, maxLength - 3))}...`;
+  };
+
+  const buildCtStudentFolderName = (studentId = '', familyRaw = '', givenRaw = '') => {
+    const family = String(familyRaw || '').trim().toUpperCase();
+    const given = toProperCase(givenRaw || '').trim();
+    const label = [studentId, family, given].filter(Boolean).join(' ');
+    return truncateCtLabel(sanitizeWindowsFileName(label), 50);
+  };
+
+  const buildCtCreditFileName = (studentId = '', familyRaw = '', givenRaw = '') => {
+    const family = String(familyRaw || '').trim().toUpperCase();
+    const given = toProperCase(givenRaw || '').trim();
+    const namePart = family && given ? `${family}, ${given}` : family || given;
+    const suffix = ' - Credit (HE)';
+    const label = sanitizeWindowsFileName([studentId, namePart].filter(Boolean).join(' '));
+    const maxBaseLength = 50 - suffix.length;
+    const base = label.length <= maxBaseLength ? label : `${label.slice(0, Math.max(0, maxBaseLength - 3))}...`;
+    return `${base}${suffix}.docx`;
+  };
+
+  const ensureSettingsSemesterFolderLoaded = async () => {
+    if (settingsSemesterFolderPath) return true;
+    const loaded = await ensureFileLocationsCacheLoaded().catch(() => false);
+    if (loaded && settingsSemesterFolderPath) return true;
+    const content = await readFileLocationsSiteText().catch(() => null);
+    if (!content) return false;
+    parseFileLocationsText(content);
+    return !!settingsSemesterFolderPath;
+  };
+
+  const normalizeOperationalSemesterFolderPath = (value = '') => {
+    const clean = normalizeEnrolProtocolPath(value);
+    if (!clean) return '';
+    const segments = clean.split(/\\/).filter(Boolean);
+    const enrolIndex = segments.findIndex((segment) => /^enrol\s*\d{2}\s*[_-]?\s*s[12s]+$/i.test(segment));
+    const semesterRoot =
+      enrolIndex >= 0
+        ? segments.slice(0, enrolIndex + 1).join('\\')
+        : clean.replace(/\\Enrolment System(?:\\site)?$/i, '');
+    const currentLabel = getCurrentSemesterShortcutLabel(new Date());
+    return normalizeEnrolProtocolPath(getSemesterShortcutPath(semesterRoot, currentLabel) || semesterRoot);
+  };
+
+  const getOperationalSemesterFolderPath = async () => {
+    await ensureSettingsSemesterFolderLoaded();
+    const configured = normalizeOperationalSemesterFolderPath(applyPathPlaceholders(settingsSemesterFolderPath || ''));
+    if (configured) return configured;
+    const candidates = [window.location.href, document.baseURI, window.location.pathname];
+    for (const candidate of candidates) {
+      const semesterPath = normalizeOperationalSemesterFolderPath(extractSemesterFolderPath(candidate, 'windows'));
+      if (semesterPath && /\\Enrolment System\\site$/i.test(normalizeEnrolProtocolPath(getPathDirname(candidate)))) {
+        return semesterPath;
+      }
+      if (semesterPath && /\\Enrol\s*\d{2}[_-]?S[12S]*/i.test(semesterPath)) {
+        return semesterPath;
+      }
+    }
+    return '';
+  };
+
+  const buildCtTempPayload = async () => {
+    const semesterPath = await getOperationalSemesterFolderPath();
+    if (!semesterPath) return null;
+    const record = getActiveStudentRecord();
+    const studentId = normalizeStudentId(record?.Student_IDs_Unique || activeStudentId || studentIdInput?.value || '');
+    if (!studentId) return null;
+    const familyRaw = String(record?.Family_Name || '').trim();
+    const givenRaw = String(record?.Given_Name || '').trim();
+    const teacherTempInfo = getTeacherTempFolderInfo(semesterPath, { os: 'windows' });
+    const teacherTempPath = normalizeEnrolProtocolPath(teacherTempInfo.preferredPath || teacherTempInfo.effectivePath || '');
+    const tempRootPath = normalizeEnrolProtocolPath(teacherTempInfo.rootPath || joinPath(semesterPath, 'Our temp and working files'));
+    const semesterParentPath = normalizeEnrolProtocolPath(getPathDirname(semesterPath));
+    const creditTransfersRootPath = normalizeEnrolProtocolPath(joinPath(semesterParentPath, 'credit transfers'));
+    const supportingCreditRootPath = normalizeEnrolProtocolPath(joinPath(semesterPath, 'Supporting Documents\\Credits Transfers'));
+    const templatePath = normalizeEnrolProtocolPath(joinPath(teacherTempPath, CREDIT_FORM_TEMPLATE_FILE_NAME));
+    const templateFallbackPath = normalizeEnrolProtocolPath(joinPath(supportingCreditRootPath, CREDIT_FORM_TEMPLATE_FILE_NAME));
+    const siteFolderPath = normalizeEnrolProtocolPath(getEnrolInstallSiteFolderPath());
+    const statusFileName = `${studentId}.json`;
+    const statusPath = siteFolderPath ? joinPath(siteFolderPath, 'ct-status', statusFileName) : '';
+    return {
+      semesterPath,
+      creditTransfersRootPath,
+      tempRootPath,
+      teacherTempPath,
+      supportingCreditRootPath,
+      templatePath,
+      templateFallbackPath,
+      teacherName: teacherTempInfo.teacherName || teacherTempInfo.teacherNameSegment || '',
+      studentIdText: studentId,
+      familyNameText: familyRaw,
+      givenNameText: givenRaw,
+      studentFolderName: buildCtStudentFolderName(studentId, familyRaw, givenRaw),
+      creditFileName: buildCtCreditFileName(studentId, familyRaw, givenRaw),
+      statusPath,
+      statusUrl: `ct-status/${encodeURIComponent(statusFileName)}`,
+    };
+  };
+
+  async function launchCreditTransferTempWorkflow(button = null) {
+    if (getClientOs() !== 'windows' || !isEnrolProtocolEnabled()) {
+      window.alert(CT_TEMP_HELPER_MESSAGE);
+      return false;
+    }
+    if (!window.confirm(`${CT_TEMP_HELPER_MESSAGE}\n\nContinue with ct -> temp?`)) return false;
+    const payload = await buildCtTempPayload();
+    if (!payload) {
+      window.alert(
+        'Cannot find the current semester folder or active student.\n\nOpen the locally synced SharePoint copy of the site, or configure ThisSemesterFolderPath in settings.txt.'
+      );
+      return false;
+    }
+    const launched = launchEnrolProtocol(payload.teacherTempPath || payload.semesterPath, {
+      ...payload,
+      ctTemp: true,
+      protocolHost: 'run',
+    });
+    if (launched) {
+      if (getActiveStudentRecord()) void copyActiveStudentPersonalsSequence(button || undefined);
+      if (button) triggerFlash(button);
+      const launchedAt = Date.now();
+      [900, 2500, 5000, 10000, 20000, 40000].forEach((delay) => {
+        window.setTimeout(
+          () => refreshMissingStudentCreditTransferNotice(payload.studentIdText, { minUpdatedAt: launchedAt, attempts: 2 }),
+          delay
+        );
+      });
+    }
+    return launched;
+  }
+
+  async function launchCreditTransferOpenWorkflow(button = null) {
+    if (getClientOs() !== 'windows' || !isEnrolProtocolEnabled()) {
+      window.alert(CT_TEMP_HELPER_MESSAGE);
+      return false;
+    }
+    const payload = await buildCtTempPayload();
+    if (!payload) {
+      window.alert(
+        'Cannot find the current semester folder or student ID.\n\nOpen the locally synced SharePoint copy of the site, or configure ThisSemesterFolderPath in settings.txt.'
+      );
+      return false;
+    }
+    const launched = launchEnrolProtocol(payload.teacherTempPath || payload.semesterPath, {
+      ...payload,
+      ctOpen: true,
+      protocolHost: 'run',
+    });
+    if (launched) {
+      if (getActiveStudentRecord()) void copyActiveStudentPersonalsSequence(button || undefined);
+      if (button) triggerFlash(button);
+      window.setTimeout(() => refreshMissingStudentCreditTransferNotice(payload.studentIdText), 900);
+    }
+    return launched;
+  }
 
   const buildCreditFormAutomationPayload = (templatePath = '') => {
     if (getClientOs() !== 'windows' || !isEnrolProtocolEnabled()) return null;
@@ -17219,14 +17598,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return false;
     }
     const href = fileHref;
-    if (officeProtocolHref) {
+    if (officeProtocolHref && !options?.selectFallbackPath) {
       const launched = openOfficeProtocol(officeProtocolHref);
       if (launched) return true;
     }
+    if (os === 'windows' && isAbsoluteFsPath(cleanPath) && hasFileExtension && isEnrolProtocolEnabled()) {
+      const parentPath = normalizeEnrolProtocolPath(getPathDirname(cleanPath));
+      const protocolOptions = { ...options, selectPath: cleanPath, openFile: true };
+      const launched = launchEnrolProtocol(parentPath || cleanPath, protocolOptions);
+      if (launched) return true;
+    }
     if (os === 'windows' && isAbsoluteFsPath(cleanPath) && !hasFileExtension && isEnrolProtocolEnabled()) {
-      const launched = selectPath
-        ? launchEnrolProtocol(cleanPath, { selectPath })
-        : launchEnrolProtocol(cleanPath);
+      const protocolOptions = { ...options };
+      if (selectPath) protocolOptions.selectPath = selectPath;
+      const launched = launchEnrolProtocol(cleanPath, protocolOptions);
       if (launched) return true;
     }
     if (/^https?:\/\//i.test(href) && openHrefInNewTab(href)) return true;
@@ -17336,6 +17721,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return `${String(year % 100).padStart(2, '0')}_${suffix}`;
   };
 
+  const getSemesterShortcutPath = (semesterPath = '', label = '') => {
+    const cleanPath = String(semesterPath || '').replace(/[\\/]+$/, '');
+    const m = String(label || '').trim().match(/^(\d{2})_(0[12])$/);
+    if (!cleanPath || !m) return semesterPath;
+    const [, yy, suffix] = m;
+    const sem = suffix === '01' ? '1' : '2';
+    const base = getPathBasename(cleanPath);
+    let nextBase = base.replace(/^(enrol\s*)\d{2}(\s*[_-]?\s*s)[12]/i, `$1${yy}$2${sem}`);
+    if (nextBase === base) {
+      nextBase = base.replace(/\b\d{2}_0[12]\b/, `${yy}_${suffix}`);
+    }
+    if (!nextBase || nextBase === base) return semesterPath;
+    return joinPath(getPathDirname(cleanPath), nextBase);
+  };
+
   const hasLoadedPlannerFiles = () =>
     !!(
       sourceWorkbookFileObject ||
@@ -17351,7 +17751,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     label,
     folderPath,
     fallbackLabel = 'Folder',
-    tooltipOverride = ''
+    tooltipOverride = '',
+    fallbackPath = ''
   ) => {
     if (!button) return;
     const cleanLabel = String(label || '').trim() || String(fallbackLabel || 'Folder').trim();
@@ -17370,6 +17771,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     button.classList.remove('is-unavailable');
     button.setAttribute('data-path', cleanPath);
+    if (fallbackPath) {
+      button.setAttribute('data-fallback-path', String(fallbackPath).trim());
+    } else {
+      button.removeAttribute('data-fallback-path');
+    }
     button.setAttribute('title', String(tooltipOverride || cleanPath));
   };
 
@@ -17399,20 +17805,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (m) return `${m[1]}_0${m[2]}`;
       return raw;
     })();
-    const studentFormsPath = semesterPath ? joinPath(semesterPath, 'Student Forms') : '';
+    const shortcutSemesterPath = getSemesterShortcutPath(semesterPath, semesterLabel);
+    const studentFormsPath = shortcutSemesterPath ? joinPath(shortcutSemesterPath, 'Student Forms') : '';
     const studentFormsTodayFolderName = formatStudentFormsDateFolderName(new Date());
-    const semesterPathClean = String(semesterPath || '').replace(/[\\/]+$/, '');
+    const semesterPathClean = String(shortcutSemesterPath || semesterPath || '').replace(/[\\/]+$/, '');
     const semesterParentPath = semesterPathClean
       ? String(getPathDirname(semesterPathClean) || '').replace(/[\\/]+$/, '')
       : '';
     const creditTransfersLocalPath = semesterParentPath
       ? joinPath(semesterParentPath, 'credit transfers')
       : applyPathPlaceholders(CREDIT_TRANSFERS_LOCAL_FALLBACK);
-    const creditTransfersSuggestionsPath = semesterPath
-      ? joinPath(semesterPath, 'Supporting Documents\\Credits Transfers\\Suggestions')
+    const creditTransfersSuggestionsPath = shortcutSemesterPath
+      ? joinPath(shortcutSemesterPath, 'Supporting Documents\\Credits Transfers\\Suggestions')
       : applyPathPlaceholders(CREDIT_TRANSFERS_SUGGESTIONS_FALLBACK);
-    const creditTransfersDocsRootPath = semesterPath
-      ? joinPath(semesterPath, 'Supporting Documents\\Credits Transfers')
+    const creditTransfersDocsRootPath = shortcutSemesterPath
+      ? joinPath(shortcutSemesterPath, 'Supporting Documents\\Credits Transfers')
       : applyPathPlaceholders(CREDIT_TRANSFERS_DOCS_ROOT_FALLBACK);
     const creditStrategyDocPath = joinPath(creditTransfersDocsRootPath, 'IT Enrolment Strategy.docx');
     const creditFormDocPath = joinPath(creditTransfersDocsRootPath, CREDIT_FORM_TEMPLATE_FILE_NAME);
@@ -17443,22 +17850,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     const teacherLabel = 'Temp.';
-    const teacherFolderInfo = getTeacherTempFolderInfo(semesterPath, { os, teacherName });
+    const teacherFolderInfo = getTeacherTempFolderInfo(shortcutSemesterPath, { os, teacherName });
     const teacherFolderRoot = teacherFolderInfo.rootPath;
     const teacherFolderPath =
-      filesLoaded
+      filesLoaded || teacherFolderInfo.teacherNameSegment
         ? teacherFolderInfo.effectivePath
         : teacherFolderRoot;
+    const teacherCreditStrategyDocPath = teacherFolderPath
+      ? joinPath(teacherFolderPath, 'IT Enrolment Strategy.docx')
+      : creditStrategyDocPath;
+    const teacherCreditFormDocPath = teacherFolderPath
+      ? joinPath(teacherFolderPath, CREDIT_FORM_TEMPLATE_FILE_NAME)
+      : creditFormDocPath;
+    const teacherCreditMpArticulationDocPath = teacherFolderPath
+      ? joinPath(teacherFolderPath, 'Credit (HE) Form - Articulation for MP Diploma of IT.docx')
+      : creditMpArticulationDocPath;
+    const teacherCreditFmpArticulationDocPath = teacherFolderPath
+      ? joinPath(teacherFolderPath, 'Credit (HE) Form - Articulation for FMP Associate Degree.docx')
+      : creditFmpArticulationDocPath;
     setFolderShortcutButton(
       folderShortcutSemesterButton,
       semesterLabel,
-      semesterPath,
+      shortcutSemesterPath,
       semesterLabel
     );
     setFolderShortcutButton(
       folderShortcutSemesterDialogButton,
       `${semesterLabel} enrolment folder`,
-      semesterPath,
+      shortcutSemesterPath,
       semesterLabel
     );
     setFolderShortcutButton(folderShortcutStudentFormsButton, 'Student Forms', studentFormsPath, 'Student Forms');
@@ -17531,16 +17950,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setFolderShortcutButton(
       folderShortcutCreditStrategyButton,
       'Enrolment Strategy',
-      creditStrategyDocPath,
+      teacherCreditStrategyDocPath,
       'Enrolment Strategy',
-      'Open IT Enrolment Strategy document.'
+      'Open IT Enrolment Strategy document.',
+      creditStrategyDocPath
     );
     setFolderShortcutButton(
       folderShortcutCreditFormButton,
       'Credit (HE)',
-      creditFormDocPath,
+      teacherCreditFormDocPath,
       'Credit (HE)',
-      'If a student is loaded (Windows helper enabled): create/open that student\'s Credit Form in temp, open Explorer + Word, and run copy personals. If no student is loaded (or helper unavailable): open the standard Credit (HE) Form template.'
+      'If a student is loaded (Windows helper enabled): create/open that student\'s Credit Form in temp, open Explorer + Word, and run copy personals. If no student is loaded (or helper unavailable): open the standard Credit (HE) Form template.',
+      creditFormDocPath
     );
     if (folderShortcutCopyPersonalsButton) {
       folderShortcutCopyPersonalsButton.classList.remove('hidden-initial', 'is-unavailable');
@@ -17555,16 +17976,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setFolderShortcutButton(
       folderShortcutCreditMpArticulationButton,
       'Credit (HE) - MP Dip',
-      creditMpArticulationDocPath,
+      teacherCreditMpArticulationDocPath,
       'Credit (HE) - MP Dip',
-      'Open the MP Diploma of IT articulation credit form.'
+      'Open the MP Diploma of IT articulation credit form.',
+      creditMpArticulationDocPath
     );
     setFolderShortcutButton(
       folderShortcutCreditFmpArticulationButton,
       'Credit (HE) - FMP Assoc Deg',
-      creditFmpArticulationDocPath,
+      teacherCreditFmpArticulationDocPath,
       'Credit (HE) - FMP Assoc Deg',
-      'Open the FMP Associate Degree articulation credit form.'
+      'Open the FMP Associate Degree articulation credit form.',
+      creditFmpArticulationDocPath
     );
     if (folderShortcutHelpButton) {
       folderShortcutHelpButton.classList.remove('hidden-initial');
@@ -17577,6 +18000,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         isEnrolProtocolEnabled()
           ? 'Protocol helper enabled (click to view/toggle)'
           : 'Install/enable Windows helper protocol'
+      );
+    }
+    if (folderShortcutCtTempButton) {
+      folderShortcutCtTempButton.classList.remove('hidden-initial', 'is-unavailable');
+      folderShortcutCtTempButton.disabled = false;
+      folderShortcutCtTempButton.removeAttribute('data-path');
+      folderShortcutCtTempButton.setAttribute(
+        'title',
+        'Find or prepare the active student credit transfer working folder.'
       );
     }
   };
@@ -17597,6 +18029,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
       showFolderShortcutHelpPopup();
+      return;
+    }
+    if (target.id === 'folder-shortcut-ct-temp') {
+      void launchCreditTransferTempWorkflow(target);
       return;
     }
     if (target.id === 'folder-shortcut-copy-personals') {
@@ -17621,26 +18057,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const datedFolderPath = dateFolderName
         ? joinPath(studentFormsRootPath, dateFolderName)
         : studentFormsRootPath;
-      if (
-        getClientOs() === 'windows' &&
-        isAbsoluteFsPath(datedFolderPath) &&
-        isEnrolProtocolEnabled() &&
-        launchEnrolProtocol(datedFolderPath, {
-          mkdirPath: datedFolderPath,
-          protocolHost: 'run',
-        })
-      ) {
-        triggerFlash(target);
-        return;
-      }
-      const copiedDatedPath = await copyPlainText(datedFolderPath);
-      if (copiedDatedPath) {
-        triggerFlash(target);
-      }
-      void openFolderShortcutPath(
+      const opened = await openFolderShortcutPath(
         datedFolderPath,
-        dateFolderName ? `Student Forms (${dateFolderName})` : 'Student Forms'
+        dateFolderName ? `Student Forms (${dateFolderName})` : 'Student Forms',
+        { mkdirPath: datedFolderPath }
       );
+      if (opened) {
+        triggerFlash(target);
+      }
       return;
     }
     if (target.id === 'folder-shortcut-credit-crt') {
@@ -17656,6 +18080,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     let path = String(target.getAttribute('data-path') || '').trim();
+    const fallbackPath = String(target.getAttribute('data-fallback-path') || '').trim();
     const label = String(target.textContent || '').trim() || 'Folder';
     if (!path) {
       await renderFolderShortcutPanel();
@@ -17665,11 +18090,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.alert(`Could not resolve ${label} path yet. Check settings.txt.`);
       return;
     }
-    const copiedPath = await copyPlainText(path);
-    if (copiedPath) {
+    const opened = await openFolderShortcutPath(path, label, fallbackPath ? { selectFallbackPath: fallbackPath } : {});
+    if (opened) {
       triggerFlash(target);
     }
-    void openFolderShortcutPath(path, label);
   };
   if (folderShortcutsPanel) {
     folderShortcutsPanel.addEventListener('click', handleFolderShortcutClick);
@@ -17838,6 +18262,39 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return results;
   };
 
+  const findFilesInPreferredEnrolmentSystemFolder = async (rootHandle) => {
+    if (!rootHandle) return [];
+    const intakeName = String(getIntakeNameHint() || '').trim();
+    const rootName = String(rootHandle.name || '').trim().toLowerCase();
+    let enrolmentSystemHandle = null;
+    let enrolmentSystemPath = '';
+    if (rootName === 'enrolment system') {
+      enrolmentSystemHandle = rootHandle;
+    } else if (intakeName && rootName === intakeName.toLowerCase()) {
+      try {
+        enrolmentSystemHandle = await rootHandle.getDirectoryHandle('Enrolment System');
+        enrolmentSystemPath = 'Enrolment System/';
+      } catch {
+        enrolmentSystemHandle = null;
+      }
+    } else if (intakeName) {
+      try {
+        const intakeHandle = await rootHandle.getDirectoryHandle(intakeName);
+        enrolmentSystemHandle = await intakeHandle.getDirectoryHandle('Enrolment System');
+        enrolmentSystemPath = `${intakeName}/Enrolment System/`;
+      } catch {
+        enrolmentSystemHandle = null;
+      }
+    }
+    if (!enrolmentSystemHandle) return [];
+    const entries = await findFilesInHandle(enrolmentSystemHandle, 1);
+    return entries.map((entry) => ({
+      ...entry,
+      path: `${enrolmentSystemPath}${entry.path || ''}`,
+      depth: Math.max(0, entry.depth),
+    }));
+  };
+
   const pickBestFileByDepth = (entries, matcher, preferExactName) => {
     const matches = entries.filter((entry) => matcher(entry.handle?.name || ''));
     if (!matches.length) return null;
@@ -17917,7 +18374,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!staffFolderHandle) return null;
     const allowed = await ensureHandlePermission(staffFolderHandle);
     if (!allowed) return null;
-    const fileEntries = await findFilesInHandle(staffFolderHandle, 2);
+    const preferredFileEntries = await findFilesInPreferredEnrolmentSystemFolder(staffFolderHandle);
+    const fileEntries = preferredFileEntries.length
+      ? preferredFileEntries
+      : await findFilesInHandle(staffFolderHandle, 4);
     const sourceExact = (name) => String(name || '').toLowerCase() === 'source.xlsx';
     const sourceStarts = (name) => /^source.*\.xlsx$/i.test(name || '');
     const triageStarts = (name) => isTriageWorkbookName(name);
@@ -17933,6 +18393,166 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       /\.(html|htm)$/i.test(String(name || ''))
     );
     return { bestSource, bestEmail, bestTriage };
+  };
+
+  const EXTERNAL_OPEN_ICON_SVG =
+    '<svg class="student-summary-ct-open-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M5 5h8v2H7v10h10v-6h2v8H5V5z"></path>' +
+    '<path d="M14 3h7v7h-2V6.41l-8.29 8.3-1.42-1.42 8.3-8.29H14V3z"></path>' +
+    '</svg>';
+
+  const openCtFolderLinkHtml = (location) => {
+    const path = String(location?.path || '').trim();
+    const label = String(location?.label || '').trim();
+    if (!path || !label) return '';
+    const link = (text) =>
+      `<button type="button" class="student-summary-ct-location-link" data-path="${escapeHtml(path)}" title="${escapeHtml(path)}">${escapeHtml(text)}</button>`;
+    if (label === 'general Credit Transfer folder') {
+      return `Student's folder is in the ${link('Credit Transfer folder')}`;
+    }
+    let match = label.match(/^(Credit folder is in )'([^']+)'$/);
+    if (match && match[2] === 'general Credit Transfer folder') {
+      return `Student's folder is in the ${link('Credit Transfer folder')}`;
+    }
+    if (match) return `${escapeHtml(match[1])}'${link(match[2])}'`;
+    match = label.match(/^(Credit folder is in )'([^']+)'( within Credit Transfers on SharePoint)$/);
+    if (match) return `${escapeHtml(match[1])}'${link(match[2])}'${escapeHtml(match[3])}`;
+    match = label.match(/^(Credit folder appears to be in )'(.+)'( folder)$/);
+    if (match) return `${escapeHtml(match[1])}'${link(match[2])}'${escapeHtml(match[3])}`;
+    return link(label);
+  };
+
+  const isCurrentTeacherCtLocation = (location = {}) => {
+    if (String(location?.area || '').toLowerCase() !== 'temp') return false;
+    if (location?.inCurrentTeacher) return true;
+    const currentTeacher = String(getPreferredTeacherNameForFolderShortcuts() || '').trim().toLowerCase();
+    const locationTeacher = String(location?.teacher || '').trim().toLowerCase();
+    if (currentTeacher && locationTeacher && currentTeacher === locationTeacher) return true;
+    const semesterPath = normalizeEnrolProtocolPath(getSemesterFolderPath() || settingsSemesterFolderPath || '');
+    const teacherTemp = normalizeEnrolProtocolPath(getTeacherTempFolderInfo(semesterPath, { os: 'windows' }).preferredPath || '');
+    const locationPath = normalizeEnrolProtocolPath(location?.path || '');
+    return !!teacherTemp && !!locationPath && locationPath.toLowerCase().startsWith(`${teacherTemp.toLowerCase()}\\`);
+  };
+
+  const formatCtDocumentExamples = (location = {}) => {
+    const docs = Array.isArray(location.documentMatches) ? location.documentMatches.slice(0, 2) : [];
+    if (!docs.length) return '';
+    return ` Found: ${docs.map((doc) => escapeHtml(doc)).join('; ')}.`;
+  };
+
+  const formatCtConfidenceText = (location = {}) => {
+    if (String(location?.area || '').toLowerCase() !== 'temp') return '';
+    const confidence = String(location?.confidence || '').toLowerCase();
+    if (confidence === 'likely') return ` Likely credit-transfer folder.${formatCtDocumentExamples(location)}`;
+    if (confidence === 'unlikely') return ' Folder found, but no likely credit-transfer documents were found.';
+    return '';
+  };
+
+  const renderCreditTransferStatus = (slot, studentId, status = null) => {
+    const locations = Array.isArray(status?.locations)
+      ? status.locations.filter((location) => String(location?.path || '').trim() && String(location?.label || '').trim())
+      : [];
+    const locationLinks = locations.map(openCtFolderLinkHtml).filter(Boolean);
+    const alreadyInCurrentTeacherTemp =
+      locations.length === 1 &&
+      isCurrentTeacherCtLocation(locations[0]);
+    const statusHtml =
+      locations.length > 1
+        ? `<div class="student-summary-ct-warning">WARNING: This student's credit folder appears to be in ${locations.length} locations</div>${locationLinks.map((link, index) => `<div>${link}${formatCtConfidenceText(locations[index])}</div>`).join('')}`
+        : locations.length === 1
+          ? `${locationLinks[0]}${formatCtConfidenceText(locations[0])}`
+          : '';
+    if (!statusHtml) {
+      slot.innerHTML = '';
+      return;
+    }
+    const actionHtml = alreadyInCurrentTeacherTemp
+      ? ''
+      : '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Move/open via ct -&gt; temp workflow">ct -&gt; temp</button>';
+    slot.innerHTML =
+      `<div class="student-summary-warning student-summary-ct-found-line"><strong class="student-summary-ct-heading">Credit Transfer:</strong> ${statusHtml}${actionHtml}</div>`;
+  };
+
+  const getUnknownCreditTransferTooltip = () => [
+    'Location guess: the browser cannot confirm the current credit folder location from here, so this is only a guess and could very well be incorrect.',
+    'During running of the script you will be shown the location and given options, including cancelling.',
+    '',
+    'What will happen depends on where the folder is found:',
+    '1. If it is in Credit Transfers, you will be offered the option to move it into your temp folder.',
+    '2. If it is already in your temp folder, it will be opened there.',
+    "3. If it is in another teacher's temp folder, you will be offered the option to take control or open it there.",
+    '',
+    'The workflow will then open the student credit folder, copy/open the Credit (HE) file where available, and copy the student credit-folder details to the clipboard.'
+  ].join('\n');
+
+  const readCtStatus = async (payload, minUpdatedAt = 0, attempts = 10) => {
+    if (!payload?.statusUrl) return null;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        const response = await fetch(`${payload.statusUrl}?t=${Date.now()}`, { cache: 'no-store' });
+        if (response.ok) {
+          const status = await response.json();
+          const updatedAt = Date.parse(status?.updatedAt || '');
+          if (!minUpdatedAt || (Number.isFinite(updatedAt) && updatedAt >= minUpdatedAt)) return status;
+        }
+      } catch {
+        // keep polling briefly; the helper may still be writing the file
+      }
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    return null;
+  };
+
+  const requestCreditTransferStatus = async (studentId = '', options = {}) => {
+    const id = normalizeStudentId(studentId);
+    const payload = await buildCtTempPayload();
+    if (!payload?.statusUrl) return null;
+    const status = await readCtStatus(payload, options.minUpdatedAt || 0, options.attempts || 1);
+    return normalizeStudentId(status?.studentId || '') === id ? status : null;
+  };
+
+  const refreshMissingStudentCreditTransferNotice = async (studentId = '', options = {}) => {
+    const id = normalizeStudentId(studentId);
+    if (!id) return;
+    const slots = Array.from(document.querySelectorAll('.student-summary-ct-found'));
+    const slot = slots.find((el) => normalizeStudentId(el.getAttribute('data-ct-student-id') || '') === id);
+    if (!slot) return;
+    slot.innerHTML = '<div class="student-summary-warning student-summary-ct-found-line student-summary-ct-checking"><span class="student-summary-ct-spinner" aria-hidden="true"></span><strong class="student-summary-ct-heading">Credit Transfer:</strong> checking folders...</div>';
+    const status = await requestCreditTransferStatus(id, options);
+    if (!document.body.contains(slot)) return;
+    if (status?.count > 0) {
+      renderCreditTransferStatus(slot, id, status);
+      return;
+    }
+    const tempMatches = await findTeacherTempFoldersForStudent(id).catch(() => []);
+    if (!document.body.contains(slot)) return;
+    if (tempMatches.length) {
+      const match = await findCreditTransferFolderForStudent(id).catch(() => null);
+      const locations = [...tempMatches];
+      if (match?.path) {
+        locations.push({ path: match.path, label: match.locationLabel || 'Credit folder is in \'general Credit Transfer folder\'', area: 'credit', inCurrentTeacher: false });
+      }
+      renderCreditTransferStatus(slot, id, {
+        studentId: id,
+        count: locations.length,
+        locations,
+      });
+    } else {
+      const match = await findCreditTransferFolderForStudent(id).catch(() => null);
+      if (!document.body.contains(slot)) return;
+      if (match?.path) {
+        renderCreditTransferStatus(slot, id, {
+          studentId: id,
+          count: 1,
+          locations: [{ path: match.path, label: match.locationLabel || 'Credit folder is in \'general Credit Transfer folder\'', area: 'credit', inCurrentTeacher: false }],
+        });
+      } else {
+        const tooltip = escapeHtml(getUnknownCreditTransferTooltip());
+        slot.innerHTML = isEnrolProtocolEnabled()
+          ? `<div class="student-summary-warning student-summary-ct-found-line student-summary-ct-fallback" title="${tooltip}"><span><strong class="student-summary-ct-heading">Credit Transfer:</strong> Credit transfer folder exists</span><button type="button" class="clear-button secondary student-summary-ct-temp" title="${tooltip}">Activate</button></div>`
+          : '';
+      }
+    }
   };
 
   const loadFilesFromDirectoryHandle = async (dirHandle, options = {}) => {
@@ -18082,6 +18702,194 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return null;
   };
 
+  const getStoredStaffFolderHandleWithReadGrant = async () => {
+    if (!staffFolderHandle) {
+      try {
+        staffFolderHandle = await staffHandleStore.getHandle(STAFF_HANDLE_KEY);
+      } catch {
+        staffFolderHandle = null;
+      }
+    }
+    if (!staffFolderHandle?.queryPermission) return null;
+    try {
+      const status = await staffFolderHandle.queryPermission({ mode: 'read' });
+      return status === 'granted' ? staffFolderHandle : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const findDirectoryHandleByName = async (rootHandle, targetName, maxDepth = 3) => {
+    const wanted = String(targetName || '').trim().toLowerCase();
+    if (!rootHandle || !wanted) return null;
+    if (String(rootHandle.name || '').trim().toLowerCase() === wanted) {
+      return { handle: rootHandle, path: '' };
+    }
+    const queue = [{ handle: rootHandle, depth: 0, path: '' }];
+    while (queue.length) {
+      const { handle, depth, path } = queue.shift();
+      if (depth >= maxDepth) continue;
+      for await (const entry of handle.values()) {
+        if (entry.kind !== 'directory') continue;
+        const entryPath = `${path}${entry.name}/`;
+        if (String(entry.name || '').trim().toLowerCase() === wanted) {
+          return { handle: entry, path: entryPath };
+        }
+        queue.push({ handle: entry, depth: depth + 1, path: entryPath });
+      }
+    }
+    return null;
+  };
+
+  const CT_CREDIT_DOCUMENT_PATTERNS = [
+    { test: (name) => name.includes('credit') },
+    { test: (name) => name.includes('credit transfer') },
+    { test: (name) => name.includes('credit (he)') },
+    { test: (name) => name.includes('enrolment strategy') },
+    { test: (name) => name.includes('transcript') },
+    { test: (name) => name.includes('certificate') },
+    { test: (name) => name.includes('certified') },
+    { test: (name) => name.includes('articulation') },
+  ];
+
+  const inspectCtFolderDocuments = async (folderHandle) => {
+    if (!folderHandle) return [];
+    const matches = [];
+    for await (const entry of folderHandle.values()) {
+      if (entry.kind !== 'file') continue;
+      const name = String(entry.name || '').trim();
+      if (!/\.(docx|pdf)$/i.test(name)) continue;
+      const lower = name.toLowerCase();
+      const priority = CT_CREDIT_DOCUMENT_PATTERNS.findIndex((pattern) => pattern.test(lower));
+      if (priority < 0) continue;
+      matches.push({ name, priority });
+    }
+    matches.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+    return matches.map((match) => match.name);
+  };
+
+  const findTeacherTempFoldersForStudent = async (studentId = '') => {
+    const id = normalizeStudentId(studentId);
+    if (!id) return [];
+    const rootHandle = await getStoredStaffFolderHandleWithReadGrant();
+    if (!rootHandle) return [];
+    const tempRootEntry = await findDirectoryHandleByName(rootHandle, 'Our temp and working files', 4);
+    if (!tempRootEntry?.handle) return [];
+    const semesterPath = await getOperationalSemesterFolderPath();
+    const teacherTempInfo = getTeacherTempFolderInfo(semesterPath, { os: 'windows' });
+    const tempRootPath = normalizeEnrolProtocolPath(teacherTempInfo.rootPath || joinPath(semesterPath, 'Our temp and working files'));
+    const currentTeacher = String(teacherTempInfo.teacherNameSegment || teacherTempInfo.teacherName || '').trim();
+    const results = [];
+    for await (const teacherEntry of tempRootEntry.handle.values()) {
+      if (teacherEntry.kind !== 'directory') continue;
+      const teacher = String(teacherEntry.name || '').trim();
+      for await (const studentEntry of teacherEntry.values()) {
+        if (studentEntry.kind !== 'directory') continue;
+        const name = String(studentEntry.name || '');
+        if (!name.toLowerCase().startsWith(id.toLowerCase())) continue;
+        const documentMatches = await inspectCtFolderDocuments(studentEntry).catch(() => []);
+        results.push({
+          name,
+          path: tempRootPath ? joinPath(tempRootPath, teacher, name) : '',
+          locationLabel: `Credit folder appears to be in '${teacher || 'another teacher'}'s Our temp and working files' folder`,
+          area: 'temp',
+          teacher,
+          inCurrentTeacher: !!currentTeacher && teacher.toLowerCase() === currentTeacher.toLowerCase(),
+          confidence: documentMatches.length ? 'likely' : 'unlikely',
+          documentMatches,
+        });
+      }
+    }
+    return results.sort((a, b) => {
+      const confidenceDiff = (a.confidence === 'likely' ? 0 : 1) - (b.confidence === 'likely' ? 0 : 1);
+      if (confidenceDiff) return confidenceDiff;
+      const currentDiff = (a.inCurrentTeacher ? 0 : 1) - (b.inCurrentTeacher ? 0 : 1);
+      if (currentDiff) return currentDiff;
+      return String(a.path || '').localeCompare(String(b.path || ''));
+    });
+  };
+
+  const findCurrentTeacherTempFolderForStudent = async (studentId = '') => {
+    const id = normalizeStudentId(studentId);
+    if (!id) return null;
+    const rootHandle = await getStoredStaffFolderHandleWithReadGrant();
+    if (!rootHandle) return null;
+    const tempRootEntry = await findDirectoryHandleByName(rootHandle, 'Our temp and working files', 4);
+    if (!tempRootEntry?.handle) return null;
+    const semesterPath = await getOperationalSemesterFolderPath();
+    const teacherTempInfo = getTeacherTempFolderInfo(semesterPath, { os: 'windows' });
+    const teacherSegment = String(teacherTempInfo.teacherNameSegment || teacherTempInfo.teacherName || '').trim();
+    let teacherHandle = tempRootEntry.handle;
+    let teacherPath = tempRootEntry.path || '';
+    if (teacherSegment) {
+      try {
+        teacherHandle = await tempRootEntry.handle.getDirectoryHandle(teacherSegment);
+        teacherPath = `${teacherPath}${teacherSegment}/`;
+      } catch {
+        const foundTeacher = await findDirectoryHandleByName(tempRootEntry.handle, teacherSegment, 1);
+        if (foundTeacher?.handle) {
+          teacherHandle = foundTeacher.handle;
+          teacherPath = `${tempRootEntry.path || ''}${foundTeacher.path || ''}`;
+        }
+      }
+    }
+    for await (const entry of teacherHandle.values()) {
+      if (entry.kind !== 'directory') continue;
+      const name = String(entry.name || '');
+      if (!name.toLowerCase().startsWith(id.toLowerCase())) continue;
+      const teacherTempPath = normalizeEnrolProtocolPath(
+        teacherTempInfo.preferredPath || joinPath(teacherTempInfo.rootPath || '', teacherSegment)
+      );
+      return {
+        name,
+        path: teacherTempPath ? joinPath(teacherTempPath, name) : '',
+        locationLabel: `Credit folder appears to be in '${teacherSegment || 'this teacher'}'s Our temp and working files' folder`,
+        area: 'temp',
+        teacher: teacherSegment,
+        inCurrentTeacher: true,
+      };
+    }
+    return null;
+  };
+
+  const findCreditTransferFolderForStudent = async (studentId = '') => {
+    const id = normalizeStudentId(studentId);
+    if (!id) return null;
+    const rootHandle = await getStoredStaffFolderHandleWithReadGrant();
+    if (!rootHandle) return null;
+    const creditRootEntry = await findDirectoryHandleByName(rootHandle, 'credit transfers', 3);
+    if (!creditRootEntry?.handle) return null;
+    const queue = [{ handle: creditRootEntry.handle, depth: 0, path: '' }];
+    while (queue.length) {
+      const { handle, depth, path } = queue.shift();
+      if (depth >= 2) continue;
+      for await (const entry of handle.values()) {
+        if (entry.kind !== 'directory') continue;
+        const nextDepth = depth + 1;
+        const entryPath = `${path}${entry.name}/`;
+        const name = String(entry.name || '');
+        const isMatch = name.toLowerCase().startsWith(id.toLowerCase()) || (nextDepth > 1 && name.includes(id));
+        if (isMatch) {
+          const semesterPath = await getOperationalSemesterFolderPath();
+          const creditRootPath = semesterPath
+            ? normalizeEnrolProtocolPath(joinPath(getPathDirname(semesterPath), 'credit transfers'))
+            : '';
+          const parentPath = path.replace(/[\\/]$/, '');
+          const locationLabel = parentPath
+            ? `${parentPath.split(/[\\/]/).pop()} within Credit Transfers on SharePoint`
+            : 'general Credit Transfer folder';
+          return {
+            name,
+            path: creditRootPath ? joinPath(creditRootPath, entryPath.replace(/[\\/]$/, '')) : '',
+            locationLabel,
+          };
+        }
+        queue.push({ handle: entry, depth: nextDepth, path: entryPath });
+      }
+    }
+    return null;
+  };
+
   const TRIAGE_OPEN_COOLDOWN_MS = 7000;
   const getTriageOpenCooldownRemainingMs = () =>
     Math.max(0, triageOpenCooldownUntil - Date.now());
@@ -18214,6 +19022,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const handle = await window.showDirectoryPicker();
       staffFolderHandle = handle || null;
       if (staffFolderHandle) {
+        if (String(staffFolderHandle.name || '').trim() !== 'General - Bachelor of Information Technology Operations') {
+          window.alert(
+            'For full functionality, select the "General - Bachelor of Information Technology Operations" folder.\n\n' +
+            'If you select a narrower folder, Source/Triage/Email Scripts may still load, but credit-transfer folder detection and some folder shortcuts may not be fully accurate.'
+          );
+        }
         await staffHandleStore.setHandle(STAFF_HANDLE_KEY, staffFolderHandle);
         return loadFilesFromDirectoryHandle(staffFolderHandle, options);
       }
@@ -21439,7 +22253,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         height: window.innerHeight,
       };
     const margin = 8;
-    const rightInset = courseMapOpen ? 48 : 8;
+    const rightInset = courseMapOpen ? 48 : 80;
     const width = modalRect.width || modalEl.offsetWidth || 0;
     const height = modalRect.height || modalEl.offsetHeight || 0;
     const left = clampValue(hostRect.right - rightInset - width, margin, Math.max(margin, window.innerWidth - width - margin));
@@ -22897,12 +23711,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!timetableTable || !clipboardAvailable) return false;
     const rows = Array.from(timetableTable.querySelectorAll('tr'));
     const now = new Date();
-    const heading = timetableTitleEl
-      ? timetableTitleEl.textContent
-      : `Timetable for ${getTimetableLabel(now)}. Prepared ${formatDate(now)}`;
-    const headingLower = (heading || '').toLowerCase();
-    const isAvailableSubjectsClip = headingLower.startsWith('available subjects');
-    const includeHeading = heading && !isAvailableSubjectsClip;
+    const record = getActiveStudentRecord();
+    const studentId = record ? normalizeStudentId(record.Student_IDs_Unique) : '';
+    const givenName = record ? toProperCase(record.Given_Name || '') : '';
+    const familyName = record ? String(record.Family_Name || '').trim().toUpperCase() : '';
+    const studentName = [givenName, familyName].filter(Boolean).join(' ').trim();
+    const studentHeading = [studentId, studentName].filter(Boolean).join(' ').trim();
+    const timetableLabel = getTimetableLabel(now);
+    const isTimetableOptionsClip = timetableModal?.dataset?.mode === 'available';
+    const headingPrefix = `Timetable for ${timetableLabel}. Prepared ${formatDate(now)}`;
+    const heading = isTimetableOptionsClip
+      ? `Timetable options${studentHeading ? ` for ${studentHeading}` : ''}. ${timetableLabel}.`
+      : studentHeading ? `${headingPrefix}, for ${studentHeading}` : headingPrefix;
+    const includeHeading = !!heading;
 
     const textBody = rows
       .map((row) =>
@@ -22934,7 +23755,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const textCore = includeHeading
       ? `${heading}\n${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`
       : `${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`;
-    const text = indentPlainTextBlock(textCore);
+    const text = `\n${indentPlainTextBlock(textCore)}`;
 
     const headerSample = timetableTable.querySelector('thead th');
     const headerStyle = headerSample ? window.getComputedStyle(headerSample) : null;
@@ -22944,11 +23765,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const conflictStyle = conflictSample ? window.getComputedStyle(conflictSample) : null;
     const conflictColor = conflictStyle?.color || '#c00';
     const conflictWeight = conflictStyle?.fontWeight || '700';
+    const tableBorder = '0.5pt solid #d9d9d9';
     const htmlRows = rows
       .map((row) => {
         const cells = Array.from(row.querySelectorAll('th,td')).map((c) => {
           const tag = c.tagName.toLowerCase();
-          const baseStyle = 'border:1px solid #ccc;text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;';
+          const baseStyle = `border:${tableBorder};text-align:left;line-height:1;font-family:Calibri, Arial, sans-serif;font-size:11pt;`;
           const headStyle = `${baseStyle}padding:6pt 8px;font-weight:700;background:${headerBg};color:${headerColor};`;
           let bodyStyle = `${baseStyle}padding:0 8px;font-weight:400;`;
           if (tag !== 'th' && c.classList.contains('timetable-conflict')) {
@@ -22960,9 +23782,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const htmlIndentStyle = 'margin-left:1.27cm;mso-margin-left-alt:1.27cm;';
+    const htmlOuterIndentStyle = 'margin-left:1.27cm;mso-margin-left-alt:1.27cm;';
+    const headingContentHtml = isTimetableOptionsClip
+      ? escapeHtml(heading)
+      : studentHeading
+        ? `${escapeHtml(headingPrefix)}, for <span style="font-weight:700;">${escapeHtml(studentHeading)}</span>`
+        : escapeHtml(headingPrefix);
     const headingHtml = includeHeading
-      ? `<p style="margin-top:0;margin-right:0;margin-bottom:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:700;line-height:1.2;">${escapeHtml(heading)}</p>`
+      ? `<p style="margin-top:0;margin-right:0;margin-bottom:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:400;line-height:1.2;">${headingContentHtml}</p>`
       : '';
     const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
@@ -22988,7 +23815,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(Boolean)
       .map(
         (line) =>
-          `<p style="margin-top:0;margin-right:0;margin-bottom:0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
+          `<p style="margin-top:0;margin-right:0;margin-bottom:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;line-height:1.2;">${formatFeeLineHtml(
             line
           )}</p>`
       )
@@ -22998,6 +23825,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const feeStyle = window.getComputedStyle(timetableFees);
       const feeBoxStyle = [
         'margin:0',
+        'mso-margin-left-alt:0',
+        'mso-para-margin-left:0',
         'mso-margin-top-alt:0',
         'mso-margin-bottom-alt:0',
         'font-family:Calibri, Arial, sans-serif',
@@ -23011,8 +23840,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ].join(';');
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
-    const htmlSpacer = `<p style="margin:0 0 10pt 0;${htmlIndentStyle}mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
-    const htmlCore = `${headingHtml}<table style="${htmlIndentStyle}border-collapse:collapse;border:1px solid #ccc;border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
+    const htmlSpacer = '<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>';
+    const htmlCore = `<p style="margin:0;line-height:1;">&nbsp;</p><div style="${htmlOuterIndentStyle}">${headingHtml}<table style="border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}</div>`;
     const html = htmlCore;
 
     if (window.ClipboardItem) {
@@ -23062,6 +23891,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const signOffName = pref?.signOffName ? pref.signOffName.trim() : '';
     const signOffBlock = `${signOffPhrase}${signOffName ? `\n${signOffName}` : ''}`;
     return `${salutation}\n\n\n${signOffBlock}`;
+  };
+
+  const buildEmailDraftPartsSync = (firstName) => {
+    const name = firstName || 'student';
+    const scripts = emailScriptsCache;
+    const pref = scripts?.preferences || getSettingsSignOffPrefs() || null;
+    const salutationBase = pref?.salutation ? pref.salutation.trim() : 'Hello';
+    const salutation = `${salutationBase} ${name}`.trim();
+    const signOffPhrase = pref?.signOffPhrase ? pref.signOffPhrase.trim() : 'Kind regards';
+    const signOffName = pref?.signOffName ? pref.signOffName.trim() : '';
+    const signoff = `${signOffPhrase}${signOffName ? `\n${signOffName}` : ''}`;
+    return { salutation, signoff };
+  };
+
+  const canUseAntonyOutlookComDraft = () =>
+    isEnrolProtocolEnabled() &&
+    String(getPreferredTeacherNameForFolderShortcuts() || '').trim().toLowerCase() === 'antony';
+
+  const launchOutlookComDraftFromClipboard = (recipients, subjectLine, firstName) => {
+    if (!canUseAntonyOutlookComDraft()) return false;
+    const { salutation, signoff } = buildEmailDraftPartsSync(firstName);
+    return launchEnrolProtocol('', {
+      protocolHost: 'run',
+      emailDraft: true,
+      emailTo: recipients,
+      emailSubject: subjectLine,
+      emailSalutation: salutation,
+      emailSignoff: signoff,
+    });
   };
 
   const buildTimetableTextBlock = () => {
@@ -23604,6 +24462,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await ensureSettingsSignOffPrefsLoaded();
       const firstName = getStudentFirstName(record);
       const baseBody = buildTimetableEmailBodySync(firstName);
+      if (subjectLine === 'Student Declaration for ongoing students') {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        if (launchOutlookComDraftFromClipboard(recipientList, subjectLine, firstName)) {
+          return;
+        }
+      }
       openTimetableEmailDraftSafe(recipientList, baseBody, baseBody, subjectLine);
     } finally {
       emailInProgress = false;
@@ -24870,9 +25734,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         }
         const sectionKey = String(button.dataset.sectionKey || '');
         const sectionLabel = String(button.dataset.sectionLabel || sectionKey || 'section');
+        const emailSubject = String(button.dataset.emailSubject || sectionLabel);
         await sendDeclarationEmail('both', {
           copyFn: () => copyEmailScriptsSectionByKey(sectionKey),
-          subjectLine: sectionLabel,
+          subjectLine: emailSubject,
           copyFailMessage: `Could not copy "${sectionLabel}" text. Check the matching heading in Email Scripts and try again.`,
         });
       });

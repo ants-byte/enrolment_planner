@@ -67,7 +67,7 @@ Created: December 30, 2025
       </div>
       <div id="drop-zone" class="drop-zone">
         <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
-          data-tooltip-html="Select the folder that contains these 3 files: 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. It will probably be the &quot;Enrolment System&quot; folder.">Load from folder</button>
+          data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load from folder</button>
         <div class="drop-zone-text">(or for lesser functionality: drag-and-drop the files here: 'Triage 2026 S2.xlsx',
           'Source.xlsx', and 'Email Scripts.htm'.<br>Depending on your setup, clicking the zone will auto-load those 3 files too.)</div>
       </div>
@@ -637,6 +637,12 @@ Created: December 30, 2025
           <h3>Credit Transfers</h3>
           <div id="folder-shortcuts-credit-host" class="folder-shortcuts-modal-buttons"></div>
           <div id="folder-shortcuts-credit-docs-host" class="folder-shortcuts-modal-buttons"></div>
+        </div>
+        <div class="folder-shortcuts-modal-section">
+          <h3>Under Construction - Credit Transfers</h3>
+          <div id="folder-shortcuts-credit-construction-host" class="folder-shortcuts-modal-buttons">
+            <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">ct -&gt; temp</button>
+          </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -1269,6 +1275,8 @@ Created: December 30, 2025
           type="button" hidden data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
         <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
           type="button" data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders &amp; Files</button>
+        <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial"
+          type="button" hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">ct -&gt; temp</button>
         <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes"
           type="button" data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
         <button id="course-map-full-semester-timetable" class="clear-button secondary course-map-full-semester-timetable"
@@ -1553,81 +1561,6 @@ Created: December 30, 2025
             <button class="clear-button secondary email-scripts-access-icon email-scripts-section-email" type="button"
               data-section-key="student-dec-returned" data-section-label="Student Dec returned"
               aria-label="Email Student Dec returned text">
-              <span class="email-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-          </div>
-          <div class="email-scripts-access-row" role="listitem">
-            <div class="email-scripts-access-text">Link to Start Application</div>
-            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-copy" type="button"
-              data-section-key="link-to-start-application" data-section-label="Link to Start Application"
-              aria-label="Copy Link to Start Application text to clipboard">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-            <button class="clear-button secondary email-scripts-access-icon email-scripts-section-email" type="button"
-              data-section-key="link-to-start-application" data-section-label="Link to Start Application"
-              aria-label="Email Link to Start Application text">
-              <span class="email-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-          </div>
-          <div class="email-scripts-access-row" role="listitem">
-            <div class="email-scripts-access-text">Online progression - classes entered</div>
-            <button id="email-scripts-copy-online-progression-classes-entered"
-              class="clear-button secondary email-scripts-access-icon" type="button"
-              aria-label="Copy Online progression classes entered text to clipboard">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-            <button id="email-scripts-email-online-progression-classes-entered"
-              class="clear-button secondary email-scripts-access-icon" type="button"
-              aria-label="Email Online progression classes entered text">
-              <span class="email-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-          </div>
-          <div class="email-scripts-access-row" role="listitem">
-            <div class="email-scripts-access-text">Online progress - selections look good. classes entered</div>
-            <button id="email-scripts-copy-online-progress-selections-look-good-classes-entered"
-              class="clear-button secondary email-scripts-access-icon" type="button"
-              aria-label="Copy Online progress selections look good classes entered text to clipboard">
-              <span class="clipboard-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="img" focusable="false">
-                  <path
-                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                    fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-            <button id="email-scripts-email-online-progress-selections-look-good-classes-entered"
-              class="clear-button secondary email-scripts-access-icon" type="button"
-              aria-label="Email Online progress selections look good classes entered text">
               <span class="email-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
                   <path

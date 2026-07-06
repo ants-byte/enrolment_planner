@@ -832,6 +832,105 @@ button {
   color: var(--folder-shortcut-hover-text);
 }
 
+.student-summary-ct-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--folder-shortcut-border);
+  border-radius: 4px;
+  background: var(--folder-shortcut-bg);
+  color: var(--folder-shortcut-text);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.student-summary-ct-found-line .student-summary-ct-temp {
+  display: flex;
+  width: fit-content;
+  min-width: 0;
+  margin: 6px 0 0 20px;
+  padding-left: 14px;
+  padding-right: 14px;
+  white-space: nowrap;
+}
+
+.student-summary-ct-fallback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-summary-ct-fallback .student-summary-ct-temp {
+  margin: 0 0 0 auto;
+  padding-left: 14px;
+  padding-right: 14px;
+  flex: 0 0 auto;
+}
+
+.student-summary-ct-checking {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.student-summary-ct-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ct-spinner-rotate 0.8s linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes ct-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.student-summary-ct-heading {
+  color: #fff;
+  font-weight: 700;
+}
+
+.student-summary-ct-location-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #28a8ff;
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.student-summary-ct-location-link:hover {
+  color: #6fc6ff;
+}
+
+.student-summary-ct-warning {
+  color: #ffd84d;
+  font-weight: 700;
+}
+
+.student-summary-ct-open:hover {
+  background: var(--folder-shortcut-hover-bg);
+  color: var(--folder-shortcut-hover-text);
+}
+
+.student-summary-ct-open-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
 #open-folder-shortcuts-modal {
   padding-left: 6px;
   padding-right: 6px;
@@ -902,9 +1001,9 @@ button {
 }
 
 .folder-shortcuts-modal-section h3 {
-  margin: 12px 0 6px;
+  margin: 28px 0 6px;
   font-size: 0.9rem;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -2683,6 +2782,17 @@ body.staff-mode .drop-sidebar.is-active {
   animation: copyFlash 0.55s ease;
 }
 
+.timetable-title-student-id,
+.timetable-title-student-name {
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.timetable-title-student-id.copy-flash,
+.timetable-title-student-name.copy-flash {
+  animation: copyFlash 0.55s ease;
+}
+
 .student-search-empty {
   margin-top: 6px;
   font-size: 12px;
@@ -2763,11 +2873,15 @@ body.staff-mode .drop-sidebar.is-active {
   display: inline-flex;
   width: auto;
   min-width: 0;
-  margin: 0px 0 6px 14px;
+  margin: 0 0 6px;
   padding: 4px 12px;
   background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
   color: #fff;
   border-color: var(--btn-primary-border);
+}
+
+.student-summary-triage-add-no-history {
+  margin-top: 12px;
 }
 
 .student-summary-triage-missing {
@@ -6338,6 +6452,19 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   gap: 6px;
 }
 
+#open-supporting-docs-folder,
+#open-teacher-temp-folder {
+  border-color: var(--folder-shortcut-border);
+  background: var(--folder-shortcut-bg);
+  color: var(--folder-shortcut-text);
+}
+
+#open-supporting-docs-folder:hover,
+#open-teacher-temp-folder:hover {
+  background: var(--folder-shortcut-hover-bg);
+  color: var(--folder-shortcut-hover-text);
+}
+
 .timetable-email .email-icon svg {
   width: 22px;
   height: 22px;
@@ -6407,7 +6534,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .email-scripts-access-row.email-scripts-access-divider {
-  border-bottom: 1px solid #36454f;
+  border-bottom: 1px solid #111;
 }
 
 .email-scripts-access-text {
@@ -11112,4 +11239,17 @@ body.completed-mode #clear-selections {
 :root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-item.elective,
 :root[data-appearance="dark"] #semester-timetable-modal:not(.semester-timetable-colours-off) .semester-timetable-not-running-item.elective {
   border-left-color: var(--elective-band) !important;
+}
+
+#timetable-modal #open-supporting-docs-folder.clear-button.secondary,
+#timetable-modal #open-teacher-temp-folder.clear-button.secondary {
+  border-color: var(--folder-shortcut-border) !important;
+  background: var(--folder-shortcut-bg) !important;
+  color: var(--folder-shortcut-text) !important;
+}
+
+#timetable-modal #open-supporting-docs-folder.clear-button.secondary:hover,
+#timetable-modal #open-teacher-temp-folder.clear-button.secondary:hover {
+  background: var(--folder-shortcut-hover-bg) !important;
+  color: var(--folder-shortcut-hover-text) !important;
 }
