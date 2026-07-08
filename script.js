@@ -1236,16 +1236,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
   const SOURCE_WORKER_URL = (() => {
     try {
-      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260618-1';
+      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260709-1';
     } catch {
-      return 'workbook-parser-worker.js?v=source-20260618-1';
+      return 'workbook-parser-worker.js?v=source-20260709-1';
     }
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260708-14';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260709-8';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260708-14';
+      return 'triage-parser-worker.js?v=triage-20260709-8';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1433,11 +1433,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   ];
   const COURSE_INFO_RANGES = [
     'Semester_Start_Date',
+    'Census_Date',
+    'CensusDate',
     'Price_per_CSP_Unit',
     'Price_per_Unit',
     'Credit_Points_Earned',
     'EndOfWeekTwoDate',
     'Countries_facing_troubles',
+    'studentPool',
+    'StudentPool',
+    'Student_Pool',
   ];
   const studentIdPattern = /(\d{7})/;
   let extractedStudentId = '';
@@ -4388,6 +4393,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
     if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter History';
   }
+  const focusStaffLoadFromFolderButton = () => {
+    if (!staffFacing || !loadFromFolderButton) return;
+    if (loadFromFolderButton.hidden || loadFromFolderButton.disabled) return;
+    if (loadFromFolderButton.style.display === 'none') return;
+    loadFromFolderButton.focus({ preventScroll: true });
+  };
 
   const lockModalPosition = () => {
     if (modalLocked || !timetableModal) return;
@@ -6935,7 +6946,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const formatCurrency = (value) => {
     const num = Number(value);
     if (!Number.isFinite(num)) return '';
-    return `$ ${num.toLocaleString('en-AU', {
+    return `$${num.toLocaleString('en-AU', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -7391,7 +7402,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       (priceValue && priceValue > 0 ? formatCurrency(priceValue) : '') || '$ 2,360.00';
     const cspValue = parseCreditPoints(courseInfo?.Price_per_CSP_Unit || '');
     const cspPrice =
-      (cspValue && cspValue > 0 ? formatCurrency(cspValue) : '') || '$ 2,360.00';
+      (cspValue && cspValue > 0 ? formatCurrency(cspValue) : '') || '$1,192.00';
 
     if (record) {
       const feeDetails = getFeeStatusDetails(record);
@@ -14381,6 +14392,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getCalculatedCensusDate = (courseInfo = {}) => {
+    const fromNamedCensus = getDateOnly(toDateValue(courseInfo?.Census_Date || courseInfo?.CensusDate));
+    if (fromNamedCensus) return fromNamedCensus;
     const fromSemesterStart = getCensusDateFromSemesterStart(courseInfo?.Semester_Start_Date);
     if (fromSemesterStart) return fromSemesterStart;
     const endWeekTwo = getDateOnly(toDateValue(courseInfo?.EndOfWeekTwoDate));
@@ -15545,6 +15558,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
     // Run immediately to avoid missing idle callbacks.
     run();
+  };
+
+  const reloadTriageWorkbookOnly = async () => {
+    if (!triageWorkbookFileHandle || typeof triageWorkbookFileHandle.getFile !== 'function') return false;
+    try {
+      const file = await triageWorkbookFileHandle.getFile();
+      if (!file?.size) return false;
+      triageWorkbookFileObject = file;
+      triageWorkbookBuffer = await file.arrayBuffer();
+      triageWorkbookFileName = file.name || triageWorkbookFileName || 'Triage.xlsx';
+      triageFileInfo = {
+        ...(triageFileInfo || {}),
+        fileName: triageWorkbookFileName,
+        modifiedMs: Number.isFinite(file.lastModified) ? file.lastModified : triageFileInfo?.modifiedMs || null,
+      };
+      skipTriageParseOnLoad = false;
+      scheduleTriageParse(triageWorkbookBuffer);
+      return true;
+    } catch (error) {
+      console.warn('[Triage save] could not reload Triage workbook after save', error);
+      return false;
+    }
   };
 
   const readWorkbookAsync = (buffer) =>
@@ -23313,7 +23348,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getNewTriageRowWriteValues = (form, formValues) => {
-    const changedValues = getCourseMapTriageChangedValues(form);
     const clean = (value) => String(value || '').trim();
     const values = {
       studentId: clean(formValues.studentId),
@@ -23322,11 +23356,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       comments: clean(formValues.comments),
     };
     if (clean(formValues.alteredStatus)) values.alteredStatus = clean(formValues.alteredStatus);
-    ['familyName', 'givenName', 'primaryEmail', 'friendlyName'].forEach((key) => {
-      if (!Object.prototype.hasOwnProperty.call(changedValues, key)) return;
-      const nextValue = clean(changedValues[key]);
-      if (nextValue) values[key] = nextValue;
-    });
     return values;
   };
 
@@ -23362,6 +23391,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     form.querySelectorAll('input, textarea, select').forEach((field) => {
       if (field.dataset.triageDirtyBound === 'true') return;
       field.dataset.triageDirtyBound = 'true';
+      field.addEventListener('input', () => {
+        field.dataset.triageUserEdited = 'true';
+      });
+      field.addEventListener('change', () => {
+        field.dataset.triageUserEdited = 'true';
+      });
       field.addEventListener('input', updateCourseMapTriageSaveVisibility);
       field.addEventListener('change', updateCourseMapTriageSaveVisibility);
     });
@@ -23383,6 +23418,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await writable.close();
       triageWorkbookBuffer = result.output;
       startTriageOpenCooldown();
+      await reloadTriageWorkbookOnly();
       return true;
     } catch {
       window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
@@ -23570,6 +23606,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return false;
     }
     triageWorkbookBuffer = result.output;
+    await reloadTriageWorkbookOnly();
     const triage = triageRecords.get(studentId) || {};
     triageRecords.set(studentId, { ...triage, comments: result.next || cleanComment });
     updateCourseMapTopInfoStrip();
@@ -25699,14 +25736,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const lines = [];
     const sourceLine = buildModifiedLine(lastDroppedFileInfo.fileName, lastDroppedFileInfo.modifiedMs);
+    const courseInfo = staffWorkbookState.getCourseInfo() || {};
+    const studentPoolEntry = Object.entries(courseInfo).find(([key, value]) =>
+      normalizeNamedRangeKey(key).toLowerCase() === 'studentpool' && String(value ?? '').trim()
+    );
+    const studentPool = String(studentPoolEntry?.[1] ?? '').trim();
     const sourceRowsText = lastStudentCountLine
       ? lastStudentCountLine.replace(/\s+students\s+listed\.?$/i, ' rows')
       : '';
     if (sourceLine) {
       lines.push({
-        text: sourceRowsText
-          ? `${lastDroppedFileInfo.fileName} - ${sourceRowsText}`
-          : String(lastDroppedFileInfo.fileName || ''),
+        text: studentPool
+          ? `${lastDroppedFileInfo.fileName}. Pool of ${studentPool}`
+          : sourceRowsText
+            ? `${lastDroppedFileInfo.fileName} - ${sourceRowsText}`
+            : String(lastDroppedFileInfo.fileName || ''),
         tooltip: sourceLine,
         actions: [
           {
@@ -27794,6 +27838,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   setAlertMessages('data', []);
   renderAlertButton('data');
   showMobileNotice();
+  if (staffFacing) {
+    requestAnimationFrame(() => {
+      focusStaffLoadFromFolderButton();
+      setTimeout(focusStaffLoadFromFolderButton, 0);
+    });
+  }
   Array.from(document.querySelectorAll('.modal')).forEach((modalEl) => enableModalDragResize(modalEl));
 
   // Sidebars + main content resize handles (drag any border).

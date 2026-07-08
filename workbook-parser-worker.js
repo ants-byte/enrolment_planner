@@ -50,6 +50,9 @@ const COURSE_INFO_RANGES = [
   'Credit_Points_Earned',
   'EndOfWeekTwoDate',
   'Countries_facing_troubles',
+  'studentPool',
+  'StudentPool',
+  'Student_Pool',
 ];
 const TRIAGE_ROW_LIMIT = 350;
 const TRIAGE_MAX_COL_SCAN = 120;
