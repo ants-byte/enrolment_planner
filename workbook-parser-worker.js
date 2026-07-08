@@ -627,6 +627,7 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     onSharePoint: getIdx('On SharePoint'),
     inStrata: getIdx('In Strata (Enrolled) - subject list'),
     comments: getIdx('Comments'),
+    order: getIdx('Order'),
   };
   const sharePointPathIdx = getIdxAny('SharePoint Path', 'Sharepoint Path');
   const familyIdx = getIdx('Family Names');
@@ -913,10 +914,160 @@ const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = 
 
   const address = XLSX.utils.encode_cell({ r: targetRow, c: commentsCol });
   const existing = String(sheet[address]?.w ?? sheet[address]?.v ?? '').trim();
-  const next = existing ? `${cleanComment}\n${existing}` : cleanComment;
+  const next = existing ? `${cleanComment}\n\n${existing}` : `${cleanComment}\n`;
   sheet[address] = { t: 's', v: next, w: next };
   const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return { ok: true, output, next };
+  return { ok: true, output, next, sheetCount: workbook.SheetNames.length };
+};
+
+const findTriageWorkbookSheetInfo = (workbook) => {
+  const sheetName =
+    TRIAGE_SHEET_NAMES.find((name) => workbook.Sheets?.[name]) ||
+    workbook.SheetNames.find((name) => /^triage$/i.test(name)) ||
+    workbook.SheetNames[0];
+  const sheet = workbook.Sheets?.[sheetName];
+  const ref = sheet?.['!ref'];
+  if (!sheet || !ref) return null;
+  const range = XLSX.utils.decode_range(ref);
+  const getCellText = (r, c) => {
+    const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+    return String(cell?.w ?? cell?.v ?? '').trim();
+  };
+  const headerTargets = [
+    normalizeHeadingText('Student ID as String'),
+    normalizeHeadingText('Student ID'),
+    normalizeHeadingText('StudentID'),
+    normalizeHeadingText('Student_ID'),
+  ];
+  let headerRowIndex = -1;
+  let headerMap = null;
+  const maxScanRow = Math.min(range.e.r, range.s.r + 200);
+  for (let r = range.s.r; r <= maxScanRow; r += 1) {
+    const byKey = {};
+    for (let c = range.s.c; c <= range.e.c; c += 1) {
+      const key = normalizeHeadingText(getCellText(r, c));
+      if (key) byKey[key] = c;
+    }
+    if (Object.keys(byKey).some((key) => headerTargets.includes(key))) {
+      headerRowIndex = r;
+      headerMap = byKey;
+      break;
+    }
+  }
+  if (headerRowIndex < 0 || !headerMap) return null;
+  const getIdx = (label) => headerMap[normalizeHeadingText(label)];
+  const getIdxAny = (...labels) => {
+    for (const label of labels) {
+      const idx = getIdx(label);
+      if (idx !== undefined) return idx;
+      const target = normalizeHeadingText(label);
+      const match = Object.entries(headerMap).find(([key]) =>
+        key === target || key.includes(target) || target.includes(key)
+      );
+      if (match) return match[1];
+    }
+    return undefined;
+  };
+  const idCol =
+    getIdx('Student ID as String') ??
+    getIdx('Student ID') ??
+    getIdx('StudentID') ??
+    getIdx('Student_ID');
+  return {
+    sheetName,
+    sheet,
+    range,
+    headerRowIndex,
+    idCol,
+    columns: {
+      studentId: idCol,
+      familyName: getIdx('Family Names'),
+      givenName: getIdx('Given Names'),
+      primaryEmail: getIdxAny('Primary Email', 'Personal Email', 'Email'),
+      friendlyName: getIdx('Friendly name'),
+      handledBy: getIdx('Handled By'),
+      statusLabel: getIdxAny('Int, Ongoing, FMP', 'Int Ongoing FMP', 'Int, Ongiong, FMP'),
+      statusDetails: getIdx('Details - CRT, Ongoing, Domestic, etc.'),
+      alteredStatus: getIdx('Altered Status'),
+      comments: getIdx('Comments'),
+      order: getIdx('Order'),
+    },
+  };
+};
+
+const writeCellValue = (sheet, row, col, value) => {
+  if (col === undefined || col === null) return false;
+  const text = String(value ?? '');
+  sheet[XLSX.utils.encode_cell({ r: row, c: col })] = { t: 's', v: text, w: text };
+  return true;
+};
+
+const findTriageStudentRow = (sheet, range, idCol, studentId) => {
+  if (idCol === undefined || idCol === null) return -1;
+  const cleanStudentId = normalizeStudentId(studentId);
+  for (let r = range.s.r; r <= range.e.r; r += 1) {
+    const cell = sheet[XLSX.utils.encode_cell({ r, c: idCol })];
+    if (normalizeStudentId(cell?.w ?? cell?.v ?? '') === cleanStudentId) return r;
+  }
+  return -1;
+};
+
+const getLastTriageDataRow = (sheet, range, headerRowIndex, columns) => {
+  const dataCols = Object.values(columns || {}).filter((col) => col !== undefined && col !== null);
+  let lastRow = headerRowIndex;
+  for (let r = headerRowIndex + 1; r <= range.e.r; r += 1) {
+    const hasData = dataCols.some((c) => {
+      const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+      return String(cell?.w ?? cell?.v ?? '').trim();
+    });
+    if (hasData) lastRow = r;
+  }
+  return lastRow;
+};
+
+const updateTriageFieldsInWorkbook = (buffer, studentId, values) => {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const info = findTriageWorkbookSheetInfo(workbook);
+  if (!info) return { ok: false, error: 'Triage sheet or header row was not found.' };
+  const targetRow = findTriageStudentRow(info.sheet, info.range, info.idCol, studentId);
+  if (targetRow < 0) return { ok: false, error: 'This student was not found in Triage.' };
+  let updated = 0;
+  Object.entries(values || {}).forEach(([key, value]) => {
+    if (key === 'studentId') return;
+    if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
+  });
+  if (!updated) return { ok: false, error: 'No matching Triage columns were found for this update.' };
+  const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return { ok: true, output, values, sheetCount: workbook.SheetNames.length };
+};
+
+const addTriageRowToWorkbook = (buffer, studentId, values) => {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const info = findTriageWorkbookSheetInfo(workbook);
+  if (!info) return { ok: false, error: 'Triage sheet or header row was not found.' };
+  const cleanStudentId = normalizeStudentId(studentId || values?.studentId);
+  if (!cleanStudentId) return { ok: false, error: 'Missing student ID.' };
+  if (findTriageStudentRow(info.sheet, info.range, info.idCol, cleanStudentId) >= 0) {
+    return { ok: false, error: 'This student is already in Triage.' };
+  }
+  const targetRow = getLastTriageDataRow(info.sheet, info.range, info.headerRowIndex, info.columns) + 1;
+  const nextValues = { ...(values || {}), studentId: cleanStudentId };
+  let updated = 0;
+  Object.entries(nextValues).forEach(([key, value]) => {
+    if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
+  });
+  if (!updated) return { ok: false, error: 'No matching Triage columns were found for this new row.' };
+  info.sheet['!ref'] = XLSX.utils.encode_range({
+    s: info.range.s,
+    e: { r: Math.max(targetRow, info.range.e.r), c: info.range.e.c },
+  });
+  const newRow = [];
+  for (let c = info.range.s.c; c <= info.range.e.c; c += 1) {
+    const cell = info.sheet[XLSX.utils.encode_cell({ r: targetRow, c })];
+    newRow.push(cell?.w ?? cell?.v ?? '');
+  }
+  const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return { ok: true, output, values: nextValues, newRow, sheetCount: workbook.SheetNames.length };
 };
 
 try {
@@ -976,6 +1127,7 @@ self.onmessage = (event) => {
         ok: !!result.ok,
         output: result.output || null,
         next: result.next || '',
+        sheetCount: result.sheetCount || 0,
         error: result.error || '',
       }, transfer);
     } catch (error) {
@@ -983,6 +1135,47 @@ self.onmessage = (event) => {
         type: 'triageCommentPrepended',
         ok: false,
         error: error?.message || 'Triage comment update failed.',
+      });
+    }
+  }
+  if (data.type === 'updateTriageFields') {
+    try {
+      const result = updateTriageFieldsInWorkbook(data.buffer, data.studentId, data.values);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageFieldsUpdated',
+        ok: !!result.ok,
+        output: result.output || null,
+        values: result.values || data.values || {},
+        sheetCount: result.sheetCount || 0,
+        error: result.error || '',
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageFieldsUpdated',
+        ok: false,
+        error: error?.message || 'Triage field update failed.',
+      });
+    }
+  }
+  if (data.type === 'addTriageRow') {
+    try {
+      const result = addTriageRowToWorkbook(data.buffer, data.studentId, data.values);
+      const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
+      self.postMessage({
+        type: 'triageRowAdded',
+        ok: !!result.ok,
+        output: result.output || null,
+        values: result.values || data.values || {},
+        newRow: result.newRow || null,
+        sheetCount: result.sheetCount || 0,
+        error: result.error || '',
+      }, transfer);
+    } catch (error) {
+      self.postMessage({
+        type: 'triageRowAdded',
+        ok: false,
+        error: error?.message || 'Triage row add failed.',
       });
     }
   }

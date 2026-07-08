@@ -713,7 +713,7 @@ button {
 
 .load-from-folder-button {
   position: absolute;
-  top: 8px;
+  top: 12px;
   left: 50%;
   z-index: 3;
   width: auto !important;
@@ -774,11 +774,11 @@ button {
   align-items: flex-start;
   font-weight: 400;
   width: 100%;
-  padding-top: 34px;
+  padding-top: 50px;
 }
 
 .drop-zone.load-from-folder-hidden .drop-zone-text {
-  padding-top: 0;
+  padding-top: 12px;
 }
 
 .folder-shortcuts-panel {
@@ -1025,6 +1025,7 @@ button {
   text-align: center;
   padding-left: 14px;
   padding-right: 14px;
+  width: auto;
   white-space: nowrap;
 }
 
@@ -1445,9 +1446,9 @@ button {
 .student-email-all,
 .student-email-copy {
   margin-left: 6px;
-  width: 32px;
+  width: 24px;
   height: 24px;
-  min-width: 32px;
+  min-width: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1457,6 +1458,12 @@ button {
   color: #fff;
   padding: 0;
   cursor: pointer;
+}
+
+.student-email-copy {
+  width: 24px;
+  padding: 0;
+  line-height: 1;
 }
 
 .student-email-all .email-icon,
@@ -1504,7 +1511,7 @@ button {
 .sidebar {
   order: 2;
   flex: 0 2 auto;
-  width: 270px;
+  width: 310px;
   max-width: 516px;
   min-width: 155px;
   background: var(--sidebar-bg);
@@ -1593,8 +1600,8 @@ button {
 }
 
 body.staff-mode .sidebar {
-  flex: 0 0 261px;
-  width: 261px;
+  flex: 0 0 310px;
+  width: 310px;
 }
 
 body.staff-mode .drop-sidebar.is-active {
@@ -2708,6 +2715,11 @@ body.staff-mode .drop-sidebar.is-active {
   position: relative;
   display: block;
   padding-right: 0;
+  margin-bottom: 0.08em;
+}
+
+.student-data-preview .student-summary-id + .student-email-row {
+  margin-top: 0;
 }
 
 .student-data-preview .student-summary-id::after {
@@ -2721,11 +2733,16 @@ body.staff-mode .drop-sidebar.is-active {
   min-width: 0;
 }
 
+.student-summary-id-value {
+  border-radius: 4px;
+  display: inline-block;
+}
+
 .student-data-preview .student-summary-copy-personals {
   position: relative;
   float: right;
   right: auto;
-  top: -3px;
+  top: 0;
   transform: none;
   margin-left: 6px;
 }
@@ -2735,29 +2752,31 @@ body.staff-mode .drop-sidebar.is-active {
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4f7ff;
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 6px;
+  background: linear-gradient(to bottom, var(--btn-secondary-start), var(--btn-secondary-end));
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   cursor: pointer;
 }
 
 .student-summary-copy-personals .clipboard-icon,
 .student-summary-copy-personals .clipboard-icon svg {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
+  display: block;
 }
 
 .student-summary-copy-personals:hover,
 .student-summary-copy-personals:focus-visible {
-  background: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end));
 }
 
 .student-summary-copy-personals.copy-flash {
@@ -2784,18 +2803,41 @@ body.staff-mode .drop-sidebar.is-active {
   animation: copyFlash 0.55s ease;
 }
 
-.student-summary-id.copy-flash {
+.student-data-preview .student-summary-ct-temp,
+#course-map-ct-temp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+  align-self: flex-start;
+}
+
+.student-summary-id.copy-flash,
+.student-summary-id-value.copy-flash {
   animation: copyFlash 0.55s ease;
 }
 
 .timetable-title-student-id,
-.timetable-title-student-name {
+.timetable-title-student-details,
+.timetable-title-student-name,
+.course-map-triage-copy-target {
   border-radius: 4px;
+  display: inline-block;
+}
+
+.timetable-title-student-id,
+.timetable-title-student-name,
+.course-map-triage-copy-target {
   cursor: pointer;
 }
 
 .timetable-title-student-id.copy-flash,
-.timetable-title-student-name.copy-flash {
+.timetable-title-student-details.copy-flash,
+.timetable-title-student-name.copy-flash,
+.course-map-triage-copy-target.copy-flash {
   animation: copyFlash 0.55s ease;
 }
 
@@ -2809,6 +2851,31 @@ body.staff-mode .drop-sidebar.is-active {
 
 .sidebar .student-summary-warning .alert-inline-text {
   color: #ffffff;
+}
+
+.sidebar .student-summary-flag,
+.student-data-preview .student-summary-flag,
+.sidebar .student-summary-flag .alert-inline-title,
+.sidebar .student-summary-flag .alert-inline-text,
+.student-data-preview .student-summary-flag .alert-inline-title,
+.student-data-preview .student-summary-flag .alert-inline-text {
+  color: #ffff00;
+}
+
+.student-summary-flag {
+  line-height: 1.25;
+}
+
+.student-summary-flag .student-summary-flag-preview {
+  color: #ffff00;
+}
+
+.student-summary-flag.is-expandable .student-summary-flag-preview {
+  padding-right: 58px;
+}
+
+.student-summary-flag .triage-comment-menu {
+  bottom: 0;
 }
 
 .sidebar .student-summary-warning.fail-2 .alert-inline-title,
@@ -2860,7 +2927,7 @@ body.staff-mode .drop-sidebar.is-active {
   font-family: inherit;
   font-size: 1rem;
   line-height: normal;
-  margin: 4px 0 0 12px;
+  margin: 6px 0 0 12px;
   padding: 3px 12px;
   cursor: pointer;
 }
@@ -2869,6 +2936,10 @@ body.staff-mode .drop-sidebar.is-active {
   font-weight: 700;
   font-size: 1rem;
   margin-bottom: 4px;
+}
+
+.student-summary-triage-order {
+  font-weight: 400;
 }
 
 .student-summary-triage-body {
@@ -3310,6 +3381,12 @@ input:checked+.slider:before {
 
 .ui-tooltip.ui-tooltip-interactive {
   pointer-events: auto;
+}
+
+.ui-tooltip.ui-tooltip-alert-button {
+  background: #fff;
+  color: #000;
+  border-color: #111;
 }
 
 .ui-tooltip.ui-tooltip-interactive a {
@@ -5314,7 +5391,7 @@ body.student-mode #select-by-typing-button {
   padding: 10px 12px;
   border-radius: 8px;
   box-shadow: 0px 0px 10px rgb(0, 0, 0);
-  font-size: 13.2px;
+  font-size: 18px;
   line-height: 1.4;
   white-space: normal;
   width: 90%;
@@ -5336,7 +5413,7 @@ body.student-mode #select-by-typing-button {
   border: 1px solid #b8c9ff;
   border-radius: 3px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 1em;
   margin-bottom: 6px;
 }
 
@@ -5353,7 +5430,7 @@ body.show-availability .satisfied:not(.toggled):not(.completed) .subject-tooltip
   border: 1px solid #b8c9ff;
   border-radius: 3px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 1em;
   margin-bottom: 6px;
 }
 
@@ -5368,14 +5445,14 @@ body.show-availability .satisfied.not-this-sem:not(.toggled):not(.completed) .su
   display: block;
   margin: 0;
   color: #1c8dff;
-  font-size: 12px;
+  font-size: 1em;
 }
 
 .subject-tooltip .inline-strong {
   display: inline;
   margin: 0;
   color: var(--sidebar-heading-color);
-  font-size: 12px;
+  font-size: 1em;
   font-weight: 700;
 }
 
@@ -6300,10 +6377,16 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   background: #fff;
   padding-top: 8px;
   z-index: 2;
-  grid-template-columns: var(--code-col-width, 80px) max-content minmax(0, 1fr) max-content;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   column-gap: 6px;
   width: 100%;
   max-width: none;
+}
+
+#timetable-modal .subject-table-actions .modal-copy-codes {
+  width: auto;
+  height: 32px;
+  padding: 4px 12px;
 }
 
 #timetable-modal .modal-action-group .clear-button {
@@ -6364,6 +6447,16 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   margin-bottom: 0;
 }
 
+.timetable-fee-choice-heading {
+  margin: 2px 0 6px;
+  font-weight: 800;
+  cursor: help;
+}
+
+#timetable-fees.has-fee-options .timetable-fee-hideable {
+  margin-left: 16px;
+}
+
 :root[data-appearance="dark"] #timetable-fees,
 :root[data-appearance="dark"] .timetable-fees {
   background: #151a20 !important;
@@ -6398,7 +6491,11 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 
 .timetable-fee-line {
   position: relative;
-  cursor: pointer;
+}
+
+.timetable-fees.fees-known-student,
+.timetable-fees.fees-known-student .timetable-fee-line {
+  cursor: default;
 }
 
 .timetable-fee-line.fee-hidden {
@@ -6406,6 +6503,10 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 .timetable-fee-hideable {
+  cursor: default;
+}
+
+#timetable-fees.has-fee-options .timetable-fee-hideable {
   cursor: pointer;
 }
 
@@ -6459,6 +6560,7 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 #open-supporting-docs-folder,
+#open-student-forms-folder,
 #open-teacher-temp-folder {
   border-color: var(--folder-shortcut-border);
   background: var(--folder-shortcut-bg);
@@ -6466,9 +6568,20 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
 }
 
 #open-supporting-docs-folder:hover,
+#open-student-forms-folder:hover,
 #open-teacher-temp-folder:hover {
   background: var(--folder-shortcut-hover-bg);
   color: var(--folder-shortcut-hover-text);
+}
+
+#email-primary,
+#open-supporting-docs-folder,
+#timetable-colours {
+  margin-left: 12px;
+}
+
+#hide-timetable.close-near-colours {
+  margin-left: 24px;
 }
 
 .timetable-email .email-icon svg {
@@ -6675,17 +6788,41 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   gap: 8px;
 }
 
+.remaining-copy-indent {
+  margin-left: 24px;
+}
+
 #timetable-modal .subject-table-actions .modal-action-group {
+  grid-column: 1;
   justify-self: start;
   gap: 6px;
 }
 
 #timetable-modal .subject-table-actions #hide-timetable {
-  grid-column: 4;
+  grid-column: 3;
   justify-self: end;
   width: auto;
   min-width: 0;
 }
+
+.course-map-show-hide-dialog .course-map-staff-mode-row {
+  margin-top: 10px;
+}
+
+.course-map-default-view {
+  display: block;
+  width: auto;
+  margin-top: 6px;
+  padding-left: 14px;
+  padding-right: 14px;
+  text-align: left;
+}
+
+.course-map-staff-student-flag {
+  color: #ffff00;
+  font-weight: 700;
+}
+
 
 .subject-table-actions .modal-action-group .is-active {
   border-color: #0f4c94;
@@ -7292,7 +7429,8 @@ body.completed-mode .completed:hover::after {
 #course-map-remaining-info-modal,
 #course-map-full-student-details-modal,
 #course-map-student-note-modal,
-#course-map-triage-comment-modal {
+#course-map-triage-comment-modal,
+#course-map-triage-sync-help-modal {
   z-index: 14060;
 }
 
@@ -7302,6 +7440,10 @@ body.completed-mode .completed:hover::after {
 
 #course-map-triage-comment-modal {
   z-index: 14080;
+}
+
+#course-map-triage-sync-help-modal {
+  z-index: 14120;
 }
 
 #container-popout-modal {
@@ -7963,6 +8105,37 @@ body.completed-mode .completed:hover::after {
   padding-right: 14px;
 }
 
+#course-map-student-note-modal .modal-title {
+  flex: 1 1 auto;
+  margin-right: auto;
+}
+
+.course-map-triage-sync-help {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+#course-map-student-note-modal .modal-close {
+  flex: 0 0 auto;
+  width: auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.course-map-triage-sync-help-modal {
+  max-width: 620px;
+}
+
+#course-map-triage-sync-help-modal .modal-actions .clear-button {
+  width: auto;
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 #course-map-triage-edit:focus-visible {
   outline: 3px solid #1f6fd1;
   outline-offset: 3px;
@@ -7970,6 +8143,18 @@ body.completed-mode .completed:hover::after {
 
 #course-map-triage-edit.save-ring-pulse {
   animation: triageSaveRingPulse 0.45s ease;
+}
+
+.triage-grey-ring-pulse {
+  animation: triageGreyRingPulse 0.55s ease;
+}
+
+.triage-default-suggested {
+  background-color: #d9ecff;
+}
+
+#course-map-student-note-modal .triage-default-suggested {
+  background-color: #d9ecff;
 }
 
 @keyframes triageSaveRingPulse {
@@ -7985,6 +8170,23 @@ body.completed-mode .completed:hover::after {
 
   100% {
     outline: 3px solid rgba(31, 111, 209, 0);
+    outline-offset: 10px;
+  }
+}
+
+@keyframes triageGreyRingPulse {
+  0% {
+    outline: 2px solid rgba(255, 132, 0, 0.95);
+    outline-offset: 2px;
+  }
+
+  70% {
+    outline: 2px solid rgba(255, 132, 0, 0.65);
+    outline-offset: 8px;
+  }
+
+  100% {
+    outline: 2px solid rgba(255, 132, 0, 0);
     outline-offset: 10px;
   }
 }
@@ -10407,6 +10609,13 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   display: none;
 }
 
+#alert-title .alert-title-note {
+  color: #111;
+  font-size: 0.82em;
+  font-weight: 400;
+  margin-left: 10px;
+}
+
 #timetable-modal.staff-mode #timetable-title {
   font-weight: 700;
   font-size: 1.2rem;
@@ -10971,10 +11180,10 @@ body.completed-mode #clear-selections {
 
 .course-map-triage-static .course-map-triage-id-line {
   grid-column: 1 / -1;
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.course-map-triage-static .course-map-triage-institute-email {
+.course-map-triage-static .course-map-triage-email-line {
   margin-bottom: 8px;
   padding-bottom: 8px;
 }

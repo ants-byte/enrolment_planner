@@ -369,6 +369,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const SETTINGS_QUERY_COURSE_MAP_FONT_KEY = 'courseMapFont';
   const SETTINGS_QUERY_APPEARANCE_KEY = 'mode';
   const SETTINGS_QUERY_COLOUR_PALETTE_KEY = 'palette';
+  const SETTINGS_QUERY_SELECTED_SUBJECTS_KEY = 'sel';
+  const SETTINGS_QUERY_HISTORY_KEY = 'hist';
+  const SETTINGS_QUERY_CURRENT_KEY = 'cur';
+  const SETTINGS_QUERY_USE_ELECTIVES_KEY = 'use';
+  const SETTINGS_QUERY_BIT_ELECTIVES_KEY = 'ebit';
   const SETTINGS_QUERY_PANEL_WIDTH_KEYS = {
     sidebar: 'sidebar',
     'drop-sidebar': 'dropSidebar',
@@ -398,6 +403,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const DEFAULT_COLOUR_PALETTE = 'default';
   const ACCESSIBLE_COLOUR_PALETTE = 'accessible';
   const GREYSCALE_COLOUR_PALETTE = 'greyscale';
+  let plannerStateUrlReady = false;
   const getCardThemeFromQuery = () => {
     const raw = getQueryParamLower(SETTINGS_QUERY_CARDS_KEY);
     if (!raw) return '';
@@ -549,6 +555,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           params.delete(param);
         }
       });
+      if (plannerStateUrlReady) {
+        if (shouldOmitPlannerStateFromUrl()) {
+          deletePlannerStateUrlParams(params);
+        } else {
+          appendPlannerStateToParams(params);
+        }
+      }
       const query = params.toString();
       const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash || ''}`;
       window.history.replaceState(null, '', nextUrl);
@@ -714,9 +727,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : document.getElementById(key) || document.querySelector(`.${key}`);
       if (panel) {
         if (key === 'sidebar') {
-          panel.style.width = '260px';
-          panel.style.flex = '0 0 260px';
-          activePanelWidthPx[key] = 260;
+          panel.style.width = '310px';
+          panel.style.flex = '0 0 310px';
+          activePanelWidthPx[key] = 310;
         } else {
           panel.style.width = '';
           panel.style.flex = '';
@@ -1184,7 +1197,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
-    "(or for lesser functionality: drag-and-drop the files here: 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. Depending on your setup, clicking the zone will auto-load those 3 files too.)";
+    "(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here may give you the same.).";
   const dropZoneSpinner = dropZone
     ? (() => {
       const spinner = document.createElement('div');
@@ -1230,9 +1243,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260702-1';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260708-14';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260702-1';
+      return 'triage-parser-worker.js?v=triage-20260708-14';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1422,7 +1435,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'Semester_Start_Date',
     'Price_per_CSP_Unit',
     'Price_per_Unit',
-    'CensusDate',
     'Credit_Points_Earned',
     'EndOfWeekTwoDate',
     'Countries_facing_troubles',
@@ -1623,6 +1635,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!normalizedId) return null;
     return studentRecords.find((record) => getStudentRecordId(record) === normalizedId) || null;
   };
+  let suppressStudentSearchAutocomplete = false;
+  const hasOtherStudentIdWithPrefix = (prefix, currentId) =>
+    !!prefix && studentRecords.some((record) => {
+      const id = getStudentRecordId(record);
+      return id && id !== currentId && id.startsWith(prefix);
+    });
+  const getStudentIdBackspaceFallback = (value) => {
+    const currentId = String(value || '').trim();
+    if (!/^\d{7}$/.test(currentId) || !studentRecords.length) return '';
+    if (hasOtherStudentIdWithPrefix(currentId.slice(0, 6), currentId)) return '';
+    return hasOtherStudentIdWithPrefix(currentId.slice(0, 5), currentId)
+      ? currentId.slice(0, 5)
+      : currentId.slice(0, 4);
+  };
   const hostName = window.location.hostname || '';
   function getQueryParamLower(key) {
     const search = String(window.location.search || '');
@@ -1669,6 +1695,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const emailBothButton = document.getElementById('email-both');
   const copyStudentEmailsButton = document.getElementById('copy-student-emails');
   const openSupportingDocsFolderButton = document.getElementById('open-supporting-docs-folder');
+  const openStudentFormsFolderButton = document.getElementById('open-student-forms-folder');
   const openTeacherTempFolderButton = document.getElementById('open-teacher-temp-folder');
   const copyStudentDeclarationButton = document.getElementById('copy-student-declaration');
   const emailScriptsAccessModal = document.getElementById('email-scripts-access-modal');
@@ -1798,6 +1825,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapStudentNoteContent = document.getElementById('course-map-student-note-content');
   const closeCourseMapStudentNote = document.getElementById('close-course-map-student-note');
   const closeCourseMapStudentNoteCta = document.getElementById('close-course-map-student-note-cta');
+  const courseMapTriageSyncHelpButton = document.getElementById('course-map-triage-sync-help');
+  const courseMapTriageSyncHelpModal = document.getElementById('course-map-triage-sync-help-modal');
+  const closeCourseMapTriageSyncHelp = document.getElementById('close-course-map-triage-sync-help');
+  const closeCourseMapTriageSyncHelpCta = document.getElementById('close-course-map-triage-sync-help-cta');
   const courseMapTriageActions = document.getElementById('course-map-triage-actions');
   const courseMapTriageEditButton = document.getElementById('course-map-triage-edit');
   const courseMapTriageAddCommentButton = document.getElementById('course-map-triage-add-comment');
@@ -1854,6 +1885,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapShowHideActions = document.querySelector('#course-map-modal .course-map-show-hide-actions');
   const openCourseMapShowHideButton = document.getElementById('open-course-map-show-hide');
   const courseMapShowHideDialog = document.getElementById('course-map-show-hide-dialog');
+  const courseMapDefaultStudentViewButton = document.getElementById('course-map-default-student-view');
+  const courseMapDefaultStaffViewButton = document.getElementById('course-map-default-staff-view');
   const courseMapModeActions = document.querySelector('#course-map-modal .course-map-mode-actions');
   const openCourseMapModeButton = document.getElementById('open-course-map-mode');
   const courseMapModeDialog = document.getElementById('course-map-mode-dialog');
@@ -1886,6 +1919,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeRemainingCta = document.getElementById('close-remaining-cta');
   const copyRemaining = document.getElementById('copy-remaining');
   const copyRemainingCodes = document.getElementById('copy-remaining-codes');
+  const removeCurrentSelectionsButton = document.getElementById('remove-current-selections');
   const nextSemesterModal = document.getElementById('next-semester-modal');
   const nextSemesterTitleEl = document.getElementById('next-semester-title');
   const nextSemesterTable = document.getElementById('next-semester-table');
@@ -1981,6 +2015,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       emailInstituteButton,
       emailBothButton,
       openSupportingDocsFolderButton,
+      openStudentFormsFolderButton,
       openTeacherTempFolderButton,
       copyHistory,
       copyHistoryCodes,
@@ -3108,12 +3143,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ].map((value) => String(value || '').trim()).filter(Boolean).join(' ');
     const triageStudentCopyName = [familyName.toUpperCase(), givenName].filter(Boolean).join(', ');
     const triageStudentCopy = [studentId, triageStudentCopyName].filter(Boolean).join(' ');
+    const triageEmailCopy = Array.from(new Set([primaryEmail, instituteEmail].filter(Boolean))).join('; ');
     const feeDetails = getFeeStatusDetails(record);
     const remainingCount = getRemainingSubjectsCount();
     const showPastYearMedian = [9, 7, 6, 5].includes(remainingCount);
     const notInSource = !!record?._notInSource;
     const tempClass = notInSource ? ' is-temp-hidden' : '';
     const handledByValue = triage.handledBy || getCurrentTeacherNameForTriage();
+    const defaultStatusDetails =
+      hasTriageRecord || triage.statusDetails
+        ? triage.statusDetails
+        : feeDetails.domesticFees
+          ? "New - Domestic - Don't know if CT"
+          : "New - International - Don't know if CT";
     return [
       `<form id="course-map-triage-edit-form" class="course-map-triage-edit-form${tempClass}" data-new-triage-row="${hasTriageRecord ? 'false' : 'true'}" data-student-id="${escapeHtml(studentId)}" data-original-family-name="${escapeHtml(familyName)}" data-original-given-name="${escapeHtml(givenName)}" data-original-primary-email="${escapeHtml(primaryEmail)}" data-original-friendly-name="${escapeHtml(triage.friendlyName || '')}" data-original-handled-by="${escapeHtml(handledByValue)}" data-original-altered-status="${escapeHtml(triage.alteredStatus || '')}" data-original-status-details="${escapeHtml(triage.statusDetails || '')}" data-original-comments="${escapeHtml(comments)}">`,
       '<div class="course-map-triage-static">',
@@ -3121,8 +3163,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? '<label class="course-map-triage-inline-field course-map-triage-student-id-field"><span>Student ID:</span>' +
         `<input id="course-map-triage-student-id" type="text" value="${escapeHtml(studentId)}" />` +
         '</label>'
-        : `<div class="course-map-triage-id-line" data-triage-copy="${escapeHtml(triageStudentCopy)}">${escapeHtml([givenName, familyName, studentId].filter(Boolean).join(' '))}</div>`,
-      instituteEmail ? `<div class="course-map-triage-id-line course-map-triage-institute-email">${escapeHtml(instituteEmail)}</div>` : '',
+        : `<div class="course-map-triage-id-line"><span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(studentId)}" title="Copy student ID">${escapeHtml(studentId)}</span>${displayName ? ` <span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(triageStudentCopy)}" title="Copy student ID and name">${escapeHtml(displayName)}</span>` : ''}</div>`,
+      triageEmailCopy ? `<div class="course-map-triage-id-line course-map-triage-email-line">${primaryEmail ? `<span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(triageEmailCopy)}" title="Copy both emails">${escapeHtml(primaryEmail)}</span>` : ''}${primaryEmail && instituteEmail ? ' ; ' : ''}${instituteEmail ? `<span class="course-map-triage-copy-target course-map-triage-institute-email" data-triage-copy="${escapeHtml(triageEmailCopy)}" title="Copy both emails">${escapeHtml(instituteEmail)}</span>` : ''}</div>` : '',
       notInSource ? '' : `<div><strong>Suspended:</strong><span>${escapeHtml(String(record?.Suspended || '').trim() || 'N')}</span></div>`,
       notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${getPassedSubjectCountForRecord(record)}</span></div>`,
       notInSource ? '' : `<div><strong>Status:</strong><span>${escapeHtml(triage.statusLabel || '')}</span></div>`,
@@ -3150,15 +3192,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       `<select id="course-map-triage-handled-by">${optionHtml(TRIAGE_HANDLED_BY_OPTIONS, handledByValue)}</select>`,
       '</label>',
       '<label class="course-map-triage-inline-field"><span>Enrolment type <span class="triage-required-mark" aria-hidden="true">*</span></span>',
-      `<select id="course-map-triage-status-details">${optionHtml(TRIAGE_STATUS_DETAILS_OPTIONS, triage.statusDetails)}</select>`,
+      `<select id="course-map-triage-status-details" class="${!hasTriageRecord ? 'triage-default-suggested' : ''}" data-initial-value="${escapeHtml(defaultStatusDetails)}">${optionHtml(TRIAGE_STATUS_DETAILS_OPTIONS, defaultStatusDetails)}</select>`,
       '</label>',
       '<label class="course-map-triage-inline-field"><span>Enrolment change</span>',
       `<select id="course-map-triage-altered-status">${optionHtml(TRIAGE_ALTERED_STATUS_OPTIONS, triage.alteredStatus)}</select>`,
       '</label>',
       '</div>',
-      '<label class="course-map-triage-block-field">New Comment',
-      '<textarea id="course-map-triage-new-comment" rows="2"></textarea>',
-      '</label>',
       commentsLines.length && hasTriageRecord
         ? [
           '<label class="course-map-triage-block-field">Comments',
@@ -3166,6 +3205,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           '</label>',
         ].join('')
         : '',
+      '<label class="course-map-triage-block-field">New Comment',
+      `<textarea id="course-map-triage-new-comment" class="triage-default-suggested" rows="2"></textarea>`,
+      '</label>',
       '</form>',
     ].join('');
   };
@@ -4172,6 +4214,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapStaffSelectedSummary = () => {
     if (!courseMapStaffSelectedSummaryEl) return;
     courseMapStaffSelectedSummaryEl.innerHTML = '';
+    const studentFlag = getStudentFlagText(getActiveStudentRecord());
+    if (studentFlag) {
+      const flagEl = document.createElement('div');
+      flagEl.className = 'course-map-staff-student-flag';
+      flagEl.textContent = `Student Flag: ${studentFlag}`;
+      courseMapStaffSelectedSummaryEl.appendChild(flagEl);
+    }
   };
 
   const mountCourseMapSelectedListIntoStaffPanel = () => {
@@ -5019,6 +5068,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapIndicatorsOn = true;
   let courseMapNotesOn = !staffFacing;
   let courseMapListColoursOn = false;
+  let remainingHideCurrentSelections = false;
   let remainingNoticeUnlocked = false;
   let majorPulseTimer = null;
 
@@ -5075,7 +5125,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (uiTooltipEl) {
       uiTooltipEl.style.display = 'none';
       uiTooltipEl.textContent = '';
-      uiTooltipEl.classList.remove('ui-tooltip-interactive', 'ui-tooltip-counts');
+      uiTooltipEl.classList.remove('ui-tooltip-interactive', 'ui-tooltip-counts', 'ui-tooltip-alert-button');
     }
 
     document.querySelectorAll('.show-tooltip, .hover-active').forEach((el) => {
@@ -5981,6 +6031,145 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const encodePlannerUrlPart = (value) => encodeURIComponent(String(value ?? ''));
+  const decodePlannerUrlPart = (value) => {
+    try {
+      return decodeURIComponent(String(value ?? '')).trim();
+    } catch {
+      return String(value ?? '').trim();
+    }
+  };
+  const formatPlannerUrlEntry = (...parts) => parts.map(encodePlannerUrlPart).join('~');
+  const parsePlannerUrlEntry = (entry) => String(entry || '').split('~').map(decodePlannerUrlPart);
+  const getPlannerUrlList = (params, key) => String(params.get(key) || '').split(',').filter(Boolean);
+  const setPlannerUrlList = (params, key, values, keepSlots = false) => {
+    const items = Array.isArray(values) ? values.map((value) => String(value || '')) : [];
+    if (!items.some(Boolean)) {
+      params.delete(key);
+      return;
+    }
+    params.set(key, (keepSlots ? items : items.filter(Boolean)).join(','));
+  };
+
+  const deletePlannerStateUrlParams = (params) => {
+    [
+      SETTINGS_QUERY_SELECTED_SUBJECTS_KEY,
+      SETTINGS_QUERY_HISTORY_KEY,
+      SETTINGS_QUERY_CURRENT_KEY,
+      SETTINGS_QUERY_USE_ELECTIVES_KEY,
+      SETTINGS_QUERY_BIT_ELECTIVES_KEY,
+    ].forEach((key) => params.delete(key));
+  };
+
+  const shouldOmitPlannerStateFromUrl = () =>
+    !!staffFacing && !!(
+      sourceWorkbookFileObject ||
+      (Array.isArray(studentRecords) && studentRecords.length)
+    );
+
+  function appendPlannerStateToParams(params) {
+    const selected = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code);
+    const resultHistoryCodes = new Set();
+    const history = manualEntryResults
+      .filter((entry) => entry?.id)
+      .map((entry) => {
+        resultHistoryCodes.add(String(entry.id || '').toUpperCase());
+        return formatPlannerUrlEntry(entry.id, entry.result || '', entry.date || '');
+      });
+    subjectState.forEach((st, code) => {
+      if (st?.completed && !resultHistoryCodes.has(code)) history.push(formatPlannerUrlEntry(code, '', ''));
+    });
+    const currentSource = new Map([...workbookCurrent.entries(), ...manualEntryCurrent.entries()]);
+    const current = Array.from(currentSource.entries())
+      .filter(([code]) => code)
+      .map(([code, meta]) => formatPlannerUrlEntry(code, meta?.result || '', meta?.date || ''));
+
+    setPlannerUrlList(params, SETTINGS_QUERY_SELECTED_SUBJECTS_KEY, selected);
+    setPlannerUrlList(params, SETTINGS_QUERY_HISTORY_KEY, history);
+    setPlannerUrlList(params, SETTINGS_QUERY_CURRENT_KEY, current);
+    setPlannerUrlList(params, SETTINGS_QUERY_USE_ELECTIVES_KEY, electivePlaceholderState, true);
+    setPlannerUrlList(params, SETTINGS_QUERY_BIT_ELECTIVES_KEY, electiveBitState, true);
+  }
+
+  const applyPlannerStateFromUrl = () => {
+    if (typeof URLSearchParams === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search || '');
+    const selectedEntries = getPlannerUrlList(params, SETTINGS_QUERY_SELECTED_SUBJECTS_KEY);
+    const historyEntries = getPlannerUrlList(params, SETTINGS_QUERY_HISTORY_KEY);
+    const currentEntries = getPlannerUrlList(params, SETTINGS_QUERY_CURRENT_KEY);
+    const useEntries = String(params.get(SETTINGS_QUERY_USE_ELECTIVES_KEY) || '').split(',');
+    const bitEntries = String(params.get(SETTINGS_QUERY_BIT_ELECTIVES_KEY) || '').split(',');
+    const hasPlannerState =
+      selectedEntries.length ||
+      historyEntries.length ||
+      currentEntries.length ||
+      useEntries.some(Boolean) ||
+      bitEntries.some(Boolean);
+    if (!hasPlannerState) return false;
+
+    manualEntryAliases.clear();
+    manualEntryMeta.clear();
+    manualEntryCurrent.clear();
+    workbookCurrent.clear();
+    manualEntryUnknown.length = 0;
+    manualEntryResults = [];
+    electivePlaceholderState = ['', '', '', ''];
+    electiveBitState = ['', '', '', ''];
+    subjectState.forEach((st, code) => {
+      subjectState.set(code, { completed: false, toggled: false });
+    });
+
+    historyEntries.forEach((entry) => {
+      const [rawId, rawResult = '', rawDate = ''] = parsePlannerUrlEntry(entry);
+      const id = String(rawId || '').toUpperCase();
+      if (!validSubjectCodes.has(id) && !validUseCodes.has(id)) return;
+      const result = normalizeGradeToken(rawResult || '');
+      const date = rawDate || '';
+      manualEntryResults.push({ id, result, date });
+      const existing = manualEntryMeta.get(id) || {};
+      manualEntryMeta.set(id, {
+        result: result || existing.result || '',
+        date: date || existing.date || '',
+        failCountN: (existing.failCountN || 0) + (result === 'N' ? 1 : 0),
+      });
+      if (validSubjectCodes.has(id) && (getGradeStatus(result) === 'pass' || (!result && !date))) {
+        subjectState.set(id, { completed: true, toggled: false });
+      }
+    });
+
+    useEntries.slice(0, electivePlaceholderState.length).forEach((rawCode, idx) => {
+      const code = String(rawCode || '').toUpperCase();
+      electivePlaceholderState[idx] = validUseCodes.has(code) ? code : '';
+    });
+    bitEntries.slice(0, electiveBitState.length).forEach((rawCode, idx) => {
+      const code = String(rawCode || '').toUpperCase();
+      electiveBitState[idx] = validSubjectCodes.has(code) ? code : '';
+    });
+    selectedEntries.forEach((rawCode) => {
+      const code = String(rawCode || '').toUpperCase();
+      const st = subjectState.get(code);
+      if (!st || st.completed) return;
+      subjectState.set(code, { completed: false, toggled: true });
+    });
+    currentEntries.forEach((entry) => {
+      const [rawCode, rawResult = '', rawDate = ''] = parsePlannerUrlEntry(entry);
+      const code = String(rawCode || '').toUpperCase();
+      if (!validSubjectCodes.has(code)) return;
+      manualEntryCurrent.set(code, { result: normalizeGradeToken(rawResult || ''), date: rawDate || '' });
+      const st = subjectState.get(code);
+      if (st?.completed) subjectState.set(code, { completed: false, toggled: false });
+    });
+
+    refreshCurrentEnrolmentStudentRecord();
+    applySubjectStateToCells();
+    rebuildElectiveBitStateFromState();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateResetState();
+    return true;
+  };
+
   const refreshCurrentEnrolmentStudentRecord = () => {
     currentEnrolmentStudentRecord.clear();
     withdrawnCurrentEnrolments.clear();
@@ -6219,7 +6408,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return `Most recent result: ${resultText}.`;
   };
 
-  const getStudentFlagText = (record) => String(record?.Student_Flag || '').trim();
+  const isNormalResultReleaseForCurrentSemester = (date) => {
+    const resultDate = getDateOnly(date);
+    if (!resultDate) return false;
+    const year = resultDate.getFullYear();
+    const month = resultDate.getMonth();
+    if (currentSemesterKey === 'S2') {
+      return month >= 5 && month <= 6 && year === new Date().getFullYear();
+    }
+    if (currentSemesterKey === 'S1') {
+      const currentYear = new Date().getFullYear();
+      return month >= 10 && month <= 11 && year === currentYear - 1;
+    }
+    return false;
+  };
+
+  const getStudentFlagText = (record) => {
+    if (!record) return '';
+    const direct = String(
+      record.Student_Flag || record['Student Flag'] || record.StudentFlag || record.studentFlag || ''
+    ).trim();
+    if (direct) return direct;
+    const matchKey = Object.keys(record).find((key) =>
+      String(key || '').replace(/[^a-z0-9]/gi, '').toLowerCase() === 'studentflag'
+    );
+    return matchKey ? String(record[matchKey] || '').trim() : '';
+  };
 
   const isSdSubjectCode = (code) => {
     const classes = subjectMeta[code]?.classes || [];
@@ -6330,6 +6544,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return new Set([...plannedCodes, ...currentCodes]);
   };
 
+  const hasCurrentHistoryHoldOrUngradedSubject = () =>
+    [...workbookCurrent.entries(), ...manualEntryCurrent.entries()].some(([code, meta]) => {
+      if (!validSubjectCodes.has(code) || withdrawnCurrentEnrolments.has(code)) return false;
+      const token = normalizeGradeToken(meta?.result || '');
+      return !token || token === 'H';
+    });
+
   const getSummerSchoolOpportunityAlert = () => {
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const isSemesterOneWindow = currentSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent);
@@ -6352,6 +6573,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       severity,
       title,
       html: `<p><strong class="alert-inline-title ${leadClass}">${title}</strong> <span class="alert-inline-text">${body}</span></p>`,
+    };
+  };
+
+  const getCapstoneEarlyCompletionCautionAlert = () => {
+    const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
+    const hasEarlyCompletionOption =
+      (currentSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent)) ||
+      (currentSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent));
+    const fullLoadSelected = getPlannedCount() >= getLoadThreshold() && getLoadThreshold() > 0;
+    if (!hasEarlyCompletionOption || !fullLoadSelected) return null;
+    if (subjectState.get('BIT371')?.completed || subjectState.get('BIT371')?.toggled) return null;
+    return {
+      title: 'Capstone may affect early completion',
+      html: '<p><strong class="alert-inline-title alert-title-warning">Capstone may affect early completion</strong> <span class="alert-inline-text">BIT371 is still required after the selected full load. Because Capstone runs as a sequence, completing BIT371 may prevent Summer School, or possibly a 5-subject final semester, from allowing this student to complete a semester early.</span></p>',
     };
   };
 
@@ -6505,7 +6740,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const loadThreshold = Math.max(1, getLoadThreshold());
     const studyingCount = getCurrentStudyCodes().size;
     const hasRealStudentRecord = !!record && Object.keys(record).length > 0;
-    if (hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record)) {
+    const skipVisaVariation = hasCurrentHistoryHoldOrUngradedSubject();
+    if (hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record) && !skipVisaVariation) {
       if (studyingCount < loadThreshold) {
         infoMessages.push({
           title: 'Visa requirement variation',
@@ -7015,7 +7251,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const setTimetableHeading = (mode) => {
     if (!timetableTitleEl) return;
-    if (mode === 'available') {
+    if (mode === 'available' && !staffFacing) {
       timetableTitleEl.textContent = 'Available Subjects. Click a row to select that subject.';
       return;
     }
@@ -7044,7 +7280,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const familyName = record ? String(record.Family_Name || '').trim().toUpperCase() : '';
     const name = [givenName, familyName].filter(Boolean).join(' ').trim();
     const studentCopyText = [studentId, [familyName, givenName].filter(Boolean).join(', ')].filter(Boolean).join(' ');
-    const strongText = `Timetable for ${label}`;
+    const appendStudentDetails = (parent) => {
+      if (!studentId && !name) return false;
+      const detailsSpan = document.createElement('span');
+      detailsSpan.className = 'timetable-title-student-details';
+      if (studentId) {
+        const idSpan = document.createElement('span');
+        idSpan.className = 'timetable-title-student-id';
+        idSpan.textContent = studentId;
+        idSpan.title = 'Copy student ID';
+        idSpan.addEventListener('click', (event) => {
+          event.stopPropagation();
+          void copyPlainText(studentId).then((copied) => {
+            if (copied) triggerFlash(idSpan);
+          });
+        });
+        detailsSpan.appendChild(idSpan);
+      }
+      if (studentId && name) detailsSpan.appendChild(document.createTextNode(' '));
+      if (name) {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'timetable-title-student-name';
+        nameSpan.textContent = name;
+        nameSpan.title = 'Copy student ID and name';
+        nameSpan.addEventListener('click', (event) => {
+          event.stopPropagation();
+          void copyPlainText(studentCopyText).then((copied) => {
+            if (copied) triggerFlash(detailsSpan);
+          });
+        });
+        detailsSpan.appendChild(nameSpan);
+      }
+      parent.appendChild(detailsSpan);
+      return true;
+    };
+    const strongText =
+      mode === 'available'
+        ? 'Available Subjects. Click a row to select that subject.'
+        : `Timetable for ${label}`;
     timetableTitleEl.textContent = '';
     const strongEl = document.createElement('span');
     strongEl.className = 'timetable-title-strong';
@@ -7052,38 +7325,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     timetableTitleEl.appendChild(strongEl);
     const preparedLine = document.createElement('span');
     preparedLine.className = 'timetable-prepared-line';
-    preparedLine.appendChild(document.createTextNode('Prepared '));
-    const dateSpan = document.createElement('span');
-    dateSpan.className = 'timetable-date';
-    dateSpan.textContent = prepared;
-    timetablePreparedEl = dateSpan;
-    preparedLine.appendChild(dateSpan);
-    if (studentId || name) {
-      preparedLine.appendChild(document.createTextNode(', for '));
-      if (studentId) {
-        const idSpan = document.createElement('span');
-        idSpan.className = 'timetable-title-student-id';
-        idSpan.textContent = studentId;
-        idSpan.title = 'Copy student ID';
-        idSpan.addEventListener('click', () => {
-          void copyPlainText(studentId).then((copied) => {
-            if (copied) triggerFlash(idSpan);
-          });
-        });
-        preparedLine.appendChild(idSpan);
-      }
-      if (studentId && name) preparedLine.appendChild(document.createTextNode(' '));
-      if (name) {
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'timetable-title-student-name';
-        nameSpan.textContent = name;
-        nameSpan.title = 'Copy student ID and name';
-        nameSpan.addEventListener('click', () => {
-          void copyPlainText(studentCopyText).then((copied) => {
-            if (copied) triggerFlash(nameSpan);
-          });
-        });
-        preparedLine.appendChild(nameSpan);
+    if (mode === 'available') {
+      preparedLine.appendChild(document.createTextNode('Options for '));
+      appendStudentDetails(preparedLine);
+    } else {
+      preparedLine.appendChild(document.createTextNode('Prepared '));
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'timetable-date';
+      dateSpan.textContent = prepared;
+      timetablePreparedEl = dateSpan;
+      preparedLine.appendChild(dateSpan);
+      if (studentId || name) {
+        preparedLine.appendChild(document.createTextNode(', for '));
+        appendStudentDetails(preparedLine);
       }
     }
     timetableTitleEl.appendChild(preparedLine);
@@ -7121,9 +7375,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const record = getActiveStudentRecord();
     const courseInfo = staffWorkbookState.getCourseInfo();
+    timetableFees.classList.toggle('fees-known-student', !!record);
     updateDateAlerts(courseInfo);
-    const census = formatShortDate(courseInfo?.CensusDate || '');
-    const censusText = census || '20/03/26';
+    const census = formatShortDate(getCalculatedCensusDate(courseInfo));
+    const censusText = census || 'not set';
     const censusHtml = `<span class="timetable-date">${escapeHtml(censusText)}</span>`;
     const semesterStartText =
       record ? formatLongDate(courseInfo?.Semester_Start_Date || '') : '';
@@ -7183,22 +7438,41 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const bachelorUrl = 'https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/';
     const bachelorLink = `<a class="timetable-fee-link" href="${bachelorUrl}" target="_blank" rel="noopener">Bachelor of IT</a>`;
+    const feeChoiceHeading =
+      '<div class="timetable-fee-choice-heading" title="Click on one fee option to remove it and leave the most appropriate one.">Fee types. Click one to remove it:</div>';
 
     timetableFees.innerHTML = [
       `<p class="timetable-fee-paragraph census"><strong>Census Date:</strong> ${escapeHtml(
         censusText
       )}. Subjects withdrawn before this day are graded W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
+      feeChoiceHeading,
       `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
-      `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>Domestic students fees: </strong> See the ${bachelorLink} web site. Switch to "LOCAL STUDENT" at top of page.</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable"><strong>Domestic students fees: </strong> See the ${bachelorLink} web site. .</p>`,
     ].join('');
 
     // Allow dismissing the fee guidance paragraphs (but keep links clickable).
+    const syncFeeChoiceHeading = () => {
+      const visibleOptions = timetableFees.querySelectorAll('.timetable-fee-hideable:not(.fee-hidden)');
+      const heading = timetableFees.querySelector('.timetable-fee-choice-heading');
+      const showChoiceUi = visibleOptions.length >= 2;
+      if (heading) heading.hidden = !showChoiceUi;
+      timetableFees.classList.toggle('has-fee-options', showChoiceUi);
+    };
     timetableFees.querySelectorAll('.timetable-fee-hideable').forEach((el) => {
       el.addEventListener('click', (event) => {
         if (event.target?.closest?.('a')) return;
+        if (timetableFees.querySelectorAll('.timetable-fee-hideable:not(.fee-hidden)').length < 2) {
+          timetableFees.querySelectorAll('.timetable-fee-hideable.fee-hidden').forEach((hiddenEl) => {
+            hiddenEl.classList.remove('fee-hidden');
+          });
+          syncFeeChoiceHeading();
+          return;
+        }
         el.classList.add('fee-hidden');
+        syncFeeChoiceHeading();
       });
     });
+    syncFeeChoiceHeading();
     timetableFees.hidden = false;
     lastFullLoadSelected = fullLoadSelected;
     if (record && semesterLineText) {
@@ -7305,6 +7579,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasScripts = hasEmailScriptsLoaded();
     const semesterPath = getSemesterFolderPath();
     const supportingDocsPath = semesterPath ? joinPath(semesterPath, 'Supporting Documents') : '';
+    const studentFormsPath = semesterPath ? joinPath(semesterPath, 'Student Forms') : '';
     const teacherTempInfo = getTeacherTempFolderInfo(semesterPath);
     const teacherTempPath = teacherTempInfo.effectivePath || teacherTempInfo.rootPath || '';
     if (emailPrimaryButton) {
@@ -7347,6 +7622,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       openSupportingDocsFolderButton.setAttribute(
         'title',
         canOpen ? supportingDocsPath : 'Semester folder path unavailable.'
+      );
+    }
+    if (openStudentFormsFolderButton) {
+      openStudentFormsFolderButton.hidden = !shouldShow;
+      const canOpen = !!studentFormsPath;
+      openStudentFormsFolderButton.disabled = !canOpen;
+      openStudentFormsFolderButton.classList.toggle('disabled', !canOpen);
+      openStudentFormsFolderButton.setAttribute('aria-disabled', canOpen ? 'false' : 'true');
+      openStudentFormsFolderButton.setAttribute(
+        'title',
+        canOpen ? `Open today's Student Forms folder from ${studentFormsPath}` : 'Student Forms path unavailable.'
       );
     }
     if (openTeacherTempFolderButton) {
@@ -7599,6 +7885,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const summerSchoolAlert = getSummerSchoolOpportunityAlert();
     if (summerSchoolAlert?.severity === 'warning') warnings.push(summerSchoolAlert);
+    const capstoneEarlyCompletionCaution = getCapstoneEarlyCompletionCautionAlert();
+    if (capstoneEarlyCompletionCaution) warnings.push(capstoneEarlyCompletionCaution);
     if (remainingNoticeUnlocked && majorDropdown) {
       const currentValue = majorDropdown.dataset.value || 'undecided';
       if (currentValue !== 'undecided') {
@@ -9550,6 +9838,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (studentIdInput) {
     studentIdInput.addEventListener('input', handleStudentIdInput);
     studentIdInput.addEventListener('keydown', (event) => {
+      if (
+        event.key === 'Backspace' &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        studentIdInput.selectionStart === studentIdInput.selectionEnd &&
+        studentIdInput.selectionStart === studentIdInput.value.length
+      ) {
+        const fallback = getStudentIdBackspaceFallback(studentIdInput.value);
+        if (fallback) {
+          event.preventDefault();
+          studentIdInput.value = fallback;
+          suppressStudentSearchAutocomplete = true;
+          try {
+            handleStudentIdInput();
+          } finally {
+            suppressStudentSearchAutocomplete = false;
+          }
+          requestAnimationFrame(() => {
+            studentIdInput.setSelectionRange(fallback.length, fallback.length);
+          });
+          return;
+        }
+      }
       const activeDropdown = getVisibleStudentSearchDropdown();
       if (!activeDropdown || activeDropdown.hidden) return;
       if (event.key === 'ArrowDown') {
@@ -9705,6 +10017,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       uiTooltipEl.textContent = '';
       uiTooltipEl.classList.remove(
         'ui-tooltip-interactive',
+        'ui-tooltip-alert-button',
         'ui-tooltip-course-map-triage',
         'ui-tooltip-course-map-remaining'
       );
@@ -9751,15 +10064,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
 
     const showTooltip = (target, x, y) => {
+      const flagWrapper = target?.closest?.('.student-summary-flag');
+      if (
+        flagWrapper &&
+        (
+          target?.classList?.contains('triage-comment-menu') ||
+          !flagWrapper.querySelector('.triage-comment-full')?.classList.contains('hidden-initial')
+        )
+      ) {
+        hideTooltip();
+        return;
+      }
       const html = target?.getAttribute('data-tooltip-html');
       const text = target?.getAttribute('data-tooltip') || '';
       const trimmedText = String(text).trim();
       if ((!trimmedText && !html) || (!html && trimmedText === '?')) return;
       const isCounts = target.classList.contains('subject-counts-item');
+      const isAlertButton = target.classList.contains('alert-tooltip-unread');
       const isCourseMapTriage = target.classList.contains('course-map-info-triage');
       const isCourseMapRemaining = target.classList.contains('course-map-info-remaining');
       const interactive = target?.getAttribute('data-tooltip-interactive') === 'true';
       uiTooltipEl.classList.toggle('ui-tooltip-counts', isCounts);
+      uiTooltipEl.classList.toggle('ui-tooltip-alert-button', isAlertButton);
       uiTooltipEl.classList.toggle('ui-tooltip-interactive', interactive);
       uiTooltipEl.classList.toggle('ui-tooltip-course-map-triage', isCourseMapTriage);
       uiTooltipEl.classList.toggle('ui-tooltip-course-map-remaining', isCourseMapRemaining);
@@ -9960,6 +10286,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const resetStudentSelections = () => {
+    timetableClashError = null;
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
       if (restoreStudentSnapshot(loadedStudentSnapshot)) {
         resetModeOptionsToDefault();
@@ -9967,6 +10294,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateResetState();
         updateSelectedList();
         updateWarnings();
+        updateBookmarkableSettingsUrl();
         return;
       }
     }
@@ -10004,9 +10332,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateResetState();
     updateElectiveWarning();
     updateSelectedList();
+    updateBookmarkableSettingsUrl();
   };
 
   const clearCurrentSemesterSelections = () => {
+    timetableClashError = null;
     const selectedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
@@ -10027,6 +10357,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     conditionalRecompute({ force: true, usePlanned: completedMode ? false : null });
     updateResetState();
     updateWarnings();
+    updateBookmarkableSettingsUrl();
     if (timetableModal?.classList.contains('show')) refreshTimetableModalState();
   };
 
@@ -12290,6 +12621,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setElectiveCredits(assignments, true);
     updateElectiveWarning();
     updateSelectedList();
+    updateBookmarkableSettingsUrl();
   };
 
   const parseSemesterSelectionCodesFromText = (raw) => {
@@ -12456,6 +12788,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateSelectedList();
         conditionalRecompute({ force: true, usePlanned: false });
         updateResetState();
+        updateBookmarkableSettingsUrl();
         return;
       }
     }
@@ -12478,6 +12811,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateSelectedList();
         conditionalRecompute({ force: true, usePlanned: false });
         updateResetState();
+        updateBookmarkableSettingsUrl();
         return;
       }
       if (placeholder) {
@@ -12504,6 +12838,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           updateSelectedList();
           conditionalRecompute({ force: true, usePlanned: false });
           updateResetState();
+          updateBookmarkableSettingsUrl();
           return;
         }
       }
@@ -12555,6 +12890,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         updateSelectedList();
         conditionalRecompute({ force: true, usePlanned: null });
         updateResetState();
+        updateBookmarkableSettingsUrl();
         return;
       }
       const already = !!st.toggled;
@@ -12613,6 +12949,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSelectedList();
     setElectiveCredits(buildElectiveAssignments());
     updateWarnings();
+    updateBookmarkableSettingsUrl();
   };
 
   subjects.forEach((cell) => {
@@ -12787,8 +13124,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!idText) return;
       void copyPlainText(idText).then((copied) => {
         if (!copied) return;
-        const flashTarget = idCopyTarget.closest('.student-summary-id') || idCopyTarget;
-        triggerFlash(flashTarget);
+        triggerFlash(idCopyTarget);
       });
       return;
     }
@@ -13060,8 +13396,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     presetMpDipOld.addEventListener('click', () => fillCodeInputWithPreset(codeModalPresets.mpDipOld));
   }
   if (courseMapStudentNoteContent) {
-    courseMapStudentNoteContent.addEventListener('dblclick', (event) => {
-      const copyTarget = event.target?.closest?.('.course-map-triage-id-line[data-triage-copy]');
+    courseMapStudentNoteContent.addEventListener('click', (event) => {
+      const copyTarget = event.target?.closest?.('.course-map-triage-copy-target[data-triage-copy]');
       if (!copyTarget || !courseMapStudentNoteContent.contains(copyTarget)) return;
       const text = (copyTarget.getAttribute('data-triage-copy') || '').trim();
       if (!text) return;
@@ -13081,8 +13417,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!idText) return;
         void copyPlainText(idText).then((copied) => {
           if (!copied) return;
-          const flashTarget = idCopyTarget.closest('.student-summary-id') || idCopyTarget;
-          triggerFlash(flashTarget);
+          triggerFlash(idCopyTarget);
         });
         return;
       }
@@ -14038,6 +14373,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return next;
   };
 
+  const getCensusDateFromSemesterStart = (value) => {
+    const semesterStart = getDateOnly(toDateValue(value));
+    if (!semesterStart) return null;
+    const daysUntilFriday = (5 - semesterStart.getDay() + 7) % 7;
+    return addDays(semesterStart, 21 + daysUntilFriday);
+  };
+
+  const getCalculatedCensusDate = (courseInfo = {}) => {
+    const fromSemesterStart = getCensusDateFromSemesterStart(courseInfo?.Semester_Start_Date);
+    if (fromSemesterStart) return fromSemesterStart;
+    const endWeekTwo = getDateOnly(toDateValue(courseInfo?.EndOfWeekTwoDate));
+    return endWeekTwo ? addDays(endWeekTwo, 14) : null;
+  };
+
   const updateDateAlerts = (courseInfo) => {
     censusWarning = null;
     censusError = null;
@@ -14051,7 +14400,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const semesterStart = getDateOnly(toDateValue(courseInfo.Semester_Start_Date));
     const endWeekTwo = getDateOnly(toDateValue(courseInfo.EndOfWeekTwoDate));
-    const censusDate = getDateOnly(toDateValue(courseInfo.CensusDate));
+    const censusDate = getCalculatedCensusDate(courseInfo);
 
     if (endWeekTwo) {
       const weekOneEnd = semesterStart ? addDays(semesterStart, 7) : addDays(endWeekTwo, -7);
@@ -14192,7 +14541,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (mpEmail || primaryEmail) {
       const emailList = [mpEmail, primaryEmail].filter(Boolean);
-      const emailIconHtml = '<span class="email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z" fill="currentColor" /></svg></span>';
+      const emailIconHtml = `<span class="email-icon" aria-hidden="true">${EMAIL_SCRIPTS_EMAIL_ICON_SVG}</span>`;
       const copyIconHtml = `<span class="clipboard-icon" aria-hidden="true">${EMAIL_SCRIPTS_CLIPBOARD_ICON_SVG}</span>`;
       const emailLinks = emailList
         .map(
@@ -14203,9 +14552,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const allEmails = emailList.join(',');
       const emailAllIcon =
         emailList.length > 1
-          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student">${emailIconHtml}</button>`
+          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student" data-tooltip-html="Email student<br>Open a draft addressed to all listed student emails.">${emailIconHtml}</button>`
           : '';
-      const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="Copy student emails">${copyIconHtml}</button>`;
+      const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="Copy student emails" data-tooltip-html="Copy student emails<br>Copy all listed student emails to the clipboard.">${copyIconHtml}</button>`;
       lines.push(`<div class="student-email-row">${emailLinks}${emailAllIcon ? ` ${emailAllIcon}` : ''} ${copyEmailsIcon}</div>`);
     }
     if (deferredInfo?.isDeferred) {
@@ -14218,10 +14567,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const studentFlag = getStudentFlagText(record);
     if (studentFlag) {
+      const flagLines = studentFlag.replace(/(\r?\n){2,}/g, '\n').split(/\r?\n/).filter((line) => line.trim());
+      const flagFull = flagLines.length
+        ? flagLines.map((line) => `<div class="triage-comment-line">${escapeHtml(line)}</div>`).join('')
+        : `<div class="triage-comment-line">${escapeHtml(studentFlag)}</div>`;
+      const flagTooltip = escapeHtml(studentFlag);
       lines.push(
-        `<div class="student-summary-warning"><strong class="alert-inline-title alert-title-warning">Student Flag:</strong> <span class="alert-inline-text">${escapeHtml(
+        `<div class="student-summary-warning student-summary-flag triage-comment is-expandable"><span class="student-summary-flag-preview triage-comment-preview" role="button" tabindex="0" data-tooltip="${flagTooltip}"><strong class="alert-inline-title alert-title-warning">Student Flag:</strong> <span class="alert-inline-text">${escapeHtml(
           studentFlag
-        )}</span></div>`
+        )}</span></span><button type="button" class="triage-comment-menu">show all</button><div class="triage-comment-full hidden-initial" role="dialog" aria-modal="false" aria-label="Student Flag"><div class="triage-comment-full-header"><strong>Student Flag</strong><button type="button" class="triage-comment-full-close" aria-label="Close student flag">X</button></div><div class="triage-comment-full-body">${flagFull}</div></div></div>`
       );
     }
     if (record) {
@@ -14373,8 +14727,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           );
         }
         if (triageLines.length) {
+          const triageOrder = String(triage.order || '').trim().replace(/^#/, '');
+          const triageOrderSuffix = triageOrder
+            ? ` <span class="student-summary-triage-order">(#${escapeHtml(triageOrder)})</span>`
+            : '';
           lines.push(
-            `<div class="student-summary-triage"><div class="student-summary-triage-heading">Triage details:</div><div class="student-summary-triage-body">${triageLines.join(
+            `<div class="student-summary-triage"><div class="student-summary-triage-heading">Triage details${triageOrderSuffix}:</div><div class="student-summary-triage-body">${triageLines.join(
               ''
             )}</div><button type="button" class="student-summary-triage-title student-summary-triage-action" data-triage-action="open">Update Triage</button></div>`
           );
@@ -14531,7 +14889,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (record) {
       lines.push(
-        '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Find or prepare this student credit transfer working folder.">ct -&gt; temp</button>'
+        '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Find or prepare this student credit transfer working folder.">CT -&gt; Temp</button>'
       );
     }
     if (!hasHistory) {
@@ -14801,6 +15159,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         onSharePoint: getIdx('On SharePoint'),
         inStrata: getIdx('In Strata (Enrolled) - subject list'),
         comments: getIdx('Comments'),
+        order: getIdx('Order'),
         familyName: getIdx('Family Names'),
         givenName: getIdx('Given Names'),
         primaryEmail: getIdxAny('Primary Email', 'Personal Email', 'Email'),
@@ -15744,6 +16103,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const willShow = full.classList.contains('hidden-initial');
     closeAllTriageComments();
     if (!willShow) return;
+    if (wrapper.classList.contains('student-summary-flag')) hideAllVisibleTooltips();
     full.classList.remove('hidden-initial');
     const anchor = target?.closest?.('.triage-comment-menu') || wrapper.querySelector('.triage-comment-menu') || wrapper;
     const rect = anchor.getBoundingClientRect();
@@ -15797,11 +16157,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const enrolmentDates = entries.map((entry) => entry?.date).filter(Boolean);
       const lastEnrolmentDate = getLatestDateFromDates(enrolmentDates);
       const lastEnrolmentText = lastEnrolmentDate ? formatNumericDate(lastEnrolmentDate) : 'unknown';
-      deferredInfo = {
-        isDeferred: true,
-        lastEnrolmentDate,
-        lastEnrolmentText,
-      };
+      if (!isNormalResultReleaseForCurrentSemester(lastEnrolmentDate)) {
+        deferredInfo = {
+          isDeferred: true,
+          lastEnrolmentDate,
+          lastEnrolmentText,
+        };
+      }
     }
 
     resultsParsed.aliasEntries.forEach((aliases, mapped) => {
@@ -15968,6 +16330,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     syncLoadFormState();
     updateVaryLoadLabel();
     loadedStudentSnapshot = captureStudentSnapshot();
+    updateBookmarkableSettingsUrl();
     if (courseMapModal?.classList.contains('show')) {
       updateCourseMapStatuses();
       scheduleCourseMapRelayout();
@@ -16265,6 +16628,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       studentIdInput.value = nextId;
       clearStudentSearchDropdown();
       updateStudentPreview();
+      updateBookmarkableSettingsUrl();
       return;
     }
 
@@ -16280,7 +16644,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           getStudentRecordId(record).includes(numericQuery)
         );
       }
-      if (matches.length === 1) {
+      if (matches.length === 1 && !suppressStudentSearchAutocomplete) {
         applyStudentSearchSelection(matches[0]);
         return;
       }
@@ -16710,6 +17074,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           renderDropZoneStatus([lastStudentCountLine]);
         }
         updateStudentPreview();
+        updateBookmarkableSettingsUrl();
         stopSpinner();
       } catch (error) {
         renderStudentPreview(`Workbook parse error: ${error.message}`);
@@ -17443,8 +17808,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildCtStudentFolderName = (studentId = '', familyRaw = '', givenRaw = '') => {
     const family = String(familyRaw || '').trim().toUpperCase();
     const given = toProperCase(givenRaw || '').trim();
-    const label = [studentId, family, given].filter(Boolean).join(' ');
-    return truncateCtLabel(sanitizeWindowsFileName(label), 50);
+    const label = sanitizeWindowsFileName([studentId, family, given].filter(Boolean).join(' '));
+    const suffix = /\bC(?:R)?T\b/i.test(label) ? '' : ' CT';
+    return truncateCtLabel(`${label}${suffix}`, 50);
   };
 
   const buildCtCreditFileName = (studentId = '', familyRaw = '', givenRaw = '') => {
@@ -17517,6 +17883,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const siteFolderPath = normalizeEnrolProtocolPath(getEnrolInstallSiteFolderPath());
     const statusFileName = `${studentId}.json`;
     const statusPath = siteFolderPath ? joinPath(siteFolderPath, 'ct-status', statusFileName) : '';
+    const normalizeCtTempFolderName = (name) => {
+      const clean = String(name || '').trim();
+      if (!clean) return clean;
+      return /(?:[\s-]CRT|[\s-]CT)$/i.test(clean) ? clean : `${clean} – CT`;
+    };
     return {
       semesterPath,
       creditTransfersRootPath,
@@ -17529,7 +17900,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       studentIdText: studentId,
       familyNameText: familyRaw,
       givenNameText: givenRaw,
-      studentFolderName: buildCtStudentFolderName(studentId, familyRaw, givenRaw),
+      studentFolderName: normalizeCtTempFolderName(buildCtStudentFolderName(studentId, familyRaw, givenRaw)),
       creditFileName: buildCtCreditFileName(studentId, familyRaw, givenRaw),
       statusPath,
       statusUrl: `ct-status/${encodeURIComponent(statusFileName)}`,
@@ -17541,7 +17912,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.alert(CT_TEMP_HELPER_MESSAGE);
       return false;
     }
-    if (!window.confirm(`${CT_TEMP_HELPER_MESSAGE}\n\nContinue with ct -> temp?`)) return false;
+    if (!window.confirm(`${CT_TEMP_HELPER_MESSAGE}\n\nContinue with CT -> Temp?`)) return false;
     const payload = await buildCtTempPayload();
     if (!payload) {
       window.alert(
@@ -18341,6 +18712,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const STAFF_HANDLE_KEY = 'staff-folder-handle';
 
   const hasDirectoryPicker = () => typeof window.showDirectoryPicker === 'function';
+  const isBachelorOperationsFolderName = (name = '') =>
+    String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '') ===
+    'generalbachelorofinformationtechnologyoperations';
 
   const ensureHandlePermission = async (handle) => {
     if (!handle) return false;
@@ -18365,7 +18739,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const { handle, depth, path } = queue.shift();
       for await (const entry of handle.values()) {
         if (entry.kind === 'file') {
-          results.push({ handle: entry, depth, path });
+          results.push({ handle: entry, directoryHandle: handle, depth, path });
           continue;
         }
         if (entry.kind === 'directory' && depth < maxDepth) {
@@ -18404,6 +18778,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const entries = await findFilesInHandle(enrolmentSystemHandle, 1);
     return entries.map((entry) => ({
       ...entry,
+      directoryHandle: enrolmentSystemHandle,
       path: `${enrolmentSystemPath}${entry.path || ''}`,
       depth: Math.max(0, entry.depth),
     }));
@@ -18582,7 +18957,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const actionHtml = alreadyInCurrentTeacherTemp
       ? ''
-      : '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Move/open via ct -&gt; temp workflow">ct -&gt; temp</button>';
+      : '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Move/open via CT -&gt; Temp workflow">CT -&gt; Temp</button>';
     slot.innerHTML =
       `<div class="student-summary-warning student-summary-ct-found-line"><strong class="student-summary-ct-heading">Credit Transfer:</strong> ${statusHtml}${actionHtml}</div>`;
   };
@@ -18604,6 +18979,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
         const response = await fetch(`${payload.statusUrl}?t=${Date.now()}`, { cache: 'no-store' });
+        if (response.status === 404) return null;
         if (response.ok) {
           const status = await response.json();
           const updatedAt = Date.parse(status?.updatedAt || '');
@@ -18619,9 +18995,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const requestCreditTransferStatus = async (studentId = '', options = {}) => {
     const id = normalizeStudentId(studentId);
+    const minUpdatedAt = options.minUpdatedAt || 0;
+    if (!minUpdatedAt) return null;
     const payload = await buildCtTempPayload();
     if (!payload?.statusUrl) return null;
-    const status = await readCtStatus(payload, options.minUpdatedAt || 0, options.attempts || 1);
+    const status = await readCtStatus(payload, minUpdatedAt, options.attempts || 1);
     return normalizeStudentId(status?.studentId || '') === id ? status : null;
   };
 
@@ -18711,7 +19089,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (bestTriage && triageFileInfo) {
       triageFileInfo.path = formatHandlePath(bestTriage.path || '');
       triageWorkbookFileHandle = bestTriage.handle || null;
-      triageWorkbookDirectoryHandle = dirHandle;
+      triageWorkbookDirectoryHandle = bestTriage.directoryHandle || dirHandle;
     }
     ensureFileLocationsCacheLoaded().then((loaded) => {
       if (!loaded) return;
@@ -19136,7 +19514,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const handle = await window.showDirectoryPicker();
       staffFolderHandle = handle || null;
       if (staffFolderHandle) {
-        if (String(staffFolderHandle.name || '').trim() !== 'General - Bachelor of Information Technology Operations') {
+        if (!isBachelorOperationsFolderName(staffFolderHandle.name)) {
           window.alert(
             'For full functionality, select the "General - Bachelor of Information Technology Operations" folder.\n\n' +
             'If you select a narrower folder, Source/Triage/Email Scripts may still load, but credit-transfer folder detection and some folder shortcuts may not be fully accurate.'
@@ -19549,7 +19927,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
 
   const renderRemainingModal = () => {
-    const rows = getRemainingRows();
+    const isCurrentSelection = (row) => !!subjectState.get(row?.id)?.toggled;
+    const hasCurrentSelections = Array.from(subjectState.values()).some((st) => st?.toggled);
+    const rows = getRemainingRows().filter((row) => !remainingHideCurrentSelections || !isCurrentSelection(row));
+    if (removeCurrentSelectionsButton) {
+      removeCurrentSelectionsButton.disabled = !hasCurrentSelections;
+      removeCurrentSelectionsButton.classList.toggle('disabled', !hasCurrentSelections);
+      removeCurrentSelectionsButton.setAttribute('aria-disabled', hasCurrentSelections ? 'false' : 'true');
+    }
     renderSubjectTable(remainingTable, rows, 'No remaining core or major subjects to show.');
     if (remainingSummary) {
       const majorName = getMajorDisplayName();
@@ -19561,7 +19946,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     if (remainingElectivesSection && remainingElectivesTable) {
-      const electiveRows = getRemainingElectiveRows();
+      const electiveRows = getRemainingElectiveRows().filter(
+        (row) => !remainingHideCurrentSelections || !isCurrentSelection(row)
+      );
       if (electiveRows.length) {
         renderSubjectTable(remainingElectivesTable, electiveRows, 'No elective subjects to show.');
         remainingElectivesSection.hidden = false;
@@ -20208,6 +20595,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const selectedListHost = document.createElement('div');
     selectedListHost.className = 'course-map-staff-selected-list-host';
+    const selectedSummary = document.createElement('div');
+    selectedSummary.className = 'course-map-staff-selected-summary';
+    selectedListHost.appendChild(selectedSummary);
     staffPanel.appendChild(selectedListHost);
 
     const staffActions = document.createElement('div');
@@ -20295,7 +20685,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffPanelEl = staffPanel;
     courseMapStaffSelectedListHostEl = selectedListHost;
     courseMapStaffActionsRowEl = staffActions;
-    courseMapStaffSelectedSummaryEl = null;
+    courseMapStaffSelectedSummaryEl = selectedSummary;
     courseMapStaffOpenWindowButton = staffOpenWindowBtn;
     courseMapStaffCopyTimetableButton = staffCopyTimetableBtn;
     courseMapStaffOpenSelectedButton = staffOpenSelectedBtn;
@@ -20780,6 +21170,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSelectedList();
     setElectiveCredits(buildElectiveAssignments());
     updateWarnings();
+    updateBookmarkableSettingsUrl();
 
     if (courseMapModal?.classList.contains('show')) {
       updateCourseMapStatuses();
@@ -22265,15 +22656,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const actionsStyle = window.getComputedStyle(actions);
       const actionsGapRaw = actionsStyle.columnGap || actionsStyle.gap || '0';
       const actionsGap = Number.isFinite(parseFloat(actionsGapRaw)) ? parseFloat(actionsGapRaw) : 0;
-      let codeColWidth = parseFloat(actionsStyle.getPropertyValue('--code-col-width'));
-      if (!Number.isFinite(codeColWidth) || codeColWidth <= 0) {
-        const headerRow =
-          timetableTable.querySelector('thead tr:last-child') || timetableTable.querySelector('thead tr');
-        const headerCell = headerRow ? headerRow.querySelector('th:first-child') : null;
-        codeColWidth = headerCell ? headerCell.getBoundingClientRect().width : 80;
-      }
-      const copyCodesButton = actions.querySelector('.modal-copy-codes');
-      const copyCodesWidth = copyCodesButton ? Math.ceil(copyCodesButton.getBoundingClientRect().width || 0) : 0;
       const actionGroup = actions.querySelector('.modal-action-group');
       let actionGroupWidth = 0;
       if (actionGroup) {
@@ -22292,9 +22674,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const closeButton = actions.querySelector('#hide-timetable');
       const closeWidth = closeButton ? Math.ceil(closeButton.getBoundingClientRect().width || 0) : 0;
-      const leftTrackWidth = Math.max(Math.max(0, codeColWidth), Math.max(0, copyCodesWidth));
-      // Timetable action row uses four columns: code-column-width | action-group | flexible spacer | close-button.
-      return Math.ceil(leftTrackWidth + Math.max(0, actionGroupWidth) + Math.max(0, closeWidth) + actionsGap * 3);
+      const coloursButton = actions.querySelector('#timetable-colours:not([hidden])');
+      if (closeButton && coloursButton) {
+        const coloursRect = coloursButton.getBoundingClientRect();
+        const closeRect = closeButton.getBoundingClientRect();
+        closeButton.classList.toggle('close-near-colours', closeRect.left - coloursRect.right < 24);
+      } else if (closeButton) {
+        closeButton.classList.remove('close-near-colours');
+      }
+      return Math.ceil(Math.max(0, actionGroupWidth) + Math.max(0, closeWidth) + actionsGap * 2);
     };
     const tableRect = timetableTable.getBoundingClientRect();
     const tableWidth = Math.ceil(
@@ -22500,6 +22888,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showRemainingModal = () => {
     if (!remainingModal) return;
+    remainingHideCurrentSelections = false;
     renderRemainingModal();
     remainingModal.classList.add('show');
     remainingModal.setAttribute('aria-hidden', 'false');
@@ -22589,6 +22978,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (options.html) courseMapStudentNoteContent.innerHTML = content;
     else courseMapStudentNoteContent.textContent = content;
     if (courseMapTriageActions) courseMapTriageActions.hidden = !options.triage;
+    if (courseMapTriageSyncHelpButton) courseMapTriageSyncHelpButton.hidden = !options.triage;
     if (courseMapTriageEditButton) {
       courseMapTriageEditButton.hidden = !options.triageEdit;
       courseMapTriageEditButton.textContent = 'Save';
@@ -22597,16 +22987,55 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapTriageAddCommentButton) courseMapTriageAddCommentButton.hidden = true;
     courseMapStudentNoteModal.classList.add('show');
     courseMapStudentNoteModal.setAttribute('aria-hidden', 'false');
+    const triageForm = document.getElementById('course-map-triage-edit-form');
+    const isNewTriageRow = triageForm?.dataset.newTriageRow === 'true';
+    const enrolmentTypeField = document.getElementById('course-map-triage-status-details');
     const newCommentField = document.getElementById('course-map-triage-new-comment');
     if (newCommentField && newCommentField.dataset.dateBound !== 'true') {
       newCommentField.dataset.dateBound = 'true';
       newCommentField.addEventListener('focus', () => {
+        clearTriageSuggested(newCommentField);
         if (String(newCommentField.value || '').trim()) return;
         newCommentField.value = `${getTodayYmdSlash()} `;
         updateCourseMapTriageSaveVisibility();
       });
+      ['pointerdown', 'keydown', 'input'].forEach((eventName) => {
+        newCommentField.addEventListener(eventName, () => clearTriageSuggested(newCommentField));
+      });
+    }
+    if (enrolmentTypeField && enrolmentTypeField.dataset.ringBound !== 'true') {
+      enrolmentTypeField.dataset.ringBound = 'true';
+      enrolmentTypeField.addEventListener('blur', () => {
+        clearTriageSuggested(enrolmentTypeField);
+        if (enrolmentTypeField.value !== enrolmentTypeField.dataset.initialValue) return;
+        enrolmentTypeField.classList.remove('triage-grey-ring-pulse');
+        void enrolmentTypeField.offsetWidth;
+        enrolmentTypeField.classList.add('triage-grey-ring-pulse');
+      });
+      enrolmentTypeField.addEventListener('change', () => {
+        clearTriageSuggested(enrolmentTypeField);
+      });
+      ['pointerdown', 'keydown'].forEach((eventName) => {
+        enrolmentTypeField.addEventListener(eventName, () => clearTriageSuggested(enrolmentTypeField));
+      });
+      enrolmentTypeField.addEventListener('animationend', () => {
+        enrolmentTypeField.classList.remove('triage-grey-ring-pulse');
+      });
     }
     bindCourseMapTriageDirtyDetection();
+    if (newCommentField && !isNewTriageRow) {
+      newCommentField.value = `${getTodayYmdSlash()} `;
+      requestAnimationFrame(() => {
+        newCommentField.focus();
+        newCommentField.setSelectionRange(newCommentField.value.length, newCommentField.value.length);
+        updateCourseMapTriageSaveVisibility();
+      });
+      return;
+    }
+    if (enrolmentTypeField && isNewTriageRow) {
+      requestAnimationFrame(() => enrolmentTypeField.focus());
+      return;
+    }
     const focusTarget = closeCourseMapStudentNoteCta || closeCourseMapStudentNote;
     if (focusTarget) focusTarget.focus();
   };
@@ -22614,6 +23043,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const hideCourseMapStudentNoteModal = () => {
     if (!courseMapStudentNoteModal) return;
     hideCourseMapTriageCommentModal();
+    hideCourseMapTriageSyncHelpModal();
     if (courseMapStudentNoteModal.contains(document.activeElement)) {
       document.activeElement.blur();
     }
@@ -22621,16 +23051,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStudentNoteModal.setAttribute('aria-hidden', 'true');
     if (courseMapStudentNoteContent) courseMapStudentNoteContent.textContent = '';
     if (courseMapTriageActions) courseMapTriageActions.hidden = true;
+    if (courseMapTriageSyncHelpButton) courseMapTriageSyncHelpButton.hidden = true;
+  };
+
+  const showCourseMapTriageSyncHelpModal = () => {
+    if (!courseMapTriageSyncHelpModal) return;
+    courseMapTriageSyncHelpModal.classList.add('show');
+    courseMapTriageSyncHelpModal.setAttribute('aria-hidden', 'false');
+    const focusTarget = closeCourseMapTriageSyncHelpCta || closeCourseMapTriageSyncHelp;
+    if (focusTarget) focusTarget.focus();
+  };
+
+  const hideCourseMapTriageSyncHelpModal = () => {
+    if (!courseMapTriageSyncHelpModal) return;
+    if (courseMapTriageSyncHelpModal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    courseMapTriageSyncHelpModal.classList.remove('show');
+    courseMapTriageSyncHelpModal.setAttribute('aria-hidden', 'true');
   };
 
   const getTodayYmdSlash = () => {
     const now = new Date();
     return [
-      now.getFullYear(),
+      String(now.getFullYear()).slice(-2),
       String(now.getMonth() + 1).padStart(2, '0'),
       String(now.getDate()).padStart(2, '0'),
     ].join('/');
   };
+  const clearTriageSuggested = (field) => field?.classList?.remove('triage-default-suggested');
 
   const showCourseMapTriageCommentModal = () => {
     if (!courseMapTriageCommentModal || !courseMapTriageCommentText) return;
@@ -22644,6 +23093,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (saveCourseMapTriageComment) saveCourseMapTriageComment.disabled = false;
     courseMapTriageCommentText.value = getTodayYmdSlash();
+    courseMapTriageCommentText.classList.add('triage-default-suggested');
+    if (courseMapTriageCommentText.dataset.suggestedBound !== 'true') {
+      courseMapTriageCommentText.dataset.suggestedBound = 'true';
+      ['focus', 'pointerdown', 'keydown', 'input'].forEach((eventName) => {
+        courseMapTriageCommentText.addEventListener(eventName, () => clearTriageSuggested(courseMapTriageCommentText));
+      });
+    }
     courseMapTriageCommentModal.classList.add('show');
     courseMapTriageCommentModal.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => {
@@ -22856,6 +23312,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return changedValues;
   };
 
+  const getNewTriageRowWriteValues = (form, formValues) => {
+    const changedValues = getCourseMapTriageChangedValues(form);
+    const clean = (value) => String(value || '').trim();
+    const values = {
+      studentId: clean(formValues.studentId),
+      handledBy: clean(formValues.handledBy),
+      statusDetails: clean(formValues.statusDetails),
+      comments: clean(formValues.comments),
+    };
+    if (clean(formValues.alteredStatus)) values.alteredStatus = clean(formValues.alteredStatus);
+    ['familyName', 'givenName', 'primaryEmail', 'friendlyName'].forEach((key) => {
+      if (!Object.prototype.hasOwnProperty.call(changedValues, key)) return;
+      const nextValue = clean(changedValues[key]);
+      if (nextValue) values[key] = nextValue;
+    });
+    return values;
+  };
+
   const updateCourseMapTriageSaveVisibility = () => {
     const form = document.getElementById('course-map-triage-edit-form');
     if (!form || !courseMapTriageEditButton) return;
@@ -22918,6 +23392,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const ensureTriageWorkbookClosedForWrite = async () => {
     if (!triageWorkbookFileHandle || typeof triageWorkbookFileHandle.createWritable !== 'function') return true;
+    if (triageWorkbookDirectoryHandle && triageWorkbookFileName) {
+      const lockName = `~$${String(triageWorkbookFileName || '').replace(/^~\$/, '')}`;
+      try {
+        const lockHandle = await triageWorkbookDirectoryHandle.getFileHandle(lockName);
+        const lockFile = await lockHandle.getFile().catch(() => null);
+        if (!lockFile || lockFile.size >= 0) {
+          window.alert('Triage appears to be open in Excel. Close Triage in Excel, wait for OneDrive sync to finish, then try saving again.');
+          return false;
+        }
+      } catch {
+        // No Excel lock file was found; continue with the browser write probe.
+      }
+    }
     try {
       const writable = await triageWorkbookFileHandle.createWritable({ keepExistingData: true });
       await writable.close();
@@ -22928,11 +23415,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
-  const appendTriageUpdateBackup = async (result) => {
-    if (!result?.newRow || !triageWorkbookDirectoryHandle || typeof XLSX === 'undefined') return;
+  const appendTriageUpdateBackup = async (result, context = {}) => {
+    if (!result?.ok || typeof XLSX === 'undefined') return false;
+    if (!triageWorkbookDirectoryHandle) return false;
+    const studentId = normalizeStudentId(context.studentId || result.values?.studentId || '');
+    if (!studentId) return false;
+    const values = context.values || result.values || {};
+    const action = context.action || (result.targetRow ? 'New student' : 'Update');
+    const fieldLabel = {
+      familyName: 'Family Names',
+      givenName: 'Given Names',
+      primaryEmail: 'Primary Email',
+      friendlyName: 'Friendly name',
+      handledBy: 'Handled By',
+      statusDetails: 'Details - CRT, Ongoing, Domestic, etc.',
+      alteredStatus: 'Altered Status',
+      comments: 'Comments',
+    };
+    const updatedFields = Object.entries(values)
+      .filter(([key]) => key !== 'studentId')
+      .filter(([, value]) => String(value ?? '').trim())
+      .map(([key, value]) => `${fieldLabel[key] || key}: ${String(value ?? '').trim()}`)
+      .join('\n');
     try {
       const allowed = await ensureHandlePermission(triageWorkbookDirectoryHandle);
-      if (!allowed) return;
+      if (!allowed) return false;
       const handle = await triageWorkbookDirectoryHandle.getFileHandle('Triage Updates.xlsx', { create: true });
       let workbook = null;
       try {
@@ -22956,17 +23463,51 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!workbook.Sheets[sheetName]) workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet([]);
       const sheet = workbook.Sheets[sheetName];
       const existing = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (!existing.length) {
+        existing.push([
+          'Date/time',
+          'Teacher',
+          'Action',
+          'Triage row',
+          'Student ID',
+          'Family Names',
+          'Given Names',
+          'Primary Email',
+          'Friendly name',
+          'Handled By',
+          'Details - CRT, Ongoing, Domestic, etc.',
+          'Altered Status',
+          'Comments',
+          'Updated fields',
+        ]);
+      }
       const timestamp = new Date().toLocaleString('en-AU', { hour12: false });
       const teacher = getCurrentTeacherNameForTriage() || '';
-      if (result.oldRow) existing.push([timestamp, teacher, ...result.oldRow]);
-      existing.push([timestamp, teacher, ...result.newRow]);
+      existing.push([
+        timestamp,
+        teacher,
+        action,
+        result.targetRow || '',
+        studentId,
+        values.familyName || '',
+        values.givenName || '',
+        values.primaryEmail || '',
+        values.friendlyName || '',
+        values.handledBy || '',
+        values.statusDetails || '',
+        values.alteredStatus || '',
+        values.comments || '',
+        updatedFields,
+      ]);
       workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(existing);
       const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       const writable = await handle.createWritable();
       await writable.write(output);
       await writable.close();
+      return true;
     } catch (error) {
       console.warn('[Triage update backup] could not write Triage Updates.xlsx', error);
+      return false;
     }
   };
 
@@ -23017,7 +23558,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('Could not save to Triage workbook. The browser did not confirm a saved file.');
         return false;
       }
-      await appendTriageUpdateBackup(result);
+      const backupSaved = await appendTriageUpdateBackup(result, {
+        action: 'Update',
+        studentId,
+        values: { comments: cleanComment },
+      });
+      if (!backupSaved) window.alert('Triage was saved, but Triage Updates.xlsx could not be written.');
     } catch {
       console.error('[Triage save] file write failed');
       window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
@@ -23062,8 +23608,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         window.alert('Enter at least a first name or family name before saving to Triage.');
         return false;
       }
-      result = await addTriageRowInWorker(triageWorkbookBuffer, studentId, formValues);
-      savedValues = result?.values || formValues;
+      const newRowValues = getNewTriageRowWriteValues(form, formValues);
+      result = await addTriageRowInWorker(triageWorkbookBuffer, studentId, newRowValues);
+      savedValues = result?.values || newRowValues;
     } else {
       delete changedValues.studentId;
       if (!Object.keys(changedValues).length) return true;
@@ -23071,7 +23618,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const saved = await writeUpdatedTriageWorkbook(result);
     if (!saved) return false;
-    await appendTriageUpdateBackup(result);
+    const backupSaved = await appendTriageUpdateBackup(result, {
+      action: isNewTriageRow ? 'New student' : 'Update',
+      studentId,
+      values: isNewTriageRow ? savedValues : changedValues,
+    });
+    if (!backupSaved) window.alert('Triage was saved, but Triage Updates.xlsx could not be written.');
     const triage = triageRecords.get(studentId) || {};
     triageRecords.set(studentId, { ...triage, ...savedValues });
     const record = findStudentRecordById(studentId) || staffWorkbookState.getStudentRecord?.();
@@ -23578,6 +24130,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const hideTimetableModal = () => {
     if (!timetableModal) return;
     unlockModalPosition();
+    if (timetableModal.contains(document.activeElement)) document.activeElement.blur();
     timetableModal.classList.remove('show');
     timetableModal.setAttribute('aria-hidden', 'true');
     lastFullLoadSelected = false;
@@ -23637,6 +24190,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (type === 'codes') return [codesButton, courseMapCodesButton].filter(Boolean);
     return [];
   };
+  const getAlertDecisionText = (type) =>
+    type === 'error'
+      ? 'Alert messages should be addressed before finalising decisions.'
+      : type === 'warning'
+        ? 'Caution messages may not be serious, but take care to read them well.'
+        : type === 'data'
+          ? 'Data Error messages should be addressed before finalising decisions.'
+          : '';
+  const getAlertHeadingNote = (type) => {
+    const decisionText = getAlertDecisionText(type);
+    if (type === 'error') {
+      return ['These are serious issues that should be addressed', decisionText].filter(Boolean).join(' ');
+    }
+    if (type === 'warning') {
+      return [
+        'Take care.',
+        decisionText,
+      ]
+        .filter(Boolean)
+        .join(' ');
+    }
+    return decisionText;
+  };
+  const getUnreadAlertTooltip = (type, unreadCount) => {
+    const label =
+      type === 'warning'
+        ? 'Caution'
+        : type === 'error'
+          ? 'Alert'
+          : type === 'data'
+            ? 'Data Error'
+            : type === 'info'
+              ? 'Info'
+              : 'Code';
+    const messageWord = unreadCount === 1 ? 'message' : 'messages';
+    const decisionText = getAlertDecisionText(type);
+    return [`${unreadCount} unread ${label} ${messageWord}.`, decisionText].filter(Boolean).join('\n');
+  };
 
   const hideAlertModal = () => {
     if (!alertModal) return;
@@ -23658,7 +24249,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const labels = { error: 'Alert', warning: 'Caution', info: 'Info', data: 'Data Error?', codes: 'Codes' };
     const content = alertContent[type] || [];
     const count = content.length;
-    const hasUnread = content.some((p) => !p.seen);
+    const unreadCount = content.filter((p) => !p.seen).length;
+    const hasUnread = unreadCount > 0;
     const isViewed = count > 0 && !hasUnread;
     const signature = content.map((p) => alertId(p)).join('|');
     const contentChanged = signature !== alertPrevSignatures[type];
@@ -23667,6 +24259,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       buttons.forEach((button) => {
         button.classList.remove('hidden');
         button.classList.toggle('alert-viewed', isViewed);
+        button.classList.toggle('alert-tooltip-unread', hasUnread);
+        if (hasUnread) button.setAttribute('data-tooltip', getUnreadAlertTooltip(type, unreadCount));
+        else button.setAttribute('data-tooltip', '');
         if (isCountless || !hasUnread) {
           button.textContent = labels[type] || type;
           button.classList.remove('has-unread');
@@ -23712,6 +24307,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       buttons.forEach((button) => {
         button.classList.add('hidden');
         button.classList.remove('has-unread', 'alert-viewed');
+        button.classList.remove('alert-tooltip-unread');
+        button.setAttribute('data-tooltip', '');
         button.textContent = labels[type] || type;
         button.classList.remove('alert-pending', 'alert-flash', 'alert-open');
       });
@@ -23755,7 +24352,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       )
       .join('');
     alertBody.innerHTML = combined;
-    alertTitle.textContent =
+    const titleText =
       type === 'warning'
         ? 'Cautions'
         : type === 'error'
@@ -23765,6 +24362,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             : type === 'info'
               ? 'Information'
               : payloads[0].title || 'Notice';
+    const headingNote = getAlertHeadingNote(type);
+    alertTitle.innerHTML = `${escapeHtml(titleText)}${headingNote ? ` <span class="alert-title-note">${escapeHtml(headingNote)}</span>` : ''}`;
     alertTitle.style.display = 'block';
     alertTitle.style.fontWeight = '700';
     if (type === 'warning') {
@@ -23893,15 +24492,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return `<tr>${cells.join('')}</tr>`;
       })
       .join('');
-    const htmlIndentStyle = 'margin-left:36pt;mso-margin-left-alt:36pt;mso-para-margin-left:36pt;';
-    const tableIndentStyle = 'margin-left:36pt;mso-table-lspace:36pt;mso-table-rspace:0pt;';
+    const tableIndentStyle = 'margin-left:0;mso-table-lspace:0pt;mso-table-rspace:0pt;';
     const headingContentHtml = isTimetableOptionsClip
       ? escapeHtml(heading)
       : studentHeading
         ? `${escapeHtml(headingPrefix)}, for <span style="font-weight:700;">${escapeHtml(studentHeading)}</span>`
         : escapeHtml(headingPrefix);
     const headingHtml = includeHeading
-      ? `<p style="${htmlIndentStyle}margin-top:0;margin-right:0;margin-bottom:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:400;line-height:1.2;">${headingContentHtml}</p>`
+      ? `<p style="margin:0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;font-weight:400;line-height:1.2;">${headingContentHtml}</p>`
       : '';
     const formatFeeLineHtml = (line) => {
       const safe = escapeHtml(line);
@@ -23936,9 +24534,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (feesHtml && timetableFees) {
       const feeStyle = window.getComputedStyle(timetableFees);
       const feeBoxStyle = [
-        'margin:0 0 0 36pt',
-        'mso-margin-left-alt:36pt',
-        'mso-para-margin-left:36pt',
+        'margin:0',
+        'mso-margin-left-alt:0',
+        'mso-para-margin-left:0',
         'mso-margin-top-alt:0',
         'mso-margin-bottom-alt:0',
         'font-family:Calibri, Arial, sans-serif',
@@ -23952,8 +24550,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ].join(';');
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
-    const htmlSpacer = `<p style="${htmlIndentStyle}margin-top:0;margin-right:0;margin-bottom:10pt;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
-    const htmlCore = `<p style="margin:0;line-height:1;">&nbsp;</p>${headingHtml}<table style="${tableIndentStyle}border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
+    const htmlSpacer = `<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
+    const htmlContent = `${headingHtml}<table style="${tableIndentStyle}border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
+    const htmlCore = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:0;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="width:36pt;min-width:36pt;font-size:0;line-height:0;">&nbsp;</td><td style="padding:0;margin:0;vertical-align:top;">${htmlContent}</td></tr></table>`;
     const html = htmlCore;
 
     if (window.ClipboardItem) {
@@ -24513,7 +25112,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ? primary
       : target === 'institute'
         ? institute
-        : [primary, institute].filter(Boolean).join(',');
+        : [primary, institute].filter(Boolean).join('; ');
   };
 
   const sendTimetableEmail = async (target) => {
@@ -24531,8 +25130,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
       await ensureSettingsSignOffPrefsLoaded();
-      const scripts = await parseEmailScripts();
-      console.info('[Email prefs] cache ready:', !!scripts);
+      await parseEmailScripts();
       const firstName = getStudentFirstName(record);
       const baseBody = buildTimetableEmailBodySync(firstName);
       await copyTimetableToClipboard();
@@ -25141,7 +25739,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               label: '•••',
               fileName: toDocxName(emailScriptsInfo.fileName),
               path: getBestKnownActionPath('email', emailScriptsInfo.path),
-              tooltip: "Open Email Scripts actions",
+              tooltip: "Open Email Scripts dialog",
             },
           ],
         });
@@ -25310,6 +25908,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map(([code]) => code)
       .sort()
       .join(',');
+    const selectedSignature = Array.from(subjectState.entries())
+      .filter(([, st]) => st?.toggled)
+      .map(([code]) => code)
+      .sort()
+      .join(',');
     return [
       studentKey,
       majorKey,
@@ -25317,6 +25920,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       liveKey,
       currentKey,
       completedSignature,
+      selectedSignature,
     ].join('|');
   };
 
@@ -25744,7 +26348,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (copyStudentEmailsButton) {
     copyStudentEmailsButton.addEventListener('click', () => {
       const emails = buildRecipientListFromTarget(getActiveStudentRecord(), 'both')
-        .split(',')
+        .split(/[;,]/)
         .map((email) => email.trim())
         .filter(Boolean)
         .join('; ');
@@ -25763,6 +26367,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
       void openFolderShortcutPath(supportingDocsPath, 'Supporting Documents');
+    });
+  }
+  if (openStudentFormsFolderButton) {
+    openStudentFormsFolderButton.addEventListener('click', async () => {
+      const semesterPath = await getOperationalSemesterFolderPath();
+      const studentFormsRootPath = semesterPath ? joinPath(semesterPath, 'Student Forms') : '';
+      const dateFolderName = formatStudentFormsDateFolderName(new Date());
+      const datedFolderPath = dateFolderName
+        ? joinPath(studentFormsRootPath, dateFolderName)
+        : studentFormsRootPath;
+      if (!datedFolderPath) {
+        window.alert('Could not resolve Student Forms path yet. Check settings.txt.');
+        return;
+      }
+      void openFolderShortcutPath(datedFolderPath, 'Student Forms', { mkdirPath: datedFolderPath });
     });
   }
   if (openTeacherTempFolderButton) {
@@ -25987,7 +26606,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       flashCopyButton(copyRemaining);
       const hasElectivesTable =
         remainingElectivesSection && !remainingElectivesSection.hidden && remainingElectivesTable;
-      const coreMajorCount = getRemainingRows().length;
+      const isCurrentSelection = (row) => !!subjectState.get(row?.id)?.toggled;
+      const coreMajorCount = getRemainingRows().filter(
+        (row) => !remainingHideCurrentSelections || !isCurrentSelection(row)
+      ).length;
       const majorName = getMajorDisplayName();
       const remainingElectives = getRemainingElectiveCount();
 
@@ -26016,14 +26638,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
       const fontBase = 'font-family: Calibri, sans-serif;';
       const blue = 'style="color:#1f6fd6;"';
-      const lineHtml = (line, size = 11, marginBottomPt = 0) =>
-        `<p style="${fontBase}font-weight:700;font-size:${size}pt;margin:0 0 ${marginBottomPt}pt 0;">${line}</p>`;
+      const lineHtml = (line, size = 11, marginBottomPt = 0, weight = 700) =>
+        `<p style="${fontBase}font-weight:${weight};font-size:${size}pt;margin:0 0 ${marginBottomPt}pt 0;">${line}</p>`;
       const summaryHtml = `<p style="${fontBase}font-weight:700;font-size:11pt;margin:0;">You have <span ${blue}>${coreMajorCount}</span> Core and ${escapeHtml(
         majorName
       )} subjects remaining</p>`;
       const electiveCountHtml = `<p style="${fontBase}font-weight:700;font-size:11pt;margin:0;">You have <span ${blue}>${remainingElectives}</span> Elective${remainingElectives === 1 ? '' : 's'} to complete</p>`;
       const topHtml = [
-        titleText ? lineHtml(escapeHtml(titleText), 12, 12) : '',
+        titleText ? lineHtml(escapeHtml(titleText), 12, 12, 400) : '',
         summaryText ? summaryHtml : '',
       ]
         .filter(Boolean)
@@ -26039,9 +26661,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
       const htmlParts = [
         topHtml,
-        corePart.html ? corePart.html : '',
+        corePart.html ? `<div class="remaining-copy-indent" style="margin-left:24px;">${corePart.html}</div>` : '',
         midHtml,
-        electivePart?.html || '',
+        electivePart?.html ? `<div class="remaining-copy-indent" style="margin-left:24px;">${electivePart.html}</div>` : '',
       ].filter(Boolean);
       const html = htmlParts.join('');
 
@@ -26056,6 +26678,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         navigator.clipboard.writeText(text).catch(() => { });
       }
+    });
+  }
+  if (removeCurrentSelectionsButton) {
+    removeCurrentSelectionsButton.addEventListener('click', () => {
+      remainingHideCurrentSelections = true;
+      renderRemainingModal();
     });
   }
   if (remainingModal) {
@@ -26126,6 +26754,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeCourseMapStudentNote) closeCourseMapStudentNote.addEventListener('click', hideCourseMapStudentNoteModal);
   if (closeCourseMapStudentNoteCta) {
     closeCourseMapStudentNoteCta.addEventListener('click', hideCourseMapStudentNoteModal);
+  }
+  if (courseMapTriageSyncHelpButton) {
+    courseMapTriageSyncHelpButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      showCourseMapTriageSyncHelpModal();
+    });
+  }
+  if (closeCourseMapTriageSyncHelp) {
+    closeCourseMapTriageSyncHelp.addEventListener('click', hideCourseMapTriageSyncHelpModal);
+  }
+  if (closeCourseMapTriageSyncHelpCta) {
+    closeCourseMapTriageSyncHelpCta.addEventListener('click', hideCourseMapTriageSyncHelpModal);
   }
   const pulseCourseMapTriageSaveButton = () => {
     if (!courseMapTriageEditButton) return;
@@ -26253,6 +26893,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       hideCourseMapStudentNoteModal();
     });
   }
+  if (courseMapTriageSyncHelpModal) {
+    courseMapTriageSyncHelpModal.addEventListener('click', (event) => {
+      if (event.target !== courseMapTriageSyncHelpModal) return;
+      hideCourseMapTriageSyncHelpModal();
+    });
+  }
   if (closeCourseMap) closeCourseMap.addEventListener('click', hideCourseMapModal);
   if (closeCourseMapCta) closeCourseMapCta.addEventListener('click', hideCourseMapModal);
   if (courseMapEmailToolsButton) {
@@ -26337,6 +26983,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       syncCourseMapKeyPanelBottomOffset();
     }
   };
+  const applyCourseMapViewDefaults = (mode) => {
+    const staffView = mode === 'staff';
+    if (allowCourseMapModeToggle) courseMapStaffMode = staffView;
+    courseMapStudentSemCountsOn = staffView;
+    courseMapNotesOn = !staffView;
+    courseMapListColoursOn = false;
+    courseMapPrereqColoursOn = staffView;
+    courseMapPrereqTextOn = staffView;
+    courseMapIndicatorsOn = staffView;
+    courseMapAiNamesOn = false;
+    if (staffView) hideCourseMapKeyModal();
+    else showCourseMapKeyModal();
+    updateCourseMapModeUi();
+    updateCourseMapSemCountToggleUi();
+    updateCourseMapNotesToggle();
+    updateCourseMapPrereqToggle();
+    updateCourseMapPrereqTextToggle();
+    updateCourseMapIndicatorsToggle();
+    updateCourseMapListColoursToggle();
+    updateCourseMapAiNamesToggle();
+    syncCourseMapSemCountBadgesFromMainGrid();
+    if (courseMapModal?.classList.contains('show')) {
+      renderCourseMapModal();
+      syncCourseMapKeyPanelBottomOffset();
+    }
+  };
   if (courseMapModeToggleButton) {
     courseMapModeToggleButton.addEventListener('click', () => {
       setCourseMapStaffModeFromControl(!courseMapStaffMode);
@@ -26346,6 +27018,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (courseMapStaffModeToggle) {
     courseMapStaffModeToggle.addEventListener('change', () => {
       setCourseMapStaffModeFromControl(courseMapStaffModeToggle.checked);
+    });
+  }
+  if (courseMapDefaultStudentViewButton) {
+    courseMapDefaultStudentViewButton.addEventListener('click', () => {
+      applyCourseMapViewDefaults('student');
+    });
+  }
+  if (courseMapDefaultStaffViewButton) {
+    courseMapDefaultStaffViewButton.addEventListener('click', () => {
+      applyCourseMapViewDefaults('staff');
     });
   }
   if (courseMapAiNamesToggleButton) {
@@ -26681,6 +27363,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       [courseMapRemainingInfoModal, hideCourseMapRemainingInfoModal],
       [courseMapFullStudentDetailsModal, hideCourseMapFullStudentDetailsModal],
       [courseMapStudentNoteModal, hideCourseMapStudentNoteModal],
+      [courseMapTriageSyncHelpModal, hideCourseMapTriageSyncHelpModal],
       [courseMapTriageCommentModal, hideCourseMapTriageCommentModal],
       [nextSemesterModal, hideNextSemesterModal],
       [timetableModal, hideTimetableModal],
@@ -27074,6 +27757,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (closeBtn) closeBtn.addEventListener('click', dismiss);
     setTimeout(() => notice.classList.add('show'), 10);
   };
+  applyPlannerStateFromUrl();
+  plannerStateUrlReady = true;
+  updateBookmarkableSettingsUrl();
   setElectiveCredits(buildElectiveAssignments());
   updateElectiveWarning();
   updateSelectedList();
@@ -27265,6 +27951,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         closeFn();
         return true;
       };
+      if (closeTopModal(courseMapTriageSyncHelpModal, hideCourseMapTriageSyncHelpModal)) return;
       if (closeTopModal(courseMapTriageCommentModal, hideCourseMapTriageCommentModal)) return;
       if (closeTopModal(alertModal, hideAlertModal)) return;
       if (closeTopModal(folderShortcutsModal, hideFolderShortcutsModal)) return;

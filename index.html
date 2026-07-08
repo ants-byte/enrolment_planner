@@ -68,8 +68,8 @@ Created: December 30, 2025
       <div id="drop-zone" class="drop-zone">
         <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
           data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load from folder</button>
-        <div class="drop-zone-text">(or for lesser functionality: drag-and-drop the files here: 'Triage 2026 S2.xlsx',
-          'Source.xlsx', and 'Email Scripts.htm'.<br>Depending on your setup, clicking the zone will auto-load those 3 files too.)</div>
+        <div class="drop-zone-text">(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx',
+          'Source.xlsx', and 'Email Scripts.htm'. here.<br>Double-clicking here may give you the same.).</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
@@ -225,9 +225,9 @@ Created: December 30, 2025
         <div class="title">
           <div id="title-alerts" class="title-alerts">
             <div class="title-buttons">
-              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false">Alert</button>
-              <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
-              <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
+              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Alert</button>
+              <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false" data-tooltip="">Caution</button>
+              <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false" data-tooltip="">Info</button>
             </div>
           </div>
           <div class="title-text">
@@ -343,8 +343,8 @@ Created: December 30, 2025
             </div>
           </div>
           <div class="title-right">
-            <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false">Data Error?</button>
-            <button id="btn-codes" class="title-btn btn-codes hidden" aria-expanded="false">Codes</button>
+            <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Data Error?</button>
+            <button id="btn-codes" class="title-btn btn-codes hidden" aria-expanded="false" data-tooltip="">Codes</button>
             <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
           </div>
         </div>
@@ -641,7 +641,7 @@ Created: December 30, 2025
         <div class="folder-shortcuts-modal-section">
           <h3>Under Construction - Credit Transfers</h3>
           <div id="folder-shortcuts-credit-construction-host" class="folder-shortcuts-modal-buttons">
-            <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">ct -&gt; temp</button>
+            <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">CT -&gt; Temp</button>
           </div>
         </div>
       </div>
@@ -1110,6 +1110,9 @@ Created: December 30, 2025
               </span>
               Copy
             </button>
+            <button id="remove-current-selections" class="clear-button secondary" type="button">
+              Remove current selections
+            </button>
             <button id="remaining-colours" class="clear-button secondary semester-timetable-toggle" type="button"
               aria-pressed="false">Colours On</button>
             <button id="close-remaining-cta" class="clear-button secondary" type="button">Close</button>
@@ -1124,11 +1127,11 @@ Created: December 30, 2025
         <button id="course-map-load-files" class="clear-button secondary course-map-load-files-top" type="button" hidden>Load</button>
         <div class="modal-title" id="course-map-title">Course Map</div>
         <div id="course-map-alert-buttons" class="course-map-alert-buttons">
-          <button id="course-map-btn-info" class="title-btn btn-info hidden" aria-expanded="false">Info</button>
-          <button id="course-map-btn-warning" class="title-btn btn-caution hidden" aria-expanded="false">Caution</button>
-          <button id="course-map-btn-error" class="title-btn btn-error hidden" aria-expanded="false">Alert</button>
-          <button id="course-map-btn-data-error" class="title-btn btn-error hidden" aria-expanded="false">Data Error?</button>
-          <button id="course-map-btn-codes" class="title-btn btn-codes hidden" aria-expanded="false">Codes</button>
+          <button id="course-map-btn-info" class="title-btn btn-info hidden" aria-expanded="false" data-tooltip="">Info</button>
+          <button id="course-map-btn-warning" class="title-btn btn-caution hidden" aria-expanded="false" data-tooltip="">Caution</button>
+          <button id="course-map-btn-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Alert</button>
+          <button id="course-map-btn-data-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Data Error?</button>
+          <button id="course-map-btn-codes" class="title-btn btn-codes hidden" aria-expanded="false" data-tooltip="">Codes</button>
         </div>
         <div id="course-map-header-strip" class="course-map-header-strip" hidden>
           <div class="course-map-header-search-wrap">
@@ -1214,6 +1217,19 @@ Created: December 30, 2025
               </label>
               <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names (removed)</span>
             </div>
+            <div class="toggle-row course-map-show-hide-row course-map-staff-mode-row">
+              <label class="switch">
+                <input type="checkbox" id="course-map-staff-mode-toggle" aria-label="Staff mode">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
+            </div>
+            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view" type="button">
+              Default student view
+            </button>
+            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view" type="button">
+              Default staff view
+            </button>
           </div>
         </div>
         <div class="course-map-mode-actions">
@@ -1245,13 +1261,6 @@ Created: December 30, 2025
               <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
               <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
             </div>
-            <div class="toggle-row course-map-mode-row">
-              <label class="switch">
-                <input type="checkbox" id="course-map-staff-mode-toggle" aria-label="Staff mode">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
-            </div>
           </div>
         </div>
         <button id="course-map-history" class="clear-button secondary" type="button"
@@ -1276,7 +1285,7 @@ Created: December 30, 2025
         <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
           type="button" data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders &amp; Files</button>
         <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial"
-          type="button" hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">ct -&gt; temp</button>
+          type="button" hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">CT -&gt; Temp</button>
         <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes"
           type="button" data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
         <button id="course-map-full-semester-timetable" class="clear-button secondary course-map-full-semester-timetable"
@@ -1324,6 +1333,7 @@ Created: December 30, 2025
       aria-labelledby="course-map-student-note-title">
       <div class="modal-header">
         <div class="modal-title" id="course-map-student-note-title">Student details</div>
+        <button id="course-map-triage-sync-help" class="clear-button secondary course-map-triage-sync-help" type="button" hidden>Help with syncing</button>
         <button class="modal-close" id="close-course-map-student-note" aria-label="Close student details">X</button>
       </div>
       <div class="modal-body">
@@ -1334,6 +1344,24 @@ Created: December 30, 2025
           <button id="course-map-triage-edit" class="clear-button secondary" type="button">Save</button>
         </div>
         <button id="close-course-map-student-note-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="course-map-triage-sync-help-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal course-map-triage-sync-help-modal" role="dialog" aria-modal="true"
+      aria-labelledby="course-map-triage-sync-help-title">
+      <div class="modal-header">
+        <div class="modal-title" id="course-map-triage-sync-help-title">Help with syncing</div>
+        <button class="modal-close" id="close-course-map-triage-sync-help" aria-label="Close syncing help">X</button>
+      </div>
+      <div class="modal-body">
+        <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away.</p>
+        <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
+        <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’. If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
+        <p>If what you entered is lost, a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’.</p>
+      </div>
+      <div class="modal-actions">
+        <button id="close-course-map-triage-sync-help-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -1426,18 +1454,18 @@ Created: December 30, 2025
         </div>
         <div id="timetable-fees" class="timetable-fees" hidden></div>
         <div class="timetable-actions subject-table-actions">
-          <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
-            aria-label="Copy subject codes" title="Copy subject codes">
-            <span class="clipboard-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="img" focusable="false">
-                <path
-                  d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                  fill="currentColor" />
-              </svg>
-            </span>
-            Codes
-          </button>
           <div class="modal-action-group">
+            <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
+              aria-label="Copy subject codes" title="Copy subject codes">
+              <span class="clipboard-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                  <path
+                    d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              Codes
+            </button>
             <button id="copy-timetable" class="clear-button secondary" type="button">
               <span class="clipboard-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
@@ -1511,6 +1539,17 @@ Created: December 30, 2025
                 </span>
                 SD
               </button>
+              <button id="open-student-forms-folder" class="clear-button secondary timetable-email" type="button"
+                hidden title="Open today's Student Forms folder.">
+                <span class="folder-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path
+                      d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
+                      fill="currentColor" />
+                  </svg>
+                </span>
+                SFs
+              </button>
               <button id="open-teacher-temp-folder" class="clear-button secondary timetable-email" type="button"
                 hidden>
                 <span class="folder-icon" aria-hidden="true">
@@ -1520,7 +1559,7 @@ Created: December 30, 2025
                       fill="currentColor" />
                   </svg>
                 </span>
-                t
+                Temp
               </button>
               <button id="timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
                 aria-pressed="false" hidden>Show Colours</button>
