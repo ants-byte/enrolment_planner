@@ -42,6 +42,13 @@ const STUDENT_COLUMNS = [
   'Student_Flag',
 ];
 
+const STUDENT_COLUMN_ALIASES = {
+  Student_IDs_Unique: ['Student ID', 'Student ID as String', 'Student IDs Unique', 'StudentID', 'Student_ID'],
+  Full_Name: ['Full Name', 'Full Names'],
+  Family_Name: ['Family', 'Family Name', 'Family Names', 'Surname', 'Last Name'],
+  Given_Name: ['Given', 'Given Name', 'Given Names', 'First Name'],
+};
+
 const COURSE_INFO_RANGES = [
   'Semester_Start_Date',
   'Price_per_CSP_Unit',
@@ -66,6 +73,37 @@ const normalizeHeader = (value) =>
   String(value ?? '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
+
+const buildStudentColumnKeyMap = () =>
+  STUDENT_COLUMNS.reduce((acc, col) => {
+    acc[normalizeHeader(col)] = col;
+    (STUDENT_COLUMN_ALIASES[col] || []).forEach((alias) => {
+      acc[normalizeHeader(alias)] = col;
+    });
+    return acc;
+  }, {});
+
+const splitStudentFullName = (value = '') => {
+  const fullName = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!fullName) return { family: '', given: '' };
+  if (fullName.includes(',')) {
+    const [family, ...givenParts] = fullName.split(',');
+    return { family: String(family || '').trim(), given: givenParts.join(',').trim() };
+  }
+  const parts = fullName.split(' ').filter(Boolean);
+  if (parts.length < 2) return { family: fullName, given: '' };
+  return { family: parts[parts.length - 1], given: parts.slice(0, -1).join(' ') };
+};
+
+const normalizeStudentRecordNameFields = (record) => {
+  if (!record) return record;
+  const fullName = String(record.Full_Name || '').trim();
+  if (!fullName) return record;
+  const split = splitStudentFullName(fullName);
+  if (!String(record.Family_Name || '').trim() && split.family) record.Family_Name = split.family;
+  if (!String(record.Given_Name || '').trim() && split.given) record.Given_Name = split.given;
+  return record;
+};
 
 const normalizeHeadingText = (value) =>
   String(value || '')
@@ -258,6 +296,11 @@ const resolveNamedRangeKey = (name, allowed) => {
   const rawKey = getNamedRangeKey(name);
   if (allowed.includes(rawKey)) return rawKey;
   const normalized = normalizeNamedRangeKey(rawKey).toLowerCase();
+  const aliasMatch = Object.entries(STUDENT_COLUMN_ALIASES).find(([key, aliases]) =>
+    allowed.includes(key) &&
+    aliases.some((alias) => normalizeNamedRangeKey(alias).toLowerCase() === normalized)
+  );
+  if (aliasMatch) return aliasMatch[0];
   const match = allowed.find((entry) => entry.toLowerCase() === normalized);
   return match || '';
 };
@@ -332,6 +375,28 @@ function getRangeValues(sheet, rangeRef, columnName, workbook = null) {
   return normalized;
 }
 
+function getNamedSingleCellValue(sheet, rangeRef) {
+  if (!sheet || !rangeRef) return '';
+  const cleaned = stripRangeRef(rangeRef);
+  const parts = cleaned.split('!');
+  const range = parts[parts.length - 1] || '';
+  let decoded = null;
+  try {
+    decoded = XLSX.utils.decode_range(range);
+  } catch {
+    return '';
+  }
+  if (!decoded || decoded.s.c !== decoded.e.c || decoded.s.r !== decoded.e.r) return '';
+  const cellAddress = XLSX.utils.encode_cell({ c: decoded.s.c, r: decoded.s.r });
+  const denseRow = Array.isArray(sheet)
+    ? sheet[decoded.s.r]
+    : Array.isArray(sheet?.['!data'])
+      ? sheet['!data'][decoded.s.r]
+      : null;
+  const cell = denseRow ? denseRow[decoded.s.c] : sheet[cellAddress];
+  return cell ? (cell.w ?? cell.v ?? '') : '';
+}
+
 function buildStudentRecordsFromWorkbook(workbook) {
   if (!workbook) return [];
   const sheetName = 'Students';
@@ -353,10 +418,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
   const collectSharePointByStudentId = () => {
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
     if (!rows.length) return;
-    const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
-      acc[normalizeHeader(col)] = col;
-      return acc;
-    }, {});
+    const columnKeyMap = buildStudentColumnKeyMap();
     const scanLimit = Math.min(rows.length, 50);
     let headerIndex = -1;
     const studentIdHeaderKeys = new Set(
@@ -416,10 +478,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     if (rows.length <= 1) {
       return { columnMapFromRows: null, rowCountFromRows: 0 };
     }
-    const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
-      acc[normalizeHeader(col)] = col;
-      return acc;
-    }, {});
+    const columnKeyMap = buildStudentColumnKeyMap();
     const scanLimit = Math.min(rows.length, 50);
     let headerIndex = -1;
     const studentIdHeaderKeys = new Set(
@@ -503,6 +562,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const studentId = normalizeStudentId(record.Student_IDs_Unique);
     if (!studentId || !hasValue) continue;
     record.Student_IDs_Unique = studentId;
+    normalizeStudentRecordNameFields(record);
     if (!String(record.SharePoint_StudentForms || '').trim() && sharePointByStudentId.has(studentId)) {
       record.SharePoint_StudentForms = sharePointByStudentId.get(studentId) || '';
     }
@@ -527,7 +587,9 @@ function buildCourseInfoFromWorkbook(workbook) {
     const refSheet =
       (refSheetName && workbook.Sheets?.[refSheetName]) || defaultSheet;
     if (!refSheet) return;
-    const values = getRangeValues(refSheet, nameEntry.Ref, nameKey, workbook);
+    const values = normalizeNamedRangeKey(nameKey).toLowerCase() === 'studentpool'
+      ? [getNamedSingleCellValue(refSheet, nameEntry.Ref)]
+      : getRangeValues(refSheet, nameEntry.Ref, nameKey, workbook);
     const value = values.find((val) => val !== '') ?? '';
     info[nameKey] = value;
   });
@@ -633,6 +695,7 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     order: getIdx('Order'),
   };
   const sharePointPathIdx = getIdxAny('SharePoint Path', 'Sharepoint Path');
+  const fullNameIdx = getIdxAny('Full Names', 'Full Name');
   const familyIdx = getIdx('Family Names');
   const givenIdx = getIdx('Given Names');
   const normalizeLinkCandidate = (value) => {
@@ -738,9 +801,10 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
 
   const buildPreviewRow = (r) => {
     const idVal = idIdx !== undefined ? getCellText(r, idIdx) : '';
+    const fullNameVal = fullNameIdx !== undefined ? getCellText(r, fullNameIdx) : '';
     const familyVal = familyIdx !== undefined ? getCellText(r, familyIdx) : '';
     const givenVal = givenIdx !== undefined ? getCellText(r, givenIdx) : '';
-    const parts = [idVal, familyVal, givenVal].filter(Boolean);
+    const parts = [idVal, fullNameVal || familyVal, fullNameVal ? '' : givenVal].filter(Boolean);
     if (parts.length) return parts.join(' | ');
     const fallback = [];
     for (let c = range.s.c; c <= maxScanCol; c += 1) {
@@ -1005,6 +1069,9 @@ const writeCellValue = (sheet, row, col, value) => {
   return true;
 };
 
+const shouldSkipTriageWriteValue = (key, value) =>
+  key === 'fullName' || (['familyName', 'givenName'].includes(key) && !String(value ?? '').trim());
+
 const findTriageStudentRow = (sheet, range, idCol, studentId) => {
   if (idCol === undefined || idCol === null) return -1;
   const cleanStudentId = normalizeStudentId(studentId);
@@ -1037,6 +1104,7 @@ const updateTriageFieldsInWorkbook = (buffer, studentId, values) => {
   let updated = 0;
   Object.entries(values || {}).forEach(([key, value]) => {
     if (key === 'studentId') return;
+    if (shouldSkipTriageWriteValue(key, value)) return;
     if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
   });
   if (!updated) return { ok: false, error: 'No matching Triage columns were found for this update.' };
@@ -1057,6 +1125,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values) => {
   const nextValues = { ...(values || {}), studentId: cleanStudentId };
   let updated = 0;
   Object.entries(nextValues).forEach(([key, value]) => {
+    if (shouldSkipTriageWriteValue(key, value)) return;
     if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
   });
   if (!updated) return { ok: false, error: 'No matching Triage columns were found for this new row.' };

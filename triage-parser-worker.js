@@ -544,6 +544,7 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     primaryEmail: getIdxAny('Primary Email', 'Personal Email', 'Email'),
   };
   const sharePointPathIdx = getIdxAny('SharePoint Path', 'Sharepoint Path');
+  const fullNameIdx = getIdxAny('Full Names', 'Full Name');
   const familyIdx = getIdx('Family Names');
   const givenIdx = getIdx('Given Names');
   const normalizeLinkCandidate = (value) => {
@@ -649,9 +650,10 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
 
   const buildPreviewRow = (r) => {
     const idVal = idIdx !== undefined ? getCellText(r, idIdx) : '';
+    const fullNameVal = fullNameIdx !== undefined ? getCellText(r, fullNameIdx) : '';
     const familyVal = familyIdx !== undefined ? getCellText(r, familyIdx) : '';
     const givenVal = givenIdx !== undefined ? getCellText(r, givenIdx) : '';
-    const parts = [idVal, familyVal, givenVal].filter(Boolean);
+    const parts = [idVal, fullNameVal || familyVal, fullNameVal ? '' : givenVal].filter(Boolean);
     if (parts.length) return parts.join(' | ');
     const fallback = [];
     for (let c = range.s.c; c <= maxScanCol; c += 1) {
@@ -1196,9 +1198,11 @@ const getProtectedTriageWriteColumns = (sheetXml, sharedStrings, parseInfo = nul
 const isExpectedTriageWriteColumn = (sheetXml, sharedStrings, key, col, parseInfo = null) => {
   if (col === null || col === undefined) return false;
   const heading = getColumnHeadingKeyFromSheetXml(sheetXml, sharedStrings, col, parseInfo);
-  if (heading === 'fullname' || heading === 'email') return false;
+  if (heading === 'fullname' || heading === 'fullnames' || heading === 'email') return false;
   const expectedHeadings = {
     studentId: new Set(['studentid', 'studentidasstring', 'student_id']),
+    familyName: new Set(['familynames']),
+    givenName: new Set(['givennames']),
     handledBy: new Set(['handledby']),
     alteredStatus: new Set(['alteredstatus']),
     statusDetails: new Set(['detailscrtongoingdomesticetc']),
@@ -1234,16 +1238,28 @@ const setRawCellXmlInSheetXml = (sheetXml, cellRef, rawCellXml) => {
   return String(sheetXml || '').replace(rowXml, nextRowXml);
 };
 
-const retargetFormulaCellXmlToRow = (cellXml, targetRow) => {
-  const sourceRef = String(cellXml || '').match(/\br="([A-Z]+)(\d+)"/)?.[0] || '';
+const getFormulaBodyFromCellXml = (cellXml, sheetXml = '') => {
+  const direct = String(cellXml || '').match(/<f\b[^>]*>([\s\S]*?)<\/f>/);
+  if (direct) return direct[1] || '';
+  const sharedId = String(cellXml || '').match(/<f\b[^>]*\bsi="([^"]+)"[^>]*\/>/)?.[1];
+  if (!sharedId) return '';
+  const shared = String(sheetXml || '').match(new RegExp(`<f\\b(?=[^>]*\\bsi="${sharedId}")[^>]*>([\\s\\S]*?)<\\/f>`));
+  return shared?.[1] || '';
+};
+
+const retargetFormulaCellXmlToRow = (cellXml, targetRow, sheetXml = '') => {
   const sourceParts = String(cellXml || '').match(/\br="([A-Z]+)(\d+)"/);
   if (!sourceParts) return '';
   const sourceCol = sourceParts[1];
   const sourceRow = sourceParts[2];
   const targetRef = `${sourceCol}${targetRow}`;
-  return String(cellXml || '')
-    .replace(/\br="[A-Z]+\d+"/, `r="${targetRef}"`)
+  const formulaBody = getFormulaBodyFromCellXml(cellXml, sheetXml);
+  if (!formulaBody) return '';
+  const styleAttr = String(cellXml || '').match(/\bs="[^"]*"/)?.[0] || '';
+  const stylePart = styleAttr ? ` ${styleAttr}` : '';
+  const targetFormula = String(formulaBody || '')
     .replace(new RegExp(`(\\$?[A-Z]{1,3}\\$?)${sourceRow}\\b`, 'g'), `$1${targetRow}`);
+  return `<c r="${targetRef}"${stylePart}><f>${targetFormula}</f></c>`;
 };
 
 const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = null) => {
@@ -1256,9 +1272,11 @@ const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = 
 const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parseInfo = null, options = {}) => {
   const cleanStudentId = normalizeStudentId(studentId);
   const cleanValues = {};
-  ['handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
+  ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
-      cleanValues[key] = String(values[key] ?? '').trim();
+      const cleanValue = String(values[key] ?? '').trim();
+      if (['familyName', 'givenName'].includes(key) && !cleanValue) return;
+      cleanValues[key] = cleanValue;
     }
   });
   console.info('[Triage save worker] start', {
@@ -1331,9 +1349,11 @@ const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parse
 const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null) => {
   const cleanStudentId = normalizeStudentId(studentId || values.studentId);
   const cleanValues = {};
-  ['handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
+  ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
-      cleanValues[key] = String(values[key] ?? '').trim();
+      const cleanValue = String(values[key] ?? '').trim();
+      if (['familyName', 'givenName'].includes(key) && !cleanValue) return;
+      cleanValues[key] = cleanValue;
     }
   });
   if (!buffer || !cleanStudentId) return { ok: false, error: 'Missing student data.' };
@@ -1345,7 +1365,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
   if (!sheetPath || !sheetEntry?.content) return { ok: false, error: 'Triage sheet XML was not found.', sheetCount };
   let sheetXml = decodeUtf8(sheetEntry.content);
   const sharedStrings = readSharedStrings(cfb);
-  const rowFieldKeys = ['handledBy', 'alteredStatus', 'statusDetails', 'comments'];
+  const rowFieldKeys = ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'];
   const requestedKeys = rowFieldKeys;
   const { idCol, fieldCols } = getTriageEditableColumns(sheetXml, sharedStrings, parseInfo, requestedKeys);
   if (idCol === null || requestedKeys.some((key) => fieldCols[key] === null)) {
@@ -1398,12 +1418,13 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
       formulaCellsToPreserve.set(cell[1], cell[0]);
     }
   }
-  const nextRowXml = String(sheetXml || '').match(new RegExp(`<row\\b[^>]*\\br="${targetRow + 1}"[^>]*>[\\s\\S]*?<\\/row>`))?.[0] || '';
-  for (const cell of nextRowXml.matchAll(/<c\b[^>]*\br="([A-Z]+)(\d+)"[^>]*>[\s\S]*?<\/c>/g)) {
+  const followingFormulaRowXml = Array.from(String(sheetXml || '').matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g))
+    .find((rowMatch) => Number(rowMatch[1]) > targetRow && /<f\b/.test(rowMatch[0]))?.[0] || '';
+  for (const cell of followingFormulaRowXml.matchAll(/<c\b[^>]*\br="([A-Z]+)(\d+)"[^>]*>[\s\S]*?<\/c>/g)) {
     const col = colIndexFromCellRef(cell[1]);
     const targetCellRef = `${cell[1]}${targetRow}`;
     if (allowedWriteColumns.has(col) || formulaCellsToPreserve.has(targetCellRef) || !/<f\b/.test(cell[0])) continue;
-    const copiedCell = retargetFormulaCellXmlToRow(cell[0], targetRow);
+    const copiedCell = retargetFormulaCellXmlToRow(cell[0], targetRow, sheetXml);
     if (copiedCell) formulaCellsToPreserve.set(targetCellRef, copiedCell);
   }
   let writtenCount = 0;

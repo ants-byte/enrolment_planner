@@ -1236,16 +1236,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
   const SOURCE_WORKER_URL = (() => {
     try {
-      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260709-1';
+      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260709-5';
     } catch {
-      return 'workbook-parser-worker.js?v=source-20260709-1';
+      return 'workbook-parser-worker.js?v=source-20260709-5';
     }
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260709-8';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260709-11';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260709-8';
+      return 'triage-parser-worker.js?v=triage-20260709-11';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -1431,6 +1431,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'APR_APP_Attended',
     'Student_Flag',
   ];
+  const STUDENT_COLUMN_ALIASES = {
+    Student_IDs_Unique: ['Student ID', 'Student ID as String', 'Student IDs Unique', 'StudentID', 'Student_ID'],
+    Full_Name: ['Full Name', 'Full Names'],
+    Family_Name: ['Family', 'Family Name', 'Family Names', 'Surname', 'Last Name'],
+    Given_Name: ['Given', 'Given Name', 'Given Names', 'First Name'],
+  };
   const COURSE_INFO_RANGES = [
     'Semester_Start_Date',
     'Census_Date',
@@ -1617,6 +1623,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     String(value ?? '')
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '');
+  const buildStudentColumnKeyMap = () => {
+    const map = STUDENT_COLUMNS.reduce((acc, col) => {
+      acc[normalizeHeader(col)] = col;
+      (STUDENT_COLUMN_ALIASES[col] || []).forEach((alias) => {
+        acc[normalizeHeader(alias)] = col;
+      });
+      return acc;
+    }, {});
+    return map;
+  };
+  const splitStudentFullName = (value = '') => {
+    const fullName = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!fullName) return { family: '', given: '' };
+    if (fullName.includes(',')) {
+      const [family, ...givenParts] = fullName.split(',');
+      return { family: String(family || '').trim(), given: givenParts.join(',').trim() };
+    }
+    const parts = fullName.split(' ').filter(Boolean);
+    if (parts.length < 2) return { family: fullName, given: '' };
+    return { family: parts[parts.length - 1], given: parts.slice(0, -1).join(' ') };
+  };
+  const normalizeStudentRecordNameFields = (record) => {
+    if (!record) return record;
+    const fullName = String(record.Full_Name || '').trim();
+    if (!fullName) return record;
+    const split = splitStudentFullName(fullName);
+    if (!String(record.Family_Name || '').trim() && split.family) record.Family_Name = split.family;
+    if (!String(record.Given_Name || '').trim() && split.given) record.Given_Name = split.given;
+    return record;
+  };
   const STUDENT_ID_HEADER_KEYS = new Set(
     [
       'Student_IDs_Unique',
@@ -1845,6 +1881,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapHeaderStrip = document.getElementById('course-map-header-strip');
   const courseMapOpenFolderShortcutsButton = document.getElementById('course-map-open-folder-shortcuts');
   const courseMapCtTempButton = document.getElementById('course-map-ct-temp');
+  const courseMapTempCreateButton = document.getElementById('course-map-temp-create');
   const courseMapStudentInfoStrip = document.getElementById('course-map-student-info-strip');
   const courseMapStudentSearchInput = document.getElementById('course-map-student-search');
   const courseMapStudentSearchDropdown = document.getElementById('course-map-student-search-dropdown');
@@ -2758,6 +2795,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       getCourseMapIsStaffMode()
     );
   }
+  function getLoadedCourseMapStudentId() {
+    const triageFormId = document.getElementById('course-map-triage-student-id')?.value || '';
+    const triageDatasetId = document.getElementById('course-map-triage-edit-form')?.dataset.studentId || '';
+    const activeRecord = typeof getActiveStudentRecord === 'function' ? getActiveStudentRecord() : null;
+    return normalizeStudentId(
+      activeRecord?.Student_IDs_Unique ||
+      activeStudentId ||
+      extractedStudentId ||
+      triageFormId ||
+      triageDatasetId ||
+      courseMapStudentSearchInput?.value ||
+      studentIdInput?.value ||
+      ''
+    );
+  }
   function setCourseMapLoadFilesButtonBusy(busy) {
     courseMapLoadButtonBusy = !!busy;
     if (!courseMapLoadFilesButton) return;
@@ -2844,6 +2896,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapCtTempButton) {
       courseMapCtTempButton.hidden = !showStaffHeaderControls;
       courseMapCtTempButton.classList.toggle('hidden-initial', !showStaffHeaderControls);
+    }
+    if (courseMapTempCreateButton) {
+      const hasStudentId = !!getLoadedCourseMapStudentId();
+      const showTempCreate = showStaffHeaderControls && hasStudentId;
+      courseMapTempCreateButton.hidden = !showTempCreate;
+      courseMapTempCreateButton.classList.toggle('hidden-initial', !showTempCreate);
     }
     if (courseMapLoadFilesButton) {
       const show = showStaffHeaderControls;
@@ -3066,7 +3124,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const TRIAGE_HANDLED_BY_OPTIONS = ['', 'David', 'Antony', 'Sazia', 'Tony', 'Uma', 'Nandini', 'Sita', 'Anthony', 'Nidha', 'Promise'];
   const TRIAGE_ALTERED_STATUS_OPTIONS = ['', 'Enquiry only', 'No longer enrolling', 'Changing existing enrolment', 'Teacher alert'];
   const TRIAGE_STATUS_DETAILS_OPTIONS = [
-    '',
     'Ongoing - International',
     'Ongoing - International.  With new CT',
     'Ongoing - Domestic',
@@ -3085,6 +3142,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     "New - Don't know more",
     '? - need more info',
   ];
+
+  const getFilteredTriageStatusDetailsOptions = (record, selected = '') => {
+    const feeDetails = getFeeStatusDetails(record);
+    const isDomestic = feeDetails.feeStatus ? !!feeDetails.domesticFees : null;
+    const isOngoing = getStudentHasEnrolmentHistoryForRecord(record);
+    const isFmp = !!String(record?.FMP || '').trim();
+    const isDiploma = !!String(record?.In_Diploma || '').trim();
+    const selectedClean = String(selected || '').trim();
+    const options = TRIAGE_STATUS_DETAILS_OPTIONS.filter((option) => {
+      const value = String(option || '').trim();
+      if (!value) return false;
+      const lower = value.toLowerCase();
+      if (isOngoing && lower.startsWith('new -')) return false;
+      if (!isOngoing && lower.startsWith('ongoing -')) return false;
+      if (lower.includes('need more info') && isOngoing) return false;
+      if (isDomestic === true && lower.includes('international')) return false;
+      if (isDomestic === false && lower.includes('domestic')) return false;
+      if (lower.includes('fmp') && !isFmp) return false;
+      if (lower.includes('mp diploma') && !isDiploma) return false;
+      return true;
+    });
+    if (selectedClean && options.includes(selectedClean)) return options;
+    return options;
+  };
 
   const getCurrentTeacherNameForTriage = () => {
     const signOffName = String(getSettingsSignOffPrefs()?.signOffName || '').trim();
@@ -3116,6 +3197,62 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (codes?.length) return new Set(codes).size;
     return raw.split(/[,;\n]+/).map((item) => item.trim()).filter(Boolean).length;
   };
+
+  const getStudentHasEnrolmentHistoryForRecord = (record) => {
+    if (getPassedSubjectCountForRecord(record) > 0) return true;
+    const parsed = parseManualEntriesFromText(String(record?.Results_List || ''));
+    return !!(parsed?.resultEntries || []).length;
+  };
+
+  const isGraduatedStudentRecord = (record) => {
+    const creditPointsValue = parseCreditPoints(record?.Credit_Points_Earned);
+    return getPassedSubjectCountForRecord(record) >= 24 || (creditPointsValue !== null && creditPointsValue >= 288);
+  };
+
+  const getCurrentStudySemesterIndex = () => {
+    const now = new Date();
+    return now.getFullYear() * 2 + (currentSemesterKey === 'S1' ? 0 : 1);
+  };
+
+  const getStudySemesterInfoFromDate = (value) => {
+    const date = toDateValue(value);
+    if (!date) return null;
+    const semester = date.getMonth() >= 8 ? 2 : 1;
+    return {
+      date,
+      semester,
+      index: date.getFullYear() * 2 + (semester - 1),
+      label: `${date.getFullYear()} Semester ${semester}`,
+    };
+  };
+
+  const getReturningStudentInfo = (record) => {
+    if (isGraduatedStudentRecord(record)) return null;
+    if (!getStudentHasEnrolmentHistoryForRecord(record)) return null;
+    const parsed = parseManualEntriesFromText(String(record?.Results_List || ''));
+    const entries = parsed?.resultEntries || [];
+    let latest = null;
+    entries.forEach((entry) => {
+      const info = getStudySemesterInfoFromDate(entry?.date || '');
+      if (!info || (latest && info.index <= latest.index)) return;
+      latest = info;
+    });
+    if (!latest) return null;
+    const previousSemesterIndex = getCurrentStudySemesterIndex() - 1;
+    if (latest.index >= previousSemesterIndex) return null;
+    return {
+      latest,
+      inactiveForYearOrMore: latest.index <= getCurrentStudySemesterIndex() - 2,
+    };
+  };
+
+  const getReturningStudentDetailText = (info) =>
+    info?.latest?.label ? `Most recent enrolment: ${info.latest.label}.` : '';
+
+  const getReturningStudentExplanationHtml = () => [
+    '<p>Returning means the student has previous study history but did not enrol in any subjects in the previous semester.</p>',
+    "<p>If the student last studied with us a year or more ago, check the CoE to ensure the student is current. Normally the student will need a new CoE if they haven't studied with us for a year or more.</p>",
+  ].join('');
 
   const buildCourseMapTriageEditFormHtml = (record) => {
     const studentId = normalizeStudentId(record?.Student_IDs_Unique || '');
@@ -3150,19 +3287,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const triageStudentCopy = [studentId, triageStudentCopyName].filter(Boolean).join(' ');
     const triageEmailCopy = Array.from(new Set([primaryEmail, instituteEmail].filter(Boolean))).join('; ');
     const feeDetails = getFeeStatusDetails(record);
+    const passedSubjectCount = getPassedSubjectCountForRecord(record);
     const remainingCount = getRemainingSubjectsCount();
     const showPastYearMedian = [9, 7, 6, 5].includes(remainingCount);
     const notInSource = !!record?._notInSource;
     const tempClass = notInSource ? ' is-temp-hidden' : '';
     const handledByValue = triage.handledBy || getCurrentTeacherNameForTriage();
-    const defaultStatusDetails =
+    const isReturningStudent = !!getReturningStudentInfo(record);
+    const forcedReturningStatusDetails = 'Ongoing - Deferred';
+    const suggestedStatusDetails =
       hasTriageRecord || triage.statusDetails
         ? triage.statusDetails
-        : feeDetails.domesticFees
-          ? "New - Domestic - Don't know if CT"
-          : "New - International - Don't know if CT";
+        : isReturningStudent
+          ? forcedReturningStatusDetails
+          : getStudentHasEnrolmentHistoryForRecord(record)
+          ? feeDetails.domesticFees
+            ? 'Ongoing - Domestic'
+            : 'Ongoing - International'
+          : feeDetails.domesticFees
+            ? "New - Domestic - Don't know if CT"
+            : "New - International - Don't know if CT";
+    const statusDetailsOptions = isReturningStudent
+      ? [forcedReturningStatusDetails]
+      : getFilteredTriageStatusDetailsOptions(record, suggestedStatusDetails);
+    const defaultStatusDetails = isReturningStudent
+      ? forcedReturningStatusDetails
+      : statusDetailsOptions.includes(String(suggestedStatusDetails || '').trim())
+      ? suggestedStatusDetails
+      : statusDetailsOptions[0] || '';
     return [
-      `<form id="course-map-triage-edit-form" class="course-map-triage-edit-form${tempClass}" data-new-triage-row="${hasTriageRecord ? 'false' : 'true'}" data-student-id="${escapeHtml(studentId)}" data-original-family-name="${escapeHtml(familyName)}" data-original-given-name="${escapeHtml(givenName)}" data-original-primary-email="${escapeHtml(primaryEmail)}" data-original-friendly-name="${escapeHtml(triage.friendlyName || '')}" data-original-handled-by="${escapeHtml(handledByValue)}" data-original-altered-status="${escapeHtml(triage.alteredStatus || '')}" data-original-status-details="${escapeHtml(triage.statusDetails || '')}" data-original-comments="${escapeHtml(comments)}">`,
+      `<form id="course-map-triage-edit-form" class="course-map-triage-edit-form${tempClass}" data-new-triage-row="${hasTriageRecord ? 'false' : 'true'}" data-student-id="${escapeHtml(studentId)}" data-original-family-name="${escapeHtml(familyName)}" data-original-given-name="${escapeHtml(givenName)}" data-original-primary-email="${escapeHtml(primaryEmail)}" data-original-friendly-name="${escapeHtml(triage.friendlyName || '')}" data-original-handled-by="${escapeHtml(triage.handledBy || '')}" data-original-altered-status="${escapeHtml(triage.alteredStatus || '')}" data-original-status-details="${escapeHtml(triage.statusDetails || '')}" data-original-comments="${escapeHtml(comments)}">`,
       '<div class="course-map-triage-static">',
       notInSource
         ? '<label class="course-map-triage-inline-field course-map-triage-student-id-field"><span>Student ID:</span>' +
@@ -3171,7 +3325,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : `<div class="course-map-triage-id-line"><span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(studentId)}" title="Copy student ID">${escapeHtml(studentId)}</span>${displayName ? ` <span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(triageStudentCopy)}" title="Copy student ID and name">${escapeHtml(displayName)}</span>` : ''}</div>`,
       triageEmailCopy ? `<div class="course-map-triage-id-line course-map-triage-email-line">${primaryEmail ? `<span class="course-map-triage-copy-target" data-triage-copy="${escapeHtml(triageEmailCopy)}" title="Copy both emails">${escapeHtml(primaryEmail)}</span>` : ''}${primaryEmail && instituteEmail ? ' ; ' : ''}${instituteEmail ? `<span class="course-map-triage-copy-target course-map-triage-institute-email" data-triage-copy="${escapeHtml(triageEmailCopy)}" title="Copy both emails">${escapeHtml(instituteEmail)}</span>` : ''}</div>` : '',
       notInSource ? '' : `<div><strong>Suspended:</strong><span>${escapeHtml(String(record?.Suspended || '').trim() || 'N')}</span></div>`,
-      notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${getPassedSubjectCountForRecord(record)}</span></div>`,
+      notInSource ? '' : `<div><strong>Subjects passed:</strong><span>${passedSubjectCount}</span></div>`,
       notInSource ? '' : `<div><strong>Status:</strong><span>${escapeHtml(triage.statusLabel || '')}</span></div>`,
       !notInSource && feeDetails.feeLabel ? `<div><strong>Fee Type:</strong><span>${escapeHtml(feeDetails.feeStatus === 'unknown' ? '? unknown' : feeDetails.domesticFees ? 'Domestic Student' : 'International Student')}${feeDetails.fundingSource ? ` ${escapeHtml(feeDetails.fundingSource)}` : ''}</span></div>` : '',
       notInSource ? '' : `<div><strong>Median grade:</strong><span>${escapeHtml(getMedianGradeLabel(manualEntryResults))}</span></div>`,
@@ -3197,7 +3351,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       `<select id="course-map-triage-handled-by">${optionHtml(TRIAGE_HANDLED_BY_OPTIONS, handledByValue)}</select>`,
       '</label>',
       '<label class="course-map-triage-inline-field"><span>Enrolment type <span class="triage-required-mark" aria-hidden="true">*</span></span>',
-      `<select id="course-map-triage-status-details" class="${!hasTriageRecord ? 'triage-default-suggested' : ''}" data-initial-value="${escapeHtml(defaultStatusDetails)}">${optionHtml(TRIAGE_STATUS_DETAILS_OPTIONS, defaultStatusDetails)}</select>`,
+      `<select id="course-map-triage-status-details" class="${!hasTriageRecord && !isReturningStudent ? 'triage-default-suggested' : ''}" data-initial-value="${escapeHtml(defaultStatusDetails)}"${isReturningStudent ? ' disabled aria-disabled="true" title="Returning students are classified as Ongoing - Deferred."' : ''}>${optionHtml(statusDetailsOptions, defaultStatusDetails)}</select>`,
       '</label>',
       '<label class="course-map-triage-inline-field"><span>Enrolment change</span>',
       `<select id="course-map-triage-altered-status">${optionHtml(TRIAGE_ALTERED_STATUS_OPTIONS, triage.alteredStatus)}</select>`,
@@ -6868,13 +7022,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         html: `<p><strong class="alert-inline-title alert-title-info">Fuzhou Melbourne Polytechnic (FMP)</strong> <span class="alert-inline-text">Check if the student comes from a Diploma (8 credits) or Advanced Diploma (12 credits). Confirm if their course is C complete or E enrolled, and whether they have passed all subjects. An articulation agreement needs to be applied.</span></p>`,
       });
     }
-    if (deferredInfo?.isDeferred) {
-      const deferredMessage = buildDeferredNoticeText(deferredInfo);
+    const returningInfo = getReturningStudentInfo(record);
+    if (returningInfo) {
+      const detail = getReturningStudentDetailText(returningInfo);
       infoMessages.push({
-        title: 'Returning student',
-        html: `<p><strong class="alert-inline-title alert-title-warning">Returning student.</strong> <span class="alert-inline-text">${escapeHtml(
-          deferredMessage
-        )}</span></p>`,
+        title: 'Returning',
+        html: `<p class="student-summary-returning${returningInfo.inactiveForYearOrMore ? ' is-stale' : ''}"><strong class="student-summary-returning-heading">Returning:</strong> <span class="student-summary-returning-detail">${escapeHtml(
+          detail
+        )}</span></p>${getReturningStudentExplanationHtml()}`,
       });
     }
     if (countryHittingTroubles) {
@@ -6967,6 +7122,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       staffWorkbookState.getStudentRecord()
     );
   };
+
+  const isActiveStudentGraduated = () => isGraduatedStudentRecord(getActiveStudentRecord());
 
   const SPECIAL_VISA_TOKENS = ['HV', 'REF', 'PV', 'PPV', 'TPC', 'SHEV'];
   const INTERNATIONAL_VISA_NUMBERS = new Set(['417', '462', '600', '485', '482', '408']);
@@ -7374,7 +7531,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selectedCount = getSelectedRows().length;
     const threshold = getLoadThreshold();
     const fullLoadSelected = selectedCount >= threshold && threshold > 0;
-    if (currentTableMode !== 'selected' || !fullLoadSelected) {
+    if (!staffFacing || currentTableMode !== 'selected' || !fullLoadSelected) {
       timetableFees.hidden = true;
       timetableFees.textContent = '';
       lastFullLoadSelected = false;
@@ -7390,62 +7547,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateDateAlerts(courseInfo);
     const census = formatShortDate(getCalculatedCensusDate(courseInfo));
     const censusText = census || 'not set';
-    const censusHtml = `<span class="timetable-date">${escapeHtml(censusText)}</span>`;
-    const semesterStartText =
-      record ? formatLongDate(courseInfo?.Semester_Start_Date || '') : '';
-    const semesterLineText =
-      record && semesterStartText
-        ? `Semester start date: ${formatShortDate(semesterStartText)}`
-        : '';
-    const priceValue = parseCreditPoints(courseInfo?.Price_per_Unit || '');
-    const price =
-      (priceValue && priceValue > 0 ? formatCurrency(priceValue) : '') || '$ 2,360.00';
-    const cspValue = parseCreditPoints(courseInfo?.Price_per_CSP_Unit || '');
-    const cspPrice =
-      (cspValue && cspValue > 0 ? formatCurrency(cspValue) : '') || '$1,192.00';
-
-    if (record) {
-      const feeDetails = getFeeStatusDetails(record);
-      const visaLabel = feeDetails.visaShortLabel || feeDetails.visaType || 'visa';
-      const cancellationLine = `Cancellation Date: Census Date is ${censusHtml}`;
-      let feeLine = '';
-      if (feeDetails.isBridgingVisa && feeDetails.feeStatus === 'international_sv') {
-        feeLine = `Fees: International student on "${escapeHtml(visaLabel)}" visa. International fees.`;
-      } else if (feeDetails.feeStatus === 'domestic_csp') {
-        feeLine = `Fees: Domestic student with CSP. Cost remaining per subject after government payment is ${escapeHtml(
-          cspPrice
-        )}.`;
-      } else if (feeDetails.feeStatus === 'international_special') {
-        feeLine = `Fees: International student on ${escapeHtml(
-          feeDetails.visaType || 'special visa'
-        )} visa. Domestic fees.`;
-      } else if (feeDetails.feeStatus === 'international_sv') {
-        feeLine = `Fees: International student on "${escapeHtml(visaLabel)}" visa. International fees.`;
-      } else {
-        feeLine = `Fees: Domestic student. ${escapeHtml(price)} per subject for domestic students.`;
-      }
-      timetableFees.innerHTML = '';
-      const feeLineEl = document.createElement('div');
-      feeLineEl.className = 'timetable-fee-line';
-      feeLineEl.innerHTML = feeLine;
-      timetableFees.appendChild(feeLineEl);
-      const cancelEl = document.createElement('div');
-      cancelEl.className = 'timetable-fee-line';
-      cancelEl.innerHTML = cancellationLine;
-      timetableFees.appendChild(cancelEl);
-      if (semesterLineText) {
-        const note = document.createElement('div');
-        note.className = 'timetable-fee-note';
-        note.innerHTML = `<strong>Semester start date:</strong> ${escapeHtml(
-          formatShortDate(semesterStartText)
-        )}`;
-        timetableFees.appendChild(note);
-      }
-      timetableFees.hidden = false;
-      applyFeesWidth();
-      applyTimetableDateHighlight();
-      return;
-    }
 
     const bachelorUrl = 'https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/';
     const bachelorLink = `<a class="timetable-fee-link" href="${bachelorUrl}" target="_blank" rel="noopener">Bachelor of IT</a>`;
@@ -7486,12 +7587,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     syncFeeChoiceHeading();
     timetableFees.hidden = false;
     lastFullLoadSelected = fullLoadSelected;
-    if (record && semesterLineText) {
-      const note = document.createElement('div');
-      note.className = 'timetable-fee-note';
-      note.textContent = semesterLineText;
-      timetableFees.appendChild(note);
-    }
     applyFeesWidth();
     applyTimetableDateHighlight();
   };
@@ -13092,16 +13187,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       void copyActiveStudentPersonalsSequence(copyPersonalsTarget);
       return;
     }
-    const copySeqTarget = event.target?.closest?.('.student-summary-copy-seq');
-    if (copySeqTarget) {
-      event.preventDefault();
-      void copyActiveStudentPersonalsSequence(copySeqTarget);
-      return;
-    }
     const ctTempTarget = event.target?.closest?.('.student-summary-ct-temp');
     if (ctTempTarget) {
       event.preventDefault();
       void launchCreditTransferTempWorkflow(ctTempTarget);
+      return;
+    }
+    const tempCreateTarget = event.target?.closest?.('.student-summary-temp-create');
+    if (tempCreateTarget) {
+      event.preventDefault();
+      void launchStudentTempCreateWorkflow(tempCreateTarget);
       return;
     }
     const ctLocationTarget = event.target?.closest?.('.student-summary-ct-location-link');
@@ -13272,6 +13367,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (courseMapCtTempButton) {
     courseMapCtTempButton.addEventListener('click', () => {
       void launchCreditTransferTempWorkflow(courseMapCtTempButton);
+    });
+  }
+  if (courseMapTempCreateButton) {
+    courseMapTempCreateButton.addEventListener('click', () => {
+      void launchStudentTempCreateWorkflow(courseMapTempCreateButton);
     });
   }
   if (closeFolderShortcutsModal) closeFolderShortcutsModal.addEventListener('click', hideFolderShortcutsModal);
@@ -14530,6 +14630,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasHistory = !!(passedSubjects || resultsList);
     const courseInfo = staffWorkbookState.getCourseInfo();
     const feeDetails = getFeeStatusDetails(record);
+    const isGraduated = isGraduatedStudentRecord(record);
+    const returningInfo = getReturningStudentInfo(record);
     const historySummaryText = hasHistory
       ? `${creditSubjectsLabel} subjects completed (${creditPointsLabel} points).`
       : '';
@@ -14569,14 +14671,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : '';
       const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="Copy student emails" data-tooltip-html="Copy student emails<br>Copy all listed student emails to the clipboard.">${copyIconHtml}</button>`;
       lines.push(`<div class="student-email-row">${emailLinks}${emailAllIcon ? ` ${emailAllIcon}` : ''} ${copyEmailsIcon}</div>`);
-    }
-    if (deferredInfo?.isDeferred) {
-      const deferredMessage = buildDeferredNoticeText(deferredInfo);
-      lines.push(
-        `<div class="student-summary-returning"><strong>Returning student.</strong> <span>${escapeHtml(
-          [historySummaryText, deferredMessage].filter(Boolean).join(' ')
-        )}</span></div>`
-      );
     }
     const studentFlag = getStudentFlagText(record);
     if (studentFlag) {
@@ -14824,6 +14918,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (feeDetails.fundingSource) {
       lines.push(`<span class="student-summary-lead">Funding Source:</span> ${escapeHtml(feeDetails.fundingSource)}`);
     }
+    if (returningInfo) {
+      const tooltipHtml = getReturningStudentExplanationHtml();
+      const detail = getReturningStudentDetailText(returningInfo);
+      lines.push(
+        `<div class="student-summary-returning${returningInfo.inactiveForYearOrMore ? ' is-stale' : ''}" data-tooltip-html="${escapeHtml(tooltipHtml)}"><span class="student-summary-returning-heading">Returning:</span> <span class="student-summary-returning-detail">${escapeHtml(
+          detail
+        )}</span></div>`
+      );
+    }
     if (feeDetails.fundingSourcePrefix === 'F' && !visaType) {
       lines.push(
         'Funding Source begins with F. No visa information found; assuming Student Visa (500).'
@@ -14873,9 +14976,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (hasHistory) {
       if (!deferredInfo?.isDeferred) {
         lines.push(
-          `<div class="student-summary-credit" data-credit-subjects="${escapeHtml(
+          `<div class="student-summary-credit${isGraduated ? ' is-graduated' : ''}" data-credit-subjects="${escapeHtml(
             creditSubjectsLabel
-          )}">${escapeHtml(historySummaryText)}</div>`
+          )}">${isGraduated ? '<strong>Graduated: </strong>' : ''}${escapeHtml(historySummaryText)}</div>`
         );
       }
       const medianGrade = getMedianGradeLabel(manualEntryResults);
@@ -14902,12 +15005,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (record) {
       lines.push(
-        '<button type="button" class="clear-button secondary student-summary-ct-temp" title="Find or prepare this student credit transfer working folder.">CT -&gt; Temp</button>'
-      );
-    }
-    if (!hasHistory) {
-      lines.push(
-        '<button type="button" class="student-summary-copy-seq" title="Copy: Student ID, DOB, international flag, family name, given name, mobile, personal email, then multiline summary">Details for Credit Form</button>'
+        '<div class="student-summary-temp-actions"><button type="button" class="clear-button secondary student-summary-ct-temp" title="Find or prepare this student credit transfer working folder.">CT -&gt; Temp</button><button type="button" class="clear-button secondary student-summary-temp-create" title="Create and open this student folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead.">Temp Create</button></div>'
       );
     }
     return lines.filter(Boolean).map((line) => (line.startsWith('<div') ? line : `<div>${line}</div>`)).join('');
@@ -16843,6 +16941,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return normalized;
   };
 
+  function getNamedSingleCellValue(sheet, rangeRef) {
+    if (!sheet || !rangeRef) return '';
+    const cleaned = stripRangeRef(rangeRef);
+    const parts = cleaned.split('!');
+    const range = parts[parts.length - 1] || '';
+    let decoded = null;
+    try {
+      decoded = XLSX.utils.decode_range(range);
+    } catch {
+      return '';
+    }
+    if (!decoded || decoded.s.c !== decoded.e.c || decoded.s.r !== decoded.e.r) return '';
+    const cellAddress = XLSX.utils.encode_cell({ c: decoded.s.c, r: decoded.s.r });
+    const denseRow = Array.isArray(sheet)
+      ? sheet[decoded.s.r]
+      : Array.isArray(sheet?.['!data'])
+        ? sheet['!data'][decoded.s.r]
+        : null;
+    const cell = denseRow ? denseRow[decoded.s.c] : sheet[cellAddress];
+    return cell ? (cell.w ?? cell.v ?? '') : '';
+  }
+
   function buildStudentRecordsFromWorkbook(workbook) {
     if (!workbook) return [];
     const sheetName = 'Students';
@@ -16864,10 +16984,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const collectSharePointByStudentId = () => {
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (!rows.length) return;
-      const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
-        acc[normalizeHeader(col)] = col;
-        return acc;
-      }, {});
+      const columnKeyMap = buildStudentColumnKeyMap();
       const scanLimit = Math.min(rows.length, 50);
       let headerIndex = -1;
       const studentIdHeaderKeys = new Set(
@@ -16927,10 +17044,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (rows.length <= 1) {
         return { columnMapFromRows: null, rowCountFromRows: 0 };
       }
-      const columnKeyMap = STUDENT_COLUMNS.reduce((acc, col) => {
-        acc[normalizeHeader(col)] = col;
-        return acc;
-      }, {});
+      const columnKeyMap = buildStudentColumnKeyMap();
       const scanLimit = Math.min(rows.length, 50);
       let headerIndex = -1;
       const studentIdHeaderKeys = new Set(
@@ -17013,6 +17127,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const studentId = normalizeStudentId(record.Student_IDs_Unique);
       if (!studentId || !hasValue) continue;
       record.Student_IDs_Unique = studentId;
+      normalizeStudentRecordNameFields(record);
       if (!String(record.SharePoint_StudentForms || '').trim() && sharePointByStudentId.has(studentId)) {
         record.SharePoint_StudentForms = sharePointByStudentId.get(studentId) || '';
       }
@@ -17036,6 +17151,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const rawKey = getNamedRangeKey(name);
     if (allowed.includes(rawKey)) return rawKey;
     const normalized = normalizeNamedRangeKey(rawKey).toLowerCase();
+    const aliasMatch = Object.entries(STUDENT_COLUMN_ALIASES).find(([key, aliases]) =>
+      allowed.includes(key) &&
+      aliases.some((alias) => normalizeNamedRangeKey(alias).toLowerCase() === normalized)
+    );
+    if (aliasMatch) return aliasMatch[0];
     const match = allowed.find((entry) => entry.toLowerCase() === normalized);
     return match || '';
   };
@@ -17056,7 +17176,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const refSheet =
         (refSheetName && workbook.Sheets?.[refSheetName]) || defaultSheet;
       if (!refSheet) return;
-      const values = getRangeValues(refSheet, nameEntry.Ref, nameKey, workbook);
+      const values = normalizeNamedRangeKey(nameKey).toLowerCase() === 'studentpool'
+        ? [getNamedSingleCellValue(refSheet, nameEntry.Ref)]
+        : getRangeValues(refSheet, nameEntry.Ref, nameKey, workbook);
       const value = values.find((val) => val !== '') ?? '';
       info[nameKey] = value;
     });
@@ -17774,6 +17896,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const buildStudentTempClipboardLabel = (record = null, studentId = '') => {
+    const id = normalizeStudentId(studentId || record?.Student_IDs_Unique || '');
+    const familyName = String(record?.Family_Name || '').trim().toUpperCase();
+    const givenName = toProperCase(record?.Given_Name || '').trim();
+    const name = [familyName, givenName].filter(Boolean).join(', ');
+    const label = [id, name].filter(Boolean).join(' ').trim();
+    return label.length > 20 ? `${label.slice(0, 17)}...` : label;
+  };
+
+  const copyStudentTempFolderDetails = async (record = null, studentId = '', folderPath = '') => {
+    const label = buildStudentTempClipboardLabel(record, studentId);
+    if (label) await copyPlainText(label);
+    if (folderPath) await copyPlainText(folderPath);
+  };
+
   const sanitizeWindowsFileName = (value = '') => {
     return String(value || '')
       .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
@@ -17997,6 +18134,67 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.setTimeout(() => refreshMissingStudentCreditTransferNotice(payload.studentIdText), 900);
     }
     return launched;
+  }
+
+  const buildStudentTempFolderName = (record, studentId) => {
+    const family = String(record?.Family_Name || '').trim().toUpperCase();
+    const given = toProperCase(record?.Given_Name || '').trim();
+    const namePart = [family, given].filter(Boolean).join(', ');
+    const label = [studentId, namePart].filter(Boolean).join(' ');
+    return sanitizeFolderSegment(label, 'windows') || studentId;
+  };
+
+  async function launchStudentTempCreateWorkflow(button = null) {
+    if (getClientOs() !== 'windows' || !isEnrolProtocolEnabled()) {
+      window.alert(CT_TEMP_HELPER_MESSAGE);
+      return false;
+    }
+    const semesterPath = await getOperationalSemesterFolderPath();
+    const record = getActiveStudentRecord();
+    const studentId = normalizeStudentId(record?.Student_IDs_Unique || getLoadedCourseMapStudentId() || '');
+    if (!semesterPath || !studentId) {
+      window.alert('Cannot find the current semester folder or active student.');
+      return false;
+    }
+    const teacherTempInfo = getTeacherTempFolderInfo(semesterPath, { os: 'windows' });
+    const teacherTempPath = normalizeEnrolProtocolPath(teacherTempInfo.preferredPath || teacherTempInfo.effectivePath || '');
+    if (!teacherTempPath) {
+      window.alert('Cannot find the teacher temp folder.');
+      return false;
+    }
+    const teacherFolderName = teacherTempInfo.teacherNameSegment || getPathBasename(teacherTempPath) || "teacher's temp folder";
+    const tooltip =
+      `Create and open this student's folder in ${teacherFolderName}. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead.`;
+    if (button) {
+      button.setAttribute('title', tooltip);
+      button.setAttribute(
+        'data-tooltip-html',
+        `${escapeHtml(tooltip)} Folder name: Student ID FAMILY NAME, Given Name.`
+      );
+    }
+    const staffRootHandle = await getStoredStaffFolderHandleWithReadGrant();
+    if (!staffRootHandle) {
+      window.alert('Load from folder first so the app can check all teacher temp folders before creating a new student folder.');
+      return false;
+    }
+    const existingFolders = await findTeacherTempFoldersForStudent(studentId).catch(() => []);
+    const existing = existingFolders.find((entry) => entry?.path) || null;
+    if (existing) {
+      const opened = await openFolderShortcutPath(existing.path, 'Existing student temp folder');
+      if (opened) {
+        await copyStudentTempFolderDetails(record, studentId, existing.path);
+        if (button) triggerFlash(button);
+      }
+      return opened;
+    }
+    const folderName = buildStudentTempFolderName(record, studentId);
+    const targetPath = joinPath(teacherTempPath, folderName);
+    const opened = await openFolderShortcutPath(targetPath, 'Student temp folder', { mkdirPath: targetPath });
+    if (opened) {
+      await copyStudentTempFolderDetails(record, studentId, targetPath);
+      if (button) triggerFlash(button);
+    }
+    return opened;
   }
 
   const buildCreditFormAutomationPayload = (templatePath = '') => {
@@ -18376,6 +18574,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       filesLoaded || teacherFolderInfo.teacherNameSegment
         ? teacherFolderInfo.effectivePath
         : teacherFolderRoot;
+    if (courseMapTempCreateButton) {
+      const teacherFolderName =
+        teacherFolderInfo.teacherNameSegment || getPathBasename(teacherFolderPath) || "teacher's temp folder";
+      courseMapTempCreateButton.setAttribute(
+        'data-tooltip-html',
+        `Create and open this student's folder in ${escapeHtml(teacherFolderName)}. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.`
+      );
+      courseMapTempCreateButton.setAttribute(
+        'title',
+        `Create and open this student's folder in ${teacherFolderName}. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead.`
+      );
+    }
     const teacherCreditStrategyDocPath = teacherFolderPath
       ? joinPath(teacherFolderPath, 'IT Enrolment Strategy.docx')
       : creditStrategyDocPath;
@@ -23024,18 +23234,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStudentNoteModal.setAttribute('aria-hidden', 'false');
     const triageForm = document.getElementById('course-map-triage-edit-form');
     const isNewTriageRow = triageForm?.dataset.newTriageRow === 'true';
+    updateCourseMapLoadFilesButtonVisibility();
     const enrolmentTypeField = document.getElementById('course-map-triage-status-details');
     const newCommentField = document.getElementById('course-map-triage-new-comment');
     if (newCommentField && newCommentField.dataset.dateBound !== 'true') {
       newCommentField.dataset.dateBound = 'true';
       newCommentField.addEventListener('focus', () => {
-        clearTriageSuggested(newCommentField);
         if (String(newCommentField.value || '').trim()) return;
         newCommentField.value = `${getTodayYmdSlash()} `;
         updateCourseMapTriageSaveVisibility();
       });
-      ['pointerdown', 'keydown', 'input'].forEach((eventName) => {
-        newCommentField.addEventListener(eventName, () => clearTriageSuggested(newCommentField));
+      newCommentField.addEventListener('blur', () => clearTriageSuggested(newCommentField));
+      ['keydown', 'input'].forEach((eventName) => {
+        newCommentField.addEventListener(eventName, (event) => {
+          if (eventName === 'keydown' && ['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'Escape'].includes(event.key)) return;
+          clearTriageSuggested(newCommentField);
+        });
       });
     }
     if (enrolmentTypeField && enrolmentTypeField.dataset.ringBound !== 'true') {
@@ -23067,8 +23281,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       return;
     }
-    if (enrolmentTypeField && isNewTriageRow) {
-      requestAnimationFrame(() => enrolmentTypeField.focus());
+    if (newCommentField && isNewTriageRow) {
+      newCommentField.value = `${getTodayYmdSlash()} `;
+      requestAnimationFrame(() => {
+        newCommentField.focus();
+        newCommentField.setSelectionRange(newCommentField.value.length, newCommentField.value.length);
+        updateCourseMapTriageSaveVisibility();
+      });
       return;
     }
     const focusTarget = closeCourseMapStudentNoteCta || closeCourseMapStudentNote;
@@ -23131,8 +23350,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapTriageCommentText.classList.add('triage-default-suggested');
     if (courseMapTriageCommentText.dataset.suggestedBound !== 'true') {
       courseMapTriageCommentText.dataset.suggestedBound = 'true';
-      ['focus', 'pointerdown', 'keydown', 'input'].forEach((eventName) => {
-        courseMapTriageCommentText.addEventListener(eventName, () => clearTriageSuggested(courseMapTriageCommentText));
+      courseMapTriageCommentText.addEventListener('blur', () => clearTriageSuggested(courseMapTriageCommentText));
+      ['keydown', 'input'].forEach((eventName) => {
+        courseMapTriageCommentText.addEventListener(eventName, (event) => {
+          if (eventName === 'keydown' && ['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'Escape'].includes(event.key)) return;
+          clearTriageSuggested(courseMapTriageCommentText);
+        });
       });
     }
     courseMapTriageCommentModal.classList.add('show');
@@ -23309,10 +23532,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const existingCommentsField = document.getElementById('course-map-triage-comments');
     const newComment = String(document.getElementById('course-map-triage-new-comment')?.value || '').trim();
     const existingComments = String(existingCommentsField?.value || '').trim();
+    const familyName = document.getElementById('course-map-triage-family-name')?.value || '';
+    const givenName = document.getElementById('course-map-triage-given-name')?.value || '';
     const values = {
       studentId: document.getElementById('course-map-triage-student-id')?.value || form.dataset.studentId || '',
-      familyName: document.getElementById('course-map-triage-family-name')?.value || '',
-      givenName: document.getElementById('course-map-triage-given-name')?.value || '',
+      familyName,
+      givenName,
       primaryEmail: document.getElementById('course-map-triage-primary-email')?.value || '',
       friendlyName: document.getElementById('course-map-triage-friendly-name')?.value || '',
       handledBy: document.getElementById('course-map-triage-handled-by')?.value || '',
@@ -23341,20 +23566,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const values = getCourseMapTriageFormValues(form);
     const original = getCourseMapTriageOriginalValues(form);
     const changedValues = {};
+    const nameFields = new Set(['familyName', 'givenName']);
+    const familyField = document.getElementById('course-map-triage-family-name');
     Object.entries(values).forEach(([key, value]) => {
-      if (String(value || '').trim() !== String(original[key] || '').trim()) changedValues[key] = value;
+      const cleanValue = String(value || '').trim();
+      if (nameFields.has(key) && !cleanValue) return;
+      if (key === 'familyName' && familyField?.dataset.triageUserEdited !== 'true') return;
+      if (cleanValue !== String(original[key] || '').trim()) changedValues[key] = value;
     });
     return changedValues;
   };
 
   const getNewTriageRowWriteValues = (form, formValues) => {
     const clean = (value) => String(value || '').trim();
+    const familyName = clean(formValues.familyName);
+    const givenName = clean(formValues.givenName);
     const values = {
       studentId: clean(formValues.studentId),
       handledBy: clean(formValues.handledBy),
       statusDetails: clean(formValues.statusDetails),
       comments: clean(formValues.comments),
     };
+    if (familyName && document.getElementById('course-map-triage-family-name')?.dataset.triageUserEdited === 'true') {
+      values.familyName = familyName;
+    }
+    if (givenName) values.givenName = givenName;
     if (clean(formValues.alteredStatus)) values.alteredStatus = clean(formValues.alteredStatus);
     return values;
   };
@@ -23421,7 +23657,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await reloadTriageWorkbookOnly();
       return true;
     } catch {
-      window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
+      window.alert('Could not save to Triage workbook. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try again.');
       return false;
     }
   };
@@ -23434,7 +23670,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const lockHandle = await triageWorkbookDirectoryHandle.getFileHandle(lockName);
         const lockFile = await lockHandle.getFile().catch(() => null);
         if (!lockFile || lockFile.size >= 0) {
-          window.alert('Triage appears to be open in Excel. Close Triage in Excel, wait for OneDrive sync to finish, then try saving again.');
+          window.alert('Triage appears to be open in Excel. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try saving again.');
           return false;
         }
       } catch {
@@ -23446,7 +23682,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await writable.close();
       return true;
     } catch {
-      window.alert('Triage appears to be open or locked by Excel/OneDrive. Close Triage in Excel, wait for sync to finish, then try saving again.');
+      window.alert('Triage appears to be open or locked by Excel/OneDrive. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for sync to finish, then try saving again.');
       return false;
     }
   };
@@ -23602,7 +23838,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!backupSaved) window.alert('Triage was saved, but Triage Updates.xlsx could not be written.');
     } catch {
       console.error('[Triage save] file write failed');
-      window.alert('Could not save to Triage workbook. Close the workbook in Excel, then try again.');
+      window.alert('Could not save to Triage workbook. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try again.');
       return false;
     }
     triageWorkbookBuffer = result.output;
@@ -24284,7 +24520,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!buttons.length) return;
     const btn = buttons[0];
     const labels = { error: 'Alert', warning: 'Caution', info: 'Info', data: 'Data Error?', codes: 'Codes' };
-    const content = alertContent[type] || [];
+    const content = isActiveStudentGraduated() ? [] : alertContent[type] || [];
     const count = content.length;
     const unreadCount = content.filter((p) => !p.seen).length;
     const hasUnread = unreadCount > 0;
@@ -24436,6 +24672,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   function setAlertMessages(type, messages = []) {
     const state = alertState[type];
     if (!state) return;
+    if (isActiveStudentGraduated()) messages = [];
     const incomingIds = new Set();
     messages.forEach((msg) => {
       const id = alertId(msg);
@@ -26072,6 +26309,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasWorkbookCurrent = workbookCurrentCount > 0;
     const hasManualSelections = plannedCount > 0;
     const isFullyGraduated = remainingCount === 0 && plannedCount === 0 && completedTotal >= totalSubjects;
+    const isRecordGraduated = isActiveStudentGraduated();
     const graduatingWithCurrent =
       !isFullyGraduated &&
       !available.length &&
@@ -26086,7 +26324,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (plannerContainer) {
       plannerContainer.classList.toggle('is-graduated-24', isFullyGraduated);
+      plannerContainer.classList.toggle('is-student-graduated', isRecordGraduated);
     }
+    renderAllAlertButtons();
     const hasInsufficientLoad =
       available.length > 0 &&
       (remainingCount <= 5
@@ -27694,6 +27934,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const placeholders = getElectivePlaceholders();
     // Always rebuild from current state so the count/message matches what is actually selected/completed
     electiveAssignments = buildElectiveAssignments();
+    if (isActiveStudentGraduated()) {
+      placeholders.forEach((cell) => cell.classList.remove('elective-overlimit'));
+      electiveError = null;
+      const el = ensureElectiveWarning();
+      if (el) el.style.display = 'none';
+      updateElectivesFullUI();
+      refreshErrorAlerts();
+      return;
+    }
 
     const uniqueCodes = Array.from(new Set(getActiveElectiveCodes().map((code) => code.toUpperCase())));
     const over = uniqueCodes.length > 4;
