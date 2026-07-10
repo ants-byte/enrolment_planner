@@ -3867,7 +3867,7 @@ input:checked+.slider:before {
 .title-settings-card-theme-check {
   margin: 0;
   padding-top: 12px;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
 }
 
 .title-settings-check::before,
@@ -4066,6 +4066,191 @@ input:checked+.slider:before {
   padding-right: 14px;
 }
 
+#colour-settings-modal {
+  background: transparent;
+}
+
+.modal.colour-settings-modal {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  min-width: min(380px, calc(100vw - 32px));
+  height: min(884px, calc(100vh - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 12px 0 16px;
+  background: #050505 !important;
+  color: #f5f5f5;
+  border-color: #444;
+  box-shadow: 0 28px 100px rgba(0, 0, 0, 0.98), 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.colour-settings-modal .modal-header,
+.colour-settings-modal .modal-body,
+.colour-settings-modal .modal-actions {
+  background: #050505;
+  color: #f5f5f5;
+}
+
+.colour-settings-modal .modal-header {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 0 32px 12px;
+}
+
+.colour-settings-modal .modal-close {
+  position: absolute;
+  top: 0;
+  right: 12px;
+}
+
+.colour-settings-modal .modal-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  margin-top: 8px;
+  background: #e6e6e6;
+}
+
+.colour-settings-modal .modal-title {
+  line-height: 1.1;
+}
+
+.colour-settings-modal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.colour-settings-modal .modal-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 32px 0;
+  border-top-color: #050505;
+  position: static;
+}
+
+.colour-settings-modal .modal-actions .clear-button {
+  width: auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.colour-settings-controls {
+  display: grid;
+  gap: 7px;
+  min-width: 268px;
+  padding: 0 32px;
+}
+
+.colour-settings-section {
+  display: grid;
+  gap: 8px;
+  padding: 5px 0 12px;
+  margin-top: 8px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.colour-settings-section:last-child:not(.colour-settings-font-section) {
+  border-bottom: 0;
+}
+
+.colour-settings-section-title {
+  font-weight: 800;
+  color: #fff;
+}
+
+.colour-settings-subheading {
+  font-weight: 400;
+  color: #e8e8e8;
+  margin-top: 0;
+  grid-row: 1 / span 2;
+  align-self: center;
+  line-height: 1.15;
+}
+
+.colour-settings-swatch {
+  width: 32px;
+  height: 20px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.colour-settings-swatch-large {
+  grid-row: 1 / span 2;
+  width: 41px;
+  height: 39px;
+}
+
+.colour-settings-adjust-grid {
+  display: grid;
+  grid-template-columns: 54px 49px minmax(0, 1fr);
+  grid-template-rows: repeat(2, auto);
+  align-items: center;
+  gap: 4.5px 22px;
+}
+
+.colour-settings-adjust-row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  color: #ddd;
+  font-size: 0.92rem;
+}
+
+.colour-settings-adjust-row span {
+  text-align: left;
+}
+
+.colour-settings-adjust-row input {
+  justify-self: stretch;
+  width: 100%;
+}
+
+.colour-settings-font-options {
+  display: flex;
+  gap: 10px;
+}
+
+.colour-settings-font-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.colour-settings-font-section .colour-settings-section-title {
+  margin-bottom: 4px;
+}
+
+.colour-settings-defaults-slot {
+  border-left: 1px solid #b8b8b8;
+  padding-left: 12px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.colour-settings-font-option {
+  padding: 5px 14px;
+  border: 1px solid #b8b8b8;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #e6e6e6;
+  font: inherit;
+  cursor: pointer;
+}
+
+.colour-settings-font-option.is-active {
+  background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end));
+  border-color: var(--btn-primary-border);
+  color: #fff;
+}
+
 .title-settings-font-field {
   position: relative;
   border-top: 0 !important;
@@ -4197,8 +4382,7 @@ input:checked+.slider:before {
   margin-bottom: 14px;
 }
 
-#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::before,
-#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::after {
+#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::before {
   content: '';
   position: absolute;
   left: 0;
@@ -4210,10 +4394,6 @@ input:checked+.slider:before {
 
 #settings-menu #settings-default-sidebar-widths.title-settings-separator-before::before {
   top: -14px;
-}
-
-#settings-menu #settings-default-sidebar-widths.title-settings-separator-before::after {
-  bottom: -14px;
 }
 
 .title-btn {
@@ -4904,8 +5084,14 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 .subject-card>.subject-code::after {
   font-weight: 400;
   font-size: 0.75em;
-  color: #333;
+  color: var(--subject-card-font-color, #333);
   margin-left: auto;
+}
+
+.subject-card:not(.completed):not(.toggled):not(.current-enrolment):not(.use-credit) .subject-code,
+.subject-card:not(.completed):not(.toggled):not(.current-enrolment):not(.use-credit) .subject-note,
+.subject-card:not(.completed):not(.toggled):not(.current-enrolment):not(.use-credit) .prerequsites-note {
+  color: var(--subject-card-font-color, var(--text));
 }
 
 .subject-card.core>.subject-code::after {
@@ -7565,6 +7751,7 @@ body.completed-mode .completed:hover::after {
 #course-map-remaining-info-modal,
 #course-map-full-student-details-modal,
 #course-map-student-note-modal,
+#colour-settings-modal,
 #course-map-triage-comment-modal,
 #course-map-triage-sync-help-modal {
   z-index: 14060;
@@ -8121,8 +8308,7 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal button.course-map-info-triage-add:hover,
 #course-map-modal button.course-map-info-triage-add:focus-visible {
-  border-color: #9fb2d6;
-  background: #edf3ff;
+  border-color: var(--btn-primary-border);
 }
 
 #course-map-modal .course-map-info-link {
@@ -8217,11 +8403,13 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-triage-reminder-heading {
+  margin: -16px -16px 16px;
   padding: 10px 14px;
   background: #333;
   color: #ff9f1a;
   font-weight: 800;
   font-size: 1.05rem;
+  border-radius: 4px 4px 0 0;
 }
 
 #course-map-student-note-modal .modal-body {

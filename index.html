@@ -324,7 +324,7 @@ Created: December 30, 2025
                     <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
                     <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
                   </div>
-                  <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
+                  <button id="settings-default-sidebar-widths" class="title-settings-action title-settings-separator-before" type="button"
                     data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
                   <div class="title-settings-field title-settings-triage-lane-field title-settings-separator-before">
                     <div class="title-settings-section-heading">
@@ -1442,6 +1442,22 @@ Created: December 30, 2025
       </div>
       <div class="modal-actions">
         <button id="close-triage-writing-explanation-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="colour-settings-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal colour-settings-modal" role="dialog" aria-modal="true"
+      aria-labelledby="colour-settings-title">
+      <div class="modal-header">
+        <div class="modal-title" id="colour-settings-title">Colour Settings for Subject Cards</div>
+        <button class="modal-close" id="close-colour-settings" aria-label="Close colour settings">X</button>
+      </div>
+      <div class="modal-body">
+        <div id="colour-settings-controls" class="colour-settings-controls"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="colour-settings-defaults" class="clear-button secondary" type="button">Default Colours</button>
+        <button id="close-colour-settings-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>

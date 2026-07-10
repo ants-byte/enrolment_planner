@@ -178,11 +178,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT106: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Sarang Hashemi' },
     BIT241: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Dominic Mammone' },
     BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars' },
-    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'TBA', teacher: 'Promise Enwereonye' },
+    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Promise Enwereonye' },
     BIT214: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
     BIT213: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Xiaodong Wang (Tony)' },
     BIT111: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Promise Enwereonye' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'TBA', teacher: 'Md Sarwar Kamal' },
+    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PA110', teacher: 'Md Sarwar Kamal' },
     BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
     BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE227', teacher: 'Nidha Qazi' },
     BIT233: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Nikki Wan' },
@@ -292,6 +292,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsAccessibleColoursButton = document.getElementById('settings-accessible-colours');
   const settingsGreyscaleColoursButton = document.getElementById('settings-greyscale-colours');
   const settingsResetColoursButton = document.getElementById('settings-reset-colours');
+  const colourSettingsModal = document.getElementById('colour-settings-modal');
+  const colourSettingsControls = document.getElementById('colour-settings-controls');
+  const closeColourSettings = document.getElementById('close-colour-settings');
+  const closeColourSettingsCta = document.getElementById('close-colour-settings-cta');
+  const colourSettingsDefaultsButton = document.getElementById('colour-settings-defaults');
   const varyLoadButton = document.getElementById('vary-load');
   const errorButton = document.getElementById('btn-error');
   const warningButton = document.getElementById('btn-warning');
@@ -369,6 +374,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const FONT_FAMILY_STORAGE_KEY = 'subjectPlannerFontFamily';
   const APPEARANCE_STORAGE_KEY = 'subjectPlannerAppearance';
   const COLOUR_PALETTE_STORAGE_KEY = 'subjectPlannerColourPalette';
+  const COLOUR_SETTINGS_STORAGE_KEY = 'subjectPlannerColourSettings';
+  const COLOUR_FONT_STORAGE_KEY = 'subjectPlannerColourFont';
   const USE_TRIAGE_WRITER_STORAGE_KEY = 'subjectPlannerUseTriageWriter';
   const TRIAGE_WRITING_MODE_STORAGE_KEY = 'subjectPlannerTriageWritingMode';
   const TRIAGE_TWO_OTHER_LANE_STORAGE_KEY = 'subjectPlannerTriageTwoOtherLane';
@@ -380,6 +387,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const SETTINGS_QUERY_COURSE_MAP_FONT_KEY = 'courseMapFont';
   const SETTINGS_QUERY_APPEARANCE_KEY = 'mode';
   const SETTINGS_QUERY_COLOUR_PALETTE_KEY = 'palette';
+  const SETTINGS_QUERY_COLOUR_SETTINGS_KEY = 'colours';
+  const SETTINGS_QUERY_COLOUR_FONT_KEY = 'fontColour';
   const SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY = 'triageWriter';
   const SETTINGS_QUERY_TRIAGE_LANES_KEY = 'triageLanes';
   const SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY = 'triageTwoOther';
@@ -418,6 +427,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const DEFAULT_COLOUR_PALETTE = 'default';
   const ACCESSIBLE_COLOUR_PALETTE = 'accessible';
   const GREYSCALE_COLOUR_PALETTE = 'greyscale';
+  const COLOUR_SETTINGS = [
+    { key: 'coreBand', label: 'Core band', cssVars: ['--core-band'], hue: 35, defaultLightness: 63, defaultSaturation: 100 },
+    { key: 'coreBody', label: 'Core background', cssVars: ['--core', '--core-body', '--core-body-coloured-ui'], hue: 55, defaultLightness: 87, defaultSaturation: 58 },
+    { key: 'networkBand', label: 'Network Security band', cssVars: ['--network-band'], hue: 156, defaultLightness: 31, defaultSaturation: 100 },
+    { key: 'networkBody', label: 'Network Security background', cssVars: ['--network', '--network-body', '--network-body-coloured-ui'], hue: 135, defaultLightness: 90, defaultSaturation: 40 },
+    { key: 'baBand', label: 'Business Analytics band', cssVars: ['--ba-band'], hue: 206, defaultLightness: 41, defaultSaturation: 100 },
+    { key: 'baBody', label: 'Business Analytics background', cssVars: ['--ba', '--ba-body', '--ba-body-coloured-ui'], hue: 206, defaultLightness: 91, defaultSaturation: 78 },
+    { key: 'softwareBand', label: 'Software Development band', cssVars: ['--software-band'], hue: 310, defaultLightness: 45, defaultSaturation: 65 },
+    { key: 'softwareBody', label: 'Software Development background', cssVars: ['--software', '--software-body', '--software-body-coloured-ui'], hue: 281, defaultLightness: 91, defaultSaturation: 56 },
+  ];
+  const DEFAULT_COLOUR_SETTINGS = COLOUR_SETTINGS.flatMap((item) => [item.defaultLightness, item.defaultSaturation]);
+  const DEFAULT_COLOUR_FONT = 'black';
+  const normalizeColourFont = (value) => String(value || '').trim().toLowerCase() === 'white' ? 'white' : DEFAULT_COLOUR_FONT;
   const DEFAULT_TRIAGE_WRITING_MODE = '2';
   const DEFAULT_TRIAGE_TWO_OTHER_LANE = 'even';
   const DEFAULT_TRIAGE_THREE_ME_LANE = '?';
@@ -493,6 +515,40 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (['grey', 'gray', 'greyscale', 'grayscale'].includes(raw)) return GREYSCALE_COLOUR_PALETTE;
     return DEFAULT_COLOUR_PALETTE;
   };
+  const normalizeColourSettings = (value) => {
+    const values = Array.isArray(value)
+      ? value
+      : String(value || '')
+        .split(',')
+        .map((part) => part.trim());
+    if (values.length !== DEFAULT_COLOUR_SETTINGS.length) return [...DEFAULT_COLOUR_SETTINGS];
+    return values.map((part, index) => {
+      const parsed = Number.parseInt(String(part), 10);
+      const fallback = DEFAULT_COLOUR_SETTINGS[index];
+      return Number.isFinite(parsed) ? Math.min(100, Math.max(0, parsed)) : fallback;
+    });
+  };
+  const areDefaultColourSettings = (settings = activeColourSettings) =>
+    normalizeColourSettings(settings).every((value, index) => value === DEFAULT_COLOUR_SETTINGS[index]);
+  const getColourSettingsQueryValue = (settings = activeColourSettings) => normalizeColourSettings(settings).join(',');
+  const getColourSettingsFromQuery = () => {
+    if (typeof URLSearchParams === 'undefined') return null;
+    try {
+      const raw = new URLSearchParams(window.location.search || '').get(SETTINGS_QUERY_COLOUR_SETTINGS_KEY);
+      return raw ? normalizeColourSettings(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const getColourFontFromQuery = () => {
+    if (typeof URLSearchParams === 'undefined') return '';
+    try {
+      const raw = new URLSearchParams(window.location.search || '').get(SETTINGS_QUERY_COLOUR_FONT_KEY);
+      return raw ? normalizeColourFont(raw) : '';
+    } catch {
+      return '';
+    }
+  };
   const normalizeTriageWritingMode = (value) => (String(value || '').trim() === '3' ? '3' : DEFAULT_TRIAGE_WRITING_MODE);
   const normalizeTriageTwoOtherLane = (value) =>
     String(value || '').trim().toLowerCase() === 'odd' ? 'odd' : DEFAULT_TRIAGE_TWO_OTHER_LANE;
@@ -527,6 +583,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapFontScaleEm = getCourseMapFontScaleFromQuery();
   let activeAppearance = DEFAULT_APPEARANCE;
   let activeColourPalette = DEFAULT_COLOUR_PALETTE;
+  let activeColourSettings = [...DEFAULT_COLOUR_SETTINGS];
+  let activeColourFont = DEFAULT_COLOUR_FONT;
   let useTriageWriter = DEFAULT_USE_TRIAGE_WRITER;
   let activeTriageWritingMode = DEFAULT_TRIAGE_WRITING_MODE;
   let activeTriageTwoOtherLane = DEFAULT_TRIAGE_TWO_OTHER_LANE;
@@ -601,6 +659,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         params.delete(SETTINGS_QUERY_COLOUR_PALETTE_KEY);
       } else {
         params.set(SETTINGS_QUERY_COLOUR_PALETTE_KEY, activeColourPalette);
+      }
+      if (areDefaultColourSettings()) {
+        params.delete(SETTINGS_QUERY_COLOUR_SETTINGS_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_COLOUR_SETTINGS_KEY, getColourSettingsQueryValue());
+      }
+      if (activeColourFont === DEFAULT_COLOUR_FONT) {
+        params.delete(SETTINGS_QUERY_COLOUR_FONT_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_COLOUR_FONT_KEY, activeColourFont);
       }
       if (useTriageWriter === DEFAULT_USE_TRIAGE_WRITER) {
         params.delete(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY);
@@ -717,9 +785,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     settingsLightModeButton?.classList.toggle('is-active', activeAppearance === DEFAULT_APPEARANCE);
     settingsDarkModeButton?.classList.toggle('is-active', activeAppearance === DARK_APPEARANCE);
-    settingsAccessibleColoursButton?.classList.toggle('is-active', activeColourPalette === ACCESSIBLE_COLOUR_PALETTE);
+    settingsAccessibleColoursButton?.classList.toggle('is-active', !areDefaultColourSettings() || activeColourPalette === ACCESSIBLE_COLOUR_PALETTE);
     settingsGreyscaleColoursButton?.classList.toggle('is-active', activeColourPalette === GREYSCALE_COLOUR_PALETTE);
-    if (settingsAccessibleColoursButton) settingsAccessibleColoursButton.disabled = activeAppearance === DARK_APPEARANCE;
+    if (settingsAccessibleColoursButton) settingsAccessibleColoursButton.disabled = false;
     if (settingsGreyscaleColoursButton) settingsGreyscaleColoursButton.disabled = activeAppearance === DARK_APPEARANCE;
   };
   const updateMainGridKeyThemeUi = () => {
@@ -822,6 +890,127 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       else localStorage.setItem(COLOUR_PALETTE_STORAGE_KEY, activeColourPalette);
     } catch { }
   };
+  const getColourSettingCss = (item, lightness, saturation) => `hsl(${item.hue} ${saturation}% ${lightness}%)`;
+  const updateColourSettingsControlValues = () => {
+    if (!colourSettingsControls) return;
+    colourSettingsControls.querySelectorAll('input[data-colour-index]').forEach((input) => {
+      const index = Number.parseInt(input.dataset.colourIndex || '', 10);
+      if (Number.isFinite(index)) input.value = String(activeColourSettings[index]);
+    });
+    COLOUR_SETTINGS.forEach((item, rowIndex) => {
+      const swatch = colourSettingsControls.querySelector(`[data-colour-swatch="${item.key}"]`);
+      if (!swatch) return;
+      swatch.style.background = getColourSettingCss(item, activeColourSettings[rowIndex * 2], activeColourSettings[rowIndex * 2 + 1]);
+    });
+    colourSettingsControls.querySelectorAll('.colour-settings-font-option[data-font-colour]').forEach((button) => {
+      button.classList.toggle('is-active', button.dataset.fontColour === activeColourFont);
+    });
+  };
+  const applyColourFont = (fontColour, { persist = true } = {}) => {
+    activeColourFont = normalizeColourFont(fontColour);
+    if (document?.documentElement) {
+      const colour = activeColourFont === 'white' ? '#fff' : '#111';
+      if (activeColourFont === DEFAULT_COLOUR_FONT) document.documentElement.style.removeProperty('--subject-card-font-color');
+      else document.documentElement.style.setProperty('--subject-card-font-color', colour);
+    }
+    updateColourSettingsControlValues();
+    updateBookmarkableSettingsUrl();
+    if (!persist) return;
+    try {
+      if (activeColourFont === DEFAULT_COLOUR_FONT) localStorage.removeItem(COLOUR_FONT_STORAGE_KEY);
+      else localStorage.setItem(COLOUR_FONT_STORAGE_KEY, activeColourFont);
+    } catch { }
+  };
+  const applyColourSettings = (settings, { persist = true } = {}) => {
+    activeColourSettings = normalizeColourSettings(settings);
+    if (document?.documentElement) {
+      const useDefaults = areDefaultColourSettings(activeColourSettings);
+      COLOUR_SETTINGS.forEach((item, rowIndex) => {
+        const colour = getColourSettingCss(item, activeColourSettings[rowIndex * 2], activeColourSettings[rowIndex * 2 + 1]);
+        item.cssVars.forEach((cssVar) => {
+          if (useDefaults) document.documentElement.style.removeProperty(cssVar);
+          else document.documentElement.style.setProperty(cssVar, colour);
+        });
+      });
+    }
+    updateColourSettingsControlValues();
+    updateSettingsMenuUi();
+    updateBookmarkableSettingsUrl();
+    if (!persist) return;
+    try {
+      if (areDefaultColourSettings()) localStorage.removeItem(COLOUR_SETTINGS_STORAGE_KEY);
+      else localStorage.setItem(COLOUR_SETTINGS_STORAGE_KEY, getColourSettingsQueryValue());
+    } catch { }
+  };
+  const renderColourSettingsControls = () => {
+    if (!colourSettingsControls || colourSettingsControls.dataset.rendered === 'true') return;
+    colourSettingsControls.dataset.rendered = 'true';
+    [
+      { title: 'Core Subjects', band: 0, body: 1 },
+      { title: 'Network Security', band: 2, body: 3 },
+      { title: 'Business Analytics', band: 4, body: 5 },
+      { title: 'Software Development', band: 6, body: 7 },
+    ].forEach((section) => {
+      const sectionEl = document.createElement('section');
+      sectionEl.className = 'colour-settings-section';
+      const buildColourBlock = (heading, itemIndex) => {
+        const item = COLOUR_SETTINGS[itemIndex];
+        const lightIndex = itemIndex * 2;
+        const satIndex = lightIndex + 1;
+        const headingHtml = heading;
+        return `
+          <div class="colour-settings-adjust-grid">
+            <div class="colour-settings-subheading">${headingHtml}</div>
+            <span class="colour-settings-swatch colour-settings-swatch-large" data-colour-swatch="${escapeHtml(item.key)}"></span>
+            <label class="colour-settings-adjust-row">
+              <span>Lightness</span>
+              <input type="range" min="0" max="100" step="1" data-colour-index="${lightIndex}" aria-label="${escapeHtml(item.label)} lightness">
+            </label>
+            <label class="colour-settings-adjust-row">
+              <span>Saturation</span>
+              <input type="range" min="0" max="100" step="1" data-colour-index="${satIndex}" aria-label="${escapeHtml(item.label)} saturation">
+            </label>
+          </div>`;
+      };
+      sectionEl.innerHTML = `
+        <div class="colour-settings-section-title">${escapeHtml(section.title)}</div>
+        ${buildColourBlock('Band', section.band)}
+        ${buildColourBlock('Background', section.body)}`;
+      colourSettingsControls.appendChild(sectionEl);
+    });
+    const fontSection = document.createElement('section');
+    fontSection.className = 'colour-settings-section colour-settings-font-section';
+    fontSection.innerHTML = `
+      <div class="colour-settings-font-inner">
+        <div>
+          <div class="colour-settings-section-title">Font colour</div>
+          <div class="colour-settings-font-options">
+            <button class="colour-settings-font-option" type="button" data-font-colour="black">Black</button>
+            <button class="colour-settings-font-option" type="button" data-font-colour="white">White</button>
+          </div>
+        </div>
+        <div class="colour-settings-defaults-slot"></div>
+      </div>`;
+    if (colourSettingsDefaultsButton) {
+      fontSection.querySelector('.colour-settings-defaults-slot')?.appendChild(colourSettingsDefaultsButton);
+    }
+    colourSettingsControls.appendChild(fontSection);
+    colourSettingsControls.addEventListener('input', (event) => {
+      const input = event.target?.closest?.('input[data-colour-index]');
+      if (!input) return;
+      const index = Number.parseInt(input.dataset.colourIndex || '', 10);
+      if (!Number.isFinite(index)) return;
+      const next = [...activeColourSettings];
+      next[index] = Number.parseInt(input.value, 10);
+      applyColourSettings(next);
+    });
+    colourSettingsControls.addEventListener('click', (event) => {
+      const button = event.target?.closest?.('.colour-settings-font-option[data-font-colour]');
+      if (!button) return;
+      applyColourFont(button.dataset.fontColour);
+    });
+    updateColourSettingsControlValues();
+  };
   const applyUseTriageWriter = (enabled, { persist = true } = {}) => {
     useTriageWriter = !!enabled;
     if (!useTriageWriter) {
@@ -859,6 +1048,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     applyCardTheme(DEFAULT_CARD_THEME);
     applyAppearance(DEFAULT_APPEARANCE);
     applyColourPalette(DEFAULT_COLOUR_PALETTE);
+    applyColourSettings(DEFAULT_COLOUR_SETTINGS);
+    applyColourFont(DEFAULT_COLOUR_FONT);
   };
   const resetSidebarWidthsToDefault = () => {
     Object.keys(SETTINGS_QUERY_PANEL_WIDTH_KEYS).forEach((key) => {
@@ -895,6 +1086,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const queryFontFamily = getFontFamilyFromQuery();
     const queryAppearance = getAppearanceFromQuery();
     const queryColourPalette = getColourPaletteFromQuery();
+    const queryColourSettings = getColourSettingsFromQuery();
+    const queryColourFont = getColourFontFromQuery();
     const queryUseTriageWriter = getUseTriageWriterFromQuery();
     const queryTriageWriting = getTriageWritingSettingsFromQuery();
     let initialTheme = DEFAULT_CARD_THEME;
@@ -947,6 +1140,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         initialColourPalette = DEFAULT_COLOUR_PALETTE;
       }
     }
+    let initialColourSettings = [...DEFAULT_COLOUR_SETTINGS];
+    if (queryColourSettings) {
+      initialColourSettings = queryColourSettings;
+    } else {
+      try {
+        initialColourSettings = normalizeColourSettings(localStorage.getItem(COLOUR_SETTINGS_STORAGE_KEY));
+      } catch {
+        initialColourSettings = [...DEFAULT_COLOUR_SETTINGS];
+      }
+    }
+    let initialColourFont = DEFAULT_COLOUR_FONT;
+    if (queryColourFont) {
+      initialColourFont = queryColourFont;
+    } else {
+      try {
+        initialColourFont = normalizeColourFont(localStorage.getItem(COLOUR_FONT_STORAGE_KEY));
+      } catch {
+        initialColourFont = DEFAULT_COLOUR_FONT;
+      }
+    }
     let initialUseTriageWriter = DEFAULT_USE_TRIAGE_WRITER;
     if (queryUseTriageWriter !== null) {
       initialUseTriageWriter = queryUseTriageWriter;
@@ -987,6 +1200,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     applyFontFamily(initialFontFamily, { persist: false });
     applyAppearance(initialAppearance, { persist: false });
     applyColourPalette(initialColourPalette, { persist: false });
+    applyColourSettings(initialColourSettings, { persist: false });
+    applyColourFont(initialColourFont, { persist: false });
     applyUseTriageWriter(initialUseTriageWriter, { persist: false });
     applyTriageWritingSettings(initialTriageWriting, { persist: false });
     updateSettingsMenuUi();
@@ -1401,6 +1616,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let triagePreviewRows = [];
   let triageParseInfo = { status: 'not parsed', headerFound: false, idIdx: null, total: 0, preview: 0 };
   let courseMapStudentNoteReturnFocusToSearch = false;
+  let courseMapStudentNoteReturnFocusElement = null;
   const triageSharePointDebugLastLoggedAt = new Map();
   const TRIAGE_ROW_LIMIT = 350;
   const TRIAGE_MAX_COL_SCAN = 120;
@@ -10155,7 +10371,47 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   initDropZone();
+  const maybeShowTriageSaveReminder = (event = null, returnFocusElement = courseMapStudentSearchInput) => {
+    const studentId = getLoadedCourseMapStudentId();
+    if (
+      !useTriageWriter ||
+      !studentId ||
+      !triageSaveReminder.armed ||
+      triageSaveReminder.dismissed ||
+      triageSaveReminder.studentId !== studentId ||
+      triageRecords.has(studentId)
+    ) {
+      return false;
+    }
+    const record = getActiveStudentRecord() || findStudentRecordById(studentId);
+    if (!record) return false;
+    triageSaveReminder = { studentId, armed: false, dismissed: true };
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    syncCourseMapSearchFromSidebar({ force: true });
+    showCourseMapStudentNoteModal('Add to Triage', buildCourseMapTriageEditFormHtml(record), {
+      html: true,
+      triage: true,
+      triageEdit: true,
+      triageReminderHeading: 'Did you need to write to Triage?',
+      returnFocusElement,
+    });
+    return true;
+  };
   if (studentIdInput) {
+    ['pointerdown', 'beforeinput', 'paste'].forEach((eventName) => {
+      studentIdInput.addEventListener(eventName, (event) => {
+        maybeShowTriageSaveReminder(event, studentIdInput);
+      }, true);
+    });
+    studentIdInput.addEventListener('focus', () => {
+      maybeShowTriageSaveReminder(null, studentIdInput);
+    });
+    studentIdInput.addEventListener('click', () => {
+      maybeShowTriageSaveReminder(null, studentIdInput);
+    });
     studentIdInput.addEventListener('input', handleStudentIdInput);
     studentIdInput.addEventListener('keydown', (event) => {
       if (
@@ -10204,46 +10460,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         courseMapStudentSearchInput.select();
       } catch { }
     };
-    const maybeShowTriageSaveReminder = (event = null) => {
-      const studentId = getLoadedCourseMapStudentId();
-      if (
-        !useTriageWriter ||
-        !studentId ||
-        !triageSaveReminder.armed ||
-        triageSaveReminder.dismissed ||
-        triageSaveReminder.studentId !== studentId ||
-        triageRecords.has(studentId)
-      ) {
-        return false;
-      }
-      const record = getActiveStudentRecord() || findStudentRecordById(studentId);
-      if (!record) return false;
-      triageSaveReminder = { studentId, armed: false, dismissed: true };
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      syncCourseMapSearchFromSidebar({ force: true });
-      showCourseMapStudentNoteModal('Add to Triage', buildCourseMapTriageEditFormHtml(record), {
-        html: true,
-        triage: true,
-        triageEdit: true,
-        triageReminderHeading: 'Did you need to write to Triage?',
-        returnFocusToCourseMapSearch: true,
-      });
-      return true;
-    };
     ['pointerdown', 'keydown', 'beforeinput', 'paste'].forEach((eventName) => {
       courseMapStudentSearchInput.addEventListener(eventName, (event) => {
-        maybeShowTriageSaveReminder(event);
+        maybeShowTriageSaveReminder(event, courseMapStudentSearchInput);
       }, true);
     });
     courseMapStudentSearchInput.addEventListener('focus', () => {
-      if (maybeShowTriageSaveReminder()) return;
+      if (maybeShowTriageSaveReminder(null, courseMapStudentSearchInput)) return;
       requestAnimationFrame(selectCourseMapSearchContents);
     });
     courseMapStudentSearchInput.addEventListener('click', () => {
-      if (maybeShowTriageSaveReminder()) return;
+      if (maybeShowTriageSaveReminder(null, courseMapStudentSearchInput)) return;
       requestAnimationFrame(selectCourseMapSearchContents);
     });
     courseMapStudentSearchInput.addEventListener('mouseup', (event) => {
@@ -13306,6 +13533,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setElectiveCredits(buildElectiveAssignments());
     updateWarnings();
     updateBookmarkableSettingsUrl();
+    if (!completedMode) armTriageSaveReminderForCurrentStudent();
   };
 
   subjects.forEach((cell) => {
@@ -13905,13 +14133,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     settingsLightModeButton?.addEventListener('click', () => applyAppearance(DEFAULT_APPEARANCE));
     settingsDarkModeButton?.addEventListener('click', () => applyAppearance(DARK_APPEARANCE));
-    settingsAccessibleColoursButton?.addEventListener('click', () => {
-      applyColourPalette(
-        activeColourPalette === ACCESSIBLE_COLOUR_PALETTE
-          ? DEFAULT_COLOUR_PALETTE
-          : ACCESSIBLE_COLOUR_PALETTE
-      );
-    });
+    settingsAccessibleColoursButton?.addEventListener('click', () => showColourSettingsModal());
     settingsGreyscaleColoursButton?.addEventListener('click', () => {
       applyColourPalette(
         activeColourPalette === GREYSCALE_COLOUR_PALETTE
@@ -16546,12 +16768,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     full.querySelector('.triage-comment-full-close')?.focus();
   };
 
-  const closeAllTriageComments = () => {
+  function closeAllTriageComments() {
     if (!studentDataPreview) return;
     studentDataPreview
       .querySelectorAll('.triage-comment-full:not(.hidden-initial)')
       .forEach((el) => el.classList.add('hidden-initial'));
-  };
+  }
 
   const ensureTriageParsed = () => {
     if (!skipTriageParseOnLoad) return;
@@ -16770,6 +16992,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateCourseMapStatuses();
       scheduleCourseMapRelayout();
     }
+  };
+
+  const armTriageSaveReminderForCurrentStudent = () => {
+    const studentId = getLoadedCourseMapStudentId();
+    if (
+      !useTriageWriter ||
+      !studentId ||
+      triageSaveReminder.studentId !== studentId ||
+      triageSaveReminder.dismissed ||
+      triageRecords.has(studentId)
+    ) {
+      return;
+    }
+    triageSaveReminder.armed = true;
   };
 
   function toProperCase(value) {
@@ -21742,16 +21978,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       updateCourseMapStatuses();
       scheduleCourseMapRelayout();
     }
-    const studentId = getLoadedCourseMapStudentId();
-    if (
-      useTriageWriter &&
-      studentId &&
-      triageSaveReminder.studentId === studentId &&
-      !triageSaveReminder.dismissed &&
-      !triageRecords.has(studentId)
-    ) {
-      triageSaveReminder.armed = true;
-    }
+    armTriageSaveReminderForCurrentStudent();
     courseMapTooltipTarget = null;
     if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
     hideCourseMapTooltip();
@@ -23563,7 +23790,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapTriageEditButton.setAttribute('aria-busy', 'false');
     }
     if (courseMapTriageAddCommentButton) courseMapTriageAddCommentButton.hidden = true;
-    courseMapStudentNoteReturnFocusToSearch = !!options.returnFocusToCourseMapSearch;
+    courseMapStudentNoteReturnFocusElement =
+      options.returnFocusElement || (options.returnFocusToCourseMapSearch ? courseMapStudentSearchInput : null);
+    courseMapStudentNoteReturnFocusToSearch = !!courseMapStudentNoteReturnFocusElement;
     if (options.triageReminderHeading) {
       const modalBox = courseMapStudentNoteModal.querySelector('.course-map-student-note-modal');
       const modalHeader = courseMapStudentNoteModal.querySelector('.modal-header');
@@ -23652,12 +23881,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapTriageActions) courseMapTriageActions.hidden = true;
     if (courseMapTriageSyncHelpButton) courseMapTriageSyncHelpButton.hidden = true;
     if (courseMapStudentNoteReturnFocusToSearch) {
+      const focusElement = courseMapStudentNoteReturnFocusElement;
       courseMapStudentNoteReturnFocusToSearch = false;
+      courseMapStudentNoteReturnFocusElement = null;
       requestAnimationFrame(() => {
-        if (!courseMapStudentSearchInput || courseMapStudentSearchInput.disabled) return;
-        courseMapStudentSearchInput.focus();
+        if (!focusElement || focusElement.disabled) return;
+        focusElement.focus();
         try {
-          courseMapStudentSearchInput.select();
+          focusElement.select();
         } catch { }
       });
     }
@@ -23696,6 +23927,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     triageWritingExplanationModal.classList.remove('show');
     triageWritingExplanationModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showColourSettingsModal = () => {
+    if (!colourSettingsModal) return;
+    renderColourSettingsControls();
+    closeSettingsMenu();
+    const modalBox = colourSettingsModal.querySelector('.colour-settings-modal');
+    if (modalBox) {
+      modalBox.style.width = '';
+      modalBox.style.height = '';
+    }
+    colourSettingsModal.classList.add('show');
+    colourSettingsModal.setAttribute('aria-hidden', 'false');
+    const focusTarget = closeColourSettingsCta || closeColourSettings;
+    if (focusTarget) focusTarget.focus();
+  };
+
+  const hideColourSettingsModal = () => {
+    if (!colourSettingsModal) return;
+    if (colourSettingsModal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    colourSettingsModal.classList.remove('show');
+    colourSettingsModal.setAttribute('aria-hidden', 'true');
+    closeSettingsMenu();
   };
 
   const getTodayYmdSlash = () => {
@@ -24043,7 +24299,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await writable.close();
       triageWorkbookBuffer = result.output;
       startTriageOpenCooldown();
-      await reloadTriageWorkbookOnly();
       return true;
     } catch {
       window.alert('Could not save to Triage workbook. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try again.');
@@ -24275,7 +24530,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return false;
     }
     triageWorkbookBuffer = result.output;
-    await reloadTriageWorkbookOnly();
     const triage = triageRecords.get(studentId) || {};
     triageRecords.set(studentId, { ...triage, comments: result.next || cleanComment });
     updateCourseMapTopInfoStrip();
@@ -27488,6 +27742,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeTriageWritingExplanationCta) {
     closeTriageWritingExplanationCta.addEventListener('click', hideTriageWritingExplanationModal);
   }
+  if (closeColourSettings) {
+    closeColourSettings.addEventListener('click', hideColourSettingsModal);
+  }
+  if (closeColourSettingsCta) {
+    closeColourSettingsCta.addEventListener('click', hideColourSettingsModal);
+  }
+  if (colourSettingsDefaultsButton) {
+    colourSettingsDefaultsButton.addEventListener('click', () => applyColourSettings(DEFAULT_COLOUR_SETTINGS));
+  }
   const pulseCourseMapTriageSaveButton = () => {
     if (!courseMapTriageEditButton) return;
     courseMapTriageEditButton.classList.remove('save-ring-pulse');
@@ -27626,6 +27889,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     triageWritingExplanationModal.addEventListener('click', (event) => {
       if (event.target !== triageWritingExplanationModal) return;
       hideTriageWritingExplanationModal();
+    });
+  }
+  if (colourSettingsModal) {
+    colourSettingsModal.addEventListener('click', (event) => {
+      if (event.target !== colourSettingsModal) return;
+      hideColourSettingsModal();
     });
   }
   if (closeCourseMap) closeCourseMap.addEventListener('click', hideCourseMapModal);
@@ -28094,6 +28363,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       [courseMapStudentNoteModal, hideCourseMapStudentNoteModal],
       [courseMapTriageSyncHelpModal, hideCourseMapTriageSyncHelpModal],
       [triageWritingExplanationModal, hideTriageWritingExplanationModal],
+      [colourSettingsModal, hideColourSettingsModal],
       [courseMapTriageCommentModal, hideCourseMapTriageCommentModal],
       [nextSemesterModal, hideNextSemesterModal],
       [timetableModal, hideTimetableModal],
@@ -28168,6 +28438,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(folderShortcutsModal, hideFolderShortcutsModal);
   enableOutsideClickClose(loadModal, hideLoadModal);
   enableOutsideClickClose(timetableModal, hideTimetableModal);
+  enableOutsideClickClose(colourSettingsModal, hideColourSettingsModal);
   enableOutsideClickClose(courseTimetableModal, hideCourseTimetableModal);
   enableOutsideClickClose(historyModal, hideHistoryModal);
   enableOutsideClickClose(remainingModal, hideRemainingModal);
@@ -28696,6 +28967,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         closeFn();
         return true;
       };
+      if (closeTopModal(colourSettingsModal, hideColourSettingsModal)) return;
       if (closeTopModal(triageWritingExplanationModal, hideTriageWritingExplanationModal)) return;
       if (closeTopModal(courseMapTriageSyncHelpModal, hideCourseMapTriageSyncHelpModal)) return;
       if (closeTopModal(courseMapTriageCommentModal, hideCourseMapTriageCommentModal)) return;
