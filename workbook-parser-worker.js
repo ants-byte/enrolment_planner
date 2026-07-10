@@ -1069,8 +1069,11 @@ const writeCellValue = (sheet, row, col, value) => {
   return true;
 };
 
-const shouldSkipTriageWriteValue = (key, value) =>
-  key === 'fullName' || (['familyName', 'givenName'].includes(key) && !String(value ?? '').trim());
+const shouldSkipTriageWriteValue = (key, value, values = {}) =>
+  key === 'fullName' ||
+  key === 'familyNameEdited' ||
+  (key === 'familyName' && values.familyNameEdited !== true) ||
+  (['familyName', 'givenName'].includes(key) && !String(value ?? '').trim());
 
 const findTriageStudentRow = (sheet, range, idCol, studentId) => {
   if (idCol === undefined || idCol === null) return -1;
@@ -1104,7 +1107,7 @@ const updateTriageFieldsInWorkbook = (buffer, studentId, values) => {
   let updated = 0;
   Object.entries(values || {}).forEach(([key, value]) => {
     if (key === 'studentId') return;
-    if (shouldSkipTriageWriteValue(key, value)) return;
+    if (shouldSkipTriageWriteValue(key, value, values)) return;
     if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
   });
   if (!updated) return { ok: false, error: 'No matching Triage columns were found for this update.' };
@@ -1125,7 +1128,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values) => {
   const nextValues = { ...(values || {}), studentId: cleanStudentId };
   let updated = 0;
   Object.entries(nextValues).forEach(([key, value]) => {
-    if (shouldSkipTriageWriteValue(key, value)) return;
+    if (shouldSkipTriageWriteValue(key, value, nextValues)) return;
     if (writeCellValue(info.sheet, targetRow, info.columns[key], value)) updated += 1;
   });
   if (!updated) return { ok: false, error: 'No matching Triage columns were found for this new row.' };

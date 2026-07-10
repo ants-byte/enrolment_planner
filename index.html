@@ -323,10 +323,52 @@ Created: December 30, 2025
                     <button class="title-settings-font-family" type="button" data-font-family="mono">Typewriter</button>
                     <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
                     <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
-                    <button id="settings-reset-font-family" class="title-settings-font-family" type="button" data-font-family="default">Default</button>
                   </div>
                   <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
                     data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
+                  <div class="title-settings-field title-settings-triage-lane-field title-settings-separator-before">
+                    <div class="title-settings-section-heading">
+                      <span>Triage Writing Controls</span>
+                      <button id="settings-triage-writing-explanation" class="title-settings-mini-action" type="button">Explanation</button>
+                    </div>
+                    <div class="title-settings-triage-controls">
+                      <label class="title-settings-check title-settings-triage-writer-check" role="menuitemcheckbox"
+                        data-tooltip="Tick to enable writing to Triage from this site. Untick to hide/disable Triage write actions and reminders.">
+                        <input id="settings-use-triage-writer" type="checkbox" checked />
+                        <span id="settings-use-triage-writer-label">Use Triage writer</span>
+                      </label>
+                      <label class="title-settings-radio-row">
+                        <input id="settings-triage-lanes-two" name="settings-triage-lanes" type="radio" value="2" />
+                        <span>Two Enrolment Officers</span>
+                      </label>
+                      <div class="title-settings-triage-options">
+                        <div>Odd = David</div>
+                        <div>Even = Antony</div>
+                        <div class="title-settings-triage-flex-row">
+                          <button id="settings-triage-two-other-lane" class="title-settings-toggle-button" type="button">Even</button>
+                          <span>= Everyone Else</span>
+                        </div>
+                      </div>
+                      <label class="title-settings-radio-row">
+                        <input id="settings-triage-lanes-three" name="settings-triage-lanes" type="radio" value="3" />
+                        <span>Three Enrolment Officers</span>
+                      </label>
+                      <div class="title-settings-triage-options">
+                        <div>1 = David</div>
+                        <div>2 = Antony</div>
+                        <div>3 = Everyone Else</div>
+                        <label class="title-settings-triage-flex-row" title="If you don't make a selection and leave this '?', you will be in the &quot;Everyone Else&quot; category.">
+                          <select id="settings-triage-three-me-lane" class="title-settings-select title-settings-small-select">
+                            <option value="?">?</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                          </select>
+                          <span>= Me <span id="settings-triage-me-name"></span></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                   <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
                     data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
                     <input id="settings-course-map-default" type="checkbox" />
@@ -1360,7 +1402,7 @@ Created: December 30, 2025
         <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away.</p>
         <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
         <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’. If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
-        <p>If what you entered is lost, a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’.</p>
+        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
       </div>
       <div class="modal-actions">
         <button id="close-course-map-triage-sync-help-cta" class="clear-button secondary" type="button">Close</button>
@@ -1381,6 +1423,25 @@ Created: December 30, 2025
       <div class="modal-actions">
         <button id="cancel-course-map-triage-comment" class="clear-button secondary" type="button">Cancel</button>
         <button id="save-course-map-triage-comment" class="clear-button secondary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="triage-writing-explanation-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal triage-writing-explanation-modal" role="dialog" aria-modal="true"
+      aria-labelledby="triage-writing-explanation-title">
+      <div class="modal-header">
+        <div class="modal-title" id="triage-writing-explanation-title">Triage Writing Controls</div>
+        <button class="modal-close" id="close-triage-writing-explanation" aria-label="Close Triage writing explanation">X</button>
+      </div>
+      <div class="modal-body">
+        <p>These options help avoid two teachers writing over each other's entries in Triage.</p>
+        <p>Change these options any time when you know different staff members are working on that day.</p>
+        <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away. Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
+        <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’. If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
+        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
+      </div>
+      <div class="modal-actions">
+        <button id="close-triage-writing-explanation-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>

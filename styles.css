@@ -2241,6 +2241,10 @@ body.staff-mode .drop-sidebar.is-active {
   background-color: black;
 }
 
+.available-list .available-item.available-item-success.graduated-success {
+  color: var(--bright-green);
+}
+
 .available-list .available-item::before {
   content: '';
   position: absolute;
@@ -2988,6 +2992,13 @@ body.staff-mode .drop-sidebar.is-active {
 .student-summary-triage-missing .student-summary-triage-add {
   margin: 0;
   white-space: nowrap;
+}
+
+.student-summary-triage-title:disabled,
+.student-summary-triage-title.disabled,
+#course-map-modal button.course-map-info-triage-add:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .student-summary-triage-missing .alert-inline-title.alert-title-warning {
@@ -3945,6 +3956,116 @@ input:checked+.slider:before {
   outline-offset: 1px;
 }
 
+.title-settings-triage-lane-field {
+  padding: 10px 16px 12px;
+}
+
+.title-settings-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  font-weight: 700;
+}
+
+.title-settings-mini-action,
+.title-settings-toggle-button {
+  padding: 4px 10px;
+  border: 1px solid #b8b8b8;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #e6e6e6;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.title-settings-toggle-button:disabled,
+.title-settings-select:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.title-settings-radio-row input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.title-settings-triage-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  font-weight: 400;
+}
+
+.title-settings-radio-row,
+.title-settings-triage-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-settings-radio-row {
+  font-weight: 400;
+}
+
+.title-settings-triage-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 24px;
+}
+
+.title-settings-triage-flex-row {
+  justify-content: flex-start;
+}
+
+.title-settings-triage-controls>.title-settings-radio-row,
+.title-settings-triage-controls>.title-settings-triage-options {
+  margin-left: 12px;
+}
+
+.title-settings-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #b8b8b8;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #e6e6e6;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.title-settings-small-select {
+  width: auto;
+  min-width: 58px;
+  padding: 4px 10px;
+}
+
+.triage-writing-explanation-modal {
+  background: #fff;
+  color: #111;
+}
+
+.triage-writing-explanation-modal .modal-body,
+.triage-writing-explanation-modal .modal-actions {
+  background: #fff;
+  color: #111;
+}
+
+.triage-writing-explanation-modal .modal-actions {
+  justify-content: flex-end;
+}
+
+.triage-writing-explanation-modal .modal-actions .clear-button {
+  width: auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 .title-settings-font-field {
   position: relative;
   border-top: 0 !important;
@@ -4296,7 +4417,7 @@ body.graduate-highlight .key {
   align-items: stretch;
 }
 
-#container.is-student-graduated {
+body.graduate-highlight #container {
   background: #001b0b;
 }
 
@@ -8093,6 +8214,14 @@ body.completed-mode .completed:hover::after {
 #course-map-student-note-modal .course-map-student-note-modal {
   width: min(560px, calc(100vw - 40px));
   max-height: calc(100vh - 40px);
+}
+
+.course-map-triage-reminder-heading {
+  padding: 10px 14px;
+  background: #333;
+  color: #ff9f1a;
+  font-weight: 800;
+  font-size: 1.05rem;
 }
 
 #course-map-student-note-modal .modal-body {

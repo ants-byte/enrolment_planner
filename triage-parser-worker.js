@@ -847,6 +847,19 @@ const removeCalcChainFromWorkbookPackage = (cfb) => {
     contentTypesEntry.content = encodeUtf8(xml);
     contentTypesEntry.size = contentTypesEntry.content.length;
   }
+  const workbookEntry = getZipEntry(cfb, 'xl/workbook.xml');
+  if (workbookEntry?.content) {
+    let xml = decodeUtf8(workbookEntry.content);
+    if (/<calcPr\b[^>]*\/>/.test(xml)) {
+      xml = xml.replace(/<calcPr\b[^>]*\/>/, '<calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>');
+    } else if (/<calcPr\b[^>]*>[\s\S]*?<\/calcPr>/.test(xml)) {
+      xml = xml.replace(/<calcPr\b[^>]*>[\s\S]*?<\/calcPr>/, '<calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>');
+    } else {
+      xml = xml.replace('</workbook>', '<calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/></workbook>');
+    }
+    workbookEntry.content = encodeUtf8(xml);
+    workbookEntry.size = workbookEntry.content.length;
+  }
 };
 const resolveWorkbookTarget = (target) => {
   const clean = String(target || '').replace(/^\/+/, '');
@@ -899,6 +912,21 @@ const getCellTextFromXml = (cellXml, sharedStrings) => {
   if (type === 's') return sharedStrings[Number(rawValue)] || '';
   return unescapeXmlText(rawValue);
 };
+const normalizeTriageRowLane = (value) => {
+  if (value && typeof value === 'object') {
+    const laneCount = Number.parseInt(String(value.laneCount || ''), 10);
+    const laneIndex = Number.parseInt(String(value.laneIndex ?? ''), 10);
+    if ([2, 3].includes(laneCount) && Number.isInteger(laneIndex) && laneIndex >= 0 && laneIndex < laneCount) {
+      return { laneCount, laneIndex };
+    }
+  }
+  const lane = String(value || '').trim().toLowerCase();
+  if (lane === 'even') return { laneCount: 2, laneIndex: 0 };
+  if (lane === 'odd') return { laneCount: 2, laneIndex: 1 };
+  return { laneCount: 2, laneIndex: 0 };
+};
+const triageRowMatchesLane = (rowNumber, lane) =>
+  !lane || Number(rowNumber) % lane.laneCount === lane.laneIndex;
 const findTriageSheetPath = (cfb) => {
   const workbookXml = getZipEntryText(cfb, 'xl/workbook.xml');
   const relsXml = getZipEntryText(cfb, 'xl/_rels/workbook.xml.rels');
@@ -1183,7 +1211,7 @@ const getProtectedTriageWriteColumns = (sheetXml, sharedStrings, parseInfo = nul
     for (const cell of cells) {
       const heading = normalizeHeader(getCellTextFromXml(cell[0], sharedStrings));
       const col = colIndexFromCellRef(cell[1]);
-      if (heading === 'fullname' || heading === 'email') {
+      if (heading === 'fullname' || heading === 'fullnames' || heading === 'email') {
         protectedColumns.add(col);
       }
       if (heading === 'comments' || heading === 'comment') {
@@ -1272,8 +1300,12 @@ const prependTriageCommentToWorkbook = (buffer, studentId, comment, parseInfo = 
 const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parseInfo = null, options = {}) => {
   const cleanStudentId = normalizeStudentId(studentId);
   const cleanValues = {};
+  const canWriteFamilyName = values.familyNameEdited === true;
+  const canWriteGivenName = values.givenNameEdited === true;
   ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
+      if (key === 'familyName' && !canWriteFamilyName) return;
+      if (key === 'givenName' && !canWriteGivenName) return;
       const cleanValue = String(values[key] ?? '').trim();
       if (['familyName', 'givenName'].includes(key) && !cleanValue) return;
       cleanValues[key] = cleanValue;
@@ -1346,11 +1378,15 @@ const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parse
   return { ok: true, output, next: nextValues.comments, values: nextValues, oldRow, newRow, sheetCount };
 };
 
-const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null) => {
+const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null, rowLane = '') => {
   const cleanStudentId = normalizeStudentId(studentId || values.studentId);
   const cleanValues = {};
+  const canWriteFamilyName = values.familyNameEdited === true;
+  const canWriteGivenName = values.givenNameEdited === true;
   ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
+      if (key === 'familyName' && !canWriteFamilyName) return;
+      if (key === 'givenName' && !canWriteGivenName) return;
       const cleanValue = String(values[key] ?? '').trim();
       if (['familyName', 'givenName'].includes(key) && !cleanValue) return;
       cleanValues[key] = cleanValue;
@@ -1365,8 +1401,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
   if (!sheetPath || !sheetEntry?.content) return { ok: false, error: 'Triage sheet XML was not found.', sheetCount };
   let sheetXml = decodeUtf8(sheetEntry.content);
   const sharedStrings = readSharedStrings(cfb);
-  const rowFieldKeys = ['familyName', 'givenName', 'handledBy', 'alteredStatus', 'statusDetails', 'comments'];
-  const requestedKeys = rowFieldKeys;
+  const requestedKeys = Object.keys(cleanValues);
   const { idCol, fieldCols } = getTriageEditableColumns(sheetXml, sharedStrings, parseInfo, requestedKeys);
   if (idCol === null || requestedKeys.some((key) => fieldCols[key] === null)) {
     return { ok: false, error: 'One or more editable Triage columns were not found.', sheetCount };
@@ -1381,17 +1416,40 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
     }
   }
 
+  const lane = normalizeTriageRowLane(rowLane);
   const freeColName = 'D';
   let targetRow = -1;
   const rows = Array.from(sheetXml.matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g));
-  for (const rowMatch of rows) {
-    const rowNumber = Number(rowMatch[1]);
-    if (rowNumber <= 4) continue;
-    const freeCell = rowMatch[0].match(new RegExp(`<c\\b[^>]*\\br="${freeColName}${rowNumber}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
-    if (!getCellTextFromXml(freeCell, sharedStrings).trim()) {
-      targetRow = rowNumber;
-      break;
+  const rowEntries = rows
+    .map((rowMatch) => ({ rowNumber: Number(rowMatch[1]), xml: rowMatch[0] }))
+    .filter((row) => row.rowNumber > 4)
+    .sort((a, b) => a.rowNumber - b.rowNumber);
+  const isFreeRow = (row) => {
+    const freeCell = row.xml.match(new RegExp(`<c\\b[^>]*\\br="${freeColName}${row.rowNumber}"[^>]*>[\\s\\S]*?<\\/c>`))?.[0] || '';
+    return !getCellTextFromXml(freeCell, sharedStrings).trim();
+  };
+  const freeRows = rowEntries.filter(isFreeRow);
+  const frontierIndex = rowEntries.findIndex((row, index) => {
+    for (let offset = 0; offset < lane.laneCount; offset += 1) {
+      const candidate = rowEntries[index + offset];
+      if (!candidate || candidate.rowNumber !== row.rowNumber + offset || !isFreeRow(candidate)) return false;
     }
+    return true;
+  });
+  const frontierRow = frontierIndex >= 0 ? rowEntries[frontierIndex] : null;
+  const gaps = frontierRow ? freeRows.filter((row) => row.rowNumber < frontierRow.rowNumber) : [];
+  const firstGap = gaps[0] || null;
+  const secondGap = gaps[1] || null;
+  if (firstGap && triageRowMatchesLane(firstGap.rowNumber, lane)) {
+    targetRow = firstGap.rowNumber;
+  } else if (secondGap) {
+    targetRow = secondGap.rowNumber;
+  } else if (frontierRow) {
+    const frontierRows = Array.from({ length: lane.laneCount }, (_, offset) => rowEntries[frontierIndex + offset]).filter(Boolean);
+    targetRow = (frontierRows.find((row) => triageRowMatchesLane(row.rowNumber, lane)) || frontierRow).rowNumber;
+  } else {
+    const fallbackRow = freeRows.find((row) => triageRowMatchesLane(row.rowNumber, lane)) || freeRows[0];
+    targetRow = fallbackRow?.rowNumber || -1;
   }
   if (targetRow < 0) {
     return { ok: false, error: 'No existing blank Triage row was found in column D below row 4.', sheetCount };
@@ -1418,14 +1476,32 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
       formulaCellsToPreserve.set(cell[1], cell[0]);
     }
   }
-  const followingFormulaRowXml = Array.from(String(sheetXml || '').matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g))
-    .find((rowMatch) => Number(rowMatch[1]) > targetRow && /<f\b/.test(rowMatch[0]))?.[0] || '';
-  for (const cell of followingFormulaRowXml.matchAll(/<c\b[^>]*\br="([A-Z]+)(\d+)"[^>]*>[\s\S]*?<\/c>/g)) {
-    const col = colIndexFromCellRef(cell[1]);
-    const targetCellRef = `${cell[1]}${targetRow}`;
-    if (allowedWriteColumns.has(col) || formulaCellsToPreserve.has(targetCellRef) || !/<f\b/.test(cell[0])) continue;
-    const copiedCell = retargetFormulaCellXmlToRow(cell[0], targetRow, sheetXml);
-    if (copiedCell) formulaCellsToPreserve.set(targetCellRef, copiedCell);
+  const formulaCopyColumns = new Set();
+  if (Number.isFinite(Number(fieldCols.familyName))) formulaCopyColumns.add(Number(fieldCols.familyName));
+  if (Number.isFinite(Number(fieldCols.givenName))) formulaCopyColumns.add(Number(fieldCols.givenName));
+  for (let col = 0; col <= maxCol; col += 1) {
+    const heading = getColumnHeadingKeyFromSheetXml(sheetXml, sharedStrings, col, parseInfo);
+    if (heading === 'fullname' || heading === 'fullnames') formulaCopyColumns.add(col);
+  }
+  const formulaSourceRows = Array.from(String(sheetXml || '').matchAll(/<row\b[^>]*\br="(\d+)"[^>]*>[\s\S]*?<\/row>/g))
+    .filter((rowMatch) => Number(rowMatch[1]) !== targetRow && /<f\b/.test(rowMatch[0]))
+    .sort((a, b) => {
+      const aRow = Number(a[1]);
+      const bRow = Number(b[1]);
+      const aAbove = aRow < targetRow;
+      const bAbove = bRow < targetRow;
+      if (aAbove !== bAbove) return aAbove ? -1 : 1;
+      return Math.abs(targetRow - aRow) - Math.abs(targetRow - bRow);
+    });
+  for (const sourceRow of formulaSourceRows) {
+    for (const cell of sourceRow[0].matchAll(/<c\b[^>]*\br="([A-Z]+)(\d+)"[^>]*>[\s\S]*?<\/c>/g)) {
+      const col = colIndexFromCellRef(cell[1]);
+      if (!formulaCopyColumns.has(col)) continue;
+      const targetCellRef = `${cell[1]}${targetRow}`;
+      if (allowedWriteColumns.has(col) || formulaCellsToPreserve.has(targetCellRef) || !/<f\b/.test(cell[0])) continue;
+      const copiedCell = retargetFormulaCellXmlToRow(cell[0], targetRow, sheetXml);
+      if (copiedCell) formulaCellsToPreserve.set(targetCellRef, copiedCell);
+    }
   }
   let writtenCount = 0;
   const skippedFields = [];
@@ -1560,7 +1636,7 @@ self.onmessage = (event) => {
   }
   if (data.type === 'addTriageRow') {
     try {
-      const result = addTriageRowToWorkbook(data.buffer, data.studentId, data.values || {}, data.parseInfo);
+      const result = addTriageRowToWorkbook(data.buffer, data.studentId, data.values || {}, data.parseInfo, data.rowLane);
       const transfer = result.output instanceof ArrayBuffer ? [result.output] : [];
       self.postMessage({
         type: 'triageRowAdded',
