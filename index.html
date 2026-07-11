@@ -2,9 +2,9 @@
 
 Author: Antony Di Serio
 Created: December 30, 2025
+Last Modified: 11/07/2026
 
 -->
-
 
 <!doctype html>
 <html lang="en">
@@ -254,6 +254,14 @@ Created: December 30, 2025
                       min="10" max="32" step="1" value="16" />
                     <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
                   </label>
+                  <div class="title-settings-font-family-row title-settings-separator-before" role="group" aria-label="Font family settings">
+                    <button class="title-settings-font-family" type="button" data-font-family="segoe">Segoe UI</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="calibri">Calibri</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="roboto">Roboto</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="mono">Typewriter</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
+                  </div>
                   <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before" role="menuitemcheckbox"
                     data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
                     <input id="settings-card-theme-colours" type="checkbox" />
@@ -291,23 +299,6 @@ Created: December 30, 2025
                       </svg>
                     </button>
                     <span class="title-settings-separator" aria-hidden="true">|</span>
-                    <button id="settings-greyscale-colours" class="title-settings-icon-action" type="button"
-                      aria-label="Use greyscale colours"
-                      data-tooltip="Use greyscale colours for users who prefer no colour coding.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <circle cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="1" />
-                        <circle cx="12" cy="12" r="2.2" fill="currentColor" />
-                        <path d="M12 3a9 9 0 0 1 6.36 2.64L13.55 10.45A2.15 2.15 0 0 0 12 9.8Z" fill="#d8d8d8" />
-                        <path d="M18.36 5.64A9 9 0 0 1 21 12h-6.8a2.15 2.15 0 0 0-.65-1.55Z" fill="#bdbdbd" />
-                        <path d="M21 12a9 9 0 0 1-2.64 6.36l-4.81-4.81A2.15 2.15 0 0 0 14.2 12Z" fill="#8f8f8f" />
-                        <path d="M18.36 18.36A9 9 0 0 1 12 21v-6.8a2.15 2.15 0 0 0 1.55-.65Z" fill="#6f6f6f" />
-                        <path d="M12 21a9 9 0 0 1-6.36-2.64l4.81-4.81A2.15 2.15 0 0 0 12 14.2Z" fill="#555" />
-                        <path d="M5.64 18.36A9 9 0 0 1 3 12h6.8c0 .6.25 1.15.65 1.55Z" fill="#3d3d3d" />
-                        <path d="M3 12a9 9 0 0 1 2.64-6.36l4.81 4.81A2.15 2.15 0 0 0 9.8 12Z" fill="#252525" />
-                        <path d="M5.64 5.64A9 9 0 0 1 12 3v6.8c-.6 0-1.15.25-1.55.65Z" fill="#111" />
-                      </svg>
-                    </button>
-                    <span class="title-settings-separator" aria-hidden="true">|</span>
                     <button id="settings-reset-colours" class="title-settings-icon-action" type="button"
                       aria-label="Reset colour settings"
                       data-tooltip="Return colour mode and colour palette to the default settings.">
@@ -316,16 +307,13 @@ Created: December 30, 2025
                       </svg>
                     </button>
                   </div>
-                  <div class="title-settings-font-family-row title-settings-separator-before" role="group" aria-label="Font family settings">
-                    <button class="title-settings-font-family" type="button" data-font-family="segoe">Segoe UI</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="calibri">Calibri</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="roboto">Roboto</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="mono">Typewriter</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
-                  </div>
                   <button id="settings-default-sidebar-widths" class="title-settings-action title-settings-separator-before" type="button"
                     data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
+                  <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
+                    data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
+                    <input id="settings-course-map-default" type="checkbox" />
+                    <span id="settings-course-map-label">Course map mode (is off)</span>
+                  </label>
                   <div class="title-settings-field title-settings-triage-lane-field title-settings-separator-before">
                     <div class="title-settings-section-heading">
                       <span>Triage Writing Controls</span>
@@ -333,11 +321,17 @@ Created: December 30, 2025
                     </div>
                     <div class="title-settings-triage-controls">
                       <label class="title-settings-check title-settings-triage-writer-check" role="menuitemcheckbox"
-                        data-tooltip="Tick to enable writing to Triage from this site. Untick to hide/disable Triage write actions and reminders.">
+                        data-tooltip-html="<div>Tick to enable writing to Triage from this site.</div><div class=&quot;tooltip-line-gap&quot;>Untick to hide/disable Triage write actions and reminders.</div>">
                         <input id="settings-use-triage-writer" type="checkbox" checked />
                         <span id="settings-use-triage-writer-label">Use Triage writer</span>
                       </label>
-                      <label class="title-settings-radio-row">
+                      <label class="title-settings-radio-row title-settings-triage-one-using-row"
+                        data-tooltip-html="<div>Use this when there are two people working, but you are the only one using this site’s Triage button (that is, the other worker is manually/directly editing Triage.xlsx and has it open).</div><div class=&quot;tooltip-line-gap&quot;>This site leaves the first blank row for them and writes to the second blank row.</div>">
+                        <input id="settings-triage-lanes-two-one-using" name="settings-triage-lanes" type="radio" value="2one" />
+                        <span>Two Enrolment Officers - only one using</span>
+                      </label>
+                      <label class="title-settings-radio-row"
+                        data-tooltip-html="<div>Use this when only 2 enrolment officers are working (e.g. David &amp; someone, or Antony and someone, or Antony and David), and both are using this site to write to Triage. Ensure that no one manually adds new students to the Triage.xlsx directly. (By writing to different rows, we won’t overwrite each other).</div><div class=&quot;tooltip-line-gap&quot;>If you are not David or Antony, decide who you will replace – David or Antony by choosing their “odd” or “even”.</div>">
                         <input id="settings-triage-lanes-two" name="settings-triage-lanes" type="radio" value="2" />
                         <span>Two Enrolment Officers</span>
                       </label>
@@ -345,11 +339,13 @@ Created: December 30, 2025
                         <div>Odd = David</div>
                         <div>Even = Antony</div>
                         <div class="title-settings-triage-flex-row">
-                          <button id="settings-triage-two-other-lane" class="title-settings-toggle-button" type="button">Even</button>
+                          <button id="settings-triage-two-other-lane" class="title-settings-toggle-button" type="button"
+                            data-tooltip-html="<div>If David is not working today, make &quot;Everyone Else&quot; Odd. If Antony's not working, make it Even.</div><div class=&quot;tooltip-line-gap&quot;>If 3 are working (David and Antony plus you), don’t use this option. Use instead the &quot;Three Enrolment Officers&quot; option below.</div>">Even</button>
                           <span>= Everyone Else</span>
                         </div>
                       </div>
-                      <label class="title-settings-radio-row">
+                      <label class="title-settings-radio-row title-settings-triage-three-row"
+                        data-tooltip-html="<div>Use this when 3 or more enrolment officers are using this site’s Triage buttons.</div><div class=&quot;tooltip-line-gap&quot;>David will write to Triage odd rows and Antony will write to Even. Everyone else will write to a row further down</div>">
                         <input id="settings-triage-lanes-three" name="settings-triage-lanes" type="radio" value="3" />
                         <span>Three Enrolment Officers</span>
                       </label>
@@ -357,9 +353,9 @@ Created: December 30, 2025
                         <div>1 = David</div>
                         <div>2 = Antony</div>
                         <div>3 = Everyone Else</div>
-                        <label class="title-settings-triage-flex-row" title="If you don't make a selection and leave this '?', you will be in the &quot;Everyone Else&quot; category.">
+                        <label class="title-settings-triage-flex-row"
+                          data-tooltip="If David or Antony are not working today, but there are 3 officers, one officer should nominate to take David’s (1) or Antony’s (2) place and the other should remain 3.">
                           <select id="settings-triage-three-me-lane" class="title-settings-select title-settings-small-select">
-                            <option value="?">?</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -369,11 +365,6 @@ Created: December 30, 2025
                       </div>
                     </div>
                   </div>
-                  <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
-                    data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
-                    <input id="settings-course-map-default" type="checkbox" />
-                    <span id="settings-course-map-label">Course map mode (is off)</span>
-                  </label>
                 </div>
               </div>
               <button id="open-instructions-help" class="title-settings-button title-help-button" type="button"
@@ -681,9 +672,10 @@ Created: December 30, 2025
           <div id="folder-shortcuts-credit-docs-host" class="folder-shortcuts-modal-buttons"></div>
         </div>
         <div class="folder-shortcuts-modal-section">
-          <h3>Under Construction - Credit Transfers</h3>
+          <h3>Credit Transfer &amp; Student Forms</h3>
           <div id="folder-shortcuts-credit-construction-host" class="folder-shortcuts-modal-buttons">
             <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">CT -&gt; Temp</button>
+            <button id="folder-shortcut-stud-forms" class="folder-shortcut-btn hidden-initial" type="button">Stud Forms</button>
           </div>
         </div>
       </div>
@@ -1269,6 +1261,9 @@ Created: December 30, 2025
             <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view" type="button">
               Default student view
             </button>
+            <button id="course-map-explain-structure-view" class="clear-button secondary course-map-default-view" type="button">
+              Explain course structure view
+            </button>
             <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view" type="button">
               Default staff view
             </button>
@@ -1326,6 +1321,8 @@ Created: December 30, 2025
           type="button" hidden data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
         <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
           type="button" data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders &amp; Files</button>
+        <button id="course-map-stud-forms" class="clear-button secondary course-map-stud-forms hidden-initial"
+          type="button" hidden data-tooltip-html="Create/open this student's folder inside today's Student Forms folder, then copy the Student Dec returned text and folder path.">Std Frms</button>
         <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial"
           type="button" hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">CT -&gt; Temp</button>
         <button id="course-map-temp-create" class="clear-button secondary course-map-temp-create hidden-initial"
@@ -1456,7 +1453,12 @@ Created: December 30, 2025
         <div id="colour-settings-controls" class="colour-settings-controls"></div>
       </div>
       <div class="modal-actions">
-        <button id="colour-settings-defaults" class="clear-button secondary" type="button">Default Colours</button>
+        <button id="colour-settings-defaults" class="clear-button secondary colour-settings-defaults-button" type="button" aria-label="Default colours">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M7.5 8H4V4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4.7 8A7 7 0 1 1 5.9 16.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
         <button id="close-colour-settings-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
@@ -1778,9 +1780,8 @@ Created: December 30, 2025
   <script src="script.js?v=20260208-41"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
-    <div>Last Modified: 12 Jan 2026</div>
+    <div>Last Modified: 11/07/2026</div>
   </footer>
 </body>
 
 </html>
-

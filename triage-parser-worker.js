@@ -1429,7 +1429,13 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
     return !getCellTextFromXml(freeCell, sharedStrings).trim();
   };
   const freeRows = rowEntries.filter(isFreeRow);
-  const frontierIndex = rowEntries.findIndex((row, index) => {
+  if (rowLane && typeof rowLane === 'object' && rowLane.mode === 'oneUsing') {
+    targetRow = freeRows[1]?.rowNumber || -1;
+  }
+  if (targetRow < 0 && rowLane && typeof rowLane === 'object' && rowLane.mode === 'oneUsing') {
+    return { ok: false, error: 'No second blank Triage row was found in column D below row 4.', sheetCount };
+  }
+  const frontierIndex = targetRow >= 0 ? -1 : rowEntries.findIndex((row, index) => {
     for (let offset = 0; offset < lane.laneCount; offset += 1) {
       const candidate = rowEntries[index + offset];
       if (!candidate || candidate.rowNumber !== row.rowNumber + offset || !isFreeRow(candidate)) return false;
@@ -1440,7 +1446,9 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
   const gaps = frontierRow ? freeRows.filter((row) => row.rowNumber < frontierRow.rowNumber) : [];
   const firstGap = gaps[0] || null;
   const secondGap = gaps[1] || null;
-  if (firstGap && triageRowMatchesLane(firstGap.rowNumber, lane)) {
+  if (targetRow >= 0) {
+    // A special row-picking mode already selected the row.
+  } else if (firstGap && triageRowMatchesLane(firstGap.rowNumber, lane)) {
     targetRow = firstGap.rowNumber;
   } else if (secondGap) {
     targetRow = secondGap.rowNumber;
