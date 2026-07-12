@@ -1758,9 +1758,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
   const SOURCE_WORKER_URL = (() => {
     try {
-      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260709-6';
+      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260712-1';
     } catch {
-      return 'workbook-parser-worker.js?v=source-20260709-6';
+      return 'workbook-parser-worker.js?v=source-20260712-1';
     }
   })();
   const TRIAGE_WORKER_URL = (() => {
@@ -5790,6 +5790,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapPrereqTextOn = true;
   let courseMapIndicatorsOn = true;
   let courseMapNotesOn = !staffFacing;
+  let semesterConfigDetails = null;
   let courseMapStructureExplainMode = false;
   let courseMapStructureExpandedStream = '';
   let courseMapMajorElectivesReturnMode = '';
@@ -7538,7 +7539,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     }
     if (hasCompletedAnyChangedCodeSubject()) {
-      const completedChanged = new Set(getCompletedChangedCodeSubjects());
       const changedRows = [
         {
           newCode: 'BIT214',
@@ -7562,12 +7562,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         },
       ];
       const changedRowsHtml = changedRows
-        .map(({ newCode, newLabel, oldLabel }) => {
-          const oldPart = completedChanged.has(newCode)
-            ? `<strong>${oldLabel}</strong>`
-            : oldLabel;
-          return `<li>${newLabel} was ${oldPart}</li>`;
-        })
+        .map(({ newLabel, oldLabel }) => `<li>${newLabel} was <strong>${oldLabel}</strong></li>`)
         .join('');
       infoMessages.push({
         title: 'Changed subject codes/names',
@@ -11369,8 +11364,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalBox.style.setProperty('--course-map-key-bottom', `${bottomOffset}px`);
   };
 
+  const syncCourseMapNotesDefaultWidth = () => {
+    if (!courseMapNotesEl) return;
+    if (courseMapStructureExplainMode) {
+      courseMapNotesEl.style.removeProperty('--course-map-notes-auto-width');
+      return;
+    }
+    const widthSource = courseMapModal?.querySelector('.course-map-modal') || courseMapContent;
+    if (!widthSource) return;
+    const bodyWidth = widthSource.getBoundingClientRect().width;
+    const shrink = Math.max(0, 1730 - bodyWidth) * 0.286;
+    const nextWidth = Math.max(220, Math.min(480, 480 - shrink));
+    courseMapNotesEl.style.setProperty('--course-map-notes-auto-width', `${Math.round(nextWidth)}px`);
+  };
+
   const positionCourseMapKeyPanelDefault = () => {
     if (!courseMapKeyModal || courseMapKeyModal.dataset.userMoved === 'true') return;
+    syncCourseMapNotesDefaultWidth();
     const modalBox = courseMapModal?.querySelector('.course-map-modal');
     if (!modalBox) return;
     const modalRect = modalBox.getBoundingClientRect();
@@ -15199,11 +15209,46 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return addDays(semesterStart, 21 + daysUntilFriday);
   };
 
+  async function loadSemesterConfigDetails() {
+    const parseConfig = (text) => {
+      try {
+        const parsed = JSON.parse(text);
+        semesterConfigDetails = parsed?.semesterDetails || null;
+      } catch {
+        semesterConfigDetails = null;
+      }
+    };
+    if (isFileProtocol) {
+      await new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'semester-config.json', true);
+        xhr.overrideMimeType('application/json');
+        xhr.onload = () => {
+          if (String(xhr.responseText || '').trim()) parseConfig(xhr.responseText);
+          resolve();
+        };
+        xhr.onerror = () => resolve();
+        xhr.send();
+      });
+    } else {
+      try {
+        const response = await fetch('semester-config.json', { cache: 'no-store' });
+        if (response.ok) parseConfig(await response.text());
+      } catch {
+        semesterConfigDetails = null;
+      }
+    }
+    updateDateAlerts(staffWorkbookState.getCourseInfo());
+    if (timetableModal?.classList.contains('show')) updateTimetableFees();
+  }
+
   const getCalculatedCensusDate = (courseInfo = {}) => {
-    const fromNamedCensus = getDateOnly(toDateValue(courseInfo?.Census_Date || courseInfo?.CensusDate));
-    if (fromNamedCensus) return fromNamedCensus;
+    const fromConfig = getDateOnly(toDateValue(semesterConfigDetails?.census_Date || semesterConfigDetails?.Census_Date));
+    if (fromConfig) return fromConfig;
     const fromSemesterStart = getCensusDateFromSemesterStart(courseInfo?.Semester_Start_Date);
     if (fromSemesterStart) return fromSemesterStart;
+    const fromNamedCensus = getDateOnly(toDateValue(courseInfo?.Census_Date || courseInfo?.CensusDate));
+    if (fromNamedCensus) return fromNamedCensus;
     const endWeekTwo = getDateOnly(toDateValue(courseInfo?.EndOfWeekTwoDate));
     return endWeekTwo ? addDays(endWeekTwo, 14) : null;
   };
@@ -21520,7 +21565,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       <ol class="notes-list">
         <li>The 14 subjects on the first 2 rows above. These are the Core subjects.</li>
         <li>One of the Major streams.  That is, all 6 subjects from one of Network Security, Business Analytics, or Software Development.</li>
-        <li>Four subjects from the other 2 streams. That is, 4 Electives.</li>
+        <li>Four Electives. That is 4 subjects from the other 2 streams. Although if your previous study gave you credit for USE (Unspecified Electives), these will fill the Elective boxes too.</li>
       </ol>
     `;
     const highlightNotesKeywords = (root) => {
@@ -22079,6 +22124,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         );
       });
       courseMapNotesEl.classList.toggle('course-map-notes-overlap', overlaps);
+      if (courseMapKeyModal?.classList.contains('show')) positionCourseMapKeyPanelDefault();
     });
   };
 
@@ -22398,6 +22444,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapBuilt = true;
     }
     updateCourseMapModeUi();
+    syncCourseMapNotesDefaultWidth();
     updateCourseMapStatuses();
     positionCourseMapArrows();
     positionCourseMapCoreConnector();
@@ -25203,6 +25250,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             lastWidth = width;
             lastHeight = height;
             syncCourseMapKeyPanelBottomOffset();
+            syncCourseMapNotesDefaultWidth();
             positionCourseMapArrows();
             positionCourseMapCoreConnector();
             updateCourseMapStreamLabels();
@@ -25226,6 +25274,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         syncCourseMapOverlayBounds();
+        syncCourseMapNotesDefaultWidth();
         positionCourseMapArrows();
         positionCourseMapCoreConnector();
         updateCourseMapStreamLabels();
@@ -28487,6 +28536,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapMajorElectivesReturnMode = 'student';
       courseMapLastDefaultViewMode = 'student';
       applyCourseMapViewDefaults('student');
+      hideCourseMapModeDialog();
     });
   }
   if (courseMapExplainStructureViewButton) {
@@ -28515,6 +28565,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapMajorElectivesReturnMode = 'staff';
       courseMapLastDefaultViewMode = 'staff';
       applyCourseMapViewDefaults('staff');
+      hideCourseMapModeDialog();
     });
   }
   updateCourseMapDefaultViewButtonLabels();
@@ -28961,6 +29012,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(alertModal, hideAlertModal);
 
   [timetableModal, historyModal, remainingModal, oldCodesModal, nextSemesterModal].forEach(installModalScrollScrim);
+  loadSemesterConfigDetails();
 
   const getElectiveStreams = (majorKey) => {
     const key = majorKey === 'network' || majorKey === 'undecided' || majorKey === 'ns' ? 'network' : majorKey;

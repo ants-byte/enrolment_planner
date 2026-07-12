@@ -51,6 +51,7 @@ const STUDENT_COLUMN_ALIASES = {
 
 const COURSE_INFO_RANGES = [
   'Semester_Start_Date',
+  'Census_Date',
   'Price_per_CSP_Unit',
   'Price_per_Unit',
   'CensusDate',
