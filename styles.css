@@ -1022,7 +1022,7 @@ button {
 .folder-shortcuts-modal-buttons .folder-shortcut-btn {
   margin-left: 0;
   margin-right: 0;
-  text-align: center;
+  text-align: left;
   padding-left: 14px;
   padding-right: 14px;
   width: auto;
@@ -1915,22 +1915,24 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .next-sem-section .clear-button+.clear-button {
-  margin-top: 3px;
+  margin-top: 0;
 }
 
 .next-sem-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   margin-top: 6px;
 }
 
 .semester-timetable-section {
+  display: flex;
+  flex-direction: column;
   border: none;
   background: transparent;
   padding: 0;
   box-shadow: none;
-  gap: 4px;
+  gap: 8px;
 }
 
 .major-picker {
@@ -4295,8 +4297,32 @@ input:checked+.slider:before {
   cursor: pointer;
 }
 
-.colour-settings-check input {
+.colour-settings-check input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
   margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.colour-settings-check input[type="checkbox"]:checked {
+  background: #92ddff;
+  border-color: #92ddff;
+}
+
+.colour-settings-check input[type="checkbox"]:checked::before {
+  content: '';
+  width: 8px;
+  height: 12px;
+  border: solid #111;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
 }
 
 .colour-settings-font-inner {
@@ -5587,7 +5613,7 @@ body.student-mode #select-by-typing-button {
 }
 
 #open-old-codes {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 #show-semester-timetable:focus,
@@ -6897,6 +6923,15 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   cursor: help;
 }
 
+.timetable-fee-heading {
+  color: #000;
+}
+
+.timetable-fee-action-text,
+#timetable-fees.has-fee-options .timetable-fee-heading {
+  color: var(--btn-primary-end);
+}
+
 #timetable-fees.has-fee-options .timetable-fee-hideable {
   margin-left: 16px;
 }
@@ -7253,15 +7288,23 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   margin-top: 10px;
 }
 
-.course-map-show-hide-dialog .course-map-default-view {
+.course-map-show-hide-dialog .course-map-default-view,
+.course-map-mode-dialog .course-map-default-view {
   display: inline-flex;
   align-self: flex-start;
   width: auto;
   min-width: 0;
-  margin-top: 6px;
   padding-left: 14px;
   padding-right: 14px;
   text-align: left;
+}
+
+.course-map-show-hide-dialog .course-map-default-view {
+  margin-top: 6px;
+}
+
+.course-map-mode-dialog .course-map-default-view {
+  margin-top: 0;
 }
 
 .course-map-staff-student-flag {
@@ -8060,6 +8103,7 @@ body.completed-mode .completed:hover::after {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 #course-map-modal .modal-close {
@@ -9011,7 +9055,7 @@ body.completed-mode .completed:hover::after {
   bottom: 32px;
   width: calc((var(--course-map-col-width) * 2) + 10px);
   color: #fff;
-  font-size: 1.1em;
+  font-size: calc(1.1em + 4px);
   font-weight: 700;
   line-height: 1.1;
   pointer-events: none;
@@ -9023,18 +9067,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-structure-explain .course-map-streams-block::before {
-  content: '\2191\00a0\00a0\2191\00a0\00a0\2191';
-  position: absolute;
-  top: -58px;
-  left: calc((var(--course-map-col-width) * 3) + 12px);
-  width: calc((var(--course-map-col-width) * 3) + 8px);
-  color: #0b3d91;
-  font-size: 30px;
-  font-weight: 900;
-  letter-spacing: 48px;
-  text-align: center;
-  pointer-events: none;
-  text-shadow: 0 0 0 #0b3d91, 1px 0 0 #0b3d91;
+  content: none;
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-streams-block::before {
@@ -9042,27 +9075,103 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-streams-block {
-  margin-top: 120px;
+  margin-top: 80px;
 }
 
-.course-map-explain-arrows {
+.course-map-explain-arrows,
+.course-map-major-explain-arrows {
   display: none;
 }
 
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows,
 #course-map-modal.course-map-structure-expanded .course-map-explain-arrows {
   position: absolute;
-  top: -58px;
-  left: var(--course-map-arrows-left, calc((var(--course-map-col-width) * 5) + 12px));
-  width: var(--course-map-arrows-width, calc((var(--course-map-col-width) * 2) + 16px));
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  justify-items: center;
+  top: -72px;
+  left: calc((var(--course-map-col-width) * 5) + 38px);
+  width: calc((var(--course-map-col-width) * 2) - 62px);
+  display: block;
   color: #0b3d91;
   font-size: 30px;
   font-weight: 900;
   line-height: 1;
   pointer-events: none;
   text-shadow: 0 0 0 #0b3d91, 1px 0 0 #0b3d91;
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span,
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span {
+  position: absolute;
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span:nth-child(1),
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span:nth-child(1) {
+  left: calc(25% - 18px);
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span:nth-child(2),
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span:nth-child(2) {
+  left: calc(25% + 2px);
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span:nth-child(3),
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span:nth-child(3) {
+  left: calc(75% - 18px);
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span:nth-child(4),
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span:nth-child(4) {
+  left: calc(75% + 2px);
+}
+
+#course-map-modal.course-map-structure-explain .course-map-explain-arrows span:nth-child(even),
+#course-map-modal.course-map-structure-expanded .course-map-explain-arrows span:nth-child(even) {
+  transform: translateY(8px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows {
+  position: absolute;
+  top: -72px;
+  left: 0;
+  width: 100%;
+  display: block;
+  color: #0b3d91;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 0 0 #0b3d91, 1px 0 0 #0b3d91;
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span {
+  position: absolute;
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(1) {
+  left: calc(var(--course-map-major-arrow-pair-1, 25%) - 18px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(2) {
+  left: calc(var(--course-map-major-arrow-pair-1, 25%) + 2px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(3) {
+  left: calc(var(--course-map-major-arrow-pair-2, 50%) - 18px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(4) {
+  left: calc(var(--course-map-major-arrow-pair-2, 50%) + 2px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(5) {
+  left: calc(var(--course-map-major-arrow-pair-3, 75%) - 18px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(6) {
+  left: calc(var(--course-map-major-arrow-pair-3, 75%) + 2px);
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows span:nth-child(even) {
+  transform: translateY(8px);
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-selected-stream {
@@ -9099,41 +9208,85 @@ body.completed-mode .completed:hover::after {
   z-index: 13;
 }
 
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-selected-stream .course-map-stream-label::before {
+  content: "Your major: ";
+  color: #000;
+  padding-right: 6px;
+}
+
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream {
   display: grid;
   width: auto;
   margin-left: 0;
   margin-right: 0;
-  margin-bottom: 22px;
+  margin-bottom: 0;
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-stream-grid {
   grid-column: 1 / -1;
   justify-self: end;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  width: var(--course-map-elective-grid-width, 100%);
-  gap: 22px;
-  padding: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: var(--course-map-elective-grid-width, calc((var(--course-map-col-width) * 2) + 12px));
+  gap: 12px;
+  padding: 3px;
   margin-right: var(--course-map-elective-right-inset, 10px);
   border: 0;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-stream-label {
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
+  text-align: left;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-stream-label .stream-name {
+  display: block;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-status-passed .course-map-code,
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-status-passed .course-map-name,
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-status-passed .course-map-prereqs {
+  visibility: hidden;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-first .course-map-stream-label::after {
+  content: "and";
+  display: block;
+  color: #000;
+  margin-top: 10px;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-second .course-map-stream-label::after {
+  content: "subjects.";
+  display: block;
+  color: #000;
+  margin-top: 10px;
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream.ns .course-map-cell:not(.course-map-placeholder) {
   background: var(--network-body-coloured-ui);
   border-color: var(--network-band-strong);
-  border-width: 2px;
+  border-width: 3px;
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream.ba .course-map-cell:not(.course-map-placeholder) {
   background: var(--ba-body-coloured-ui);
   border-color: var(--ba-band-strong);
-  border-width: 2px;
+  border-width: 3px;
 }
 
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream.sd .course-map-cell:not(.course-map-placeholder) {
   background: var(--software-body-coloured-ui);
   border-color: var(--software-band-strong);
-  border-width: 2px;
+  border-width: 3px;
+}
+
+:root[data-card-theme="clear-cards"] #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-cell:not(.course-map-placeholder) {
+  background: #fff !important;
+  background-color: #fff !important;
 }
 
 #course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder[data-placeholder="bit245-sd"],
@@ -9605,13 +9758,60 @@ body.completed-mode .completed:hover::after {
 }
 
 .course-map-stream-label.can-switch-major {
+  cursor: default;
+}
+
+.course-map-stream-label.can-switch-major .stream-name {
   cursor: pointer;
 }
 
-.course-map-stream-label.can-switch-major:hover {
-  transform: translateY(-2px) scale(1.015) !important;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
-  background: rgba(255, 255, 255, 0.78);
+#course-map-modal.course-map-structure-explain .course-map-stream-label.can-switch-major {
+  pointer-events: none;
+  margin-left: -8px !important;
+}
+
+#course-map-modal.course-map-structure-explain .course-map-stream-label.can-switch-major .stream-name {
+  pointer-events: auto;
+  display: inline-block;
+  width: 13.5em;
+  box-sizing: border-box;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 2px 9px rgba(190, 190, 190, 0.75);
+  transition: box-shadow 140ms ease, transform 140ms ease, background-color 140ms ease;
+}
+
+#course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-stream-label.can-switch-major .stream-name {
+  width: 10em;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+#course-map-modal.course-map-structure-explain .course-map-stream-label.can-switch-major .stream-name:hover,
+#course-map-modal.course-map-structure-explain .course-map-stream-label.can-switch-major .stream-name:focus-visible {
+  transform: translateY(-2px) scale(1.015);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 6px 16px rgba(150, 150, 150, 0.95);
+}
+
+#course-map-modal.course-map-stream-label-pulse .course-map-stream-label.can-switch-major .stream-name {
+  animation: course-map-stream-label-pulse 2s ease-in-out;
+}
+
+@keyframes course-map-stream-label-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.6), 0 2px 9px rgba(190, 190, 190, 0.75);
+  }
+
+  55% {
+    box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.16), 0 6px 16px rgba(150, 150, 150, 0.95);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0), 0 2px 9px rgba(190, 190, 190, 0.75);
+  }
 }
 
 .course-map-stream-label.can-switch-major:hover .stream-name {
@@ -9687,6 +9887,17 @@ body.completed-mode .completed:hover::after {
   bottom: -2px;
   background: var(--core-band-strong);
   pointer-events: none;
+}
+
+#course-map-modal.course-map-structure-explain .course-map-cell[data-subject="BIT121"]::after {
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--course-map-separator-width));
+}
+
+#course-map-modal.course-map-structure-explain .course-map-cell[data-subject="BIT121"]::before {
+  left: 0;
+  bottom: calc(-1 * var(--course-map-separator-width));
 }
 
 .course-map-core-connector {
@@ -10070,6 +10281,10 @@ body.completed-mode .completed:hover::after {
   border-radius: 8px;
 }
 
+.course-map-staff-actions .course-map-staff-open-window.is-your-times {
+  border-color: #fff;
+}
+
 .course-map-staff-actions .course-map-staff-open-window,
 .course-map-staff-actions .course-map-staff-open-selected,
 .course-map-staff-actions .course-map-staff-clear,
@@ -10288,6 +10503,10 @@ body.completed-mode .completed:hover::after {
   display: inline-flex;
 }
 
+#course-map-modal .modal-actions .course-map-show-hide-actions {
+  align-items: flex-start;
+}
+
 #course-map-modal .course-map-show-hide-dialog,
 #course-map-modal .course-map-mode-dialog {
   position: absolute;
@@ -10418,6 +10637,43 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal .course-map-key-panel.show {
   display: flex;
+}
+
+#course-map-modal .course-map-close-major-electives-view {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 12;
+  width: fit-content;
+  min-width: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+#course-map-modal .course-map-close-major-electives-view[hidden] {
+  display: none !important;
+}
+
+#course-map-modal .course-map-close-major-electives-view.course-map-return-pulse {
+  animation: course-map-return-pulse 0.5s ease-out;
+}
+
+@keyframes course-map-return-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(120, 120, 120, 0.75);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(120, 120, 120, 0.28);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(120, 120, 120, 0);
+  }
+}
+
+#course-map-modal.course-map-structure-explain .course-map-key-panel {
+  bottom: calc(var(--course-map-key-bottom, 8px) + 54px);
 }
 
 #course-map-modal.course-map-staff-mode .course-map-notes {

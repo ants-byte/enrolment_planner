@@ -1099,6 +1099,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const next = [...activeColourSettings];
       next[index] = Number.parseInt(input.value, 10);
       applyColourSettings(next);
+      const item = COLOUR_SETTINGS[Math.floor(index / 2)];
+      const allBackgroundsChanged = COLOUR_SETTINGS.every((colourItem, colourIndex) => {
+        if (!colourItem.key.endsWith('Body')) return true;
+        const lightnessIndex = colourIndex * 2;
+        return (
+          next[lightnessIndex] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex] ||
+          next[lightnessIndex + 1] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex + 1]
+        );
+      });
+      if (item?.key?.endsWith('Body') && allBackgroundsChanged && activeCardTheme !== COLOURED_CARD_THEME) {
+        applyCardTheme(COLOURED_CARD_THEME);
+        updateColourSettingsControlValues();
+      }
     });
     colourSettingsControls.addEventListener('click', (event) => {
       const paletteToggle = event.target?.closest?.('input[data-colour-palette-switch]');
@@ -2438,6 +2451,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapFontSizeSlider = document.getElementById('course-map-font-size');
   const resetCourseMapFontSizeButton = document.getElementById('reset-course-map-font-size');
   const courseMapShowHideActions = document.querySelector('#course-map-modal .course-map-show-hide-actions');
+  const closeCourseMapMajorElectivesViewButton = document.getElementById('close-course-map-major-electives-view');
   const openCourseMapShowHideButton = document.getElementById('open-course-map-show-hide');
   const courseMapShowHideDialog = document.getElementById('course-map-show-hide-dialog');
   const courseMapDefaultStudentViewButton = document.getElementById('course-map-default-student-view');
@@ -4861,17 +4875,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const syncCourseMapStaffTimetableButton = () => {
     if (!courseMapStaffActionsRowEl) return;
     const selectedCount = Array.from(subjectState.values()).filter((st) => st?.toggled).length;
+    const threshold = getLoadThreshold();
     const hasSelected = selectedCount > 0;
+    const hasFullLoad = selectedCount >= threshold && threshold > 0;
     if (courseMapStaffActionsRowEl) {
       courseMapStaffActionsRowEl.style.display = 'flex';
       courseMapStaffActionsRowEl.classList.remove('hidden-initial');
       courseMapStaffActionsRowEl.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenWindowButton) {
-      courseMapStaffOpenWindowButton.textContent = 'Subject details';
+      courseMapStaffOpenWindowButton.textContent = hasFullLoad ? 'Your times' : 'Subject details';
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
+      courseMapStaffOpenWindowButton.classList.toggle('is-your-times', hasFullLoad);
       courseMapStaffOpenWindowButton.setAttribute('aria-hidden', 'false');
+      courseMapStaffOpenWindowButton.setAttribute(
+        'data-tooltip-html',
+        hasFullLoad
+          ? 'Show the timetable for the subjects currently selected.'
+          : 'Open the available subjects table with subject codes, names, streams, and availability.'
+      );
     }
     if (courseMapStaffCopyTimetableButton) {
       courseMapStaffCopyTimetableButton.style.display = 'inline-flex';
@@ -5769,6 +5792,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapNotesOn = !staffFacing;
   let courseMapStructureExplainMode = false;
   let courseMapStructureExpandedStream = '';
+  let courseMapMajorElectivesReturnMode = '';
+  let courseMapLastDefaultViewMode = staffFacing ? 'staff' : 'student';
+  let courseMapStreamPulseTimer = null;
   let courseMapListColoursOn = false;
   let remainingHideCurrentSelections = false;
   let remainingNoticeUnlocked = false;
@@ -8088,7 +8114,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const bachelorUrl = 'https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/';
     const bachelorLink = `<a class="timetable-fee-link" href="${bachelorUrl}" target="_blank" rel="noopener">Bachelor of IT</a>`;
     const feeChoiceHeading =
-      '<div class="timetable-fee-choice-heading" title="Click on one fee option to remove it and leave the most appropriate one.">Fee types. Click one to remove it:</div>';
+      '<div class="timetable-fee-choice-heading" title="Click on one fee option to remove it and leave the most appropriate one.">Fee types. <span class="timetable-fee-action-text">Click one to remove it:</span></div>';
     const feeDetails = getFeeStatusDetails(record);
 
     timetableFees.innerHTML = [
@@ -8096,8 +8122,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         censusText
       )}. Subjects withdrawn before this day are graded W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
       feeChoiceHeading,
-      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="international"><strong>International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
-      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="domestic"><strong>Domestic students fees: </strong> See the ${bachelorLink} web site. .</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="international"><strong class="timetable-fee-heading">International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="domestic"><strong class="timetable-fee-heading">Domestic student fees: </strong> See the ${bachelorLink} web site. .</p>`,
     ].join('');
     if (feeDetails.feeStatus && feeDetails.feeStatus !== 'unknown') {
       const hiddenOption = feeDetails.domesticFees ? 'international' : 'domestic';
@@ -11343,6 +11369,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     modalBox.style.setProperty('--course-map-key-bottom', `${bottomOffset}px`);
   };
 
+  const positionCourseMapKeyPanelDefault = () => {
+    if (!courseMapKeyModal || courseMapKeyModal.dataset.userMoved === 'true') return;
+    const modalBox = courseMapModal?.querySelector('.course-map-modal');
+    if (!modalBox) return;
+    const modalRect = modalBox.getBoundingClientRect();
+    const notesVisible = courseMapNotesEl && !courseMapNotesEl.hidden && courseMapNotesOn;
+    let left = courseMapStructureExplainMode ? 52 : 8;
+    let top = courseMapStructureExplainMode ? 360 : 160;
+    if (notesVisible) {
+      const notesRect = courseMapNotesEl.getBoundingClientRect();
+      if (notesRect.width || notesRect.height) {
+        left = notesRect.left - modalRect.left;
+        top = notesRect.bottom - modalRect.top + 80;
+      }
+    }
+    courseMapKeyModal.style.left = `${Math.max(8, Math.round(left))}px`;
+    courseMapKeyModal.style.top = `${Math.max(8, Math.round(top))}px`;
+    courseMapKeyModal.style.right = 'auto';
+    courseMapKeyModal.style.bottom = 'auto';
+  };
+
   const updateCourseMapKeyToggleButton = () => {
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
     const isOpen = courseMapKeyModal.classList.contains('show');
@@ -11374,6 +11421,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapNotesEl.hidden = !courseMapNotesOn;
     }
     updateCourseMapNotesOverlap();
+    if (courseMapKeyModal?.classList.contains('show')) positionCourseMapKeyPanelDefault();
   };
 
   const showCourseMapKeyModal = () => {
@@ -11381,6 +11429,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     // Always rebuild so the key reflects current mode/toggles.
     buildCourseMapKey();
     syncCourseMapKeyPanelBottomOffset();
+    positionCourseMapKeyPanelDefault();
     courseMapKeyModal.classList.add('show');
     courseMapKeyModal.setAttribute('aria-hidden', 'false');
     updateCourseMapKeyToggleButton();
@@ -21083,6 +21132,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapModeToggleButton.setAttribute('aria-pressed', staffMode ? 'true' : 'false');
   };
 
+  const updateCourseMapDefaultViewButtonLabels = () => {
+    const showActive = !courseMapStructureExplainMode;
+    if (courseMapDefaultStudentViewButton) {
+      courseMapDefaultStudentViewButton.textContent =
+        `Default student mode & view${showActive && courseMapLastDefaultViewMode === 'student' ? ' (on)' : ''}`;
+    }
+    if (courseMapDefaultStaffViewButton) {
+      courseMapDefaultStaffViewButton.textContent =
+        `Default Staff mode & view${showActive && courseMapLastDefaultViewMode === 'staff' ? ' (on)' : ''}`;
+    }
+  };
+
   const ensureCourseMapCellStaffMeta = (cell, code) => {
     if (!cell || !code) return;
     let sessionMeta = cell.querySelector('.course-map-session-meta');
@@ -21146,6 +21207,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapModal.classList.toggle('course-map-staff-mode', staffMode);
     courseMapModal.classList.toggle('course-map-student-view', !staffMode);
     courseMapModal.classList.toggle('course-map-structure-explain', courseMapStructureExplainMode);
+    if (closeCourseMapMajorElectivesViewButton) closeCourseMapMajorElectivesViewButton.hidden = !courseMapStructureExplainMode;
     const expandedStream = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     courseMapModal.classList.toggle('course-map-structure-expanded', !!expandedStream);
     ['ns', 'ba', 'sd'].forEach((stream) => {
@@ -21153,6 +21215,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (!staffMode) courseMapAiNamesOn = false;
     updateCourseMapModeToggleButton();
+    updateCourseMapDefaultViewButtonLabels();
     applyCourseMapAiNameOverlay();
     updateCourseMapSemCountToggleUi();
     updatePassForEnrolmentsAvailability();
@@ -21449,7 +21512,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         Pre (prerequisites) are the subjects that must be completed before starting this subject.
       </p>
       <p class="notes-paragraph">
-        <strong>BIT245</strong> belongs to both the Business Analytics and Software Development streams.
+        <strong>BIT245</strong> Web Development belongs to both the Business Analytics and Software Development streams.
       </p>
       <div class="notes-title notes-subtitle">To graduate, complete:</div>
       <ol class="notes-list">
@@ -21550,6 +21613,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     explainArrows.className = 'course-map-explain-arrows';
     explainArrows.innerHTML = '<span>↑</span><span>↑</span><span>↑</span><span>↑</span>';
     streamsBlock.appendChild(explainArrows);
+    const majorExplainArrows = document.createElement('div');
+    majorExplainArrows.className = 'course-map-major-explain-arrows';
+    majorExplainArrows.innerHTML = '<span>↑</span><span>↑</span><span>↑</span><span>↑</span><span>↑</span><span>↑</span>';
+    streamsBlock.appendChild(majorExplainArrows);
 
     const nsSection = document.createElement('div');
     nsSection.className = 'course-map-stream ns';
@@ -21793,16 +21860,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const isElective = selectedMajor && courseMapIndicatorsOn && !isMajor;
       const canSwitchMajor = ['ns', 'ba', 'sd'].includes(stream) && (!selectedMajor || stream !== majorKey);
       const canToggleExplainStream = courseMapStructureExplainMode && ['ns', 'ba', 'sd'].includes(stream);
+      const explodedStreams =
+        courseMapStructureExplainMode && courseMapStructureExpandedStream
+          ? ['ns', 'ba', 'sd'].filter((key) => key !== courseMapStructureExpandedStream)
+          : [];
+      const explodedIndex = explodedStreams.indexOf(stream);
       label.classList.toggle('is-major', isMajor);
       label.classList.toggle('is-elective', isElective);
       label.classList.toggle('can-switch-major', canSwitchMajor || canToggleExplainStream);
       label.classList.toggle('course-map-structure-selected-label', canToggleExplainStream && courseMapStructureExpandedStream === stream);
+      label.classList.toggle('course-map-structure-exploded-first-label', explodedIndex === 0);
+      label.classList.toggle('course-map-structure-exploded-second-label', explodedIndex === 1);
       const streamSection = label.closest('.course-map-stream');
       if (streamSection) {
         streamSection.classList.toggle('is-major-stream', selectedMajor && stream === majorKey);
         streamSection.classList.toggle('can-switch-major', canSwitchMajor || canToggleExplainStream);
         streamSection.classList.toggle('course-map-structure-selected-stream', canToggleExplainStream && courseMapStructureExpandedStream === stream);
         streamSection.classList.toggle('course-map-structure-exploded-stream', canToggleExplainStream && !!courseMapStructureExpandedStream && courseMapStructureExpandedStream !== stream);
+        streamSection.classList.toggle('course-map-structure-exploded-first', explodedIndex === 0);
+        streamSection.classList.toggle('course-map-structure-exploded-second', explodedIndex === 1);
       }
       const streamNames = {
         ns: 'Network Security',
@@ -21832,6 +21908,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? `<span class="stream-name">${nameDisplay}</span>`
         : `<span class="stream-name">${streamNameHtml}</span><span class="stream-descriptor">${descriptorHtml}</span>`;
       label.innerHTML = labelHtml;
+      const streamNameEl = label.querySelector('.stream-name');
       const tooltipTextBase = undecided
         ? 'No major has been selected.'
         : isMajor
@@ -21844,8 +21921,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : canSwitchMajor
         ? `${tooltipTextBase} Click to switch your major to ${streamName}.`
         : tooltipTextBase;
-      label.setAttribute('data-tooltip', tooltipText);
-      label.setAttribute('title', tooltipText);
+      label.removeAttribute('data-tooltip');
+      label.removeAttribute('data-tooltip-html');
+      label.removeAttribute('title');
+      if (streamNameEl) {
+        streamNameEl.removeAttribute('data-tooltip');
+        streamNameEl.removeAttribute('data-tooltip-html');
+        streamNameEl.removeAttribute('title');
+        if (canToggleExplainStream) {
+          streamNameEl.setAttribute(
+            'data-tooltip-html',
+            courseMapStructureExpandedStream === stream
+              ? `Click to return ${escapeHtml(streamName)}<br>to the stream list.`
+              : `Click to show ${escapeHtml(streamName)}<br>subjects in the Major Subject boxes.`
+          );
+        } else {
+          streamNameEl.setAttribute('data-tooltip', tooltipText);
+        }
+      }
     });
     if (courseMapStreamsBlockEl) {
       requestAnimationFrame(() => {
@@ -21854,25 +21947,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const selectedSection = courseMapStreamsBlockEl.querySelector('.course-map-structure-selected-stream');
           const majorGrid = courseMapContent?.querySelector('.course-map-major-grid');
           const bit372 = courseMapContent?.querySelector('.course-map-cell[data-subject="BIT372"]');
-          const elective2 = courseMapContent?.querySelector('.course-map-major-grid .course-map-cell[data-elective-slot="2"]');
-          const elective4 = courseMapContent?.querySelector('.course-map-major-grid .course-map-cell[data-elective-slot="4"]');
           if (selectedSection && majorGrid) {
             const streamRect = courseMapStreamsBlockEl.getBoundingClientRect();
             const majorRect = majorGrid.getBoundingClientRect();
             const targetWidth = Math.max(0, (majorRect.width / 5) * 3);
+            const electiveGridWidth = Math.max(0, (majorRect.width / 5) * 2 + 12);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-top', `${Math.round(majorRect.top - streamRect.top)}px`);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-left', `${Math.round(majorRect.left - streamRect.left)}px`);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${Math.round(targetWidth)}px`);
-            courseMapStreamsBlockEl.style.setProperty('--course-map-elective-grid-width', `${Math.round(targetWidth * 2)}px`);
+            courseMapStreamsBlockEl.style.setProperty('--course-map-elective-grid-width', `${Math.round(electiveGridWidth)}px`);
             if (bit372) {
               const bit372Rect = bit372.getBoundingClientRect();
               courseMapStreamsBlockEl.style.setProperty('--course-map-elective-right-inset', `${Math.round(streamRect.right - bit372Rect.right)}px`);
-            }
-            if (elective2 && elective4) {
-              const elective2Rect = elective2.getBoundingClientRect();
-              const elective4Rect = elective4.getBoundingClientRect();
-              courseMapStreamsBlockEl.style.setProperty('--course-map-arrows-left', `${Math.round(elective2Rect.left - streamRect.left + 32)}px`);
-              courseMapStreamsBlockEl.style.setProperty('--course-map-arrows-width', `${Math.round(elective4Rect.right - elective2Rect.left - 64)}px`);
             }
           }
         } else {
@@ -21881,8 +21967,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-width');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-grid-width');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-right-inset');
-          courseMapStreamsBlockEl.style.removeProperty('--course-map-arrows-left');
-          courseMapStreamsBlockEl.style.removeProperty('--course-map-arrows-width');
+        }
+        if (courseMapStructureExplainMode) {
+          const streamRect = courseMapStreamsBlockEl.getBoundingClientRect();
+          ['2', '4', '6'].forEach((slot, index) => {
+            const cell = courseMapContent?.querySelector(`.course-map-major-grid .course-map-cell[data-major-slot="${slot}"]`);
+            if (!cell) return;
+            const rect = cell.getBoundingClientRect();
+            courseMapStreamsBlockEl.style.setProperty(`--course-map-major-arrow-pair-${index + 1}`, `${Math.round(rect.left - streamRect.left + rect.width / 2)}px`);
+          });
         }
         const containerRect = courseMapStreamsBlockEl.getBoundingClientRect();
         labels.forEach((label) => {
@@ -21898,7 +21991,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           if (!grid) return;
           const gridRect = grid.getBoundingClientRect();
           const isElective = label.classList.contains('is-elective');
-          if (isElective) {
+          const isExplodedExplainLabel =
+            expandedExplainView && section?.classList.contains('course-map-structure-exploded-stream');
+          if (isExplodedExplainLabel) {
+            label.style.width = '';
+          } else if (isElective) {
             // Keep elective labels compact while preserving right-edge alignment near the grid.
             label.style.width = '';
             const naturalWidth = label.getBoundingClientRect().width;
@@ -21910,14 +22007,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           // Keep labels fully to the left of the subject blocks (no overlap into the grid).
           // For elective labels, reduce the gap slightly so they sit closer without crossing into cards.
           const gap = isElective ? 2 : 6;
-          const isExplodedExplainLabel =
-            expandedExplainView && section?.classList.contains('course-map-structure-exploded-stream');
           const sectionRect = section?.getBoundingClientRect?.();
           const normalGridLeft =
             isExplodedExplainLabel && sectionRect
-              ? sectionRect.left - containerRect.left + (sectionRect.width / 7) * 3
+              ? gridRect.left - containerRect.left
               : gridRect.left - containerRect.left;
-          const left = normalGridLeft - label.offsetWidth - gap;
+          const left = normalGridLeft - label.offsetWidth - gap - (isExplodedExplainLabel ? 100 : 0);
           const labelHeight = label.offsetHeight || 0;
           // Center when possible; otherwise anchor to the grid top to avoid drifting upward into other blocks.
           const baseTop = gridRect.top - containerRect.top;
@@ -21929,6 +22024,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           label.style.left = `${Math.round(left)}px`;
           label.style.top = `${Math.round(top)}px`;
         });
+        if (expandedExplainView) {
+          const firstLabel = courseMapStreamsBlockEl.querySelector('.course-map-structure-exploded-first .course-map-stream-label');
+          const secondLabel = courseMapStreamsBlockEl.querySelector('.course-map-structure-exploded-second .course-map-stream-label');
+          if (firstLabel && secondLabel) {
+            const firstGrid = firstLabel.closest('.course-map-stream')?.querySelector('.course-map-stream-grid');
+            const secondGrid = secondLabel.closest('.course-map-stream')?.querySelector('.course-map-stream-grid');
+            const firstGridRect = firstGrid?.getBoundingClientRect?.();
+            const secondGridRect = secondGrid?.getBoundingClientRect?.();
+            secondLabel.style.left = firstLabel.style.left;
+            secondLabel.style.top = `${Math.round((firstLabel.offsetTop || 0) + (firstLabel.offsetHeight || 0) + 4)}px`;
+            secondLabel.style.width = firstLabel.style.width || secondLabel.style.width || '';
+            if (firstGridRect && secondGridRect) {
+              const blockTop = firstGridRect.top - containerRect.top;
+              const blockBottom = secondGridRect.bottom - containerRect.top;
+              const labelTop = blockTop + ((blockBottom - blockTop) - firstLabel.offsetHeight - secondLabel.offsetHeight - 4) / 2;
+              firstLabel.style.top = `${Math.round(labelTop)}px`;
+              secondLabel.style.top = `${Math.round(labelTop + firstLabel.offsetHeight + 4)}px`;
+            }
+          }
+        }
         updateCourseMapNotesOverlap();
       });
     }
@@ -23066,7 +23181,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const boundaryCenter = boundaryCenters.length
           ? boundaryCenters.reduce((sum, value) => sum + value, 0) / boundaryCenters.length
           : fallbackXGap + sepWidth / 2;
-        const xGap = boundaryCenter - sepWidth / 2;
+        const xGap = boundaryCenter - sepWidth / 2 - (courseMapStructureExplainMode ? 4 : 0);
         addRect(
           { x: xGap, y: ms5Rect.y + ms5Rect.height, width: sepWidth, height: Math.max(0, ms6Rect.y - (ms5Rect.y + ms5Rect.height)) },
           { fill: sepColor }
@@ -25236,7 +25351,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const boundaryCenter = boundaryCenters.length
         ? boundaryCenters.reduce((sum, value) => sum + value, 0) / boundaryCenters.length
         : fallbackXGap + sepWidth / 2;
-      const xGap = boundaryCenter - sepWidth / 2;
+      const xGap = boundaryCenter - sepWidth / 2 - (courseMapStructureExplainMode ? 4 : 0);
       const yStart = ms5Rect.bottom - containerRect.top;
       const yEnd = ms6Rect.top - containerRect.top;
       msVert.style.left = fmt(xGap);
@@ -28309,17 +28424,43 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapDefaultStudentViewButton) {
     courseMapDefaultStudentViewButton.addEventListener('click', () => {
+      courseMapMajorElectivesReturnMode = 'student';
+      courseMapLastDefaultViewMode = 'student';
       applyCourseMapViewDefaults('student');
     });
   }
   if (courseMapExplainStructureViewButton) {
     courseMapExplainStructureViewButton.addEventListener('click', () => {
+      courseMapMajorElectivesReturnMode = getCourseMapIsStaffMode() ? 'staff' : 'student';
       applyCourseMapViewDefaults('structure');
+      hideCourseMapShowHideDialog();
+      if (courseMapModal) {
+        courseMapModal.classList.remove('course-map-stream-label-pulse');
+        if (closeCourseMapMajorElectivesViewButton) {
+          closeCourseMapMajorElectivesViewButton.classList.remove('course-map-return-pulse');
+          void closeCourseMapMajorElectivesViewButton.offsetWidth;
+          closeCourseMapMajorElectivesViewButton.classList.add('course-map-return-pulse');
+        }
+        void courseMapModal.offsetWidth;
+        courseMapModal.classList.add('course-map-stream-label-pulse');
+        if (courseMapStreamPulseTimer) clearTimeout(courseMapStreamPulseTimer);
+        courseMapStreamPulseTimer = setTimeout(() => {
+          courseMapModal.classList.remove('course-map-stream-label-pulse');
+        }, 2000);
+      }
     });
   }
   if (courseMapDefaultStaffViewButton) {
     courseMapDefaultStaffViewButton.addEventListener('click', () => {
+      courseMapMajorElectivesReturnMode = 'staff';
+      courseMapLastDefaultViewMode = 'staff';
       applyCourseMapViewDefaults('staff');
+    });
+  }
+  updateCourseMapDefaultViewButtonLabels();
+  if (closeCourseMapMajorElectivesViewButton) {
+    closeCourseMapMajorElectivesViewButton.addEventListener('click', () => {
+      applyCourseMapViewDefaults(courseMapMajorElectivesReturnMode || (staffFacing ? 'staff' : 'student'));
     });
   }
   if (courseMapAiNamesToggleButton) {
@@ -28545,7 +28686,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           return;
         }
       }
-      const clickedLabel = target?.closest?.('.course-map-stream-label');
+      const clickedStreamName = target?.closest?.('.course-map-stream-label .stream-name');
+      const clickedLabel = courseMapStructureExplainMode ? clickedStreamName?.closest?.('.course-map-stream-label') : target?.closest?.('.course-map-stream-label');
       if (!clickedLabel || !courseMapContent.contains(clickedLabel)) return;
       const streamSection = clickedLabel.closest('.course-map-stream[data-stream]');
       if (!streamSection || !courseMapContent.contains(streamSection)) return;
@@ -29129,6 +29271,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       minWidth: 220,
       minHeight: 120,
       getBoundaryElement: () => courseMapModal?.querySelector('.course-map-modal') || courseMapModal,
+      onDragEnd: (panel) => {
+        panel.dataset.userMoved = 'true';
+      },
+      onResizeEnd: (panel) => {
+        panel.dataset.userMoved = 'true';
+      },
     });
   } catch { }
 

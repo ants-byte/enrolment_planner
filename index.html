@@ -1178,6 +1178,8 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-course-map" aria-label="Close course map">X</button>
       </div>
       <div class="modal-body">
+        <button id="close-course-map-major-electives-view" class="clear-button secondary course-map-close-major-electives-view"
+          type="button" hidden>Return to staff/student view</button>
         <div id="course-map-content" class="course-map-content"></div>
       </div>
       <div class="modal-actions">
@@ -1258,14 +1260,8 @@ Last Modified: 11/07/2026
               </label>
               <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
             </div>
-            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view" type="button">
-              Default student view
-            </button>
             <button id="course-map-explain-structure-view" class="clear-button secondary course-map-default-view" type="button">
-              Explain course structure view
-            </button>
-            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view" type="button">
-              Default staff view
+              Major and Electives view
             </button>
           </div>
         </div>
@@ -1298,6 +1294,12 @@ Last Modified: 11/07/2026
               <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
               <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
             </div>
+            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view" type="button">
+              Default student mode &amp; view
+            </button>
+            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view" type="button">
+              Default Staff mode &amp; view
+            </button>
           </div>
         </div>
         <button id="course-map-history" class="clear-button secondary" type="button"
