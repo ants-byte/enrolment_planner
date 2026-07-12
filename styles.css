@@ -9045,6 +9045,7 @@ body.completed-mode .completed:hover::after {
   border: 2px solid rgba(11, 61, 145, 0.45);
   border-radius: 8px;
   background: #071f3f;
+  box-shadow: 0 0 0 12px #071f3f;
   padding: 10px;
 }
 
@@ -9052,7 +9053,8 @@ body.completed-mode .completed:hover::after {
   content: "Fill these 24 cards to graduate";
   position: absolute;
   left: 32px;
-  bottom: 32px;
+  bottom: 64px;
+  transform: translateY(50%);
   width: calc((var(--course-map-col-width) * 2) + 10px);
   color: #fff;
   font-size: calc(1.1em + 4px);
@@ -9076,6 +9078,7 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal.course-map-structure-expanded .course-map-streams-block {
   margin-top: 80px;
+  z-index: 15;
 }
 
 .course-map-explain-arrows,
@@ -9086,7 +9089,7 @@ body.completed-mode .completed:hover::after {
 #course-map-modal.course-map-structure-explain .course-map-explain-arrows,
 #course-map-modal.course-map-structure-expanded .course-map-explain-arrows {
   position: absolute;
-  top: -72px;
+  top: -66px;
   left: calc((var(--course-map-col-width) * 5) + 38px);
   width: calc((var(--course-map-col-width) * 2) - 62px);
   display: block;
@@ -9130,7 +9133,7 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal.course-map-structure-explain:not(.course-map-structure-expanded) .course-map-major-explain-arrows {
   position: absolute;
-  top: -72px;
+  top: -66px;
   left: 0;
   width: 100%;
   display: block;
@@ -9252,6 +9255,19 @@ body.completed-mode .completed:hover::after {
   visibility: hidden;
 }
 
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-structure-duplicate-top {
+  background: #fff !important;
+  background-color: #fff !important;
+  border-color: #d0d0d0 !important;
+  box-shadow: none !important;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-structure-duplicate-top .course-map-code,
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-structure-duplicate-top .course-map-name,
+#course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-stream .course-map-structure-duplicate-top .course-map-prereqs {
+  visibility: hidden;
+}
+
 #course-map-modal.course-map-structure-expanded .course-map-stream.course-map-structure-exploded-first .course-map-stream-label::after {
   content: "and";
   display: block;
@@ -9297,6 +9313,38 @@ body.completed-mode .completed:hover::after {
 
 #course-map-modal.course-map-structure-expanded .course-map-shared {
   z-index: 14;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-major-grid .course-map-placeholder[data-mirrored-subject="BIT245"]::after {
+  content: none;
+}
+
+#course-map-modal.course-map-structure-expanded .course-map-stream .course-map-shared-placeholder[data-mirrored-subject="BIT245"]::after {
+  content: none;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder::after {
+  content: none;
+}
+
+#course-map-modal.course-map-major-ns .course-map-stream .course-map-shared-placeholder::after,
+#course-map-modal.course-map-major-undecided .course-map-stream .course-map-shared-placeholder::after {
+  content: none;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder {
+  background: #fff !important;
+  border-color: #d0d0d0;
+}
+
+#course-map-modal.course-map-major-ns .course-map-stream .course-map-shared-placeholder,
+#course-map-modal.course-map-major-undecided .course-map-stream .course-map-shared-placeholder {
+  background: #fff !important;
+  border-color: #d0d0d0;
+}
+
+#course-map-modal .course-map-major-grid .course-map-placeholder[data-elective-slot][data-mirrored-subject="BIT245"] {
+  transform: translate(-1px, -1px);
 }
 
 .course-map-grid {
@@ -9559,6 +9607,32 @@ body.completed-mode .completed:hover::after {
 
 .course-map-status-selected .course-map-prereqs {
   color: #fff !important;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder {
+  background: #fff !important;
+  background-color: #fff !important;
+  border-color: #d0d0d0 !important;
+  box-shadow: none !important;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder .course-map-code,
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder .course-map-name,
+#course-map-modal.course-map-structure-expanded-ns .course-map-stream.course-map-structure-exploded-stream .course-map-shared-placeholder .course-map-prereqs {
+  visibility: hidden !important;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-streams-block .course-map-cell[data-subject="BIT245"] {
+  background: #fff !important;
+  background-color: #fff !important;
+  border-color: #d0d0d0 !important;
+  box-shadow: none !important;
+}
+
+#course-map-modal.course-map-structure-expanded-ns .course-map-streams-block .course-map-cell[data-subject="BIT245"] .course-map-code,
+#course-map-modal.course-map-structure-expanded-ns .course-map-streams-block .course-map-cell[data-subject="BIT245"] .course-map-name,
+#course-map-modal.course-map-structure-expanded-ns .course-map-streams-block .course-map-cell[data-subject="BIT245"] .course-map-prereqs {
+  visibility: hidden !important;
 }
 
 #course-map-modal .course-map-cell.course-map-current-record::before,
@@ -10097,9 +10171,9 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-structure-explain .course-map-notes {
-  left: 52px !important;
+  left: 20px !important;
   top: 360px !important;
-  width: 370px;
+  width: 426px;
   max-width: min(504px, calc(100% - 16px));
 }
 
@@ -10620,9 +10694,9 @@ body.completed-mode .completed:hover::after {
   min-width: 0;
   min-height: 120px;
   background: #fff;
-  border: 2px solid #222;
-  border-radius: 6px;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  border: 2px solid #9a9a9a;
+  border-radius: 26px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   padding: 10px 12px 12px;
   z-index: 7;
   display: none;
@@ -10670,10 +10744,6 @@ body.completed-mode .completed:hover::after {
   100% {
     box-shadow: 0 0 0 0 rgba(120, 120, 120, 0);
   }
-}
-
-#course-map-modal.course-map-structure-explain .course-map-key-panel {
-  bottom: calc(var(--course-map-key-bottom, 8px) + 54px);
 }
 
 #course-map-modal.course-map-staff-mode .course-map-notes {

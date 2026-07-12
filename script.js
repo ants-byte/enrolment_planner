@@ -9476,7 +9476,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
     if (semCountsLabel) {
       semCountsLabel.textContent = showSemCounts
-        ? 'Showing semesters to complete'
+        ? 'Show semesters to complete (active)'
         : 'Show semesters to complete';
       semCountsLabel.classList.toggle('active', showSemCounts);
     }
@@ -11381,7 +11381,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const notesRect = courseMapNotesEl.getBoundingClientRect();
       if (notesRect.width || notesRect.height) {
         left = notesRect.left - modalRect.left;
-        top = notesRect.bottom - modalRect.top + 80;
+        top = notesRect.bottom - modalRect.top + 16;
       }
     }
     courseMapKeyModal.style.left = `${Math.max(8, Math.round(left))}px`;
@@ -21195,7 +21195,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapSemCountsToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     if (courseMapSemCountsLabel) {
       courseMapSemCountsLabel.textContent = active
-        ? 'Showing semesters to complete'
+        ? 'Show semesters to complete (active)'
         : 'Show semesters to complete';
       courseMapSemCountsLabel.classList.toggle('active', active);
     }
@@ -21395,11 +21395,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       codeEl.textContent = displayParts.code;
       nameEl.textContent = displayParts.name || displayParts.code;
       cell.dataset.mirroredSubject = resolvedCode;
+      cell.dataset.subject = resolvedCode;
       return;
     }
     if (codeEl) codeEl.remove();
     nameEl.textContent = fallbackText;
     cell.removeAttribute('data-mirrored-subject');
+    if (cell.classList.contains('course-map-shared-placeholder')) cell.removeAttribute('data-subject');
   };
 
   const buildCourseMapGrid = (rows, cols, className = '') => {
@@ -21747,19 +21749,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .forEach((button) => staffInfoActions.appendChild(button));
     staffPanel.appendChild(staffInfoActions);
 
-    const staffOpenSelectedBtn = document.createElement('button');
-    staffOpenSelectedBtn.type = 'button';
-    staffOpenSelectedBtn.className =
-      'clear-button secondary course-map-staff-open-selected hidden-initial';
-    staffOpenSelectedBtn.textContent = 'Selection details';
-    staffOpenSelectedBtn.setAttribute('data-tooltip-html', 'Open a read-only table of the currently selected subjects.');
-    staffOpenSelectedBtn.style.display = 'none';
-    staffOpenSelectedBtn.addEventListener('click', () => {
-      if (staffOpenSelectedBtn.style.display === 'none') return;
-      showSelectedReadOnlyModal();
-    });
-    staffActions.appendChild(staffOpenSelectedBtn);
-
     courseMapContent.appendChild(staffPanel);
     enablePanelResize(staffPanel, {
       key: 'course-map-staff-panel-v3',
@@ -21772,7 +21761,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffSelectedSummaryEl = selectedSummary;
     courseMapStaffOpenWindowButton = staffOpenWindowBtn;
     courseMapStaffCopyTimetableButton = staffCopyTimetableBtn;
-    courseMapStaffOpenSelectedButton = staffOpenSelectedBtn;
+    courseMapStaffOpenSelectedButton = null;
     courseMapStaffClearButton = staffClearBtn;
     courseMapStaffFullTimetableButton = null;
     courseMapStaffAlertButtonsHostEl = alertHost;
@@ -21803,14 +21792,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : '';
       const effectiveMajorKey = explainKey || majorKey;
       if (sharedCell) {
+        sharedCell.hidden = !!explainKey;
         sharedCell.classList.toggle('bit245-overlay', effectiveMajorKey === 'ba' || effectiveMajorKey === 'sd');
         sharedCell.classList.toggle('bit245-explain-ns', explainKey === 'ns');
       }
-      const anchorSelector =
+      const streamAnchorSelector =
         effectiveMajorKey === 'sd'
           ? '.course-map-stream.sd .course-map-cell.course-map-placeholder[data-placeholder="bit245-sd"]'
           : '.course-map-stream.ba .course-map-cell.course-map-placeholder[data-placeholder="bit245-ba"]';
-      const anchorCell = courseMapContent?.querySelector(anchorSelector);
+      const majorAnchorSelector =
+        courseMapStructureExplainMode && (effectiveMajorKey === 'ba' || effectiveMajorKey === 'sd')
+          ? '.course-map-major-grid .course-map-placeholder[data-mirrored-subject="BIT245"]'
+          : '';
+      const anchorCell =
+        (majorAnchorSelector ? courseMapContent?.querySelector(majorAnchorSelector) : null) ||
+        courseMapContent?.querySelector(streamAnchorSelector);
       if (!sharedCell || !anchorCell) return;
       const anchorRect = anchorCell.getBoundingClientRect();
       const isNsMajor = effectiveMajorKey === 'ns';
@@ -22165,6 +22161,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'course-map-status-later',
         'course-map-in-major'
       );
+      setCourseMapPlaceholderMirrorText(cell, '', '');
     });
     courseMapMajorPlaceholders.forEach((cell) => {
       cell.classList.remove(
@@ -22234,11 +22231,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     });
 
+    const sharedCell = courseMapSharedEl?.querySelector('.course-map-shared-cell');
     const sharedStatus = getCourseMapStatusClass('BIT245');
-    if (sharedStatus && courseMapSharedPlaceholders.length) {
-      // Keep status styling on the floating BIT245 card only (avoid double border on placeholders).
+    if (sharedCell) {
+      sharedCell.classList.remove(
+        'course-map-status-passed',
+        'course-map-status-current',
+        'course-map-status-selected',
+        'course-map-status-next',
+        'course-map-status-later'
+      );
+      if (sharedStatus) sharedCell.classList.add(sharedStatus);
     }
-
     const majorStreamRows = courseMapStreamLayouts[majorKey] || courseMapStreamLayouts.ns;
     const majorStreamCodesByPlaceholderOrder = [];
     const maxMajorStreamCols = Math.max(0, ...majorStreamRows.map((row) => row.length || 0));
@@ -22272,6 +22276,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         !!(code && selectedMajor && activeMajorCodes.has(String(code || '').toUpperCase()) && !st?.completed && !st?.toggled && !isCurrent)
       );
     });
+    if (courseMapStructureExplainMode && ['ba', 'sd'].includes(courseMapStructureExpandedStream)) {
+      courseMapSharedPlaceholders.forEach((cell) => {
+        const selectedStream = cell.closest('.course-map-stream[data-stream]')?.dataset.stream || '';
+        if (selectedStream !== courseMapStructureExpandedStream) return;
+        setCourseMapPlaceholderMirrorText(cell, 'BIT245', '');
+        if (sharedStatus) cell.classList.add(sharedStatus);
+      });
+    } else if (courseMapStructureExplainMode && courseMapStructureExpandedStream === 'ns') {
+      courseMapSharedPlaceholders.forEach((cell) => {
+        setCourseMapPlaceholderMirrorText(cell, '', '');
+        cell.classList.remove(
+          'course-map-status-passed',
+          'course-map-status-current',
+          'course-map-status-selected',
+          'course-map-status-next',
+          'course-map-status-later',
+          'course-map-in-major'
+        );
+      });
+    }
     const getElectiveSlotStatus = (slotIndex) => {
       const bitCode = electiveBitState[slotIndex];
       if (bitCode) {
@@ -22293,13 +22317,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapElectivePlaceholders.forEach((cell, idx) => {
       const slotRaw = cell.dataset.electiveSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
-      const mirroredCode = electiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
+      let mirroredCode = electiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
+      if (
+        courseMapStructureExplainMode &&
+        !courseMapStructureExpandedStream &&
+        !selectedMajor &&
+        !/^USE\d{3}$/i.test(String(mirroredCode || ''))
+      ) {
+        mirroredCode = '';
+      }
+      const expandedMajorCodes = courseMapStructureExplainMode && courseMapStructureExpandedStream
+        ? new Set((majorLayouts[courseMapStructureExpandedStream] || []).map((code) => String(code || '').toUpperCase()))
+        : null;
+      if (
+        courseMapStructureExplainMode &&
+        expandedMajorCodes?.has(String(mirroredCode || '').toUpperCase())
+      ) {
+        mirroredCode = '';
+      }
       setCourseMapPlaceholderMirrorText(
         cell,
         mirroredCode,
         cell.dataset.placeholderLabel || `Elective Subject ${slotIndex + 1}`
       );
-      const status = getElectiveSlotStatus(slotIndex);
+      const status = mirroredCode ? getElectiveSlotStatus(slotIndex) : '';
       if (status) cell.classList.add(status);
     });
     const electiveLayout = computeElectiveList(majorKey);
@@ -22327,6 +22368,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.toggle('course-map-elective-unavailable', !shouldShowWhite);
       }
     });
+    if (courseMapStructureExplainMode && courseMapStructureExpandedStream) {
+      const representedCodes = new Set();
+      [...courseMapMajorPlaceholders, ...courseMapElectivePlaceholders].forEach((cell) => {
+        const code = String(cell.dataset.mirroredSubject || cell.dataset.subject || '').toUpperCase();
+        if (code) representedCodes.add(code);
+      });
+      courseMapContent?.querySelectorAll('.course-map-stream.course-map-structure-exploded-stream .course-map-cell[data-subject]').forEach((cell) => {
+        const code = String(cell.dataset.subject || '').toUpperCase();
+        cell.classList.toggle('course-map-structure-duplicate-top', representedCodes.has(code));
+      });
+      courseMapSharedPlaceholders.forEach((cell) => {
+        const code = String(cell.dataset.mirroredSubject || cell.dataset.subject || '').toUpperCase();
+        cell.classList.toggle('course-map-structure-duplicate-top', !!code && representedCodes.has(code));
+      });
+    } else {
+      courseMapContent?.querySelectorAll('.course-map-structure-duplicate-top').forEach((cell) => {
+        cell.classList.remove('course-map-structure-duplicate-top');
+      });
+    }
     syncCourseMapSemCountBadgesFromMainGrid();
     updateCourseMapStreamLabels();
   };
@@ -28697,6 +28757,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         event.preventDefault();
         courseMapStructureExpandedStream = courseMapStructureExpandedStream === streamKey ? '' : streamKey;
         updateCourseMapModeUi();
+        updateCourseMapStatuses();
         updateCourseMapStreamLabels();
         positionCourseMapArrows();
         return;
