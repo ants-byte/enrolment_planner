@@ -7,6 +7,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
 */
 (() => {
+  const PWA_LAST_SETTINGS_URL_STORAGE_KEY = 'timetablePlannerPwaLastSettingsUrlV1';
+  const isInstalledPwa = () =>
+    !!window.matchMedia?.('(display-mode: standalone)').matches || !!window.navigator?.standalone;
+  const restoreInstalledPwaSettingsUrl = () => {
+    if (!isInstalledPwa() || window.location.search) return;
+    try {
+      const stored = window.localStorage?.getItem(PWA_LAST_SETTINGS_URL_STORAGE_KEY);
+      if (!stored) return;
+      const savedUrl = new URL(stored, window.location.href);
+      if (savedUrl.origin !== window.location.origin) return;
+      window.history.replaceState(null, '', `${savedUrl.pathname}${savedUrl.search}${savedUrl.hash}`);
+    } catch {
+      // Continue with the manifest start URL if storage is unavailable or invalid.
+    }
+  };
+  const persistInstalledPwaSettingsUrl = (relativeUrl) => {
+    try {
+      const savedUrl = new URL(relativeUrl, window.location.href);
+      if (savedUrl.origin !== window.location.origin) return;
+      window.localStorage?.setItem(
+        PWA_LAST_SETTINGS_URL_STORAGE_KEY,
+        `${savedUrl.pathname}${savedUrl.search}${savedUrl.hash}`
+      );
+    } catch {
+      // URL settings still work for the current session when storage is unavailable.
+    }
+  };
+  restoreInstalledPwaSettingsUrl();
+
   const subjects = Array.from(
     document.querySelectorAll('.main-grid .subject-card, .electives-grid .subject-card')
   ).filter((cell) => !cell.classList.contains('info-card'));
@@ -288,6 +317,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsRootFontSizeLabel = document.getElementById('settings-font-size-label');
   const settingsFontFamilyButtons = Array.from(document.querySelectorAll('.title-settings-font-family'));
   const settingsDefaultSidebarWidthsButton = document.getElementById('settings-default-sidebar-widths');
+  const settingsPwaSetupActions = document.getElementById('settings-pwa-setup-actions');
+  const settingsPwaSaveSetupButton = document.getElementById('settings-pwa-save-setup');
+  const settingsPwaClearSetupButton = document.getElementById('settings-pwa-clear-setup');
   const settingsLightModeButton = document.getElementById('settings-light-mode');
   const settingsDarkModeButton = document.getElementById('settings-dark-mode');
   const settingsAccessibleColoursButton = document.getElementById('settings-accessible-colours');
@@ -755,6 +787,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const query = params.toString();
       const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash || ''}`;
       window.history.replaceState(null, '', nextUrl);
+      persistInstalledPwaSettingsUrl(nextUrl);
     } catch {
       // ignore URL update failures
     }
@@ -1388,6 +1421,40 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     applyTriageWritingSettings(initialTriageWriting, { persist: false });
     updateSettingsMenuUi();
     updateBookmarkableSettingsUrl();
+  };
+  const showPwaSetupButtonResult = (button, text) => {
+    if (!button) return;
+    const originalText = button.dataset.defaultText || button.textContent.trim();
+    button.dataset.defaultText = originalText;
+    button.textContent = text;
+    window.setTimeout(() => {
+      button.textContent = originalText;
+    }, 1200);
+  };
+  const saveInstalledPwaSetup = () => {
+    updateBookmarkableSettingsUrl();
+    showPwaSetupButtonResult(settingsPwaSaveSetupButton, 'Saved');
+  };
+  const clearInstalledPwaSetup = () => {
+    applyCardTheme(DEFAULT_CARD_THEME);
+    applyRootFontSize(DEFAULT_ROOT_FONT_SIZE_PX);
+    applyFontFamily(DEFAULT_FONT_FAMILY);
+    resetColourSettings();
+    applyUseTriageWriter(DEFAULT_USE_TRIAGE_WRITER);
+    applyTriageWritingSettings({
+      mode: DEFAULT_TRIAGE_WRITING_MODE,
+      twoOtherLane: DEFAULT_TRIAGE_TWO_OTHER_LANE,
+      threeMeLane: DEFAULT_TRIAGE_THREE_ME_LANE,
+    });
+    openCourseMapByDefault = false;
+    courseMapFontScaleEm = DEFAULT_COURSE_MAP_FONT_SCALE;
+    updateSettingsMenuUi();
+    updateCourseMapFontScale();
+    resetSidebarWidthsToDefault();
+    try {
+      window.localStorage?.removeItem(PWA_LAST_SETTINGS_URL_STORAGE_KEY);
+    } catch { }
+    showPwaSetupButtonResult(settingsPwaClearSetupButton, 'Cleared');
   };
   const closeSettingsMenu = () => {
     if (!settingsMenu) return;
@@ -14440,6 +14507,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapFullSemesterTimetableButton.addEventListener('click', showCourseTimetableModal);
   }
   if (settingsButton && settingsMenu) {
+    if (settingsPwaSetupActions) settingsPwaSetupActions.hidden = !isInstalledPwa();
     settingsButton.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -15442,6 +15510,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         semesterConfigDetails = null;
       }
     }
+    settingsPwaSaveSetupButton?.addEventListener('click', saveInstalledPwaSetup);
+    settingsPwaClearSetupButton?.addEventListener('click', clearInstalledPwaSetup);
     updateDateAlerts(staffWorkbookState.getCourseInfo());
     if (timetableModal?.classList.contains('show')) updateTimetableFees();
   }
@@ -29202,10 +29272,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!majorGrid) return;
     majorGrid.querySelectorAll('.course-map-elective-landing-guide').forEach((guide) => guide.remove());
     courseMapElectivePlaceholders.forEach((cell) => {
-      if (
-        !cell.classList.contains('course-map-structure-elective-landing') &&
-        !cell.classList.contains('course-map-structure-use')
-      ) return;
+      if (!cell.classList.contains('course-map-structure-elective-landing')) return;
       const guide = document.createElement('div');
       guide.className = 'course-map-elective-landing-guide';
       guide.textContent = cell.dataset.placeholderLabel || 'Elective Subject';
