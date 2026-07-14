@@ -1,4 +1,4 @@
-const CACHE_NAME = "subject-planner-v30";
+const CACHE_NAME = "subject-planner-v56";
 const STUDENT_VERSION_URL = "https://ants-byte.github.io/enrolment_planner/?mode=student";
 const IS_LOCAL_INSTALLATION = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const ASSETS = [

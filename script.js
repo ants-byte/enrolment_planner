@@ -306,6 +306,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsCourseMapDefaultLabel = document.getElementById('settings-course-map-label');
   const settingsUseTriageWriterToggle = document.getElementById('settings-use-triage-writer');
   const settingsUseTriageWriterLabel = document.getElementById('settings-use-triage-writer-label');
+  const settingsTriageWritingField = document.getElementById('settings-triage-writing-field');
+  const settingsTriageLanesSolo = document.getElementById('settings-triage-lanes-solo');
   const settingsTriageLanesTwoOneUsing = document.getElementById('settings-triage-lanes-two-one-using');
   const settingsTriageLanesTwo = document.getElementById('settings-triage-lanes-two');
   const settingsTriageLanesThree = document.getElementById('settings-triage-lanes-three');
@@ -633,6 +635,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const normalizeTriageWritingMode = (value) => {
     const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'solo') return 'solo';
     if (raw === '3') return '3';
     if (['2one', '2-one', 'oneusing'].includes(raw)) return '2one';
     return DEFAULT_TRIAGE_WRITING_MODE;
@@ -760,10 +763,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         params.set(SETTINGS_QUERY_COLOUR_FONT_KEY, activeColourFont);
       }
-      params.set(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY, useTriageWriter ? '1' : '0');
-      params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, activeTriageWritingMode);
-      params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
-      params.set(SETTINGS_QUERY_TRIAGE_ME_KEY, activeTriageThreeMeLane);
+      params.delete(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY);
+      params.delete(SETTINGS_QUERY_TRIAGE_LANES_KEY);
+      params.delete(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY);
+      params.delete(SETTINGS_QUERY_TRIAGE_ME_KEY);
+      if (!useTriageWriter) {
+        params.set(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY, '0');
+      } else if (activeTriageWritingMode === 'solo') {
+        params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, 'solo');
+      } else if (activeTriageWritingMode === '2one') {
+        params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, '2one');
+      } else if (activeTriageWritingMode === '3') {
+        if (activeTriageThreeMeLane === DEFAULT_TRIAGE_THREE_ME_LANE) {
+          params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, '3');
+        } else {
+          params.set(SETTINGS_QUERY_TRIAGE_ME_KEY, activeTriageThreeMeLane);
+        }
+      } else if (activeTriageTwoOtherLane !== DEFAULT_TRIAGE_TWO_OTHER_LANE) {
+        params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
+      }
       if (openCourseMapByDefault) {
         params.set(SETTINGS_QUERY_START_KEY, SETTINGS_QUERY_START_COURSE_MAP);
       } else {
@@ -824,8 +842,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (row) row.setAttribute('aria-checked', useTriageWriter ? 'true' : 'false');
     }
     if (settingsUseTriageWriterLabel) {
-      settingsUseTriageWriterLabel.textContent = `Use Triage writer (is ${useTriageWriter ? 'on' : 'off'})`;
+      settingsUseTriageWriterLabel.textContent =
+        `Enable/Disable Triage writing (is ${useTriageWriter ? 'enabled' : 'disabled'})`;
     }
+    if (settingsTriageLanesSolo) settingsTriageLanesSolo.checked = activeTriageWritingMode === 'solo';
     if (settingsTriageLanesTwoOneUsing) settingsTriageLanesTwoOneUsing.checked = activeTriageWritingMode === '2one';
     if (settingsTriageLanesTwo) settingsTriageLanesTwo.checked = activeTriageWritingMode === '2';
     if (settingsTriageLanesThree) settingsTriageLanesThree.checked = activeTriageWritingMode === '3';
@@ -841,6 +861,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       settingsTriageMeName.textContent = name ? `(${name})` : '';
     }
     [
+      settingsTriageLanesSolo,
+      settingsTriageLanesTwoOneUsing,
       settingsTriageLanesTwo,
       settingsTriageLanesThree,
       settingsTriageTwoOtherLaneButton,
@@ -1843,7 +1865,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
-    "(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here may give you the same.).";
+    "(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here also gives the lesser functionality.).";
   const dropZoneSpinner = dropZone
     ? (() => {
       const spinner = document.createElement('div');
@@ -1891,9 +1913,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260709-21';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260714-22';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260709-21';
+      return 'triage-parser-worker.js?v=triage-20260714-22';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -3865,6 +3887,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const teacher = String(getCurrentTeacherNameForTriage() || '').trim().toLowerCase();
     const isDavid = teacher === 'david';
     const isAntony = teacher === 'antony';
+    if (activeTriageWritingMode === 'solo') return { mode: 'solo' };
     if (activeTriageWritingMode === '2one') return { mode: 'oneUsing' };
     if (activeTriageWritingMode === '3') {
       if (isDavid) return { laneCount: 3, laneIndex: 0 };
@@ -4928,7 +4951,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapStudentInfoStrip.appendChild(crtLink);
     }
 
-    if (triageName || triage) {
+    if (!courseMapStaffMode) {
+      // Triage is staff-only.
+    } else if (triageName || triage) {
       const triageChip = document.createElement('button');
       triageChip.type = 'button';
       triageChip.className = 'course-map-info-chip course-map-info-dialog-button course-map-info-triage course-map-info-triage-detail';
@@ -5230,6 +5255,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (timetableModal && staffFacing) timetableModal.classList.add('staff-mode');
   if (document?.body) document.body.classList.toggle('student-mode', isStudentModeParam);
   if (document?.body) document.body.classList.toggle('staff-mode', !!staffFacing);
+  if (settingsTriageWritingField) settingsTriageWritingField.hidden = isStudentMode;
   if (helpSupportContent) helpSupportContent.classList.toggle('has-staff-tools', !!staffFacing);
   if (enrolmentOfficersHelpSection) {
     enrolmentOfficersHelpSection.classList.toggle('hidden-initial', !staffFacing);
@@ -5317,7 +5343,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       fixFlexOnResize = false,
       persist = true,
       respectCssMax = false,
+      defaultWidth = null,
     } = opts;
+    const isDefaultWidth = (width) =>
+      Number.isFinite(defaultWidth) && Math.round(width) === Math.round(defaultWidth);
     const baseStorageKey = `panel-size:${key}`;
     const getStorageKey = () => `${baseStorageKey}:${getPanelLayoutSignature()}`;
     let activeLayoutSignature = getPanelLayoutSignature();
@@ -5346,6 +5375,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!persist) return;
       const queryWidth = activePanelWidthPx[key];
       if (Number.isFinite(queryWidth) && queryWidth > 0) {
+        if (isDefaultWidth(queryWidth)) {
+          delete activePanelWidthPx[key];
+          try { localStorage.removeItem(getStorageKey()); } catch { }
+          updateBookmarkableSettingsUrl();
+          return;
+        }
         panelEl.style.width = `${Math.round(queryWidth)}px`;
         if (fixFlexOnResize) panelEl.style.flex = '0 0 auto';
         return;
@@ -5356,23 +5391,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return;
         if (Number.isFinite(parsed.w)) {
-          panelEl.style.width = `${parsed.w}px`;
-          activePanelWidthPx[key] = Math.round(parsed.w);
+          if (isDefaultWidth(parsed.w)) {
+            delete activePanelWidthPx[key];
+          } else {
+            panelEl.style.width = `${parsed.w}px`;
+            activePanelWidthPx[key] = Math.round(parsed.w);
+          }
           updateBookmarkableSettingsUrl();
         }
         if (Number.isFinite(parsed.h)) panelEl.style.height = `${parsed.h}px`;
-        if (fixFlexOnResize && parsed.fixedFlex) panelEl.style.flex = '0 0 auto';
+        if (fixFlexOnResize && parsed.fixedFlex && !isDefaultWidth(parsed.w)) panelEl.style.flex = '0 0 auto';
       } catch { }
     };
 
     const persistSize = (w, h, fixedFlex) => {
       if (!persist) return;
       if (Number.isFinite(w) && w > 0) {
-        activePanelWidthPx[key] = Math.round(w);
+        if (isDefaultWidth(w)) {
+          delete activePanelWidthPx[key];
+          panelEl.style.width = '';
+          if (fixFlexOnResize) panelEl.style.flex = '';
+        } else {
+          activePanelWidthPx[key] = Math.round(w);
+        }
         updateBookmarkableSettingsUrl();
       }
       try {
-        const payload = { w, h, fixedFlex: !!fixedFlex };
+        const payload = {
+          w: isDefaultWidth(w) ? null : w,
+          h,
+          fixedFlex: !!fixedFlex && !isDefaultWidth(w),
+        };
         localStorage.setItem(getStorageKey(), JSON.stringify(payload));
       } catch { }
     };
@@ -14327,8 +14376,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (helpOpenInstructionsButton) helpOpenInstructionsButton.addEventListener('click', switchHelpToInstructions);
   helpModal?.querySelectorAll('details[data-help-top-accordion]')?.forEach((details) => {
     details.addEventListener('toggle', () => {
+      if (details.open) return;
+      helpModal.querySelectorAll('details[data-help-exclusive-accordion]').forEach((subheading) => {
+        subheading.open = false;
+      });
+    });
+  });
+  helpModal?.querySelectorAll('details[data-help-exclusive-accordion]')?.forEach((details) => {
+    details.addEventListener('toggle', () => {
       if (!details.open) return;
-      helpModal.querySelectorAll('details[data-help-top-accordion]').forEach((other) => {
+      helpModal.querySelectorAll('details[data-help-exclusive-accordion]').forEach((other) => {
         if (other !== details) other.open = false;
       });
     });
@@ -14538,6 +14595,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const activeRecord = staffWorkbookState.getStudentRecord?.();
         if (activeRecord && studentDataPreview?.classList?.contains('is-visible')) {
           renderStudentPreviewHtml(formatStudentSummary(activeRecord));
+        }
+      });
+    }
+    if (settingsTriageLanesSolo) {
+      settingsTriageLanesSolo.addEventListener('change', () => {
+        if (settingsTriageLanesSolo.checked) {
+          applyTriageWritingSettings({ mode: 'solo', threeMeLane: DEFAULT_TRIAGE_THREE_ME_LANE });
         }
       });
     }
@@ -30003,7 +30067,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const mainContent = document.querySelector('.main-content');
     enablePanelResize(primarySidebar, { key: 'sidebar', fixFlexOnResize: true });
     enablePanelResize(dropSidebar, { key: 'drop-sidebar', fixFlexOnResize: true });
-    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true });
+    enablePanelResize(mainContent, { key: 'main-content', fixFlexOnResize: true, defaultWidth: 1543 });
   } catch { }
 
   try {

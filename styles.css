@@ -664,8 +664,8 @@ button {
 .main-content {
   /* Fill remaining space beside sidebars and allow grid to resize with viewport. */
   order: 3;
-  /* Default to the ideal grid width when there is room after the sidebars. */
-  flex: 1 1 1284px;
+  /* Cap the initial grid width; a manual resize may still make it wider. */
+  flex: 0 1 1543px;
   width: auto;
   min-width: 0;
   max-width: none;

@@ -1429,8 +1429,14 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
     return !getCellTextFromXml(freeCell, sharedStrings).trim();
   };
   const freeRows = rowEntries.filter(isFreeRow);
+  if (rowLane && typeof rowLane === 'object' && rowLane.mode === 'solo') {
+    targetRow = freeRows[0]?.rowNumber || -1;
+  }
   if (rowLane && typeof rowLane === 'object' && rowLane.mode === 'oneUsing') {
     targetRow = freeRows[1]?.rowNumber || -1;
+  }
+  if (targetRow < 0 && rowLane && typeof rowLane === 'object' && rowLane.mode === 'solo') {
+    return { ok: false, error: 'No blank Triage row was found in column D below row 4.', sheetCount };
   }
   if (targetRow < 0 && rowLane && typeof rowLane === 'object' && rowLane.mode === 'oneUsing') {
     return { ok: false, error: 'No second blank Triage row was found in column D below row 4.', sheetCount };
