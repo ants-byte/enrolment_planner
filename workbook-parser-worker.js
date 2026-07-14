@@ -67,7 +67,12 @@ const TRIAGE_MAX_COL_SCAN = 120;
 const TRIAGE_MAX_PREVIEW_COLS = 12;
 const TRIAGE_READ_MAX_ROWS = 800;
 const SOURCE_READ_MAX_ROWS = 4000;
-const SOURCE_SHEET_NAMES = ['Students', 'STUDENTS', 'students'];
+const SOURCE_SHEET_NAMES = [
+  'Students', 'STUDENTS', 'students',
+  'StudentFlags', 'STUDENTFLAGS', 'studentflags',
+  'Student Flags', 'STUDENT FLAGS', 'student flags',
+  'Student_Flags', 'STUDENT_FLAGS', 'student_flags',
+];
 const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
 
 const normalizeHeader = (value) =>
@@ -552,6 +557,33 @@ function buildStudentRecordsFromWorkbook(workbook) {
     rowCount = rowMapResult.rowCountFromRows;
   }
   const records = [];
+  const studentFlagsById = new Map();
+  const studentFlagsSheetName = Object.keys(workbook.Sheets || {}).find(
+    (name) => normalizeHeader(name) === 'studentflags'
+  );
+  const studentFlagsSheet = studentFlagsSheetName ? workbook.Sheets[studentFlagsSheetName] : null;
+  if (studentFlagsSheet) {
+    const flagRows = XLSX.utils.sheet_to_json(studentFlagsSheet, { header: 1, defval: '' });
+    const idHeaders = new Set(['studentnumber', 'studentid', 'studentidsunique']);
+    const flagHeaders = new Set(['notes', 'studentflag', 'studentflags']);
+    const headerIndex = flagRows.findIndex((row) =>
+      row.some((cell) => idHeaders.has(normalizeHeader(cell))) &&
+      row.some((cell) => flagHeaders.has(normalizeHeader(cell)))
+    );
+    if (headerIndex >= 0) {
+      const headers = flagRows[headerIndex].map((cell) => normalizeHeader(cell));
+      const idIndex = headers.findIndex((header) => idHeaders.has(header));
+      const flagIndex = headers.findIndex((header) => flagHeaders.has(header));
+      flagRows.slice(headerIndex + 1).forEach((row) => {
+        const studentId = normalizeStudentId(row[idIndex]);
+        const flag = String(row[flagIndex] ?? '').trim();
+        if (!studentId || !flag) return;
+        const flags = studentFlagsById.get(studentId) || [];
+        flags.push(flag);
+        studentFlagsById.set(studentId, flags);
+      });
+    }
+  }
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
     const record = {};
     let hasValue = false;
@@ -563,6 +595,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const studentId = normalizeStudentId(record.Student_IDs_Unique);
     if (!studentId || !hasValue) continue;
     record.Student_IDs_Unique = studentId;
+    if (studentFlagsById.has(studentId)) {
+      record.Student_Flags = studentFlagsById.get(studentId);
+    }
     normalizeStudentRecordNameFields(record);
     if (!String(record.SharePoint_StudentForms || '').trim() && sharePointByStudentId.has(studentId)) {
       record.SharePoint_StudentForms = sharePointByStudentId.get(studentId) || '';

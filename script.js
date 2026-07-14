@@ -416,7 +416,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     calibri: 'Calibri, "Segoe UI", Arial, sans-serif',
     roboto: 'Roboto, "Segoe UI", Arial, sans-serif',
     mono: '"Roboto Mono", Consolas, "Courier New", monospace',
-    'noto-serif': '"Noto Serif", Georgia, "Times New Roman", serif',
+    'sans-code': '"Google Sans Code", Consolas, monospace',
+    cambria: 'Cambria, "Times New Roman", serif',
     merriweather: 'Merriweather, Georgia, "Times New Roman", serif',
   };
   const MIN_COURSE_MAP_FONT_SCALE = 0.75;
@@ -430,9 +431,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const COLOUR_SETTINGS = [
     { key: 'coreBand', label: 'Core band', cssVars: ['--core-band'], hue: 35, defaultLightness: 58, defaultSaturation: 100 },
     { key: 'coreBody', label: 'Core background', cssVars: ['--core', '--core-body', '--core-body-coloured-ui'], hue: 55, defaultLightness: 87, defaultSaturation: 58 },
-    { key: 'networkBand', label: 'Network Security band', cssVars: ['--network-band'], hue: 156, defaultLightness: 27, defaultSaturation: 95 },
+    { key: 'networkBand', label: 'Network Security band', cssVars: ['--network-band'], hue: 156, defaultLightness: 24, defaultSaturation: 95 },
     { key: 'networkBody', label: 'Network Security background', cssVars: ['--network', '--network-body', '--network-body-coloured-ui'], hue: 135, defaultLightness: 90, defaultSaturation: 40 },
-    { key: 'baBand', label: 'Business Analytics band', cssVars: ['--ba-band'], hue: 206, defaultLightness: 48, defaultSaturation: 95 },
+    { key: 'baBand', label: 'Business Analytics band', cssVars: ['--ba-band'], hue: 206, defaultLightness: 52, defaultSaturation: 62 },
     { key: 'baBody', label: 'Business Analytics background', cssVars: ['--ba', '--ba-body', '--ba-body-coloured-ui'], hue: 206, defaultLightness: 91, defaultSaturation: 78 },
     { key: 'softwareBand', label: 'Software Development band', cssVars: ['--software-band'], hue: 310, defaultLightness: 48, defaultSaturation: 70 },
     { key: 'softwareBody', label: 'Software Development background', cssVars: ['--software', '--software-body', '--software-body-coloured-ui'], hue: 281, defaultLightness: 91, defaultSaturation: 56 },
@@ -440,8 +441,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const DEFAULT_COLOUR_SETTINGS = COLOUR_SETTINGS.flatMap((item) => [item.defaultLightness, item.defaultSaturation]);
   const LEGACY_DEFAULT_COLOUR_SETTINGS = [63, 100, 87, 58, 31, 100, 90, 40, 41, 100, 91, 78, 45, 65, 91, 56];
   const ACCESSIBLE_COLOUR_HUES = {
-    coreBand: 0,
-    coreBody: 0,
+    coreBand: 184,
+    coreBody: 184,
     networkBand: 48,
     networkBody: 48,
     baBand: 205,
@@ -450,15 +451,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     softwareBody: 320,
   };
   const ACCESSIBLE_COLOUR_DEFAULT_CSS = {
-    coreBand: '#050505',
-    coreBody: '#f2f2f2',
+    coreBand: 'hsl(184 90% 16%)',
+    coreBody: 'hsl(184 36% 88%)',
     networkBand: 'hsl(48 95% 56%)',
     networkBody: 'hsl(48 70% 90%)',
-    baBand: 'hsl(205 90% 42%)',
-    baBody: 'hsl(205 70% 91%)',
+    baBand: 'hsl(205 90% 48%)',
+    baBody: 'hsl(205 75% 93%)',
     softwareBand: 'hsl(320 80% 62%)',
     softwareBody: 'hsl(320 55% 91%)',
   };
+  const ACCESSIBLE_COLOUR_DEFAULT_SETTINGS = [16, 90, 88, 36, 56, 95, 90, 70, 48, 90, 93, 75, 62, 80, 91, 55];
+  const DARK_CARD_COLOUR_SETTINGS = [78, 45, 10, 95, 38, 55, 10, 85, 80, 65, 10, 90, 48, 70, 18, 85];
   const DEFAULT_COLOUR_FONT = 'black';
   const normalizeColourFont = (value) => String(value || '').trim().toLowerCase() === 'white' ? 'white' : DEFAULT_COLOUR_FONT;
   const DEFAULT_TRIAGE_WRITING_MODE = '2';
@@ -510,7 +513,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (['calibri'].includes(raw)) return 'calibri';
     if (['roboto'].includes(raw)) return 'roboto';
     if (['mono', 'monospace', 'roboto-mono', 'robotomono'].includes(raw)) return 'mono';
-    if (['serif', 'noto-serif', 'notoserif'].includes(raw)) return 'noto-serif';
+    if (['sans-code', 'sanscode', 'google-sans-code', 'jetbrains', 'jetbrains-mono', 'courier', 'courier-new', 'couriernew'].includes(raw)) return 'sans-code';
+    if (['serif', 'cambria', 'georgia', 'noto-serif', 'notoserif'].includes(raw)) return 'cambria';
     if (['merriweather', 'merri'].includes(raw)) return 'merriweather';
     return DEFAULT_FONT_FAMILY;
   };
@@ -551,9 +555,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const areDefaultColourSettings = (settings = activeColourSettings) =>
     normalizeColourSettings(settings).every((value, index) => value === DEFAULT_COLOUR_SETTINGS[index]);
+  const areDarkCardColourSettings = (settings = activeColourSettings) =>
+    normalizeColourSettings(settings).every((value, index) => value === DARK_CARD_COLOUR_SETTINGS[index]);
   const areLegacyDefaultColourSettings = (settings) =>
     normalizeColourSettings(settings).every((value, index) => value === LEGACY_DEFAULT_COLOUR_SETTINGS[index]);
   const getColourSettingsQueryValue = (settings = activeColourSettings) => normalizeColourSettings(settings).join(',');
+  const getChangedColourBodyKeys = (settings = activeColourSettings) =>
+    COLOUR_SETTINGS
+      .map((item, index) => ({ item, index }))
+      .filter(({ item, index }) => {
+        if (!item.key.endsWith('Body')) return false;
+        const lightnessIndex = index * 2;
+        return (
+          settings[lightnessIndex] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex] ||
+          settings[lightnessIndex + 1] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex + 1]
+        );
+      })
+      .map(({ item }) => item.key.replace(/Body$/, '').replace(/^software$/, 'software'));
+  const syncColourBodyBackgroundFlags = () => {
+    if (!document?.documentElement) return;
+    const changedKeys = getChangedColourBodyKeys();
+    if (changedKeys.length) {
+      document.documentElement.setAttribute('data-colour-body-bg', changedKeys.join(' '));
+    } else {
+      document.documentElement.removeAttribute('data-colour-body-bg');
+    }
+  };
   const getColourSettingsFromQuery = () => {
     if (typeof URLSearchParams === 'undefined') return null;
     try {
@@ -590,11 +617,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return raw ? normalizeUseTriageWriter(raw) : null;
   };
   const getTriageWritingSettingsFromQuery = () => {
-    let mode = normalizeTriageWritingMode(getQueryParamLower(SETTINGS_QUERY_TRIAGE_LANES_KEY));
-    const twoOtherLane = normalizeTriageTwoOtherLane(getQueryParamLower(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY));
-    const threeMeLane = normalizeTriageThreeMeLane(getQueryParamLower(SETTINGS_QUERY_TRIAGE_ME_KEY));
+    const rawMode = getQueryParamLower(SETTINGS_QUERY_TRIAGE_LANES_KEY);
+    const rawTwoOtherLane = getQueryParamLower(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY);
+    const rawThreeMeLane = getQueryParamLower(SETTINGS_QUERY_TRIAGE_ME_KEY);
+    let mode = normalizeTriageWritingMode(rawMode);
+    const twoOtherLane = normalizeTriageTwoOtherLane(rawTwoOtherLane);
+    const threeMeLane = normalizeTriageThreeMeLane(rawThreeMeLane);
     if (threeMeLane !== DEFAULT_TRIAGE_THREE_ME_LANE) mode = '3';
-    return { mode, twoOtherLane, threeMeLane };
+    return { mode, twoOtherLane, threeMeLane, hasQuery: !!(rawMode || rawTwoOtherLane || rawThreeMeLane) };
   };
   const getAppearanceFromQuery = () => {
     const raw = getQueryParamLower(SETTINGS_QUERY_APPEARANCE_KEY);
@@ -698,26 +728,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         params.set(SETTINGS_QUERY_COLOUR_FONT_KEY, activeColourFont);
       }
-      if (useTriageWriter === DEFAULT_USE_TRIAGE_WRITER) {
-        params.delete(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY);
-      } else {
-        params.set(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY, '0');
-      }
-      if (activeTriageWritingMode === DEFAULT_TRIAGE_WRITING_MODE) {
-        params.delete(SETTINGS_QUERY_TRIAGE_LANES_KEY);
-      } else {
-        params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, activeTriageWritingMode);
-      }
-      if (activeTriageTwoOtherLane === DEFAULT_TRIAGE_TWO_OTHER_LANE) {
-        params.delete(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY);
-      } else {
-        params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
-      }
-      if (activeTriageThreeMeLane === DEFAULT_TRIAGE_THREE_ME_LANE) {
-        params.delete(SETTINGS_QUERY_TRIAGE_ME_KEY);
-      } else {
-        params.set(SETTINGS_QUERY_TRIAGE_ME_KEY, activeTriageThreeMeLane);
-      }
+      params.set(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY, useTriageWriter ? '1' : '0');
+      params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, activeTriageWritingMode);
+      params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
+      params.set(SETTINGS_QUERY_TRIAGE_ME_KEY, activeTriageThreeMeLane);
       if (openCourseMapByDefault) {
         params.set(SETTINGS_QUERY_START_KEY, SETTINGS_QUERY_START_COURSE_MAP);
       } else {
@@ -936,21 +950,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ) {
       return ACCESSIBLE_COLOUR_DEFAULT_CSS[item.key];
     }
-    const safeSaturation = activeColourPalette === ACCESSIBLE_COLOUR_PALETTE && ['coreBand', 'coreBody'].includes(item?.key)
-      ? 0
-      : saturation;
-    return `hsl(${getColourSettingHue(item)} ${safeSaturation}% ${lightness}%)`;
+    return `hsl(${getColourSettingHue(item)} ${saturation}% ${lightness}%)`;
+  };
+  const getEffectiveColourSettings = (settings = activeColourSettings) => (
+    activeColourPalette === ACCESSIBLE_COLOUR_PALETTE && areDefaultColourSettings(settings)
+      ? ACCESSIBLE_COLOUR_DEFAULT_SETTINGS
+      : settings
+  );
+  const resetColourBackgroundSettingsForCurrentPalette = () => {
+    const defaults = activeColourPalette === ACCESSIBLE_COLOUR_PALETTE
+      ? ACCESSIBLE_COLOUR_DEFAULT_SETTINGS
+      : DEFAULT_COLOUR_SETTINGS;
+    const next = [...getEffectiveColourSettings()];
+    COLOUR_SETTINGS.forEach((item, rowIndex) => {
+      if (!item.key.endsWith('Body')) return;
+      const lightnessIndex = rowIndex * 2;
+      next[lightnessIndex] = defaults[lightnessIndex];
+      next[lightnessIndex + 1] = defaults[lightnessIndex + 1];
+    });
+    applyColourSettings(next);
   };
   const updateColourSettingsControlValues = () => {
     if (!colourSettingsControls) return;
+    const effectiveSettings = getEffectiveColourSettings();
     colourSettingsControls.querySelectorAll('input[data-colour-index]').forEach((input) => {
       const index = Number.parseInt(input.dataset.colourIndex || '', 10);
-      if (Number.isFinite(index)) input.value = String(activeColourSettings[index]);
+      if (Number.isFinite(index)) input.value = String(effectiveSettings[index]);
     });
     COLOUR_SETTINGS.forEach((item, rowIndex) => {
       const swatch = colourSettingsControls.querySelector(`[data-colour-swatch="${item.key}"]`);
       if (!swatch) return;
-      swatch.style.background = getColourSettingCss(item, activeColourSettings[rowIndex * 2], activeColourSettings[rowIndex * 2 + 1]);
+      swatch.style.background = getColourSettingCss(item, effectiveSettings[rowIndex * 2], effectiveSettings[rowIndex * 2 + 1]);
     });
     colourSettingsControls.querySelectorAll('.colour-settings-card-preview[data-band-index][data-body-index]').forEach((preview) => {
       const bandIndex = Number.parseInt(preview.dataset.bandIndex || '', 10);
@@ -958,9 +988,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const band = COLOUR_SETTINGS[bandIndex];
       const body = COLOUR_SETTINGS[bodyIndex];
       if (!band || !body) return;
-      preview.style.setProperty('--preview-band', getColourSettingCss(band, activeColourSettings[bandIndex * 2], activeColourSettings[bandIndex * 2 + 1]));
-      preview.style.setProperty('--preview-body', getColourSettingCss(body, activeColourSettings[bodyIndex * 2], activeColourSettings[bodyIndex * 2 + 1]));
-      preview.classList.toggle('has-black-band', activeColourPalette === ACCESSIBLE_COLOUR_PALETTE && band.key === 'coreBand');
+      preview.style.setProperty('--preview-band', getColourSettingCss(band, effectiveSettings[bandIndex * 2], effectiveSettings[bandIndex * 2 + 1]));
+      preview.style.setProperty('--preview-body', getColourSettingCss(body, effectiveSettings[bodyIndex * 2], effectiveSettings[bodyIndex * 2 + 1]));
+      preview.classList.toggle('has-black-band', false);
     });
     colourSettingsControls.querySelectorAll('input[data-colour-palette-switch]').forEach((input) => {
       const active = activeColourPalette === ACCESSIBLE_COLOUR_PALETTE;
@@ -968,7 +998,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const row = input.closest('.colour-settings-check');
       if (row) row.setAttribute('aria-checked', active ? 'true' : 'false');
       const label = row?.querySelector('[data-colour-palette-label]');
-      if (label) label.textContent = `Switch to mustard, magenta, and black (is ${active ? 'on' : 'off'})`;
+      if (label) label.textContent = `Switch to mustard, magenta, and teal (is ${active ? 'on' : 'off'})`;
+    });
+    colourSettingsControls.querySelectorAll('input[data-colour-dark-cards]').forEach((input) => {
+      const active = (
+        activeColourPalette === DEFAULT_COLOUR_PALETTE &&
+        activeCardTheme === COLOURED_CARD_THEME &&
+        areDarkCardColourSettings()
+      );
+      input.checked = active;
+      const row = input.closest('.colour-settings-check');
+      if (row) row.setAttribute('aria-checked', active ? 'true' : 'false');
+      const label = row?.querySelector('[data-colour-dark-cards-label]');
+      if (label) label.textContent = `Switch to dark cards (is ${active ? 'on' : 'off'})`;
     });
     colourSettingsControls.querySelectorAll('input[data-colour-card-theme]').forEach((input) => {
       const coloursOn = activeCardTheme === COLOURED_CARD_THEME;
@@ -986,8 +1028,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     activeColourFont = normalizeColourFont(fontColour);
     if (document?.documentElement) {
       const colour = activeColourFont === 'white' ? '#fff' : '#111';
-      if (activeColourFont === DEFAULT_COLOUR_FONT) document.documentElement.style.removeProperty('--subject-card-font-color');
-      else document.documentElement.style.setProperty('--subject-card-font-color', colour);
+      if (activeColourFont === DEFAULT_COLOUR_FONT) {
+        document.documentElement.style.removeProperty('--subject-card-font-color');
+        document.documentElement.removeAttribute('data-colour-font');
+      } else {
+        document.documentElement.style.setProperty('--subject-card-font-color', colour);
+        document.documentElement.setAttribute('data-colour-font', activeColourFont);
+      }
     }
     updateColourSettingsControlValues();
     updateBookmarkableSettingsUrl();
@@ -1009,6 +1056,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
       });
     }
+    syncColourBodyBackgroundFlags();
     updateColourSettingsControlValues();
     updateSettingsMenuUi();
     updateBookmarkableSettingsUrl();
@@ -1025,15 +1073,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     paletteSection.className = 'colour-settings-section colour-settings-palette-section';
     paletteSection.innerHTML = `
       <div class="colour-settings-palette-options">
+        <div class="colour-settings-defaults-row">
+          <div class="colour-settings-defaults-button-host"></div>
+          <span class="colour-settings-defaults-label">Default colours</span>
+        </div>
         <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
           <input type="checkbox" data-colour-palette-switch="accessible">
-          <span data-colour-palette-label>Switch to mustard, magenta, and black (is off)</span>
+          <span data-colour-palette-label>Switch to mustard, magenta, and teal (is off)</span>
+        </label>
+        <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
+          <input type="checkbox" data-colour-dark-cards>
+          <span data-colour-dark-cards-label>Switch to dark cards (is off)</span>
         </label>
         <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
           <input type="checkbox" data-colour-card-theme>
           <span data-colour-card-theme-label>Subject cards background colour (is off)</span>
         </label>
+        <div class="colour-settings-font-inner">
+          <div class="colour-settings-font-options">
+            <button class="colour-settings-font-option" type="button" data-font-colour="black">Black</button>
+            <button class="colour-settings-font-option" type="button" data-font-colour="white">White</button>
+          </div>
+          <div class="colour-settings-section-title">Font colour</div>
+        </div>
       </div>`;
+    if (colourSettingsDefaultsButton) {
+      paletteSection.querySelector('.colour-settings-defaults-button-host')?.appendChild(colourSettingsDefaultsButton);
+    }
     colourSettingsControls.appendChild(paletteSection);
     [
       { title: 'Core Subjects', band: 0, body: 1 },
@@ -1043,11 +1109,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ].forEach((section) => {
       const sectionEl = document.createElement('section');
       sectionEl.className = 'colour-settings-section colour-settings-stream-section';
-      const buildColourBlock = (heading, itemIndex, sideClass, headingFirst = false) => {
+      const buildColourBlock = (itemIndex, sideClass) => {
         const item = COLOUR_SETTINGS[itemIndex];
         const lightIndex = itemIndex * 2;
         const satIndex = lightIndex + 1;
-        const headingHtml = `<div class="colour-settings-subheading">${escapeHtml(heading)}</div>`;
         const slidersHtml = `
             <label class="colour-settings-adjust-row">
               <span>Lightness</span>
@@ -1059,53 +1124,39 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             </label>`;
         return `
           <div class="colour-settings-wing ${sideClass}">
-            ${headingFirst ? `${headingHtml}${slidersHtml}` : `${slidersHtml}${headingHtml}`}
+            ${slidersHtml}
           </div>`;
       };
       sectionEl.innerHTML = `
         <div class="colour-settings-section-title">${escapeHtml(section.title)}</div>
         <div class="colour-settings-wing-grid">
-          ${buildColourBlock('Band', section.band, 'colour-settings-wing-band')}
+          <div class="colour-settings-subheading colour-settings-wing-band-heading">Band</div>
+          <div></div>
+          <div class="colour-settings-subheading colour-settings-wing-background-heading">Background</div>
+          ${buildColourBlock(section.band, 'colour-settings-wing-band')}
           <span class="colour-settings-card-preview" data-band-index="${section.band}" data-body-index="${section.body}" aria-hidden="true"></span>
-          ${buildColourBlock('Background', section.body, 'colour-settings-wing-background', true)}
+          ${buildColourBlock(section.body, 'colour-settings-wing-background')}
         </div>`;
       colourSettingsControls.appendChild(sectionEl);
     });
-    const fontSection = document.createElement('section');
-    fontSection.className = 'colour-settings-section colour-settings-font-section';
-    fontSection.innerHTML = `
-      <div class="colour-settings-font-inner">
-        <div>
-          <div class="colour-settings-section-title">Font colour</div>
-          <div class="colour-settings-font-options">
-            <button class="colour-settings-font-option" type="button" data-font-colour="black">Black</button>
-            <button class="colour-settings-font-option" type="button" data-font-colour="white">White</button>
-          </div>
-        </div>
-        <div class="colour-settings-defaults-slot">
-          <div class="colour-settings-defaults-label">Default colours</div>
-          <div class="colour-settings-defaults-button-host"></div>
-        </div>
-      </div>`;
-    if (colourSettingsDefaultsButton) {
-      fontSection.querySelector('.colour-settings-defaults-button-host')?.appendChild(colourSettingsDefaultsButton);
-    }
-    colourSettingsControls.appendChild(fontSection);
     colourSettingsControls.addEventListener('input', (event) => {
       const input = event.target?.closest?.('input[data-colour-index]');
       if (!input) return;
       const index = Number.parseInt(input.dataset.colourIndex || '', 10);
       if (!Number.isFinite(index)) return;
-      const next = [...activeColourSettings];
+      const next = [...getEffectiveColourSettings()];
       next[index] = Number.parseInt(input.value, 10);
       applyColourSettings(next);
       const item = COLOUR_SETTINGS[Math.floor(index / 2)];
+      const defaultSettingsForPalette = activeColourPalette === ACCESSIBLE_COLOUR_PALETTE
+        ? ACCESSIBLE_COLOUR_DEFAULT_SETTINGS
+        : DEFAULT_COLOUR_SETTINGS;
       const allBackgroundsChanged = COLOUR_SETTINGS.every((colourItem, colourIndex) => {
         if (!colourItem.key.endsWith('Body')) return true;
         const lightnessIndex = colourIndex * 2;
         return (
-          next[lightnessIndex] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex] ||
-          next[lightnessIndex + 1] !== DEFAULT_COLOUR_SETTINGS[lightnessIndex + 1]
+          next[lightnessIndex] !== defaultSettingsForPalette[lightnessIndex] ||
+          next[lightnessIndex + 1] !== defaultSettingsForPalette[lightnessIndex + 1]
         );
       });
       if (item?.key?.endsWith('Body') && allBackgroundsChanged && activeCardTheme !== COLOURED_CARD_THEME) {
@@ -1119,9 +1170,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         applyColourPalette(paletteToggle.checked ? ACCESSIBLE_COLOUR_PALETTE : DEFAULT_COLOUR_PALETTE);
         return;
       }
+      const darkCardsToggle = event.target?.closest?.('input[data-colour-dark-cards]');
+      if (darkCardsToggle) {
+        const darkCardsOn = darkCardsToggle.checked;
+        applyColourPalette(DEFAULT_COLOUR_PALETTE);
+        applyColourSettings(darkCardsOn ? DARK_CARD_COLOUR_SETTINGS : DEFAULT_COLOUR_SETTINGS);
+        applyColourFont(darkCardsOn ? 'white' : DEFAULT_COLOUR_FONT);
+        if (darkCardsOn) applyCardTheme(COLOURED_CARD_THEME);
+        updateColourSettingsControlValues();
+        return;
+      }
       const cardThemeToggle = event.target?.closest?.('input[data-colour-card-theme]');
       if (cardThemeToggle) {
-        applyCardTheme(cardThemeToggle.checked ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME);
+        const cardThemeOn = cardThemeToggle.checked;
+        if (!cardThemeOn) resetColourBackgroundSettingsForCurrentPalette();
+        applyCardTheme(cardThemeOn ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME);
         updateColourSettingsControlValues();
         return;
       }
@@ -1311,11 +1374,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         threeMeLane: DEFAULT_TRIAGE_THREE_ME_LANE,
       };
     }
-    if (
-      queryTriageWriting.mode !== DEFAULT_TRIAGE_WRITING_MODE ||
-      queryTriageWriting.twoOtherLane !== DEFAULT_TRIAGE_TWO_OTHER_LANE ||
-      queryTriageWriting.threeMeLane !== DEFAULT_TRIAGE_THREE_ME_LANE
-    ) {
+    if (queryTriageWriting.hasQuery) {
       initialTriageWriting = queryTriageWriting;
     }
     applyCardTheme(initialTheme, { persist: false });
@@ -1954,10 +2013,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'Student_Flag',
   ];
   const STUDENT_COLUMN_ALIASES = {
-    Student_IDs_Unique: ['Student ID', 'Student ID as String', 'Student IDs Unique', 'StudentID', 'Student_ID'],
+    Student_IDs_Unique: ['Student ID', 'Student ID as String', 'Student IDs Unique', 'StudentID', 'Student_ID', 'Student Number'],
     Full_Name: ['Full Name', 'Full Names'],
     Family_Name: ['Family', 'Family Name', 'Family Names', 'Surname', 'Last Name'],
     Given_Name: ['Given', 'Given Name', 'Given Names', 'First Name'],
+    Student_Flag: ['Student Flags'],
   };
   const COURSE_INFO_RANGES = [
     'Semester_Start_Date',
@@ -2182,6 +2242,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Student ID',
       'StudentID',
       'Student_ID',
+      'Student Number',
     ].map((label) => normalizeHeader(label))
   );
   const getStudentRecordId = (record) => {
@@ -2256,7 +2317,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
   const emailBothButton = document.getElementById('email-both');
-  const copyStudentEmailsButton = document.getElementById('copy-student-emails');
+  const emailStudentDeclarationButton = document.getElementById('email-student-declaration');
   const openSupportingDocsFolderButton = document.getElementById('open-supporting-docs-folder');
   const openStudentFormsFolderButton = document.getElementById('open-student-forms-folder');
   const openTeacherTempFolderButton = document.getElementById('open-teacher-temp-folder');
@@ -2306,6 +2367,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeHelpModal = document.getElementById('close-help-modal');
   const closeHelpCta = document.getElementById('close-help-cta');
   const helpOpenInstructionsButton = document.getElementById('help-open-instructions');
+  const helpOpenEarlyCompletionButton = document.getElementById('help-open-early-completion');
+  const earlyCompletionModal = document.getElementById('early-completion-modal');
+  const closeEarlyCompletionModal = document.getElementById('close-early-completion-modal');
+  const closeEarlyCompletionCta = document.getElementById('close-early-completion-cta');
   const helpSupportContent = helpModal?.querySelector('.help-support-content') || null;
   const enrolmentOfficersHelpSection = document.getElementById('enrolment-officers-help-section');
   const codeModal = document.getElementById('code-modal');
@@ -2417,6 +2482,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const courseMapModeToggleButton = document.getElementById('toggle-course-map-mode');
   const courseMapStaffModeToggle = document.getElementById('course-map-staff-mode-toggle');
   const courseMapStaffModeLabel = document.getElementById('course-map-staff-mode-label');
+  const toggleCourseMapListColoursButton = document.getElementById('toggle-course-map-list-colours');
+  const courseMapListColoursToggleLabel = document.getElementById('course-map-list-colours-toggle-label');
+  const courseMapListColoursRow = document.getElementById('course-map-list-colours-row');
   const courseMapOverrideToggle = document.getElementById('course-map-override-toggle');
   const courseMapOverrideLabel = document.getElementById('course-map-override-label');
   const courseMapAiNamesToggleButton = document.getElementById('toggle-course-map-ai-names');
@@ -2427,8 +2495,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const toggleCourseMapNotesButton = document.getElementById('toggle-course-map-notes');
   const courseMapNotesToggleRow = toggleCourseMapNotesButton?.closest('.course-map-show-hide-row') || null;
   const courseMapNotesToggleLabel = document.getElementById('course-map-notes-toggle-label');
-  const toggleCourseMapListColoursButton = document.getElementById('toggle-course-map-list-colours');
-  const courseMapListColoursToggleLabel = document.getElementById('course-map-list-colours-toggle-label');
   const closeCourseMapKey = document.getElementById('close-course-map-key');
   const courseMapPassForEnrolmentsToggle = document.getElementById('course-map-pass-for-enrolments');
   const courseMapPassForEnrolmentsToggleRow = document.getElementById('course-map-pass-for-enrolments-row');
@@ -2571,7 +2637,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyNextSemester,
       copyNextSemesterCodes,
       copyCourseMapRemainingInfo,
-      copyStudentEmailsButton,
     ].forEach((button) => setClipboardButtonState(button, enabled));
   };
   updateClipboardUI();
@@ -2584,6 +2649,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       emailPrimaryButton,
       emailInstituteButton,
       emailBothButton,
+      emailStudentDeclarationButton,
       openSupportingDocsFolderButton,
       openStudentFormsFolderButton,
       openTeacherTempFolderButton,
@@ -2855,6 +2921,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const baseTypeClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective', 'dual-split', 'dual'];
   const displayTypeClasses = ['core', 'network', 'ba', 'software', 'dual', 'dual-split', 'elective'];
   const placeholderStyleClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective-stream'];
+  const applyCourseMapCellStreamClasses = (cell, code = '') => {
+    if (!cell) return;
+    cell.classList.remove(...displayTypeClasses);
+    const metaClasses = subjectMeta[String(code || '').trim().toUpperCase()]?.classes || [];
+    metaClasses
+      .filter((cls) => displayTypeClasses.includes(cls))
+      .forEach((cls) => cell.classList.add(cls));
+  };
   const getDisplayTypeClass = (cellOrId) => {
     const id = typeof cellOrId === 'string' ? cellOrId : cellOrId?.dataset?.subject;
     const metaClasses = id ? subjectMeta[id]?.classes || [] : [];
@@ -3416,29 +3490,39 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   function updateCourseMapLoadFilesButtonVisibility() {
     const showStaffHeaderControls = shouldShowCourseMapLoadFilesButton();
+    const activeRecord = typeof getActiveStudentRecord === 'function' ? getActiveStudentRecord() : null;
+    const hasStudent = !!activeRecord;
+    const syncStudentActionButton = (button, enabledTooltip, disabledTooltip) => {
+      if (!button) return;
+      button.hidden = !showStaffHeaderControls;
+      button.classList.toggle('hidden-initial', !showStaffHeaderControls);
+      button.disabled = !hasStudent;
+      button.classList.toggle('disabled', !hasStudent);
+      button.setAttribute('aria-disabled', hasStudent ? 'false' : 'true');
+      button.setAttribute('data-tooltip-html', hasStudent ? enabledTooltip : disabledTooltip);
+    };
     if (courseMapOpenFolderShortcutsButton) {
       courseMapOpenFolderShortcutsButton.hidden = !showStaffHeaderControls;
     }
-    if (courseMapStudFormsButton) {
-      courseMapStudFormsButton.hidden = !showStaffHeaderControls;
-      courseMapStudFormsButton.classList.toggle('hidden-initial', !showStaffHeaderControls);
-    }
-    if (courseMapCtTempButton) {
-      courseMapCtTempButton.hidden = !showStaffHeaderControls;
-      courseMapCtTempButton.classList.toggle('hidden-initial', !showStaffHeaderControls);
-    }
-    if (courseMapTempCreateButton) {
-      const hasStudentId = !!getLoadedCourseMapStudentId();
-      const showTempCreate = showStaffHeaderControls && hasStudentId;
-      courseMapTempCreateButton.hidden = !showTempCreate;
-      courseMapTempCreateButton.classList.toggle('hidden-initial', !showTempCreate);
-    }
+    syncStudentActionButton(
+      courseMapStudFormsButton,
+      "Create/open this student's folder inside today's Student Forms folder, then copy the Student Dec returned text and folder path.",
+      'Load a student first to use Std Frms.'
+    );
+    syncStudentActionButton(
+      courseMapCtTempButton,
+      "Find or prepare this student's credit transfer working folder in temp.",
+      'Load a student first to use CT -> Temp.'
+    );
+    syncStudentActionButton(
+      courseMapTempCreateButton,
+      "Create and open this student's folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.",
+      'Load a student first to use Temp Create.'
+    );
     if (courseMapLoadFilesButton) {
       const show = showStaffHeaderControls;
       const filesLoaded = hasCourseMapAllRequiredFilesLoaded();
       const loading = hasCourseMapActiveLoading();
-      const activeRecord = typeof getActiveStudentRecord === 'function' ? getActiveStudentRecord() : null;
-      const hasStudent = !!activeRecord;
       const buttonMode = filesLoaded ? 'clear' : 'load';
       const disabled = !show || loading || (buttonMode === 'clear' && !hasStudent);
       courseMapLoadFilesButton.hidden = !show;
@@ -4711,7 +4795,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (studentFlag) {
       const flagChip = document.createElement('span');
       flagChip.className = 'course-map-info-chip course-map-info-flag is-warning';
-      flagChip.textContent = 'Student Flag';
+      flagChip.textContent = getStudentFlagHeading(record);
       flagChip.setAttribute('data-tooltip', studentFlag);
       courseMapStudentInfoStrip.appendChild(flagChip);
     }
@@ -4928,18 +5012,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     selectedListEl.classList.toggle('course-map-scroll-threshold-active', subjectRows > 10);
   };
 
-  const updateCourseMapStaffSelectedSummary = () => {
-    if (!courseMapStaffSelectedSummaryEl) return;
-    courseMapStaffSelectedSummaryEl.innerHTML = '';
-    const studentFlag = getStudentFlagText(getActiveStudentRecord());
-    if (studentFlag) {
-      const flagEl = document.createElement('div');
-      flagEl.className = 'course-map-staff-student-flag';
-      flagEl.textContent = `Student Flag: ${studentFlag}`;
-      courseMapStaffSelectedSummaryEl.appendChild(flagEl);
-    }
-  };
-
   const mountCourseMapSelectedListIntoStaffPanel = () => {
     if (!selectedListEl || !courseMapStaffSelectedListHostEl) return;
     if (selectedListEl.parentElement === courseMapStaffSelectedListHostEl) return;
@@ -4977,7 +5049,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffPanelEl.hidden = !active;
     if (active) {
       mountCourseMapSelectedListIntoStaffPanel();
-      updateCourseMapStaffSelectedSummary();
       syncCourseMapStaffTimetableButton();
       positionCourseMapStaffPanel();
     } else {
@@ -5796,10 +5867,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapMajorElectivesReturnMode = '';
   let courseMapLastDefaultViewMode = staffFacing ? 'staff' : 'student';
   let courseMapStreamPulseTimer = null;
+  let courseMapStructureFirstExpandTimer = null;
+  let courseMapStructureOverviewRects = {};
   let courseMapListColoursOn = false;
   let remainingHideCurrentSelections = false;
   let remainingNoticeUnlocked = false;
   let majorPulseTimer = null;
+
+  function pulseCourseMapMajorElectivesHints(options = {}) {
+    if (!courseMapModal) return;
+    const { pulseReturn = true } = options;
+    const streamPulseMs = 2500;
+    courseMapModal.classList.remove('course-map-stream-label-pulse');
+    if (closeCourseMapMajorElectivesViewButton) {
+      closeCourseMapMajorElectivesViewButton.classList.remove('course-map-return-pulse');
+    }
+    void courseMapModal.offsetWidth;
+    courseMapModal.classList.add('course-map-stream-label-pulse');
+    if (courseMapStreamPulseTimer) clearTimeout(courseMapStreamPulseTimer);
+    courseMapStreamPulseTimer = setTimeout(() => {
+      courseMapModal.classList.remove('course-map-stream-label-pulse');
+      if (pulseReturn && closeCourseMapMajorElectivesViewButton && !closeCourseMapMajorElectivesViewButton.hidden) {
+        closeCourseMapMajorElectivesViewButton.classList.remove('course-map-return-pulse');
+        void closeCourseMapMajorElectivesViewButton.offsetWidth;
+        closeCourseMapMajorElectivesViewButton.classList.add('course-map-return-pulse');
+      }
+    }, streamPulseMs);
+  }
 
   const semTooltip = document.createElement('div');
   semTooltip.className = 'sem-tooltip';
@@ -7152,16 +7246,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return false;
   };
 
+  const getStudentFlags = (record) => {
+    if (!record) return [];
+    const values = [];
+    const appendValue = (value) => {
+      const items = Array.isArray(value) ? value : [value];
+      items.forEach((item) => {
+        String(item ?? '')
+          .split(/\r?\n+/)
+          .map((flag) => flag.trim().replace(/^\d+[.)]\s*/, ''))
+          .filter(Boolean)
+          .forEach((flag) => values.push(flag));
+      });
+    };
+    const studentId = getStudentRecordId(record);
+    const matchingRecords = studentId
+      ? studentRecords.filter((candidate) => getStudentRecordId(candidate) === studentId)
+      : [];
+    const sourceRecords = matchingRecords.length ? matchingRecords : [record];
+    sourceRecords.forEach((sourceRecord) => {
+      appendValue(sourceRecord.Student_Flags);
+      Object.keys(sourceRecord).forEach((key) => {
+        const normalized = String(key || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+        if (/^studentflags?\d*$/.test(normalized)) appendValue(sourceRecord[key]);
+      });
+    });
+    return Array.from(new Map(values.map((flag) => [flag.toLowerCase(), flag])).values());
+  };
+  const getStudentFlagHeading = (record) => {
+    const count = getStudentFlags(record).length;
+    return count > 1 ? `Student Flags (${count})` : 'Student Flag';
+  };
   const getStudentFlagText = (record) => {
-    if (!record) return '';
-    const direct = String(
-      record.Student_Flag || record['Student Flag'] || record.StudentFlag || record.studentFlag || ''
-    ).trim();
-    if (direct) return direct;
-    const matchKey = Object.keys(record).find((key) =>
-      String(key || '').replace(/[^a-z0-9]/gi, '').toLowerCase() === 'studentflag'
-    );
-    return matchKey ? String(record[matchKey] || '').trim() : '';
+    const flags = getStudentFlags(record);
+    return flags.length > 1
+      ? flags.map((flag, index) => `${index + 1}. ${flag}`).join('\n')
+      : flags[0] || '';
   };
 
   const isSdSubjectCode = (code) => {
@@ -7531,9 +7651,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const studentFlag = getStudentFlagText(record);
     if (studentFlag) {
+      const studentFlags = getStudentFlags(record);
+      const studentFlagHeading = getStudentFlagHeading(record);
+      const studentFlagHeadingHtml = studentFlags.length > 1
+        ? `<strong class="alert-inline-title alert-title-warning">${escapeHtml(studentFlagHeading)}:</strong><br>`
+        : `<strong class="alert-inline-title alert-title-warning">${escapeHtml(studentFlagHeading)}:</strong> `;
       infoMessages.push({
-        title: 'Student Flag',
-        html: `<p><strong class="alert-inline-title alert-title-warning">Student Flag</strong> <span class="alert-inline-text">${escapeHtml(
+        title: studentFlagHeading,
+        html: `<p>${studentFlagHeadingHtml}<span class="alert-inline-text student-flags-text">${escapeHtml(
           studentFlag
         )}</span></p>`,
       });
@@ -8281,14 +8406,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         both || 'Both email addresses required.'
       );
     }
-    if (copyStudentEmailsButton) {
-      const emails = [primary, institute].filter(Boolean).join('; ');
-      copyStudentEmailsButton.hidden = !shouldShow;
-      setActionButtonDisabledState(copyStudentEmailsButton, !hasAnyEmail);
-      copyStudentEmailsButton.setAttribute(
-        'title',
-        emails || 'No student email address loaded.'
-      );
+    if (emailStudentDeclarationButton) {
+      emailStudentDeclarationButton.hidden = !shouldShow;
+      setActionButtonDisabledState(emailStudentDeclarationButton, !hasAnyEmail);
+      emailStudentDeclarationButton.setAttribute('title', getStudentDeclarationEmailSubject());
     }
     if (openSupportingDocsFolderButton) {
       openSupportingDocsFolderButton.hidden = !shouldShow;
@@ -9739,11 +9860,53 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           : '';
       const hasTooltipTime = !!timeHtml;
       const availability = getSemesterAvailability(id);
+      const canSelectThisSemesterForTooltip = () => {
+        if (!isRunningThisSemester(id)) return false;
+        // Tooltips are attached during startup before the elective-count helpers are initialized.
+        let electivesFull = false;
+        try {
+          electivesFull = areElectivesFull();
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) throw error;
+        }
+        if (electivesFull && isElectivesGridCell(cell) && !subjectState.get(id)?.toggled) return false;
+        const state = subjectState.get(id);
+        if (state?.completed || state?.toggled) return false;
+        const completedSet = new Set(
+          Array.from(subjectState.entries())
+            .filter(([, st]) => st?.completed)
+            .map(([code]) => code)
+        );
+        const plannedSet = new Set(
+          Array.from(subjectState.entries())
+            .filter(([, st]) => st?.toggled)
+            .map(([code]) => code)
+        );
+        const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
+          id,
+          completedSet,
+          plannedSet,
+          usePlanned: false,
+        });
+        if (id === 'BIT371') {
+          const { completedMajorCount, plannedMajorCount } = getMajorCounts();
+          return getBit371Requirement({
+            completedSet,
+            plannedSet,
+            usePlanned: true,
+            completedMajorCount,
+            plannedMajorCount,
+          }).metPlanned;
+        }
+        return (corequisites[id] || []).length ? prereqMetNow && coreqMetNow : prereqMetNow;
+      };
       let availabilityHtml = '';
       if (availability !== 'Any') {
         const semesterNumber = availability === 'S1' ? '1' : availability === 'S2' ? '2' : '';
         if (semesterNumber) {
-          availabilityHtml = `<div class="tooltip-alt-sem">Only runs in Semester ${semesterNumber}</div>`;
+          availabilityHtml = canSelectThisSemesterForTooltip()
+            ? '<div class="tooltip-alt-sem tooltip-alt-sem-current">Runs this semester, <span class="tooltip-alt-sem-not">not</span> next semester</div>'
+            : `<div class="tooltip-alt-sem">Only runs in Semester ${semesterNumber}</div>`;
         }
       }
       const streamLabel = buildStreamLabel(id);
@@ -9759,7 +9922,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const neededHtml =
         depsRaw === 'None'
           ? '<div class="pre-block"><span class="inline-strong">Needed for:</span> None</div>'
-          : `<div class="pre-block"><span class="inline-strong">Needed for:</span><br>${depsRaw}</div>`;
+          : `<div class="pre-block"><span class="inline-strong">Needed for:</span> ${depsRaw}</div>`;
       const completionSemestersHtml = buildTooltipCompletionSemestersHtml(id, cell);
       const streamHtml =
         id === 'BIT245'
@@ -10997,7 +11160,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     overrideMode = false;
     fullLoadCap = 4;
     showSemCounts = true;
-    courseMapStudentSemCountsOn = true;
+    courseMapStudentSemCountsOn = false;
     refreshCurrentEnrolmentStudentRecord();
     passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
     exceptionalLoadApproved = false;
@@ -11150,6 +11313,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     helpModal.classList.remove('show');
     helpModal.setAttribute('aria-hidden', 'true');
     if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'false');
+    if (openInstructionsHelpButton) openInstructionsHelpButton.focus();
+  };
+
+  const showEarlyCompletionModal = () => {
+    if (!earlyCompletionModal) return;
+    if (helpModal) {
+      helpModal.classList.remove('show');
+      helpModal.setAttribute('aria-hidden', 'true');
+    }
+    if (openInstructionsHelpButton) openInstructionsHelpButton.setAttribute('aria-expanded', 'false');
+    earlyCompletionModal.classList.add('show');
+    earlyCompletionModal.setAttribute('aria-hidden', 'false');
+    if (closeEarlyCompletionModal) closeEarlyCompletionModal.focus();
+  };
+
+  const hideEarlyCompletionModal = () => {
+    if (!earlyCompletionModal) return;
+    earlyCompletionModal.classList.remove('show');
+    earlyCompletionModal.setAttribute('aria-hidden', 'true');
     if (openInstructionsHelpButton) openInstructionsHelpButton.focus();
   };
 
@@ -11499,6 +11681,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'student-dec-returned', label: 'Student Dec returned' },
     { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner – instructions and Zoom offer' },
     { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner – not sure about what to do', dividerAfter: true },
+    { key: 'link-to-start-application', label: 'Link to Start Application' },
+    { key: 'applying-from-os', label: 'Applying from os' },
+    { key: 'in-australia-now-completed-eform-but-no-usi', label: 'In Australia now – completed eForm but no USI' },
+    { key: 'are-you-in-aust-or-studied', label: 'Are you in Aust or studied?' },
+    { key: 'usi-get-or-create-one', label: 'USI – get or create one' },
+    { key: 'usi-incorrect-details-entered', label: 'USI – incorrect details entered' },
+    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications – Welcome!' },
+    { key: 'online-progression-classes-entered', label: 'Online progression – classes entered' },
+    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress – selections look good. classes entered' },
+    { key: 'credit-transfer-sign-return', label: 'Credit Transfer – Please sign and return' },
+    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned', dividerAfter: true },
+    { key: 'electives-use-credits-explained', label: 'Electives (USE credits) explained' },
+    { key: '6-credits', label: '6 credits' },
+    { key: '12-credits-post-bachelor-visa-concern', label: '12 credits. Post–bachelor visa concern' },
+    { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
+    { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to' },
+    { key: 'fee-payment-suspension-blocking-enrolment', label: 'Fee Non-Payment Suspension is blocking enrolment', dividerAfter: true },
     { key: 'enrolling-late-bit111', label: 'BIT111 – Enrolling late' },
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
@@ -11520,25 +11719,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'alternating-subjects-ba-major', label: 'Alternating subjects – BA' },
     { key: 'alternating-subjects-sd', label: 'Alternating subjects – SD' },
     { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects – SD & BA' },
-    { key: 'capstone-explained', label: 'Capstone Explained' },
-    { key: 'completing-the-course-early', label: 'Completing The Course Early' },
-    { key: 'summer-school-explained', label: 'Summer School Explained', dividerAfter: true },
-    { key: 'link-to-start-application', label: 'Link to Start Application' },
-    { key: 'applying-from-os', label: 'Applying from os' },
-    { key: 'in-australia-now-completed-eform-but-no-usi', label: 'In Australia now – completed eForm but no USI' },
-    { key: 'are-you-in-aust-or-studied', label: 'Are you in Aust or studied?' },
-    { key: 'usi-get-or-create-one', label: 'USI – get or create one' },
-    { key: 'usi-incorrect-details-entered', label: 'USI – incorrect details entered' },
-    { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications – Welcome!' },
-    { key: 'online-progression-classes-entered', label: 'Online progression – classes entered' },
-    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress – selections look good. classes entered' },
-    { key: 'credit-transfer-sign-return', label: 'Credit Transfer – Please sign and return' },
-    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
-    { key: 'electives-use-credits-explained', label: 'Electives (USE credits) explained' },
-    { key: '6-credits', label: '6 credits' },
-    { key: '12-credits-post-bachelor-visa-concern', label: '12 credits. Post–bachelor visa concern' },
-    { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
-    { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to', dividerAfter: true },
+    { key: 'capstone-explained', label: 'Capstone explained' },
+    { key: 'completing-the-course-early', label: 'Completing the course early' },
+    { key: 'summer-school-explained', label: 'Summer school explained', dividerAfter: true },
     { key: 'student-hub', label: 'Student Hub' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
     { key: 'personal-details-change-your-details', label: 'Personal Details – change your details' },
@@ -11686,6 +11869,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     '6-credits': ['6 credits'],
     '12-credits-post-bachelor-visa-concern': ['12 credits. Post-bachelor visa concern'],
     'enrolment-cutoff-dates': ['Enrolment cutoff dates'],
+    'fee-payment-suspension-blocking-enrolment': ['Fees/Suspension blocking enrolment'],
     'capstone-explained': ['Capstone Explained'],
     'completing-the-course-early': ['Completing The Course Early'],
     'summer-school-explained': ['Summer School Explained'],
@@ -13819,6 +14003,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const semester = semesterKey === 'S1' ? '1' : semesterKey === 'S2' ? '2' : 'Summer';
     return `Enrolment ${date.getFullYear()} Semester ${semester}`;
   };
+  const getStudentEnrolmentEmailSubject = (date = new Date()) => {
+    const semesterKey = getCurrentSemesterKey(date);
+    const semester = semesterKey === 'S1' ? '1' : semesterKey === 'S2' ? '2' : 'Summer';
+    return `Enrolment, ${date.getFullYear()} Sem ${semester}`;
+  };
   const buildStudentMailto = async (emails, firstName, subjectLine = '') => {
     const list = (emails || []).map((email) => email.trim()).filter(Boolean);
     if (!list.length) return '';
@@ -13972,7 +14161,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map((email) => email.trim())
       .filter(Boolean);
     const firstName = emailAllTarget.getAttribute('data-first-name') || '';
-    void openStudentEmail(emails, firstName);
+    const subjectLine = emailAllTarget.getAttribute('data-subject') || '';
+    void openStudentEmail(emails, firstName, subjectLine);
     triggerFlash(emailAllTarget);
   };
   const handleStudentDetailsKeydown = (event) => {
@@ -14035,16 +14225,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapCtTempButton) {
     courseMapCtTempButton.addEventListener('click', () => {
+      if (courseMapCtTempButton.disabled || !getActiveStudentRecord()) return;
       void launchCreditTransferTempWorkflow(courseMapCtTempButton);
     });
   }
   if (courseMapStudFormsButton) {
     courseMapStudFormsButton.addEventListener('click', () => {
+      if (courseMapStudFormsButton.disabled || !getActiveStudentRecord()) return;
       void launchStudentFormsCreateWorkflow(courseMapStudFormsButton);
     });
   }
   if (courseMapTempCreateButton) {
     courseMapTempCreateButton.addEventListener('click', () => {
+      if (courseMapTempCreateButton.disabled || !getActiveStudentRecord()) return;
       void launchStudentTempCreateWorkflow(courseMapTempCreateButton);
     });
   }
@@ -14065,6 +14258,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (closeHelpModal) closeHelpModal.addEventListener('click', hideHelpModal);
   if (closeHelpCta) closeHelpCta.addEventListener('click', hideHelpModal);
   if (helpOpenInstructionsButton) helpOpenInstructionsButton.addEventListener('click', switchHelpToInstructions);
+  helpModal?.querySelectorAll('details[data-help-top-accordion]')?.forEach((details) => {
+    details.addEventListener('toggle', () => {
+      if (!details.open) return;
+      helpModal.querySelectorAll('details[data-help-top-accordion]').forEach((other) => {
+        if (other !== details) other.open = false;
+      });
+    });
+  });
+  if (helpOpenEarlyCompletionButton) helpOpenEarlyCompletionButton.addEventListener('click', showEarlyCompletionModal);
+  if (closeEarlyCompletionModal) closeEarlyCompletionModal.addEventListener('click', hideEarlyCompletionModal);
+  if (closeEarlyCompletionCta) closeEarlyCompletionCta.addEventListener('click', hideEarlyCompletionModal);
   instructionsStepToggles.forEach((toggle) => {
     toggle.addEventListener('click', () => {
       toggleInstructionStep(toggle);
@@ -14243,6 +14447,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (settingsCardThemeColoursToggle) {
       settingsCardThemeColoursToggle.addEventListener('change', () => {
+        if (!settingsCardThemeColoursToggle.checked) resetColourBackgroundSettingsForCurrentPalette();
         applyCardTheme(settingsCardThemeColoursToggle.checked ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME);
       });
     }
@@ -14305,12 +14510,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
       });
     }
-    if (settingsTriageWritingExplanationButton) {
-      settingsTriageWritingExplanationButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        showTriageWritingExplanationModal();
-      });
-    }
     if (settingsRootFontSizeSlider) {
       settingsRootFontSizeSlider.addEventListener('input', () => {
         applyRootFontSize(settingsRootFontSizeSlider.value);
@@ -14337,7 +14536,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     settingsDarkModeButton?.addEventListener('click', () => applyAppearance(DARK_APPEARANCE));
     settingsAccessibleColoursButton?.addEventListener('click', () => showColourSettingsModal());
     settingsResetColoursButton?.addEventListener('click', resetColourSettings);
-    settingsMenu.addEventListener('click', (event) => event.stopPropagation());
+    settingsMenu.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!event.target.closest('#settings-triage-writing-explanation')) return;
+      event.preventDefault();
+      showTriageWritingExplanationModal();
+    });
     document.addEventListener('click', (event) => {
       if (!settingsPicker?.contains(event.target)) closeSettingsMenu();
     });
@@ -15418,24 +15622,35 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         )
         .join('<span class="student-email-sep">; </span>');
       const allEmails = emailList.join(',');
-      const emailAllIcon =
-        emailList.length > 1
-          ? `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" aria-label="Email student" data-tooltip-html="Email student<br>Open a draft addressed to all listed student emails.">${emailIconHtml}</button>`
-          : '';
-      const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="Copy student emails" data-tooltip-html="Copy student emails<br>Copy all listed student emails to the clipboard.">${copyIconHtml}</button>`;
-      lines.push(`<div class="student-email-row">${emailLinks}${emailAllIcon ? ` ${emailAllIcon}` : ''} ${copyEmailsIcon}</div>`);
+      const copyEmailsTooltip = emailList.length > 1
+        ? 'Copy both email addresses to clipboard, semi-colon separated'
+        : 'Copy email address to clipboard';
+      const copyEmailsIcon = `<button type="button" class="student-email-copy" data-emails="${escapeHtml(allEmails)}" aria-label="${copyEmailsTooltip}" data-tooltip="${copyEmailsTooltip}">${copyIconHtml}</button>`;
+      const emailSubject = getStudentEnrolmentEmailSubject();
+      const emailAllIcon = `<button type="button" class="student-email-all" data-emails="${escapeHtml(allEmails)}" data-first-name="${escapeHtml(firstName)}" data-subject="${escapeHtml(emailSubject)}" aria-label="Email student" data-tooltip-html="Send email to student.<br>Both address will be used. Subject will be 'Enrolment Year and Semester'">${emailIconHtml}</button>`;
+      lines.push(`<div class="student-email-row">${emailLinks} ${copyEmailsIcon} ${emailAllIcon}</div>`);
     }
     const studentFlag = getStudentFlagText(record);
     if (studentFlag) {
+      const studentFlags = getStudentFlags(record);
+      const studentFlagHeading = getStudentFlagHeading(record);
+      const studentFlagHeadingHtml = studentFlags.length > 1
+        ? `<strong class="alert-inline-title alert-title-warning">${escapeHtml(studentFlagHeading)}:</strong><br>`
+        : `<strong class="alert-inline-title alert-title-warning">${escapeHtml(studentFlagHeading)}:</strong> `;
       const flagLines = studentFlag.replace(/(\r?\n){2,}/g, '\n').split(/\r?\n/).filter((line) => line.trim());
       const flagFull = flagLines.length
-        ? flagLines.map((line) => `<div class="triage-comment-line">${escapeHtml(line)}</div>`).join('')
+        ? flagLines.map((line) => {
+            const numberedFlag = line.match(/^(\d+[.)])\s*(.*)$/);
+            return `<div class="triage-comment-line">${numberedFlag
+              ? `<strong class="student-flag-number">${escapeHtml(numberedFlag[1])}</strong> ${escapeHtml(numberedFlag[2])}`
+              : escapeHtml(line)}</div>`;
+          }).join('')
         : `<div class="triage-comment-line">${escapeHtml(studentFlag)}</div>`;
       const flagTooltip = escapeHtml(studentFlag);
       lines.push(
-        `<div class="student-summary-warning student-summary-flag triage-comment is-expandable"><span class="student-summary-flag-preview triage-comment-preview" role="button" tabindex="0" data-tooltip="${flagTooltip}"><strong class="alert-inline-title alert-title-warning">Student Flag:</strong> <span class="alert-inline-text">${escapeHtml(
+        `<div class="student-summary-warning student-summary-flag triage-comment is-expandable"><span class="student-summary-flag-preview triage-comment-preview" role="button" tabindex="0" data-tooltip="${flagTooltip}">${studentFlagHeadingHtml}<span class="alert-inline-text student-flags-text">${escapeHtml(
           studentFlag
-        )}</span></span><button type="button" class="triage-comment-menu">show all</button><div class="triage-comment-full hidden-initial" role="dialog" aria-modal="false" aria-label="Student Flag"><div class="triage-comment-full-header"><strong>Student Flag</strong><button type="button" class="triage-comment-full-close" aria-label="Close student flag">X</button></div><div class="triage-comment-full-body">${flagFull}</div></div></div>`
+        )}</span></span><button type="button" class="triage-comment-menu">show all</button><div class="triage-comment-full hidden-initial" role="dialog" aria-modal="false" aria-label="${escapeHtml(studentFlagHeading)}"><div class="triage-comment-full-header"><strong>${escapeHtml(studentFlagHeading)}</strong><button type="button" class="triage-comment-full-close" aria-label="Close student flag">X</button></div><div class="triage-comment-full-body">${flagFull}</div></div></div>`
       );
     }
     if (record) {
@@ -17762,6 +17977,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           'Student ID',
           'StudentID',
           'Student_ID',
+          'Student Number',
         ].map((label) => normalizeHeader(label))
       );
       for (let i = 0; i < scanLimit; i += 1) {
@@ -17822,6 +18038,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           'Student ID',
           'StudentID',
           'Student_ID',
+          'Student Number',
         ].map((label) => normalizeHeader(label))
       );
       for (let i = 0; i < scanLimit; i += 1) {
@@ -17855,9 +18072,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (headerIndex < 0) return { columnMapFromRows: null, rowCountFromRows: 0 };
       const headerRow = rows[headerIndex] || [];
       const colIndexMap = {};
+      const studentFlagColumnIndexes = [];
       headerRow.forEach((cell, idx) => {
-        const key = columnKeyMap[normalizeHeader(cell)];
+        const normalizedCell = normalizeHeader(cell);
+        const key = columnKeyMap[normalizedCell];
         if (key && colIndexMap[key] === undefined) colIndexMap[key] = idx;
+        if (/^studentflags?\d*$/.test(normalizedCell)) studentFlagColumnIndexes.push(idx);
       });
       const rowsToRead = rows.slice(headerIndex + 1);
       const hasStudentId = colIndexMap.Student_IDs_Unique !== undefined;
@@ -17871,6 +18091,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           return typeof cellValue === 'string' ? cellValue.trim() : cellValue ?? '';
         });
       });
+      if (studentFlagColumnIndexes.length) {
+        columnMapFromRows.Student_Flags = rowsToRead.map((row) =>
+          studentFlagColumnIndexes
+            .map((idx) => String(row[idx] ?? '').trim())
+            .filter(Boolean)
+        );
+      }
       const rowCountFromRows = Math.max(
         0,
         ...Object.values(columnMapFromRows).map((values) => values.length),
@@ -17884,6 +18111,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       rowCount = rowMapResult.rowCountFromRows;
     }
     const records = [];
+    const studentFlagsById = new Map();
+    const studentFlagsSheetName = Object.keys(workbook.Sheets || {}).find(
+      (name) => normalizeHeader(name) === 'studentflags'
+    );
+    const studentFlagsSheet = studentFlagsSheetName ? workbook.Sheets[studentFlagsSheetName] : null;
+    if (studentFlagsSheet) {
+      const flagRows = XLSX.utils.sheet_to_json(studentFlagsSheet, { header: 1, defval: '' });
+      const idHeaders = new Set(['studentnumber', 'studentid', 'studentidsunique']);
+      const flagHeaders = new Set(['notes', 'studentflag', 'studentflags']);
+      const headerIndex = flagRows.findIndex((row) =>
+        row.some((cell) => idHeaders.has(normalizeHeader(cell))) &&
+        row.some((cell) => flagHeaders.has(normalizeHeader(cell)))
+      );
+      if (headerIndex >= 0) {
+        const headers = flagRows[headerIndex].map((cell) => normalizeHeader(cell));
+        const idIndex = headers.findIndex((header) => idHeaders.has(header));
+        const flagIndex = headers.findIndex((header) => flagHeaders.has(header));
+        flagRows.slice(headerIndex + 1).forEach((row) => {
+          const studentId = normalizeStudentId(row[idIndex]);
+          const flag = String(row[flagIndex] ?? '').trim();
+          if (!studentId || !flag) return;
+          const flags = studentFlagsById.get(studentId) || [];
+          flags.push(flag);
+          studentFlagsById.set(studentId, flags);
+        });
+      }
+    }
     for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
       const record = {};
       let hasValue = false;
@@ -17892,9 +18146,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (value) hasValue = true;
         record[columnName] = value;
       });
+      record.Student_Flags = columnMap.Student_Flags?.[rowIndex] || [];
       const studentId = normalizeStudentId(record.Student_IDs_Unique);
       if (!studentId || !hasValue) continue;
       record.Student_IDs_Unique = studentId;
+      if (studentFlagsById.has(studentId)) {
+        record.Student_Flags = studentFlagsById.get(studentId);
+      }
       normalizeStudentRecordNameFields(record);
       if (!String(record.SharePoint_StudentForms || '').trim() && sharePointByStudentId.has(studentId)) {
         record.SharePoint_StudentForms = sharePointByStudentId.get(studentId) || '';
@@ -18837,7 +19095,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const normalizeCtTempFolderName = (name) => {
       const clean = String(name || '').trim();
       if (!clean) return clean;
-      return /(?:[\s-]CRT|[\s-]CT)$/i.test(clean) ? clean : `${clean} – CT`;
+      return /(?:[\s-]CRT|[\s-]CT)$/i.test(clean) ? clean : `${clean} - CT`;
     };
     return {
       semesterPath,
@@ -19555,23 +19813,31 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
     }
     if (folderShortcutCtTempButton) {
-      folderShortcutCtTempButton.classList.remove('hidden-initial', 'is-unavailable');
+      const hasLoadedStudent = !!getActiveStudentRecord();
+      folderShortcutCtTempButton.classList.remove('hidden-initial');
+      folderShortcutCtTempButton.classList.toggle('is-unavailable', !hasLoadedStudent);
       folderShortcutCtTempButton.classList.add('folder-shortcut-btn-blue');
-      folderShortcutCtTempButton.disabled = false;
+      folderShortcutCtTempButton.disabled = !hasLoadedStudent;
       folderShortcutCtTempButton.removeAttribute('data-path');
       folderShortcutCtTempButton.setAttribute(
         'title',
-        'Find or prepare the active student credit transfer working folder.'
+        hasLoadedStudent
+          ? 'Find or prepare the active student credit transfer working folder.'
+          : 'Load a student first to use CT -> Temp.'
       );
     }
     if (folderShortcutStudFormsButton) {
-      folderShortcutStudFormsButton.classList.remove('hidden-initial', 'is-unavailable');
+      const hasLoadedStudent = !!getActiveStudentRecord();
+      folderShortcutStudFormsButton.classList.remove('hidden-initial');
+      folderShortcutStudFormsButton.classList.toggle('is-unavailable', !hasLoadedStudent);
       folderShortcutStudFormsButton.classList.add('folder-shortcut-btn-blue');
-      folderShortcutStudFormsButton.disabled = false;
+      folderShortcutStudFormsButton.disabled = !hasLoadedStudent;
       folderShortcutStudFormsButton.removeAttribute('data-path');
       folderShortcutStudFormsButton.setAttribute(
         'title',
-        'Create/open this student folder inside today\'s Student Forms folder, then copy the Student Dec returned text and folder path.'
+        hasLoadedStudent
+          ? 'Create/open this student folder inside today\'s Student Forms folder, then copy the Student Dec returned text and folder path.'
+          : 'Load a student first to use Stud Forms.'
       );
     }
   };
@@ -19595,10 +19861,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return;
     }
     if (target.id === 'folder-shortcut-ct-temp') {
+      if (!getActiveStudentRecord()) return;
       void launchCreditTransferTempWorkflow(target);
       return;
     }
     if (target.id === 'folder-shortcut-stud-forms') {
+      if (!getActiveStudentRecord()) return;
       void launchStudentFormsCreateWorkflow(target);
       return;
     }
@@ -21146,7 +21414,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapCoreConnectorEl = null;
   let courseMapStaffPanelEl = null;
   let courseMapStaffSelectedListHostEl = null;
-  let courseMapStaffSelectedSummaryEl = null;
   let courseMapStaffActionsRowEl = null;
   let courseMapStaffOpenWindowButton = null;
   let courseMapStaffCopyTimetableButton = null;
@@ -21186,6 +21453,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapDefaultStaffViewButton) {
       courseMapDefaultStaffViewButton.textContent =
         `Default Staff mode & view${showActive && courseMapLastDefaultViewMode === 'staff' ? ' (on)' : ''}`;
+    }
+    if (courseMapExplainStructureViewButton) {
+      courseMapExplainStructureViewButton.textContent =
+        `Major and Electives view${courseMapStructureExplainMode ? ' (active)' : ''}`;
     }
   };
 
@@ -21252,6 +21523,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapModal.classList.toggle('course-map-staff-mode', staffMode);
     courseMapModal.classList.toggle('course-map-student-view', !staffMode);
     courseMapModal.classList.toggle('course-map-structure-explain', courseMapStructureExplainMode);
+    if (!courseMapStructureExplainMode) {
+      courseMapModal.classList.remove('course-map-structure-preparing-expand');
+    }
     if (closeCourseMapMajorElectivesViewButton) closeCourseMapMajorElectivesViewButton.hidden = !courseMapStructureExplainMode;
     const expandedStream = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     courseMapModal.classList.toggle('course-map-structure-expanded', !!expandedStream);
@@ -21263,6 +21537,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateCourseMapDefaultViewButtonLabels();
     applyCourseMapAiNameOverlay();
     updateCourseMapSemCountToggleUi();
+    updateCourseMapListColoursToggle();
     updatePassForEnrolmentsAvailability();
     updateCourseMapNotesToggle();
     syncCourseMapKeyAvailability();
@@ -21382,6 +21657,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (empty) cell.classList.add('course-map-empty');
     if (code) {
       cell.dataset.subject = code;
+      applyCourseMapCellStreamClasses(cell, code);
       const codeEl = document.createElement('div');
       codeEl.className = 'course-map-code';
       const displayParts = getCourseMapSubjectDisplayParts(code);
@@ -21428,6 +21704,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cell.appendChild(nameEl);
     }
     if (resolvedCode) {
+      applyCourseMapCellStreamClasses(cell, resolvedCode);
       if (!codeEl) {
         codeEl = document.createElement('div');
         codeEl.className = 'course-map-code';
@@ -21446,7 +21723,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (codeEl) codeEl.remove();
     nameEl.textContent = fallbackText;
     cell.removeAttribute('data-mirrored-subject');
-    if (cell.classList.contains('course-map-shared-placeholder')) cell.removeAttribute('data-subject');
+    cell.removeAttribute('data-subject');
+    applyCourseMapCellStreamClasses(cell, '');
   };
 
   const buildCourseMapGrid = (rows, cols, className = '') => {
@@ -21626,7 +21904,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapElectivePlaceholders.length = 0;
     courseMapStaffPanelEl = null;
     courseMapStaffSelectedListHostEl = null;
-    courseMapStaffSelectedSummaryEl = null;
     courseMapStaffActionsRowEl = null;
     courseMapStaffOpenWindowButton = null;
     courseMapStaffCopyTimetableButton = null;
@@ -21726,9 +22003,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const selectedListHost = document.createElement('div');
     selectedListHost.className = 'course-map-staff-selected-list-host';
-    const selectedSummary = document.createElement('div');
-    selectedSummary.className = 'course-map-staff-selected-summary';
-    selectedListHost.appendChild(selectedSummary);
     staffPanel.appendChild(selectedListHost);
 
     const staffActions = document.createElement('div');
@@ -21803,7 +22077,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffPanelEl = staffPanel;
     courseMapStaffSelectedListHostEl = selectedListHost;
     courseMapStaffActionsRowEl = staffActions;
-    courseMapStaffSelectedSummaryEl = selectedSummary;
     courseMapStaffOpenWindowButton = staffOpenWindowBtn;
     courseMapStaffCopyTimetableButton = staffCopyTimetableBtn;
     courseMapStaffOpenSelectedButton = null;
@@ -21811,12 +22084,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffFullTimetableButton = null;
     courseMapStaffAlertButtonsHostEl = alertHost;
     renderAllAlertButtons();
-    updateCourseMapStaffSelectedSummary();
     syncCourseMapStaffTimetableButton();
   };
 
   const positionCourseMapArrows = () => {
     if (!courseMapSharedEl || !courseMapStreamsBlockEl || !courseMapBaSectionEl || !courseMapSdSectionEl) return;
+    courseMapSharedEl.hidden = false;
     courseMapSharedEl.style.top = '0px';
     courseMapSharedEl.style.transform = 'none';
     courseMapSharedEl.classList.add('arrows-hidden');
@@ -21837,7 +22110,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : '';
       const effectiveMajorKey = explainKey || majorKey;
       if (sharedCell) {
-        sharedCell.hidden = !!explainKey;
+        const hideSharedCell = courseMapStructureExplainMode && !!courseMapStructureExpandedStream;
+        sharedCell.hidden = hideSharedCell;
+        courseMapSharedEl.hidden = hideSharedCell;
+        if (hideSharedCell) return;
         sharedCell.classList.toggle('bit245-overlay', effectiveMajorKey === 'ba' || effectiveMajorKey === 'sd');
         sharedCell.classList.toggle('bit245-explain-ns', explainKey === 'ns');
       }
@@ -21860,23 +22136,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       // Make the floating BIT245 card slightly narrower than its anchor cell.
       const width = isNsMajor ? Math.max(0, widthBase * 0.99) : Math.max(0, widthBase);
       const height = anchorRect.height;
-      const adjustedHeight = isNsMajor ? height * 1.1 : height;
+      const inMajorOverlay = effectiveMajorKey === 'ba' || effectiveMajorKey === 'sd';
+      const adjustedHeight = isNsMajor ? height * 1.1 : Math.max(0, height - (inMajorOverlay ? 1 : 0));
       const top =
         explainKey === 'ns'
           ? anchorRect.top - containerRect.top
           : effectiveMajorKey === 'ba' || effectiveMajorKey === 'sd'
           ? anchorRect.top - containerRect.top
           : gapCenter - adjustedHeight / 2;
-      sharedCell.style.left = `${Math.round(left)}px`;
-      sharedCell.style.top = `${Math.round(top)}px`;
+      sharedCell.style.left = `${Math.round(left + (inMajorOverlay ? 1 : 0))}px`;
+      sharedCell.style.top = `${Math.round(top + (inMajorOverlay ? 1 : 0))}px`;
       sharedCell.style.width = `${Math.round(width)}px`;
       sharedCell.style.height = `${Math.round(adjustedHeight)}px`;
     });
   };
 
   const updateCourseMapStreamLabels = () => {
-    const majorKey = getMajorKeyFromUi();
-    const selectedMajor = hasSelectedMajor();
+    const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
+    const majorKey = explainMajorKey || getMajorKeyFromUi();
+    const selectedMajor = courseMapStructureExplainMode ? !!explainMajorKey : hasSelectedMajor();
     const majorNameMap = {
       ns: 'Network Security',
       ba: 'Business Analytics',
@@ -22047,13 +22325,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
           // Keep labels fully to the left of the subject blocks (no overlap into the grid).
           // For elective labels, reduce the gap slightly so they sit closer without crossing into cards.
-          const gap = isElective ? 2 : 6;
+          const gap = isExplodedExplainLabel ? 20 : (isElective ? 2 : 6);
           const sectionRect = section?.getBoundingClientRect?.();
           const normalGridLeft =
             isExplodedExplainLabel && sectionRect
               ? gridRect.left - containerRect.left
               : gridRect.left - containerRect.left;
-          const left = normalGridLeft - label.offsetWidth - gap - (isExplodedExplainLabel ? 100 : 0);
+          const left = normalGridLeft - label.offsetWidth - gap;
           const labelHeight = label.offsetHeight || 0;
           // Center when possible; otherwise anchor to the grid top to avoid drifting upward into other blocks.
           const baseTop = gridRect.top - containerRect.top;
@@ -22129,8 +22407,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const updateCourseMapStatuses = () => {
-    const majorKey = getMajorKeyFromUi();
-    const selectedMajor = hasSelectedMajor();
+    const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
+    const majorKey = explainMajorKey || getMajorKeyFromUi();
+    const selectedMajor = courseMapStructureExplainMode ? !!explainMajorKey : hasSelectedMajor();
     const historyWithdrawFlag = hasAnyWithdrawalGradesInHistory() ? 'Y' : 'N';
     const withdrawalRibbonLabel = `Withdrawal form needed (W=${historyWithdrawFlag})`;
     const completedSet = new Set(
@@ -22186,6 +22465,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return '';
     };
     const courseMapModalTarget = courseMapModal || document.getElementById('course-map-modal');
+    if (!courseMapStructureExplainMode || !courseMapStructureExpandedStream) {
+      courseMapContent?.querySelectorAll('.course-map-elective-landing-guide').forEach((guide) => guide.remove());
+    }
     if (courseMapModalTarget) {
       courseMapModalTarget.classList.remove(
         'course-map-major-ns',
@@ -22306,7 +22588,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapMajorPlaceholders.forEach((cell, idx) => {
       const slotRaw = cell.dataset.majorSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
-      const code = selectedMajor ? majorStreamCodesByPlaceholderOrder[slotIndex] : '';
+      const code = courseMapStructureExplainMode
+        ? ''
+        : selectedMajor
+          ? majorStreamCodesByPlaceholderOrder[slotIndex]
+          : '';
       setCourseMapPlaceholderMirrorText(
         cell,
         code || '',
@@ -22342,8 +22628,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         );
       });
     }
+    let displayedElectiveBitState = electiveBitState;
+    if (courseMapStructureExplainMode && courseMapStructureExpandedStream) {
+      const selectedMajorCodes = new Set(majorLayouts[majorKey] || []);
+      const activeElectives = getElectiveSlotCodes(majorKey).filter((code) => {
+        if (!code || selectedMajorCodes.has(code)) return false;
+        const st = subjectState.get(code);
+        return !!(st?.completed || st?.toggled);
+      });
+      displayedElectiveBitState = ['', '', '', ''];
+      let activeIndex = 0;
+      for (let slotIndex = 0; slotIndex < displayedElectiveBitState.length; slotIndex += 1) {
+        if (electivePlaceholderState[slotIndex]) continue;
+        if (activeIndex >= activeElectives.length) break;
+        displayedElectiveBitState[slotIndex] = activeElectives[activeIndex];
+        activeIndex += 1;
+      }
+    }
     const getElectiveSlotStatus = (slotIndex) => {
-      const bitCode = electiveBitState[slotIndex];
+      const bitCode = displayedElectiveBitState[slotIndex];
       if (bitCode) {
         const st = subjectState.get(bitCode);
         if (!st) return '';
@@ -22363,15 +22666,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapElectivePlaceholders.forEach((cell, idx) => {
       const slotRaw = cell.dataset.electiveSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
-      let mirroredCode = electiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
-      if (
-        courseMapStructureExplainMode &&
-        !courseMapStructureExpandedStream &&
-        !selectedMajor &&
-        !/^USE\d{3}$/i.test(String(mirroredCode || ''))
-      ) {
-        mirroredCode = '';
-      }
+      let mirroredCode = displayedElectiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
+      if (courseMapStructureExplainMode && !courseMapStructureExpandedStream) mirroredCode = '';
       const expandedMajorCodes = courseMapStructureExplainMode && courseMapStructureExpandedStream
         ? new Set((majorLayouts[courseMapStructureExpandedStream] || []).map((code) => String(code || '').toUpperCase()))
         : null;
@@ -22386,34 +22682,49 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         mirroredCode,
         cell.dataset.placeholderLabel || `Elective Subject ${slotIndex + 1}`
       );
+      const isStructureUse = courseMapStructureExplainMode && /^USE\d{3}$/i.test(String(mirroredCode || ''));
+      cell.classList.toggle('course-map-structure-use', isStructureUse);
+      if (!isStructureUse) cell.classList.remove('course-map-structure-use-visible');
+      const isStructureLanding =
+        courseMapStructureExplainMode && !!courseMapStructureExpandedStream && !!mirroredCode && !isStructureUse;
+      cell.classList.toggle('course-map-structure-elective-landing', isStructureLanding);
+      if (!isStructureLanding) {
+        cell.classList.remove('course-map-structure-elective-landing-visible');
+        cell.style.removeProperty('--course-map-elective-landing-dx');
+        cell.style.removeProperty('--course-map-elective-landing-dy');
+        cell.style.removeProperty('--course-map-elective-landing-scale-x');
+        cell.style.removeProperty('--course-map-elective-landing-scale-y');
+      }
       const status = mirroredCode ? getElectiveSlotStatus(slotIndex) : '';
       if (status) cell.classList.add(status);
     });
-    const electiveLayout = computeElectiveList(majorKey);
-    const electiveCandidates = Array.from(
-      new Set(Object.values(electiveLayout).filter(Boolean))
-    ).filter((code) => !(majorLayouts[majorKey] || []).includes(code));
-    const availableElectiveCount = electiveCandidates.reduce((count, code) => {
-      const status = getCourseMapStatusClass(code);
-      const runsNow = isRunningThisSemester(code);
-      return !status && runsNow ? count + 1 : count;
-    }, 0);
-    const sortedElectivePlaceholders = [...courseMapElectivePlaceholders].sort((a, b) => {
-      const getSlot = (cell) => parseInt(cell.dataset.electiveSlot || '', 10) || 0;
-      return getSlot(a) - getSlot(b);
-    });
-    let remainingWhiteCourseMapElectivePlaceholders = availableElectiveCount;
-    sortedElectivePlaceholders.forEach((cell) => {
-      const isBlue =
-        cell.classList.contains('course-map-status-current') ||
-        cell.classList.contains('course-map-status-selected') ||
-        cell.classList.contains('course-map-status-passed');
-      if (!isBlue) {
-        const shouldShowWhite = remainingWhiteCourseMapElectivePlaceholders > 0;
-        if (shouldShowWhite) remainingWhiteCourseMapElectivePlaceholders -= 1;
-        cell.classList.toggle('course-map-elective-unavailable', !shouldShowWhite);
-      }
-    });
+    if (!courseMapStructureExplainMode) {
+      const electiveLayout = computeElectiveList(majorKey);
+      const electiveCandidates = Array.from(
+        new Set(Object.values(electiveLayout).filter(Boolean))
+      ).filter((code) => !(majorLayouts[majorKey] || []).includes(code));
+      const availableElectiveCount = electiveCandidates.reduce((count, code) => {
+        const status = getCourseMapStatusClass(code);
+        const runsNow = isRunningThisSemester(code);
+        return !status && runsNow ? count + 1 : count;
+      }, 0);
+      const sortedElectivePlaceholders = [...courseMapElectivePlaceholders].sort((a, b) => {
+        const getSlot = (cell) => parseInt(cell.dataset.electiveSlot || '', 10) || 0;
+        return getSlot(a) - getSlot(b);
+      });
+      let remainingWhiteCourseMapElectivePlaceholders = availableElectiveCount;
+      sortedElectivePlaceholders.forEach((cell) => {
+        const isBlue =
+          cell.classList.contains('course-map-status-current') ||
+          cell.classList.contains('course-map-status-selected') ||
+          cell.classList.contains('course-map-status-passed');
+        if (!isBlue) {
+          const shouldShowWhite = remainingWhiteCourseMapElectivePlaceholders > 0;
+          if (shouldShowWhite) remainingWhiteCourseMapElectivePlaceholders -= 1;
+          cell.classList.toggle('course-map-elective-unavailable', !shouldShowWhite);
+        }
+      });
+    }
     if (courseMapStructureExplainMode && courseMapStructureExpandedStream) {
       const representedCodes = new Set();
       [...courseMapMajorPlaceholders, ...courseMapElectivePlaceholders].forEach((cell) => {
@@ -24436,6 +24747,41 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     triageWritingExplanationModal.setAttribute('aria-hidden', 'true');
   };
 
+  const positionColourSettingsModal = () => {
+    const modalBox = colourSettingsModal?.querySelector('.colour-settings-modal');
+    if (!modalBox || !mainGrid) return;
+    const gridRect = mainGrid.getBoundingClientRect();
+    const firstRowTop = mainGrid.querySelector('.subject-card')?.getBoundingClientRect().top;
+    const secondRowCard = Array.from(mainGrid.querySelectorAll('.subject-card')).find((card) => {
+      const top = card.getBoundingClientRect().top;
+      return Number.isFinite(firstRowTop) && top > firstRowTop + 2;
+    });
+    const preferredTop = secondRowCard?.getBoundingClientRect().top ?? gridRect.top;
+    const viewportPadding = 16;
+
+    modalBox.style.position = 'fixed';
+    modalBox.style.height = 'auto';
+    modalBox.style.maxHeight = 'none';
+    const naturalHeight = modalBox.getBoundingClientRect().height;
+    const top = Math.max(
+      viewportPadding,
+      Math.min(preferredTop, window.innerHeight - viewportPadding - naturalHeight)
+    );
+    const maxHeight = Math.max(0, window.innerHeight - top - viewportPadding);
+    const width = modalBox.getBoundingClientRect().width;
+    const left = Math.max(
+      viewportPadding,
+      Math.min(
+        gridRect.left + (gridRect.width - width) / 2,
+        window.innerWidth - viewportPadding - width
+      )
+    );
+
+    modalBox.style.left = `${Math.round(left)}px`;
+    modalBox.style.top = `${Math.round(top)}px`;
+    modalBox.style.maxHeight = `${Math.round(maxHeight)}px`;
+  };
+
   const showColourSettingsModal = () => {
     if (!colourSettingsModal) return;
     renderColourSettingsControls();
@@ -24444,9 +24790,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (modalBox) {
       modalBox.style.width = '';
       modalBox.style.height = '';
+      modalBox.style.left = '';
+      modalBox.style.top = '';
+      modalBox.style.maxHeight = '';
+      modalBox.style.position = '';
     }
     colourSettingsModal.classList.add('show');
     colourSettingsModal.setAttribute('aria-hidden', 'false');
+    positionColourSettingsModal();
     const focusTarget = closeColourSettingsCta || closeColourSettings;
     if (focusTarget) focusTarget.focus();
   };
@@ -25308,6 +25659,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const updateCourseMapListColoursToggle = () => {
+    const showRow = getCourseMapIsStaffMode();
+    if (courseMapListColoursRow) courseMapListColoursRow.hidden = !showRow;
     if (courseMapModal) {
       courseMapModal.classList.toggle('course-map-list-colours-on', courseMapListColoursOn);
     }
@@ -25317,8 +25670,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (courseMapListColoursToggleLabel) {
       courseMapListColoursToggleLabel.textContent = courseMapListColoursOn
-        ? 'Selected list colours (showing)'
-        : 'Selected list colours (turned off)';
+        ? 'Available Subjects list background colours (showing)'
+        : 'Available Subjects list background colours (turned off)';
       courseMapListColoursToggleLabel.classList.toggle('active', courseMapListColoursOn);
     }
   };
@@ -25409,10 +25762,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (bit121Cell && bit105Cell) {
       const bit121Rect = bit121Cell.getBoundingClientRect();
       const bit105BorderLeft = parseFloat(bit105Style.borderLeftWidth) || 0;
-      const xStartLine = bit121Rect.right - containerRect.left;
+      const xStartLine = bit121Rect.right - containerRect.left - 1;
       const xEndLine = bit105Rect.left - containerRect.left + bit105BorderLeft / 2;
       bit121Horiz.style.left = fmt(xStartLine);
-      bit121Horiz.style.top = fmt(yCenter - sepWidth / 2);
+      bit121Horiz.style.top = fmt(yCenter - sepWidth / 2 - 1);
       bit121Horiz.style.width = fmt(Math.max(0, xEndLine - xStartLine));
     } else {
       bit121Horiz.style.width = '0px';
@@ -25423,8 +25776,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (bit372Cell && es3Cell) {
       const bit372Rect = bit372Cell.getBoundingClientRect();
       const es3Rect = es3Cell.getBoundingClientRect();
-      const xMid = bit372Rect.right - containerRect.left + 1;
-      const yStart = bit372Rect.bottom - containerRect.top;
+      const xMid = bit372Rect.right - containerRect.left;
+      const yStart = bit372Rect.bottom - containerRect.top - 1;
       const yEnd = es3Rect.top - containerRect.top;
       bit372Vert.style.left = `${Math.round(xMid)}px`;
       bit372Vert.style.top = `${Math.round(yStart)}px`;
@@ -25541,7 +25894,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       courseMapFontSizeSlider.title = `Course map font: ${Math.round(courseMapFontScaleEm * 100)}% (${fontPx}px)`;
     }
     if (resetCourseMapFontSizeButton) {
-      resetCourseMapFontSizeButton.textContent = `${Math.round(courseMapFontScaleEm * 100)}%`;
+      resetCourseMapFontSizeButton.textContent = `Font size: ${Math.round(courseMapFontScaleEm * 100)}%`;
     }
     updateBookmarkableSettingsUrl();
     requestAnimationFrame(() => {
@@ -25726,15 +26079,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const isViewed = count > 0 && !hasUnread;
     const signature = content.map((p) => alertId(p)).join('|');
     const contentChanged = signature !== alertPrevSignatures[type];
-    const isCountless = type === 'codes';
     if (count > 0) {
       buttons.forEach((button) => {
         button.classList.remove('hidden');
         button.classList.toggle('alert-viewed', isViewed);
         button.classList.toggle('alert-tooltip-unread', hasUnread);
+        button.classList.toggle('alert-pending', hasUnread);
         if (hasUnread) button.setAttribute('data-tooltip', getUnreadAlertTooltip(type, unreadCount));
         else button.setAttribute('data-tooltip', '');
-        if (isCountless || !hasUnread) {
+        if (!hasUnread) {
           button.textContent = labels[type] || type;
           button.classList.remove('has-unread');
         } else {
@@ -25757,7 +26110,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!hasUnread) {
           buttons.forEach((button) => button.classList.remove('has-unread'));
         }
-        if (!isCountless && (delta > 0 || (contentChanged && hasUnread))) {
+        if (delta > 0 || (contentChanged && hasUnread)) {
           const rect = btn.getBoundingClientRect();
           btn.style.setProperty('--alert-flash-x', `${rect.left + rect.width / 2}px`);
           btn.style.setProperty('--alert-flash-y', `${rect.top + rect.height / 2}px`);
@@ -25766,10 +26119,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             btn.classList.add('alert-pending', 'alert-flash');
             setTimeout(() => btn.classList.remove('alert-flash'), 500);
           }, 150);
-        } else if (!isCountless && delta < 0) {
+        } else if (delta < 0 && !hasUnread) {
           buttons.forEach((button) => button.classList.remove('alert-pending', 'alert-flash'));
         }
-        if (!isCountless && delta === 0 && !hasUnread) {
+        if (delta === 0 && !hasUnread) {
           buttons.forEach((button) => button.classList.remove('alert-pending', 'alert-flash'));
         }
       }
@@ -26583,7 +26936,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : [primary, institute].filter(Boolean).join('; ');
   };
 
-  const sendTimetableEmail = async (target) => {
+  const getStudentDeclarationEmailSubject = (date = new Date()) => {
+    const semesterKey = getCurrentSemesterKey(date);
+    const semester = semesterKey === 'S1' ? 'S1' : semesterKey === 'S2' ? 'S2' : 'SS';
+    return `Student Declaration ${String(date.getFullYear()).slice(-2)} ${semester}`;
+  };
+
+  const sendTimetableEmail = async (target, subjectLine = '') => {
     if (emailInProgress) return;
     emailInProgress = true;
     try {
@@ -26607,7 +26966,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!ok) {
         window.alert('Could not copy Student Declaration to clipboard.');
       }
-      openTimetableEmailDraftSafe(recipientList, baseBody, baseBody, getCourseMapEmailSubject());
+      openTimetableEmailDraftSafe(
+        recipientList,
+        baseBody,
+        baseBody,
+        subjectLine || getCourseMapEmailSubject()
+      );
     } finally {
       emailInProgress = false;
     }
@@ -27668,7 +28032,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     selectedListSection.style.display = '';
     syncCourseMapSelectedListScrollThreshold();
-    updateCourseMapStaffSelectedSummary();
     syncCourseMapStaffTimetableButton();
     updateCourseMapStaffPanelState();
     updateSubjectCounts();
@@ -27822,17 +28185,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       sendTimetableEmail('both');
     });
   }
-  if (copyStudentEmailsButton) {
-    copyStudentEmailsButton.addEventListener('click', () => {
-      const emails = buildRecipientListFromTarget(getActiveStudentRecord(), 'both')
-        .split(/[;,]/)
-        .map((email) => email.trim())
-        .filter(Boolean)
-        .join('; ');
-      if (!emails) return;
-      void copyPlainText(emails).then((copied) => {
-        if (copied) flashCopyButton(copyStudentEmailsButton);
-      });
+  if (emailStudentDeclarationButton) {
+    emailStudentDeclarationButton.addEventListener('click', () => {
+      sendTimetableEmail('both', getStudentDeclarationEmailSubject());
     });
   }
   if (openSupportingDocsFolderButton) {
@@ -28257,7 +28612,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     closeColourSettingsCta.addEventListener('click', hideColourSettingsModal);
   }
   if (colourSettingsDefaultsButton) {
-    colourSettingsDefaultsButton.addEventListener('click', () => applyColourSettings(DEFAULT_COLOUR_SETTINGS));
+    colourSettingsDefaultsButton.addEventListener('click', () => resetColourSettings());
   }
   const pulseCourseMapTriageSaveButton = () => {
     if (!courseMapTriageEditButton) return;
@@ -28497,7 +28852,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStructureExplainMode = explainView;
     courseMapStructureExpandedStream = '';
     if (allowCourseMapModeToggle) courseMapStaffMode = staffView;
-    courseMapStudentSemCountsOn = staffView;
+    courseMapStudentSemCountsOn = false;
     courseMapNotesOn = !staffView;
     courseMapListColoursOn = false;
     courseMapPrereqColoursOn = staffView;
@@ -28541,23 +28896,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (courseMapExplainStructureViewButton) {
     courseMapExplainStructureViewButton.addEventListener('click', () => {
+      if (courseMapStructureExplainMode) {
+        applyCourseMapViewDefaults(courseMapMajorElectivesReturnMode || (staffFacing ? 'staff' : 'student'));
+        return;
+      }
       courseMapMajorElectivesReturnMode = getCourseMapIsStaffMode() ? 'staff' : 'student';
       applyCourseMapViewDefaults('structure');
       hideCourseMapShowHideDialog();
-      if (courseMapModal) {
-        courseMapModal.classList.remove('course-map-stream-label-pulse');
-        if (closeCourseMapMajorElectivesViewButton) {
-          closeCourseMapMajorElectivesViewButton.classList.remove('course-map-return-pulse');
-          void closeCourseMapMajorElectivesViewButton.offsetWidth;
-          closeCourseMapMajorElectivesViewButton.classList.add('course-map-return-pulse');
-        }
-        void courseMapModal.offsetWidth;
-        courseMapModal.classList.add('course-map-stream-label-pulse');
-        if (courseMapStreamPulseTimer) clearTimeout(courseMapStreamPulseTimer);
-        courseMapStreamPulseTimer = setTimeout(() => {
-          courseMapModal.classList.remove('course-map-stream-label-pulse');
-        }, 2000);
-      }
+      pulseCourseMapMajorElectivesHints();
     });
   }
   if (courseMapDefaultStaffViewButton) {
@@ -28632,6 +28978,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   function setCourseMapShowHideDialogVisible(isVisible) {
     if (!courseMapShowHideDialog || !openCourseMapShowHideButton) return;
+    if (!isVisible && courseMapShowHideDialog.contains(document.activeElement)) {
+      openCourseMapShowHideButton.focus({ preventScroll: true });
+    }
     courseMapShowHideDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
     openCourseMapShowHideButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
   }
@@ -28643,6 +28992,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   function setCourseMapModeDialogVisible(isVisible) {
     if (!courseMapModeDialog || !openCourseMapModeButton) return;
+    if (!isVisible && courseMapModeDialog.contains(document.activeElement)) {
+      openCourseMapModeButton.focus({ preventScroll: true });
+    }
     courseMapModeDialog.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
     openCourseMapModeButton.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
   }
@@ -28748,6 +29100,122 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     });
   }
+  const captureCourseMapStructureRects = () =>
+    Array.from(courseMapContent?.querySelectorAll('.course-map-stream[data-stream]') || []).reduce((acc, section) => {
+      const key = section.dataset.stream || '';
+      const grid = section.querySelector('.course-map-stream-grid') || section;
+      const label = section.querySelector('.course-map-stream-label') || section;
+      const name = label.querySelector?.('.stream-name') || label;
+      if (key) {
+        acc[key] = {
+          grid: grid.getBoundingClientRect(),
+          name: name.getBoundingClientRect(),
+          cells: Array.from(grid.children)
+            .filter((cell) => cell.classList?.contains('course-map-cell'))
+            .map((cell) => cell.getBoundingClientRect()),
+        };
+      }
+      return acc;
+    }, {});
+  const setCourseMapCellFlipOffsets = (cell, startRect, endRect, gridDx, gridDy, prefix) => {
+    if (!startRect || !endRect.width || !endRect.height) return;
+    cell.style.setProperty(`--${prefix}-dx`, `${Math.round(startRect.left - endRect.left - gridDx)}px`);
+    cell.style.setProperty(`--${prefix}-dy`, `${Math.round(startRect.top - endRect.top - gridDy)}px`);
+    cell.style.setProperty(`--${prefix}-scale-x`, String(startRect.width / endRect.width));
+    cell.style.setProperty(`--${prefix}-scale-y`, String(startRect.height / endRect.height));
+  };
+  const setCourseMapOverviewAnimationOffsets = (selectedKey, overviewRects) => {
+    const selectedSection = courseMapContent?.querySelector(
+      `.course-map-stream.course-map-structure-selected-stream[data-stream="${selectedKey}"]`
+    );
+    const selectedGrid = selectedSection?.querySelector('.course-map-stream-grid') || selectedSection;
+    const selectedName = selectedSection?.querySelector('.course-map-stream-label .stream-name');
+    const selectedStart = overviewRects[selectedKey];
+    const animationHost = courseMapStreamsBlockEl || courseMapModal;
+    if (selectedGrid && selectedStart?.grid) {
+      const rect = selectedGrid.getBoundingClientRect();
+      animationHost.style.setProperty('--course-map-first-major-dx', `${Math.round(selectedStart.grid.left - rect.left)}px`);
+      animationHost.style.setProperty('--course-map-first-major-dy', `${Math.round(selectedStart.grid.top - rect.top)}px`);
+    }
+    if (selectedName && selectedStart?.name) {
+      const rect = selectedName.getBoundingClientRect();
+      animationHost.style.setProperty('--course-map-first-major-label-dx', `${Math.round(selectedStart.name.left - rect.left)}px`);
+      animationHost.style.setProperty('--course-map-first-major-label-dy', `${Math.round(selectedStart.name.top - rect.top)}px`);
+    }
+    courseMapContent?.querySelectorAll('.course-map-stream.course-map-structure-exploded-stream[data-stream]').forEach((section) => {
+      const start = overviewRects[section.dataset.stream || ''];
+      const grid = section.querySelector('.course-map-stream-grid') || section;
+      const name = section.querySelector('.course-map-stream-label .stream-name');
+      const gridRect = grid.getBoundingClientRect();
+      if (!start?.grid) return;
+      const gridDx = Math.round(start.grid.left - gridRect.left);
+      const gridDy = Math.round(start.grid.top - gridRect.top);
+      section.style.setProperty('--course-map-first-elective-dx', `${gridDx}px`);
+      section.style.setProperty('--course-map-first-elective-dy', `${gridDy}px`);
+      if (name && start.name) {
+        const nameRect = name.getBoundingClientRect();
+        section.style.setProperty('--course-map-first-elective-label-dx', `${Math.round(start.name.left - nameRect.left)}px`);
+        section.style.setProperty('--course-map-first-elective-label-dy', `${Math.round(start.name.top - nameRect.top)}px`);
+      }
+      Array.from(grid.children)
+        .filter((cell) => cell.classList?.contains('course-map-cell'))
+        .forEach((cell, index) => setCourseMapCellFlipOffsets(
+          cell,
+          start.cells?.[index],
+          cell.getBoundingClientRect(),
+          gridDx,
+          gridDy,
+          'course-map-first-elective-cell'
+        ));
+    });
+  };
+  const setCourseMapElectiveLandingOffsets = (overviewRects, sharedStartRect) => {
+    courseMapElectivePlaceholders.forEach((cell) => {
+      if (!cell.classList.contains('course-map-structure-elective-landing')) return;
+      const code = String(cell.dataset.mirroredSubject || '').toUpperCase();
+      let startRect = code === 'BIT245' ? sharedStartRect : null;
+      if (!startRect) {
+        const sourceCell = courseMapContent?.querySelector(
+          `.course-map-stream[data-stream] .course-map-stream-grid > .course-map-cell[data-subject="${code}"]`
+        );
+        const section = sourceCell?.closest('.course-map-stream[data-stream]');
+        const grid = sourceCell?.parentElement;
+        const sourceIndex = grid
+          ? Array.from(grid.children)
+              .filter((item) => item.classList?.contains('course-map-cell'))
+              .indexOf(sourceCell)
+          : -1;
+        if (section && sourceIndex >= 0) {
+          startRect = overviewRects[section.dataset.stream || '']?.cells?.[sourceIndex] || null;
+        }
+      }
+      const endRect = cell.getBoundingClientRect();
+      if (!startRect || !endRect.width || !endRect.height) return;
+      cell.style.setProperty('--course-map-elective-landing-dx', `${Math.round(startRect.left - endRect.left)}px`);
+      cell.style.setProperty('--course-map-elective-landing-dy', `${Math.round(startRect.top - endRect.top)}px`);
+      cell.style.setProperty('--course-map-elective-landing-scale-x', String(startRect.width / endRect.width));
+      cell.style.setProperty('--course-map-elective-landing-scale-y', String(startRect.height / endRect.height));
+    });
+  };
+  const syncCourseMapElectiveLandingGuides = () => {
+    const majorGrid = courseMapContent?.querySelector('.course-map-major-grid');
+    if (!majorGrid) return;
+    majorGrid.querySelectorAll('.course-map-elective-landing-guide').forEach((guide) => guide.remove());
+    courseMapElectivePlaceholders.forEach((cell) => {
+      if (
+        !cell.classList.contains('course-map-structure-elective-landing') &&
+        !cell.classList.contains('course-map-structure-use')
+      ) return;
+      const guide = document.createElement('div');
+      guide.className = 'course-map-elective-landing-guide';
+      guide.textContent = cell.dataset.placeholderLabel || 'Elective Subject';
+      guide.style.left = `${cell.offsetLeft}px`;
+      guide.style.top = `${cell.offsetTop}px`;
+      guide.style.width = `${cell.offsetWidth}px`;
+      guide.style.height = `${cell.offsetHeight}px`;
+      majorGrid.appendChild(guide);
+    });
+  };
   if (courseMapContent) {
     courseMapContent.addEventListener('mousemove', (event) => {
       courseMapTooltipPos = { x: event.clientX, y: event.clientY };
@@ -28788,6 +29256,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     courseMapContent.addEventListener('click', (event) => {
       const target = event.target;
+      const clickedExplainArrow = target?.closest?.('.course-map-explain-arrows span, .course-map-major-explain-arrows span');
+      if (clickedExplainArrow && courseMapContent.contains(clickedExplainArrow) && courseMapStructureExplainMode && !courseMapStructureExpandedStream) {
+        event.preventDefault();
+        pulseCourseMapMajorElectivesHints({ pulseReturn: false });
+        return;
+      }
       const clickedCell = target?.closest?.('.course-map-cell[data-subject]');
       if (clickedCell && courseMapContent.contains(clickedCell)) {
         const code = clickedCell.dataset.subject || '';
@@ -28806,11 +29280,96 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!['ns', 'ba', 'sd'].includes(streamKey || '')) return;
       if (courseMapStructureExplainMode) {
         event.preventDefault();
+        hideAllVisibleTooltips();
+        hideCourseMapTooltip();
+        if (
+          courseMapModal?.classList.contains('course-map-structure-first-expand') ||
+          courseMapModal?.classList.contains('course-map-structure-first-collapse')
+        ) return;
+        const wasExpanded = !!courseMapStructureExpandedStream;
+        const transitionStartRects = captureCourseMapStructureRects();
+        const transitionSharedStartRect = courseMapSharedEl
+          ?.querySelector('.course-map-shared-cell')
+          ?.getBoundingClientRect();
+        if (!wasExpanded) courseMapStructureOverviewRects = transitionStartRects;
+        if (wasExpanded && courseMapModal) {
+          courseMapContent.querySelectorAll('.course-map-structure-use-visible').forEach((cell) => {
+            cell.classList.remove('course-map-structure-use-visible');
+          });
+          courseMapContent.querySelectorAll('.course-map-structure-elective-landing-visible').forEach((cell) => {
+            cell.classList.remove('course-map-structure-elective-landing-visible');
+          });
+          courseMapModal.classList.add('course-map-structure-first-collapse');
+          void courseMapModal.offsetWidth;
+          courseMapStructureFirstExpandTimer = setTimeout(() => {
+            courseMapModal.classList.remove('course-map-structure-first-collapse');
+            courseMapStructureExpandedStream = '';
+            const animationHost = courseMapStreamsBlockEl || courseMapModal;
+            animationHost.style.removeProperty('--course-map-first-major-dx');
+            animationHost.style.removeProperty('--course-map-first-major-dy');
+            animationHost.style.removeProperty('--course-map-first-major-label-dx');
+            animationHost.style.removeProperty('--course-map-first-major-label-dy');
+            courseMapContent.querySelectorAll('.course-map-stream[data-stream]').forEach((section) => {
+              section.style.removeProperty('--course-map-first-elective-dx');
+              section.style.removeProperty('--course-map-first-elective-dy');
+              section.style.removeProperty('--course-map-first-elective-label-dx');
+              section.style.removeProperty('--course-map-first-elective-label-dy');
+              section.querySelectorAll('.course-map-stream-grid > .course-map-cell').forEach((cell) => {
+                cell.style.removeProperty('--course-map-first-elective-cell-dx');
+                cell.style.removeProperty('--course-map-first-elective-cell-dy');
+                cell.style.removeProperty('--course-map-first-elective-cell-scale-x');
+                cell.style.removeProperty('--course-map-first-elective-cell-scale-y');
+              });
+            });
+            updateCourseMapModeUi();
+            updateCourseMapStatuses();
+            updateCourseMapStreamLabels();
+            positionCourseMapArrows();
+            positionCourseMapSharedBit245();
+            courseMapStructureFirstExpandTimer = null;
+          }, 1500);
+          return;
+        }
+        if (!wasExpanded && courseMapModal) {
+          courseMapModal.classList.add('course-map-structure-preparing-expand');
+        }
         courseMapStructureExpandedStream = courseMapStructureExpandedStream === streamKey ? '' : streamKey;
+        const firstExpand = !wasExpanded && !!courseMapStructureExpandedStream;
         updateCourseMapModeUi();
         updateCourseMapStatuses();
         updateCourseMapStreamLabels();
         positionCourseMapArrows();
+        if (firstExpand && courseMapModal) {
+          syncCourseMapElectiveLandingGuides();
+          courseMapModal.classList.remove('course-map-structure-first-expand');
+          if (courseMapStructureFirstExpandTimer) clearTimeout(courseMapStructureFirstExpandTimer);
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+              setCourseMapOverviewAnimationOffsets(streamKey, transitionStartRects);
+              setCourseMapElectiveLandingOffsets(transitionStartRects, transitionSharedStartRect);
+              void courseMapModal.offsetWidth;
+              courseMapModal.classList.remove('course-map-structure-preparing-expand');
+              courseMapModal.classList.add('course-map-structure-first-expand');
+              courseMapContent.querySelectorAll('.course-map-structure-use').forEach((cell) => {
+                cell.classList.add('course-map-structure-use-visible');
+              });
+              courseMapContent.querySelectorAll('.course-map-structure-elective-landing').forEach((cell) => {
+                cell.classList.add('course-map-structure-elective-landing-visible');
+              });
+              courseMapStructureFirstExpandTimer = setTimeout(() => {
+                courseMapModal.classList.remove('course-map-structure-first-expand');
+                courseMapModal.classList.remove('course-map-structure-preparing-expand');
+                positionCourseMapSharedBit245();
+                updateCourseMapStreamLabels();
+                courseMapStructureFirstExpandTimer = null;
+              }, 1500);
+                });
+              });
+            });
+          });
+        }
         return;
       }
       const nextMajorValue = mapStreamKeyToDropdownValue(streamKey);
@@ -28988,6 +29547,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   enableOutsideClickClose(instructionsModal, hideInstructionsModal);
   enableOutsideClickClose(helpModal, hideHelpModal);
+  enableOutsideClickClose(earlyCompletionModal, hideEarlyCompletionModal);
   enableOutsideClickClose(codeModal, hideCodeModal);
   enableOutsideClickClose(selectByTypingModal, hideSelectByTypingModal);
   enableOutsideClickClose(emailScriptsAccessModal, hideEmailScriptsAccessModal);
@@ -29536,6 +30096,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (closeTopModal(courseMapTriageCommentModal, hideCourseMapTriageCommentModal)) return;
       if (closeTopModal(alertModal, hideAlertModal)) return;
       if (closeTopModal(folderShortcutsModal, hideFolderShortcutsModal)) return;
+      if (closeTopModal(earlyCompletionModal, hideEarlyCompletionModal)) return;
       if (closeTopModal(courseTimetableModal, hideCourseTimetableModal)) return;
       if (closeTopModal(historyModal, hideHistoryModal)) return;
       if (closeTopModal(remainingModal, hideRemainingModal)) return;

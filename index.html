@@ -15,7 +15,9 @@ Last Modified: 11/07/2026
   <title>Timetable Planner. Bachelor of IT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
@@ -67,7 +69,8 @@ Last Modified: 11/07/2026
       </div>
       <div id="drop-zone" class="drop-zone">
         <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
-          data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load from folder</button>
+          data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load
+          from folder</button>
         <div class="drop-zone-text">(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx',
           'Source.xlsx', and 'Email Scripts.htm'. here.<br>Double-clicking here may give you the same.).</div>
       </div>
@@ -155,7 +158,8 @@ Last Modified: 11/07/2026
           <div id="selected-list" class="available-list" role="list"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
-              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Subjects details</button>
+              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Subjects
+              details</button>
             <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
           </div>
           <div class="toggle-row"
@@ -181,7 +185,8 @@ Last Modified: 11/07/2026
               A Student Visa condition is that students must study a full load where possible.<br>
               <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
               <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
-              This website uses this count to determine when you've selected your full complement of subjects">Subjects this semester?</span>
+              This website uses this count to determine when you've selected your full complement of subjects">Subjects
+              this semester?</span>
           </div>
           <div class="toggle-row hidden-initial" id="live-prereq-row">
             <label class="switch">
@@ -225,9 +230,12 @@ Last Modified: 11/07/2026
         <div class="title">
           <div id="title-alerts" class="title-alerts">
             <div class="title-buttons">
-              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Alert</button>
-              <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false" data-tooltip="">Caution</button>
-              <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false" data-tooltip="">Info</button>
+              <button id="btn-error" class="title-btn btn-error hidden" aria-expanded="false"
+                data-tooltip="">Alert</button>
+              <button id="btn-warning" class="title-btn btn-caution hidden" aria-expanded="false"
+                data-tooltip="">Caution</button>
+              <button id="btn-info" class="title-btn btn-info hidden" aria-expanded="false"
+                data-tooltip="">Info</button>
             </div>
           </div>
           <div class="title-text">
@@ -237,11 +245,8 @@ Last Modified: 11/07/2026
                 data-tooltip="Show full Bachelor of IT timetable"></button>
               <h1>Timetable Planner</h1>
               <div id="settings-picker" class="title-settings-picker">
-                <button id="settings-button" class="title-settings-button" type="button"
-                  aria-label="Settings"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                  data-tooltip="Settings">
+                <button id="settings-button" class="title-settings-button" type="button" aria-label="Settings"
+                  aria-haspopup="menu" aria-expanded="false" data-tooltip="Settings">
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path
                       d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.22 7.22 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.89 2h-3.78a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.72 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.78a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
@@ -250,65 +255,52 @@ Last Modified: 11/07/2026
                 <div id="settings-menu" class="title-settings-menu" role="menu" hidden>
                   <label class="title-settings-field title-settings-font-field"
                     data-tooltip="Set the base font size for the whole site.">
-                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range"
-                      min="10" max="32" step="1" value="16" />
-                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size: 16px</button>
+                    <input id="settings-root-font-size" class="title-settings-font-slider" type="range" min="10"
+                      max="32" step="1" value="16" />
+                    <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size:
+                      16px</button>
                   </label>
-                  <div class="title-settings-font-family-row title-settings-separator-before" role="group" aria-label="Font family settings">
+                  <div class="title-settings-font-family-row title-settings-separator-before" role="group"
+                    aria-label="Font family settings">
                     <button class="title-settings-font-family" type="button" data-font-family="segoe">Segoe UI</button>
                     <button class="title-settings-font-family" type="button" data-font-family="calibri">Calibri</button>
                     <button class="title-settings-font-family" type="button" data-font-family="roboto">Roboto</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="mono">Typewriter</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="noto-serif">Noto Serif</button>
-                    <button class="title-settings-font-family" type="button" data-font-family="merriweather">Merriweather</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="mono">Mono</button>
+                    <button class="title-settings-font-family" type="button"
+                      data-font-family="sans-code">SansCode</button>
+                    <button class="title-settings-font-family" type="button" data-font-family="cambria">Cambria</button>
+                    <button class="title-settings-font-family" type="button"
+                      data-font-family="merriweather">Merriweather</button>
                   </div>
-                  <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before" role="menuitemcheckbox"
+                  <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before"
+                    role="menuitemcheckbox"
                     data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
                     <input id="settings-card-theme-colours" type="checkbox" />
                     <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
                   </label>
                   <div class="title-settings-icon-row" role="group" aria-label="Colour and display settings">
-                    <button id="settings-light-mode" class="title-settings-icon-action" type="button"
-                      aria-label="Use light mode"
-                      data-tooltip="Use light mode. This keeps the current light page setup with dark sidebars.">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M6.76 4.84 4.96 3.05 3.55 4.46l1.79 1.8 1.42-1.42ZM1 13h3v-2H1v2Zm10-12v3h2V1h-2Zm9.04 2.05-1.41-1.41-1.8 1.79 1.42 1.42 1.79-1.8ZM17.24 19.16l1.79 1.8 1.42-1.42-1.8-1.79-1.41 1.41ZM20 11v2h3v-2h-3ZM4.96 20.95l1.8-1.79-1.42-1.42-1.79 1.8 1.41 1.41ZM11 20v3h2v-3h-2Zm1-14a6 6 0 1 0 0 12A6 6 0 0 0 12 6Z" />
-                      </svg>
-                    </button>
-                    <button id="settings-dark-mode" class="title-settings-icon-action" type="button"
-                      aria-label="Use dark mode"
-                      data-tooltip="Use dark mode for the main grid, Course Map, dialogs, and text.">
-                      <svg class="title-settings-moon-icon" viewBox="0 0 680 680" aria-hidden="true" focusable="false">
-                        <g transform="translate(340, 340) rotate(135)">
-                          <path d="M -80 -130 A 140 140 0 1 1 -80 130 A 100 100 0 1 0 -80 -130 Z" />
-                          <g transform="rotate(-135) translate(100, -60) scale(2)">
-                            <path d="M 0 -14 L 5 -5 L 14 0 L 5 5 L 0 14 L -5 5 L -14 0 L -5 -5 Z" />
-                          </g>
-                          <g transform="rotate(-135) translate(72, 28) scale(2)">
-                            <path d="M 0 -9 L 3.5 -3.5 L 9 0 L 3.5 3.5 L 0 9 L -3.5 3.5 L -9 0 L -3.5 -3.5 Z" />
-                          </g>
-                        </g>
-                      </svg>
-                    </button>
-                    <span class="title-settings-separator" aria-hidden="true">|</span>
                     <button id="settings-accessible-colours" class="title-settings-icon-action" type="button"
-                      aria-label="Use colour-blind safe colours"
+                      aria-label="Colour Selector"
                       data-tooltip="Use a colour-blind safe palette: blues, greys, and soft orange with black text.">
                       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 3a9 9 0 0 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a1.5 1.5 0 0 1 0-3h2a7 7 0 0 0-2-10Zm-4 8.5A1.5 1.5 0 1 1 8 8.5a1.5 1.5 0 0 1 0 3Zm3-4A1.5 1.5 0 1 1 11 4.5a1.5 1.5 0 0 1 0 3Zm4 1A1.5 1.5 0 1 1 15 5.5a1.5 1.5 0 0 1 0 3Zm1 4A1.5 1.5 0 1 1 16 9.5a1.5 1.5 0 0 1 0 3Z" />
+                        <path
+                          d="M12 3a9 9 0 0 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a1.5 1.5 0 0 1 0-3h2a7 7 0 0 0-2-10Zm-4 8.5A1.5 1.5 0 1 1 8 8.5a1.5 1.5 0 0 1 0 3Zm3-4A1.5 1.5 0 1 1 11 4.5a1.5 1.5 0 0 1 0 3Zm4 1A1.5 1.5 0 1 1 15 5.5a1.5 1.5 0 0 1 0 3Zm1 4A1.5 1.5 0 1 1 16 9.5a1.5 1.5 0 0 1 0 3Z" />
                       </svg>
+                      <span>Colour Selector</span>
                     </button>
-                    <span class="title-settings-separator" aria-hidden="true">|</span>
                     <button id="settings-reset-colours" class="title-settings-icon-action" type="button"
-                      aria-label="Reset colour settings"
+                      aria-label="Reset/Default colours"
                       data-tooltip="Return colour mode and colour palette to the default settings.">
                       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M12 5V2L7 7l5 5V8a5 5 0 1 1-4.58 7H4.26A8 8 0 1 0 12 5Z" />
                       </svg>
+                      <span>Reset/Default colours</span>
                     </button>
                   </div>
-                  <button id="settings-default-sidebar-widths" class="title-settings-action title-settings-separator-before" type="button"
-                    data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar widths</button>
+                  <button id="settings-default-sidebar-widths"
+                    class="title-settings-action title-settings-separator-before" type="button"
+                    data-tooltip="Reset the left panel, drop zone, and main content widths.">Default sidebar
+                    widths</button>
                   <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
                     data-tooltip="Tick if you want this page to open the Course Map by default. Tick off to see the sidebars and grids by default.">
                     <input id="settings-course-map-default" type="checkbox" />
@@ -317,7 +309,9 @@ Last Modified: 11/07/2026
                   <div class="title-settings-field title-settings-triage-lane-field title-settings-separator-before">
                     <div class="title-settings-section-heading">
                       <span>Triage Writing Controls</span>
-                      <button id="settings-triage-writing-explanation" class="title-settings-mini-action" type="button">Explanation</button>
+                      <button id="settings-triage-writing-explanation" class="title-settings-mini-action" type="button"
+                        aria-haspopup="dialog" aria-controls="triage-writing-explanation-modal"
+                        data-tooltip="Explain the Triage writing controls and how to avoid conflicting updates.">Explanation</button>
                     </div>
                     <div class="title-settings-triage-controls">
                       <label class="title-settings-check title-settings-triage-writer-check" role="menuitemcheckbox"
@@ -327,7 +321,8 @@ Last Modified: 11/07/2026
                       </label>
                       <label class="title-settings-radio-row title-settings-triage-one-using-row"
                         data-tooltip-html="<div>Use this when there are two people working, but you are the only one using this site’s Triage button (that is, the other worker is manually/directly editing Triage.xlsx and has it open).</div><div class=&quot;tooltip-line-gap&quot;>This site leaves the first blank row for them and writes to the second blank row.</div>">
-                        <input id="settings-triage-lanes-two-one-using" name="settings-triage-lanes" type="radio" value="2one" />
+                        <input id="settings-triage-lanes-two-one-using" name="settings-triage-lanes" type="radio"
+                          value="2one" />
                         <span>Two Enrolment Officers - only one using</span>
                       </label>
                       <label class="title-settings-radio-row"
@@ -355,7 +350,8 @@ Last Modified: 11/07/2026
                         <div>3 = Everyone Else</div>
                         <label class="title-settings-triage-flex-row"
                           data-tooltip="If David or Antony are not working today, but there are 3 officers, one officer should nominate to take David’s (1) or Antony’s (2) place and the other should remain 3.">
-                          <select id="settings-triage-three-me-lane" class="title-settings-select title-settings-small-select">
+                          <select id="settings-triage-three-me-lane"
+                            class="title-settings-select title-settings-small-select">
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -368,16 +364,15 @@ Last Modified: 11/07/2026
                 </div>
               </div>
               <button id="open-instructions-help" class="title-settings-button title-help-button" type="button"
-                aria-label="Help and support"
-                aria-haspopup="dialog"
-                aria-controls="instructions-modal"
-                aria-expanded="false"
-                data-tooltip="Help and support">?</button>
+                aria-label="Help and support" aria-haspopup="dialog" aria-controls="instructions-modal"
+                aria-expanded="false" data-tooltip="Help and support">?</button>
             </div>
           </div>
           <div class="title-right">
-            <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Data Error?</button>
-            <button id="btn-codes" class="title-btn btn-codes hidden" aria-expanded="false" data-tooltip="">Codes</button>
+            <button id="btn-data-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Data
+              Error?</button>
+            <button id="btn-codes" class="title-btn btn-codes hidden" aria-expanded="false"
+              data-tooltip="">Codes</button>
             <div id="subject-counts" class="subject-counts" aria-live="polite"></div>
           </div>
         </div>
@@ -406,7 +401,7 @@ Last Modified: 11/07/2026
             </div>
             <div class="subject-card info-card" data-slot="r1c5">
               <div class="hover-zone"></div>
-              <div class="info-tooltip">Complete all 24 subjects in this top grid to graduate.  That is:
+              <div class="info-tooltip">Complete all 24 subjects in this top grid to graduate. That is:
                 <ul>
                   <li>14 Core subjects</li>
                   <li>6 major subjects</li>
@@ -625,16 +620,23 @@ Last Modified: 11/07/2026
               </div>
               <div class="key-item">
                 <div class="swatch core-can-select"></div>
-                <span id="main-key-can-select-label">Bright subject card: You can select this subject this semester</span>
+                <span id="main-key-can-select-label">Bright subject card: You can select this subject this
+                  semester</span>
               </div>
             </div>
             <div class="footnote">
-              <img class="sas-key-badge" src="images/SAS-MelbournePoly%20badge.png" alt="SAS Melbourne Polytechnic badge">
-              <div class="sas-inline"></div><span class="sas-heading-line1">A SAS enabled subjects.</span><span class="sas-heading-line2">Two certificates, with a badge, are available:</span>
+              <img class="sas-key-badge" src="images/SAS-MelbournePoly%20badge.png"
+                alt="SAS Melbourne Polytechnic badge">
+              <div class="sas-inline"></div><span class="sas-heading-line1">A SAS enabled subjects.</span><span
+                class="sas-heading-line2">Two certificates, with a badge, are available:</span>
               <ul class="sas-notes-list">
-                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i" target="_blank" rel="noopener noreferrer">SAS Academic Specialisation in IT Analytics</a> for completion of 3 core subjects (BIT106, BIT231, BIT112)
+                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i"
+                    target="_blank" rel="noopener noreferrer">SAS Academic Specialisation in IT Analytics</a> for
+                  completion of 3 core subjects (BIT106, BIT231, BIT112)
                   and 1 of BIT355 or BIT356 from the Business Analytics stream.<br></li>
-                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1" target="_blank" rel="noopener noreferrer">Academic Specialisation in Software Development Analytics</a> for completion of 3 core subjects (BIT106,
+                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1"
+                    target="_blank" rel="noopener noreferrer">Academic Specialisation in Software Development
+                    Analytics</a> for completion of 3 core subjects (BIT106,
                   BIT231, BIT112) and BIT358 from the Software Development stream.</li>
               </ul>
             </div>
@@ -648,16 +650,16 @@ Last Modified: 11/07/2026
       aria-labelledby="folder-shortcuts-modal-title">
       <div class="modal-header">
         <div class="modal-title" id="folder-shortcuts-modal-title">Shortcuts to folders and files</div>
-        <button class="modal-close" id="close-folder-shortcuts-modal"
-          aria-label="Close folder shortcuts">X</button>
+        <button class="modal-close" id="close-folder-shortcuts-modal" aria-label="Close folder shortcuts">X</button>
       </div>
       <div class="modal-body">
         <div class="folder-shortcuts-modal-section">
           <h3>Main locations</h3>
           <div id="folder-shortcuts-main-host" class="folder-shortcuts-modal-buttons">
-            <button id="folder-shortcut-semester-dialog" class="folder-shortcut-btn hidden-initial" type="button"></button>
-            <button id="folder-shortcut-student-forms-date-main-dialog"
-              class="folder-shortcut-btn hidden-initial" type="button"></button>
+            <button id="folder-shortcut-semester-dialog" class="folder-shortcut-btn hidden-initial"
+              type="button"></button>
+            <button id="folder-shortcut-student-forms-date-main-dialog" class="folder-shortcut-btn hidden-initial"
+              type="button"></button>
             <button id="folder-shortcut-teacher-main-dialog" class="folder-shortcut-btn hidden-initial"
               type="button"></button>
           </div>
@@ -674,8 +676,10 @@ Last Modified: 11/07/2026
         <div class="folder-shortcuts-modal-section">
           <h3>Credit Transfer &amp; Student Forms</h3>
           <div id="folder-shortcuts-credit-construction-host" class="folder-shortcuts-modal-buttons">
-            <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">CT -&gt; Temp</button>
-            <button id="folder-shortcut-stud-forms" class="folder-shortcut-btn hidden-initial" type="button">Stud Forms</button>
+            <button id="folder-shortcut-ct-temp" class="folder-shortcut-btn hidden-initial" type="button">CT -&gt;
+              Temp</button>
+            <button id="folder-shortcut-stud-forms" class="folder-shortcut-btn hidden-initial" type="button">Stud
+              Forms</button>
           </div>
         </div>
       </div>
@@ -693,20 +697,23 @@ Last Modified: 11/07/2026
       <div class="modal-body">
         <ul class="instructions-list instructions-accordion" id="instructions-accordion">
           <li class="instructions-step">
-            <button type="button" class="instructions-step-toggle" id="instructions-step-1-toggle"
-              aria-expanded="false" aria-controls="instructions-step-1-panel">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-1-toggle" aria-expanded="false"
+              aria-controls="instructions-step-1-panel">
               <span class="instructions-step-heading">Step 1 - Your major?</span>
             </button>
             <div class="instructions-step-panel" id="instructions-step-1-panel" role="region"
               aria-labelledby="instructions-step-1-toggle" hidden>
-              <p class="instructions-step-title">Pick your major from the colourful dropdown at the top of the sidebar. You'll see that as you choose a different option that the arrangement of subjects in the main grid changes.</p>
+              <p class="instructions-step-title">Pick your major from the colourful dropdown at the top of the sidebar.
+                You'll see that as you choose a different option that the arrangement of subjects in the main grid
+                changes.</p>
               <p>You'll see that the 3 options are:</p>
               <ul class="instructions-sublist">
                 <li>Network Security</li>
                 <li>Business Analytics</li>
                 <li>Software Development</li>
               </ul>
-              <p><strong>Your 1st Semester?</strong> You don't need to decide yet (assuming you don't have credit transfers either).</p>
+              <p><strong>Your 1st Semester?</strong> You don't need to decide yet (assuming you don't have credit
+                transfers either).</p>
               <ul class="instructions-sublist">
                 <li>You can just leave the dropdown as Undecided or switch it to another.</li>
                 <li>Some soft advice that will help keep your options for next semester and beyond:
@@ -717,13 +724,16 @@ Last Modified: 11/07/2026
                   </ul>
                 </li>
               </ul>
-              <p><strong>Your 2nd semester?</strong> By second semester, you should be starting to settle on your choice for major.  If unsure, try dipping your toe into 1 or 2 streams.</p>
-              <p><strong>Your 2nd year?</strong> If you have passes or credits for 8 subjects or more, you should now be certain about which major stream will be yours. Your goal now is to complete 3 of your major's subjects, but preferably 5 of them, by the end of your 2nd year.</p>
+              <p><strong>Your 2nd semester?</strong> By second semester, you should be starting to settle on your choice
+                for major. If unsure, try dipping your toe into 1 or 2 streams.</p>
+              <p><strong>Your 2nd year?</strong> If you have passes or credits for 8 subjects or more, you should now be
+                certain about which major stream will be yours. Your goal now is to complete 3 of your major's subjects,
+                but preferably 5 of them, by the end of your 2nd year.</p>
             </div>
           </li>
           <li class="instructions-step">
-            <button type="button" class="instructions-step-toggle" id="instructions-step-2-toggle"
-              aria-expanded="false" aria-controls="instructions-step-2-panel">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-2-toggle" aria-expanded="false"
+              aria-controls="instructions-step-2-panel">
               <span class="instructions-step-heading">Step 2 - Enter your history</span>
             </button>
             <div class="instructions-step-panel" id="instructions-step-2-panel" role="region"
@@ -731,28 +741,34 @@ Last Modified: 11/07/2026
               <p class="instructions-step-title"><strong>Enter your passes and credits.</strong></p>
               <p>There are two easy ways:</p>
               <ul class="instructions-sublist">
-                <li><strong>Clicking mode:</strong> Click the "Clicking Mode" button in the sidebar to go into <i>History Mode</i>.  You can then click subjects in the grid to mark them completed.</li>
-                <li><strong>Typing mode:</strong> Open a panel by clicking the "By Typing" button.  Then paste or type in subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be extraced
+                <li><strong>Clicking mode:</strong> Click the "Clicking Mode" button in the sidebar to go into
+                  <i>History Mode</i>. You can then click subjects in the grid to mark them completed.</li>
+                <li><strong>Typing mode:</strong> Open a panel by clicking the "By Typing" button. Then paste or type in
+                  subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be
+                  extraced
                 </li>
               </ul>
-              <p>Only enter your <strong>completed subjects</strong> - passes and credit transfers.  That is, don't enter failed subjects or withdrawals.</p>
+              <p>Only enter your <strong>completed subjects</strong> - passes and credit transfers. That is, don't enter
+                failed subjects or withdrawals.</p>
               <p>You'll see that when you add a subject, the main the grid and sidebar change:</p>
               <ul class="instructions-sublist">
                 <li>Its subject card greys-out.</li>
-                <li>Subjects that are <strong>available to you now</strong>, to study this semester, changes.  You'll see them highlighted with background shadows in the main grid, and in the
-                  sidebar list.  Note that all 2nd and 3rd year level subjects have prerequisites
+                <li>Subjects that are <strong>available to you now</strong>, to study this semester, changes. You'll see
+                  them highlighted with background shadows in the main grid, and in the
+                  sidebar list. Note that all 2nd and 3rd year level subjects have prerequisites
                 </li>
               </ul>
             </div>
           </li>
           <li class="instructions-step">
-            <button type="button" class="instructions-step-toggle" id="instructions-step-3-toggle"
-              aria-expanded="false" aria-controls="instructions-step-3-panel">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-3-toggle" aria-expanded="false"
+              aria-controls="instructions-step-3-panel">
               <span class="instructions-step-heading">Step 3 - Select subjects for your timetable</span>
             </button>
             <div class="instructions-step-panel" id="instructions-step-3-panel" role="region"
               aria-labelledby="instructions-step-3-toggle" hidden>
-              <p class="instructions-step-title"><strong>Choose your timetable:</strong> Select subjects in one of these ways.</p>
+              <p class="instructions-step-title"><strong>Choose your timetable:</strong> Select subjects in one of these
+                ways.</p>
               <ol class="instructions-sublist">
                 <li>Click subjects in the main grid.</li>
                 <li>Click a subject in the sidebar under <strong>Select</strong>.</li>
@@ -761,19 +777,22 @@ Last Modified: 11/07/2026
             </div>
           </li>
           <li class="instructions-step">
-            <button type="button" class="instructions-step-toggle" id="instructions-step-4-toggle"
-              aria-expanded="false" aria-controls="instructions-step-4-panel">
+            <button type="button" class="instructions-step-toggle" id="instructions-step-4-toggle" aria-expanded="false"
+              aria-controls="instructions-step-4-panel">
               <span class="instructions-step-heading">Step 4 - Send us your timetable</span>
             </button>
             <div class="instructions-step-panel" id="instructions-step-4-panel" role="region"
               aria-labelledby="instructions-step-4-toggle" hidden>
               <p>When you have selected your full semester load, a new button will appear: <strong>"My times"</strong>.
-              </p><p>Click it to open a panel that shows your timetable. Copy that table and email it to us at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+              </p>
+              <p>Click it to open a panel that shows your timetable. Copy that table and email it to us at <a
+                  href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
             </div>
           </li>
         </ul>
         <section class="instructions-disclaimer" aria-label="Site disclaimer">
-          <p>This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
+          <p>This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist
+            Bachelor of IT staff and students.</p>
         </section>
       </div>
       <div class="modal-actions">
@@ -795,31 +814,135 @@ Last Modified: 11/07/2026
             <button id="folder-shortcut-help" class="clear-button hidden-initial" type="button"
               aria-label="Enable Windows integration">Enable Windows integration</button>
           </div>
-          <div id="help-contact-section" class="help-support-section">
-            <h3>Who to ask for help?</h3>
-            <ul>
-              <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT Enrolment Team at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
-              <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or Nandini at <a href="mailto:NandiniBiskunda@melbournepolytechnic.edu.au">NandiniBiskunda@melbournepolytechnic.edu.au</a>.</li>
-              <li>For <strong>general Melbourne Polytechnic enquiries</strong>, such as using technology, accessing the library, or obtaining your student card, the <a href="https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/">Student Hub</a> is probably your best bet.</li>
-              <li>For <strong>visa queries, international compliance, and admissions</strong>, please contact the International Office.
-                <ul>
-                  <li><strong>Admissions:</strong> <a href="mailto:international-admissions@melbournepolytechnic.edu.au">international-admissions@melbournepolytechnic.edu.au</a></li>
-                  <li><strong>Payments:</strong> <a href="mailto:international-payments@melbournepolytechnic.edu.au">international-payments@melbournepolytechnic.edu.au</a></li>
-                  <li><strong>Compliance:</strong> <a href="mailto:compliance@melbournepolytechnic.edu.au">compliance@melbournepolytechnic.edu.au</a></li>
-                  <li><strong>General contact:</strong> <a href="mailto:international@melbournepolytechnic.edu.au">international@melbournepolytechnic.edu.au</a></li>
-                </ul>
-              </li>
-            </ul>
-          </div>
           <div class="help-support-section">
             <h3>How to use this site?</h3>
             <button id="help-open-instructions" class="clear-button" type="button">Instructions</button>
           </div>
+          <div id="help-contact-section" class="help-support-section">
+            <details class="help-support-accordion help-support-top-accordion" data-help-top-accordion>
+              <summary>Who to ask for help?</summary>
+              <ul>
+                <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the
+                  <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT
+                  Enrolment Team at <a
+                    href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
+                <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a
+                    href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or
+                  Nandini at <a
+                    href="mailto:NandiniBiskunda@melbournepolytechnic.edu.au">NandiniBiskunda@melbournepolytechnic.edu.au</a>.
+                </li>
+                <li>For <strong>general Melbourne Polytechnic enquiries</strong>, such as using technology, accessing
+                  the library, or obtaining your student card, the <a
+                    href="https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/">Student
+                    Hub</a> is probably your best bet.</li>
+                <li>For <strong>visa queries, international compliance, and admissions</strong>, please contact the
+                  International Office.
+                  <ul>
+                    <li><strong>Admissions:</strong> <a
+                        href="mailto:international-admissions@melbournepolytechnic.edu.au">international-admissions@melbournepolytechnic.edu.au</a>
+                    </li>
+                    <li><strong>Payments:</strong> <a
+                        href="mailto:international-payments@melbournepolytechnic.edu.au">international-payments@melbournepolytechnic.edu.au</a>
+                    </li>
+                    <li><strong>Compliance:</strong> <a
+                        href="mailto:compliance@melbournepolytechnic.edu.au">compliance@melbournepolytechnic.edu.au</a>
+                    </li>
+                    <li><strong>General contact:</strong> <a
+                        href="mailto:international@melbournepolytechnic.edu.au">international@melbournepolytechnic.edu.au</a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </details>
+          </div>
+          <div class="help-support-section">
+            <details class="help-support-accordion help-support-top-accordion" data-help-top-accordion>
+              <summary>Summer Semester and studying five subjects in a semester</summary>
+              <p>You may be able to complete your course 1 semester earlier if:</p>
+              <ul>
+                <li>You have <strong>9 or 10 subjects remaining</strong></li>
+                <li>You have <strong>5 or 6 subjects remaining</strong></li>
+              </ul>
+              <p>Whether this is possible depends on:</p>
+              <ul>
+                <li>which subjects are available;</li>
+                <li>whether the subjects are offered in Semester 1, Semester 2 or Summer Semester;</li>
+                <li>whether you have completed the required prerequisites; and</li>
+                <li>whether you meet the conditions for studying five subjects in one semester.</li>
+              </ul>
+              <p>There are two possible ways to complete your course earlier. Click to expand:</p>
+              <details class="help-support-accordion">
+                <summary>1. Summer Semester</summary>
+                <p>You may be able to study one or two subjects during Summer Semester, which is a 7-week intensive that
+                  runs November to February.</p>
+                <p>Summer Semester is optional. Students may enrol in a maximum of 2 Summer Semester subjects.</p>
+                <p>There is no guarantee that Summer Semester will be offered. We normally offer only 2 to 4 subjects,
+                  depending on student demand.</p>
+                <p>When we have run Summer Semester, we have always offered <em>BIT241 Professional IT Practice and
+                    Ethics</em> and <em>BIT313 Cybersecurity &amp; Governance</em> plus 1 or 2 others, perhaps
+                  <em>BIT105 Business Enquiry and Communication</em>.</p>
+                <p>When at least 5 students want to enrol in one of the subjects, we then run it. If less than 5 are
+                  interested, we withdraw it from the semester.</p>
+                <p>Please let us know if there is a subject that you want us to offer in Summer. We make that decision
+                  in early October.</p>
+                <p>Regarding visa and work considerations: if an international student opts to study in Summer Semester,
+                  the same visa conditions apply to paid-work hour limits as apply in Semesters 1 and 2.</p>
+              </details>
+              <details class="help-support-accordion">
+                <summary>2. Studying 5 subjects in one semester</summary>
+                <p>You may be permitted to study 5 subjects in a semester only when:</p>
+                <ul>
+                  <li>doing so would allow you to complete your course and graduate within that year; and</li>
+                  <li>your average grade over the previous year is at least 70%.</li>
+                </ul>
+                <p>Approval is not automatic and will also depend on subject availability, prerequisites and whether the
+                  proposed study load is considered manageable.</p>
+              </details>
+            </details>
+          </div>
+          <div class="help-support-section help-responsibility-section">
+            <h3>Please double-check</h3>
+            <p>This site was initiated and built by Antony Di Serio as a planning aid for Bachelor of IT students and
+              staff. It is <u>not</u> an official Melbourne Polytechnic system and may occasionally contain incomplete
+              or incorrect information.</p>
+            <p>Students should check their own study history, understand the Bachelor of IT course structure, and take
+              responsibility for planning enrolments before submitting their timetable.</p>
+          </div>
         </section>
       </div>
       <div class="modal-actions">
-        <p class="help-site-disclaimer">This site is not an official Melbourne Polytechnic site. It has been developed by Antony Di Serio to assist Bachelor of IT staff and students.</p>
         <button id="close-help-cta" class="clear-button secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  <div id="early-completion-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="early-completion-title">
+      <div class="modal-header">
+        <div class="modal-title" id="early-completion-title">Completing early</div>
+        <button class="modal-close" id="close-early-completion-modal"
+          aria-label="Close completing early information">X</button>
+      </div>
+      <div class="modal-body">
+        <section class="help-support-content early-completion-content" aria-label="Completing early information">
+          <h3>Summer School and studying 5 subjects per semester</h3>
+          <p>If you have 10 or 9 subjects remaining, you would normally take 3 semesters to complete them, but there may
+            be a way to complete them in 2 semesters. Similarly, if you have 6 or 5 subjects remaining, you may be able
+            to complete them in 1 semester instead of 2.</p>
+          <p>It may be possible to complete your course earlier by taking extra subjects, but this depends on which
+            subjects are available, whether this is the first or second semester, and whether you meet the
+            prerequisites.</p>
+          <p>There are two possibilities:</p>
+          <ul>
+            <li>You may be able to study subjects during Summer School, but only if suitable subjects are running and
+              you are eligible to enrol in them. We only run 2 to 4 subjects. It depends on how many students are
+              interested. Students can enrol in a maximum of 2 subjects over summer. It is completely optional.</li>
+            <li>The only time you can study 5 subjects in a semester is when it will allow you to graduate that year and
+              when your average grade for the past year has been at least 70%.</li>
+          </ul>
+        </section>
+      </div>
+      <div class="modal-actions">
+        <button id="close-early-completion-cta" class="clear-button secondary" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -947,7 +1070,8 @@ Last Modified: 11/07/2026
   <div id="select-by-typing-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="select-by-typing-title">
       <div class="modal-header">
-        <div class="modal-title" id="select-by-typing-title">Enter subject selections for this semester (Shift+Enter for new line)</div>
+        <div class="modal-title" id="select-by-typing-title">Enter subject selections for this semester (Shift+Enter for
+          new line)</div>
         <button class="modal-close" id="close-select-by-typing-modal" aria-label="Close modal">X</button>
       </div>
       <div class="modal-body">
@@ -1158,34 +1282,42 @@ Last Modified: 11/07/2026
   <div id="course-map-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal course-map-modal" role="dialog" aria-modal="true" aria-labelledby="course-map-title">
       <div class="modal-header">
-        <button id="course-map-load-files" class="clear-button secondary course-map-load-files-top" type="button" hidden>Load</button>
+        <button id="course-map-load-files" class="clear-button secondary course-map-load-files-top" type="button"
+          hidden>Load</button>
         <div class="modal-title" id="course-map-title">Course Map</div>
         <div id="course-map-alert-buttons" class="course-map-alert-buttons">
-          <button id="course-map-btn-info" class="title-btn btn-info hidden" aria-expanded="false" data-tooltip="">Info</button>
-          <button id="course-map-btn-warning" class="title-btn btn-caution hidden" aria-expanded="false" data-tooltip="">Caution</button>
-          <button id="course-map-btn-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Alert</button>
-          <button id="course-map-btn-data-error" class="title-btn btn-error hidden" aria-expanded="false" data-tooltip="">Data Error?</button>
-          <button id="course-map-btn-codes" class="title-btn btn-codes hidden" aria-expanded="false" data-tooltip="">Codes</button>
+          <button id="course-map-btn-info" class="title-btn btn-info hidden" aria-expanded="false"
+            data-tooltip="">Info</button>
+          <button id="course-map-btn-warning" class="title-btn btn-caution hidden" aria-expanded="false"
+            data-tooltip="">Caution</button>
+          <button id="course-map-btn-error" class="title-btn btn-error hidden" aria-expanded="false"
+            data-tooltip="">Alert</button>
+          <button id="course-map-btn-data-error" class="title-btn btn-error hidden" aria-expanded="false"
+            data-tooltip="">Data Error?</button>
+          <button id="course-map-btn-codes" class="title-btn btn-codes hidden" aria-expanded="false"
+            data-tooltip="">Codes</button>
         </div>
         <div id="course-map-header-strip" class="course-map-header-strip" hidden>
           <div class="course-map-header-search-wrap">
             <input id="course-map-student-search" class="course-map-student-search" type="text"
               placeholder="Search student" autocomplete="off" />
-            <div id="course-map-student-search-dropdown" class="student-search-dropdown course-map-student-search-dropdown" hidden></div>
+            <div id="course-map-student-search-dropdown"
+              class="student-search-dropdown course-map-student-search-dropdown" hidden></div>
           </div>
           <div id="course-map-student-info-strip" class="course-map-student-info-strip" aria-live="polite"></div>
         </div>
         <button class="modal-close" id="close-course-map" aria-label="Close course map">X</button>
       </div>
       <div class="modal-body">
-        <button id="close-course-map-major-electives-view" class="clear-button secondary course-map-close-major-electives-view"
-          type="button" hidden>Return to staff/student view</button>
+        <button id="close-course-map-major-electives-view"
+          class="clear-button secondary course-map-close-major-electives-view" type="button" hidden>Return to
+          staff/student view</button>
         <div id="course-map-content" class="course-map-content"></div>
       </div>
       <div class="modal-actions">
         <div class="course-map-show-hide-actions">
-          <button id="open-course-map-show-hide" class="clear-button secondary" type="button"
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-show-hide-dialog"
+          <button id="open-course-map-show-hide" class="clear-button secondary" type="button" aria-haspopup="dialog"
+            aria-expanded="false" aria-controls="course-map-show-hide-dialog"
             data-tooltip-html="Open display options for the Course Map, including font size, notes, colours, and prerequisite display.">View</button>
           <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
@@ -1195,11 +1327,21 @@ Last Modified: 11/07/2026
               <input id="course-map-font-size" type="range" min="0.75" max="2" step="0.05" value="1"
                 aria-label="Course map font size">
             </div>
-            <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row" id="course-map-sem-count-toggle-row"
-              data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
+            <div class="toggle-row course-map-show-hide-row" id="course-map-list-colours-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-list-colours"
+                  aria-label="Show available subjects list background colours">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-list-colours-toggle-label">Available Subjects list background
+                colours (turned off)</span>
+            </div>
+            <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row"
+              id="course-map-sem-count-toggle-row" data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
               <br>Each subject will get a little semester count at right border.">
               <label class="switch">
-                <input type="checkbox" id="course-map-sem-count-toggle" aria-label="Show semesters to complete in course map">
+                <input type="checkbox" id="course-map-sem-count-toggle"
+                  aria-label="Show semesters to complete in course map">
                 <span class="slider"></span>
               </label>
               <span class="switch-label">Show semesters to complete</span>
@@ -1220,38 +1362,35 @@ Last Modified: 11/07/2026
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
-                <input type="checkbox" id="toggle-course-map-list-colours" aria-label="Show selected list colours">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label" id="course-map-list-colours-toggle-label">Selected list colours (turned off)</span>
-            </div>
-            <div class="toggle-row course-map-show-hide-row">
-              <label class="switch">
                 <input type="checkbox" id="toggle-course-map-prereq" aria-label="Show prerequisite colouring" checked>
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-prereq-toggle-label">Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more (showing):</span>
+              <span class="switch-label" id="course-map-prereq-toggle-label">Prerequisite shading - Light grey for 1
+                semester to satisfy prerequisites and dark grey for 2 or more (showing):</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-prereq-text" aria-label="Show prerequisite lists" checked>
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject cards (showing)</span>
+              <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject
+                cards (showing)</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-indicators" aria-label="Show stream heading text" checked>
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-indicators-toggle-label">Text below stream headings (showing)</span>
+              <span class="switch-label" id="course-map-indicators-toggle-label">Text below stream headings
+                (showing)</span>
             </div>
             <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names (removed)</span>
+              <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names
+                (removed)</span>
             </div>
             <div class="toggle-row course-map-show-hide-row course-map-staff-mode-row">
               <label class="switch">
@@ -1260,14 +1399,15 @@ Last Modified: 11/07/2026
               </label>
               <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
             </div>
-            <button id="course-map-explain-structure-view" class="clear-button secondary course-map-default-view" type="button">
+            <button id="course-map-explain-structure-view" class="clear-button secondary course-map-default-view"
+              type="button">
               Major and Electives view
             </button>
           </div>
         </div>
         <div class="course-map-mode-actions">
-          <button id="open-course-map-mode" class="clear-button secondary" type="button"
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-mode-dialog"
+          <button id="open-course-map-mode" class="clear-button secondary" type="button" aria-haspopup="dialog"
+            aria-expanded="false" aria-controls="course-map-mode-dialog"
             data-tooltip-html="Open Course Map mode options, including prerequisite override, current-enrolment handling, study load, and staff mode.">Mode</button>
           <div id="course-map-mode-dialog" class="course-map-mode-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-mode-dialog-title">
@@ -1279,8 +1419,7 @@ Last Modified: 11/07/2026
               </label>
               <span class="switch-label" id="course-map-override-label">Override prerequisites</span>
             </div>
-            <div class="toggle-row course-map-mode-row pass-enrolments-tooltip"
-              id="course-map-pass-for-enrolments-row"
+            <div class="toggle-row course-map-mode-row pass-enrolments-tooltip" id="course-map-pass-for-enrolments-row"
               data-tooltip="If you have entered your study history and it includes subjects that have not yet been graded (that is, your current enrolments), then&#10;1. Leave this switch off if you want them marked as &quot;Selected&quot;&#10;2. Turn this on if you want them marked as &quot;Completed&quot;"
               hidden>
               <label class="switch">
@@ -1294,45 +1433,61 @@ Last Modified: 11/07/2026
               <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
               <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
             </div>
-            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view" type="button">
+            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view"
+              type="button">
               Default student mode &amp; view
             </button>
-            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view" type="button">
+            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view"
+              type="button">
               Default Staff mode &amp; view
             </button>
           </div>
         </div>
         <button id="course-map-history" class="clear-button secondary" type="button"
-          data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your history</button>
+          data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your
+          history</button>
         <button id="course-map-remaining" class="clear-button secondary" type="button"
-          data-tooltip-html="Show the subjects still needed and the estimated remaining semesters.">Remaining subjects</button>
+          data-tooltip-html="Show the subjects still needed and the estimated remaining semesters.">Remaining
+          subjects</button>
         <button id="course-map-next-semester" class="clear-button secondary hidden-initial" type="button"
-          data-tooltip-html="Show subjects that should become available next semester based on the current selections.">Next semester options</button>
+          data-tooltip-html="Show subjects that should become available next semester based on the current selections.">Next
+          semester options</button>
         <div class="course-map-image-actions">
-          <button id="open-course-map-image-actions" class="clear-button secondary" type="button"
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-image-dialog"
+          <button id="open-course-map-image-actions" class="clear-button secondary" type="button" aria-haspopup="dialog"
+            aria-expanded="false" aria-controls="course-map-image-dialog"
             data-tooltip-html="Copy or download an image of the Course Map.">Image</button>
           <div id="course-map-image-dialog" class="course-map-image-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-image-dialog-title">
             <h3 id="course-map-image-dialog-title">Grab an image of the map, showing selections</h3>
-            <button id="copy-course-map-image" class="clear-button secondary" type="button">Copy image to Clipboard</button>
+            <button id="copy-course-map-image" class="clear-button secondary" type="button">Copy image to
+              Clipboard</button>
             <button id="download-course-map-image" class="clear-button secondary" type="button">Download image</button>
           </div>
         </div>
         <button id="course-map-email-tools" class="clear-button secondary course-map-email-tools hidden-initial"
-          type="button" hidden data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
+          type="button" hidden
+          data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
         <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
-          type="button" data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders &amp; Files</button>
+          type="button"
+          data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders
+          &amp; Files</button>
         <button id="course-map-stud-forms" class="clear-button secondary course-map-stud-forms hidden-initial"
-          type="button" hidden data-tooltip-html="Create/open this student's folder inside today's Student Forms folder, then copy the Student Dec returned text and folder path.">Std Frms</button>
-        <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial"
-          type="button" hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">CT -&gt; Temp</button>
+          type="button" hidden
+          data-tooltip-html="Create/open this student's folder inside today's Student Forms folder, then copy the Student Dec returned text and folder path.">Std
+          Frms</button>
+        <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial" type="button"
+          hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">CT -&gt;
+          Temp</button>
         <button id="course-map-temp-create" class="clear-button secondary course-map-temp-create hidden-initial"
-          type="button" hidden data-tooltip-html="Create and open this student's folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.">Temp Create</button>
-        <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes"
-          type="button" data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
-        <button id="course-map-full-semester-timetable" class="clear-button secondary course-map-full-semester-timetable"
-          type="button" data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Full Semester Timetable</button>
+          type="button" hidden
+          data-tooltip-html="Create and open this student's folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.">Temp
+          Create</button>
+        <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes" type="button"
+          data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
+        <button id="course-map-full-semester-timetable"
+          class="clear-button secondary course-map-full-semester-timetable" type="button"
+          data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Full Semester
+          Timetable</button>
         <button id="close-course-map-cta" class="clear-button secondary" type="button"
           data-tooltip-html="Close the Course Map.">Close</button>
       </div>
@@ -1351,7 +1506,8 @@ Last Modified: 11/07/2026
       aria-labelledby="course-map-remaining-info-title">
       <div class="modal-header">
         <div class="modal-title" id="course-map-remaining-info-title">History and Current State</div>
-        <button class="modal-close" id="close-course-map-remaining-info" aria-label="Close history and current state">X</button>
+        <button class="modal-close" id="close-course-map-remaining-info"
+          aria-label="Close history and current state">X</button>
       </div>
       <div class="modal-body">
         <div id="course-map-remaining-info-content" class="course-map-remaining-info-content"></div>
@@ -1376,7 +1532,8 @@ Last Modified: 11/07/2026
       aria-labelledby="course-map-student-note-title">
       <div class="modal-header">
         <div class="modal-title" id="course-map-student-note-title">Student details</div>
-        <button id="course-map-triage-sync-help" class="clear-button secondary course-map-triage-sync-help" type="button" hidden>Help with syncing</button>
+        <button id="course-map-triage-sync-help" class="clear-button secondary course-map-triage-sync-help"
+          type="button" hidden>Help with syncing</button>
         <button class="modal-close" id="close-course-map-student-note" aria-label="Close student details">X</button>
       </div>
       <div class="modal-body">
@@ -1399,9 +1556,12 @@ Last Modified: 11/07/2026
       </div>
       <div class="modal-body">
         <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away.</p>
-        <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
-        <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’. If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
-        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
+        <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that
+          it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
+        <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’.
+          If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
+        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be
+          stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
       </div>
       <div class="modal-actions">
         <button id="close-course-map-triage-sync-help-cta" class="clear-button secondary" type="button">Close</button>
@@ -1416,7 +1576,8 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-course-map-triage-comment" aria-label="Close triage comment">X</button>
       </div>
       <div class="modal-body">
-        <label class="course-map-triage-comment-label" for="course-map-triage-comment-text">Provide a new comment:</label>
+        <label class="course-map-triage-comment-label" for="course-map-triage-comment-text">Provide a new
+          comment:</label>
         <textarea id="course-map-triage-comment-text" class="course-map-triage-comment-text" rows="4"></textarea>
       </div>
       <div class="modal-actions">
@@ -1430,14 +1591,41 @@ Last Modified: 11/07/2026
       aria-labelledby="triage-writing-explanation-title">
       <div class="modal-header">
         <div class="modal-title" id="triage-writing-explanation-title">Triage Writing Controls</div>
-        <button class="modal-close" id="close-triage-writing-explanation" aria-label="Close Triage writing explanation">X</button>
+        <button class="modal-close" id="close-triage-writing-explanation"
+          aria-label="Close Triage writing explanation">X</button>
       </div>
       <div class="modal-body">
-        <p>These options help avoid two teachers writing over each other's entries in Triage.</p>
-        <p>Change these options any time when you know different staff members are working on that day.</p>
-        <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away. Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
-        <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’. If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
-        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
+        <p>These options help prevent two teachers from writing over each other’s entries in
+          <strong>Triage.xlsx</strong>.</p>
+
+        <h3>Choosing the correct settings</h3>
+        <p>Change these options whenever different staff members are working in Triage on a particular day.</p>
+        <p>For example, you can specify:</p>
+        <ul>
+          <li>Whether one, two or three enrolment officers are working</li>
+          <li>Which officer handles odd-numbered records</li>
+          <li>Which officer handles even-numbered records</li>
+          <li>Who handles any remaining records</li>
+        </ul>
+
+        <h3>After writing to Triage.xlsx</h3>
+        <p>Do not open <strong>Triage.xlsx</strong> immediately after writing to it from this website.</p>
+        <p>Instead:</p>
+        <ol>
+          <li>Open the folder containing <strong>Triage.xlsx</strong> in Windows Explorer.</li>
+          <li>Wait until a green tick appears beside the file. This indicates that it has finished uploading to
+            SharePoint.</li>
+          <li>Wait another 1 to 2 minutes before opening the workbook.</li>
+        </ol>
+        <p>This should allow enough time for Excel to complete its synchronisation and avoid the workbook pausing while
+          it displays “Syncing workbook…”.</p>
+        <p>If Excel does display a message saying, “<strong>Excel is Syncing workbook…</strong>”, allow the process to
+          finish before continuing.</p>
+
+        <h3>If your entry is lost</h3>
+        <p>Do not worry if the information you entered does not appear in <strong>Triage.xlsx</strong>.</p>
+        <p>A record of what the website attempted to write will be saved in <strong>Triage Update.xlsx</strong>, which
+          will be created in your Temp folder.</p>
       </div>
       <div class="modal-actions">
         <button id="close-triage-writing-explanation-cta" class="clear-button secondary" type="button">Close</button>
@@ -1445,8 +1633,7 @@ Last Modified: 11/07/2026
     </div>
   </div>
   <div id="colour-settings-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal colour-settings-modal" role="dialog" aria-modal="true"
-      aria-labelledby="colour-settings-title">
+    <div class="modal colour-settings-modal" role="dialog" aria-modal="true" aria-labelledby="colour-settings-title">
       <div class="modal-header">
         <div class="modal-title" id="colour-settings-title">Colour Settings for Subject Cards</div>
         <button class="modal-close" id="close-colour-settings" aria-label="Close colour settings">X</button>
@@ -1455,10 +1642,14 @@ Last Modified: 11/07/2026
         <div id="colour-settings-controls" class="colour-settings-controls"></div>
       </div>
       <div class="modal-actions">
-        <button id="colour-settings-defaults" class="clear-button secondary colour-settings-defaults-button" type="button" aria-label="Default colours">
+        <button id="colour-settings-defaults" class="clear-button secondary colour-settings-defaults-button"
+          type="button" aria-label="Default colours"
+          data-tooltip="Reset all colour settings: font colour, subject-card backgrounds, mustard/magenta/teal mode, bands, backgrounds, and sliders.">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M7.5 8H4V4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M4.7 8A7 7 0 1 1 5.9 16.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M7.5 8H4V4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+            <path d="M4.7 8A7 7 0 1 1 5.9 16.4" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" />
           </svg>
         </button>
         <button id="close-colour-settings-cta" class="clear-button secondary" type="button">Close</button>
@@ -1570,17 +1761,6 @@ Last Modified: 11/07/2026
               StudDec
             </button>
             <div class="timetable-email-actions">
-              <button id="copy-student-emails" class="clear-button secondary timetable-email" type="button" hidden
-                aria-label="Copy student emails" title="Copy student emails">
-                <span class="clipboard-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path
-                      d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2zm0 2a1 1 0 0 0-1 1v1h8V5a1 1 0 0 0-1-1H9z"
-                      fill="currentColor" />
-                  </svg>
-                </span>
-                Emails
-              </button>
               <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
@@ -1611,34 +1791,41 @@ Last Modified: 11/07/2026
                 </span>
                 Both
               </button>
+              <button id="email-student-declaration" class="clear-button secondary timetable-email" type="button"
+                hidden>
+                <span class="email-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path
+                      d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.01L12 12l9-4.99V7H3zm18 10V9.25l-8.5 4.72a1 1 0 0 1-1 0L3 9.25V17h18z"
+                      fill="currentColor" />
+                  </svg>
+                </span>
+                StudDec
+              </button>
               <button id="open-supporting-docs-folder" class="clear-button secondary timetable-email" type="button"
                 hidden>
                 <span class="folder-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path
-                      d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
+                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
                       fill="currentColor" />
                   </svg>
                 </span>
                 SD
               </button>
-              <button id="open-student-forms-folder" class="clear-button secondary timetable-email" type="button"
-                hidden title="Open today's Student Forms folder.">
+              <button id="open-student-forms-folder" class="clear-button secondary timetable-email" type="button" hidden
+                title="Open today's Student Forms folder.">
                 <span class="folder-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path
-                      d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
+                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
                       fill="currentColor" />
                   </svg>
                 </span>
                 SFs
               </button>
-              <button id="open-teacher-temp-folder" class="clear-button secondary timetable-email" type="button"
-                hidden>
+              <button id="open-teacher-temp-folder" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="folder-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path
-                      d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
+                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
                       fill="currentColor" />
                   </svg>
                 </span>
@@ -1728,15 +1915,19 @@ Last Modified: 11/07/2026
       <div class="modal-body">
         <div class="load-explanations">
           <div class="load-explanations-title">Explanations:</div>
-          <p><strong>Domestic students</strong> can study full-time or part-time (so, 1, 2, 3, or 4 subjects) each semester.</p>
+          <p><strong>Domestic students</strong> can study full-time or part-time (so, 1, 2, 3, or 4 subjects) each
+            semester.</p>
           <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement).
             This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
             intervention.</p>
-          <p><strong>More the 4 subjects?</strong>  Studying more than 4 subjects is only possible when <strong>9 or fewer</strong> subjects remain in the final
-            year or <strong>5 or fewer</strong> subjects remain in the final semester <strong>AND</strong> a CR average (which is 60 to 69%) has been achieved over the past year.</p>
+          <p><strong>More the 4 subjects?</strong> Studying more than 4 subjects is only possible when <strong>9 or
+              fewer</strong> subjects remain in the final
+            year or <strong>5 or fewer</strong> subjects remain in the final semester <strong>AND</strong> a CR average
+            (which is 60 to 69%) has been achieved over the past year.</p>
         </div>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining and a CR average over the past year.
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining and a CR
+            average over the past year.
           </label>
         </div>
         <div class="toggle-row load-extra-row">
@@ -1750,7 +1941,8 @@ Last Modified: 11/07/2026
           </label>
         </div>
         <div class="toggle-row" id="load-exceptional-row">
-          <label for="load-exceptional"><input type="checkbox" id="load-exceptional">I have APP, APR, or other exceptional approval to vary my visa requirement from a full load</label>
+          <label for="load-exceptional"><input type="checkbox" id="load-exceptional">I have APP, APR, or other
+            exceptional approval to vary my visa requirement from a full load</label>
         </div>
         <div class="toggle-row">
           <label for="load-value">How many subjects I will study this semester:</label>
@@ -1779,7 +1971,7 @@ Last Modified: 11/07/2026
   </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260208-41"></script>
+  <script src="script.js?v=20260714-42"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 11/07/2026</div>

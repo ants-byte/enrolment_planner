@@ -1,4 +1,5 @@
-const CACHE_NAME = "subject-planner-v23";
+const CACHE_NAME = "subject-planner-v25";
+const STUDENT_VERSION_URL = "https://ants-byte.github.io/enrolment_planner/?mode=student";
 const ASSETS = [
   "./",
   "index.html",
@@ -32,32 +33,37 @@ const getLiveServerInstructions = () => new Response(`<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Start Live Server</title>
+  <title>Local planner unavailable</title>
   <style>
     body { margin: 0; font: 18px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; color: #f7f7f7; background: #262626; }
-    main { max-width: 760px; padding: 56px 44px; }
-    h1 { margin: 0 0 20px; font-size: clamp(2rem, 6vw, 4rem); line-height: 1.08; }
+    main { max-width: 680px; margin: 0 auto; padding: 72px 28px; }
+    h1 { margin: 0 0 16px; font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.08; }
     p, li { max-width: 680px; }
     code { padding: 0.12em 0.35em; border-radius: 4px; background: #3a3a3a; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-    a, button { border: 0; border-radius: 6px; padding: 12px 18px; font: inherit; font-weight: 700; text-decoration: none; color: #fff; background: #4d7bd8; cursor: pointer; }
-    a.secondary { background: #444; }
+    a, button { border: 0; border-radius: 6px; padding: 12px 18px; font: inherit; font-weight: 700; text-decoration: none; color: #fff; background: #0878d1; cursor: pointer; }
+    a.secondary, button.secondary { background: #444; }
+    details { margin-top: 32px; color: #d5d5d5; }
+    summary { cursor: pointer; font-weight: 700; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Start VS Code Live Server</h1>
-    <p>This local PWA was opened from <code>${self.location.origin}</code>, but the local web server is not responding.</p>
-    <ol>
-      <li>Open this project folder in VS Code.</li>
-      <li>Install the <strong>Live Server</strong> extension if it is not installed.</li>
-      <li>Right-click <code>index.html</code> and choose <strong>Open with Live Server</strong>.</li>
-      <li>Return here and refresh.</li>
-    </ol>
+    <h1>The local planner isn't running</h1>
+    <p>You can continue in the student version now, or start the local staff version and try again.</p>
     <div class="actions">
-      <button type="button" onclick="location.reload()">Refresh</button>
-      <a class="secondary" href="https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer">Live Server extension</a>
+      <a href="${STUDENT_VERSION_URL}">Open student version</a>
+      <button class="secondary" type="button" onclick="location.reload()">Try local version again</button>
     </div>
+    <details>
+      <summary>How to start the local staff version</summary>
+      <ol>
+        <li>Open this project folder in VS Code.</li>
+        <li>Install the <a href="https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer">Live Server extension</a> if needed.</li>
+        <li>Right-click <code>index.html</code> and choose <strong>Open with Live Server</strong>.</li>
+        <li>Return here and select <strong>Try local version again</strong>.</li>
+      </ol>
+    </details>
   </main>
 </body>
 </html>`, {
