@@ -285,6 +285,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const clearButton = document.getElementById('clear-selections');
   const completedModeButton = document.getElementById('toggle-completed-mode');
+  const withdrawCurrentEnrolmentToggle = document.getElementById('withdraw-current-enrolment');
+  const withdrawCurrentEnrolmentControl = document.getElementById('withdraw-current-enrolment-control');
+  const withdrawCurrentEnrolmentLabel = document.getElementById('withdraw-current-enrolment-label');
   const openInstructionsModal = document.getElementById('open-instructions-modal');
   const openInstructionsHelpButton = document.getElementById('open-instructions-help');
   const openCodeModal = document.getElementById('open-code-modal');
@@ -319,6 +322,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const settingsRootFontSizeLabel = document.getElementById('settings-font-size-label');
   const settingsFontFamilyButtons = Array.from(document.querySelectorAll('.title-settings-font-family'));
   const settingsDefaultSidebarWidthsButton = document.getElementById('settings-default-sidebar-widths');
+  const settingsResetPageButton = document.getElementById('settings-reset-page');
   const settingsPwaSetupActions = document.getElementById('settings-pwa-setup-actions');
   const settingsPwaSaveSetupButton = document.getElementById('settings-pwa-save-setup');
   const settingsPwaClearSetupButton = document.getElementById('settings-pwa-clear-setup');
@@ -427,6 +431,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const SETTINGS_QUERY_TRIAGE_LANES_KEY = 'triageLanes';
   const SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY = 'triageTwoOther';
   const SETTINGS_QUERY_TRIAGE_ME_KEY = 'triageMe';
+  const SETTINGS_QUERY_SEM_COUNTS_KEY = 'semCounts';
   const SETTINGS_QUERY_SELECTED_SUBJECTS_KEY = 'sel';
   const SETTINGS_QUERY_HISTORY_KEY = 'hist';
   const SETTINGS_QUERY_CURRENT_KEY = 'cur';
@@ -498,7 +503,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const DARK_CARD_COLOUR_SETTINGS = [78, 45, 10, 95, 38, 55, 10, 85, 80, 65, 10, 90, 48, 70, 18, 85];
   const DEFAULT_COLOUR_FONT = 'black';
   const normalizeColourFont = (value) => String(value || '').trim().toLowerCase() === 'white' ? 'white' : DEFAULT_COLOUR_FONT;
-  const DEFAULT_TRIAGE_WRITING_MODE = '2';
+  const DEFAULT_TRIAGE_WRITING_MODE = '2one';
   const DEFAULT_TRIAGE_TWO_OTHER_LANE = 'even';
   const DEFAULT_TRIAGE_THREE_ME_LANE = '3';
   const DEFAULT_USE_TRIAGE_WRITER = true;
@@ -636,6 +641,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const normalizeTriageWritingMode = (value) => {
     const raw = String(value || '').trim().toLowerCase();
     if (raw === 'solo') return 'solo';
+    if (raw === '2') return '2';
     if (raw === '3') return '3';
     if (['2one', '2-one', 'oneusing'].includes(raw)) return '2one';
     return DEFAULT_TRIAGE_WRITING_MODE;
@@ -651,6 +657,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const raw = getQueryParamLower(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY);
     return raw ? normalizeUseTriageWriter(raw) : null;
   };
+  const getShowSemCountsFromQuery = () =>
+    ['1', 'true', 'on', 'yes'].includes(getQueryParamLower(SETTINGS_QUERY_SEM_COUNTS_KEY));
   const getTriageWritingSettingsFromQuery = () => {
     const rawMode = getQueryParamLower(SETTINGS_QUERY_TRIAGE_LANES_KEY);
     const rawTwoOtherLane = getQueryParamLower(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY);
@@ -658,6 +666,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     let mode = normalizeTriageWritingMode(rawMode);
     const twoOtherLane = normalizeTriageTwoOtherLane(rawTwoOtherLane);
     const threeMeLane = normalizeTriageThreeMeLane(rawThreeMeLane);
+    if (rawTwoOtherLane) mode = '2';
     if (threeMeLane !== DEFAULT_TRIAGE_THREE_ME_LANE) mode = '3';
     return { mode, twoOtherLane, threeMeLane, hasQuery: !!(rawMode || rawTwoOtherLane || rawThreeMeLane) };
   };
@@ -682,6 +691,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let activeTriageWritingMode = DEFAULT_TRIAGE_WRITING_MODE;
   let activeTriageTwoOtherLane = DEFAULT_TRIAGE_TWO_OTHER_LANE;
   let activeTriageThreeMeLane = DEFAULT_TRIAGE_THREE_ME_LANE;
+  let showSemCounts = getShowSemCountsFromQuery();
   let triageSaveReminder = { studentId: '', armed: false, dismissed: false };
   let fileLocationsProfileOverride = '';
   let settingsSignOffDefaults = null;
@@ -727,7 +737,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (typeof URLSearchParams === 'undefined' || !window?.history?.replaceState) return;
     try {
       const params = new URLSearchParams(window.location.search || '');
-      params.set(SETTINGS_QUERY_CARDS_KEY, getCardThemeQueryValue(activeCardTheme));
+      if (activeCardTheme === DEFAULT_CARD_THEME) {
+        params.delete(SETTINGS_QUERY_CARDS_KEY);
+      } else {
+        params.set(SETTINGS_QUERY_CARDS_KEY, getCardThemeQueryValue(activeCardTheme));
+      }
       if (activeRootFontSizePx === DEFAULT_ROOT_FONT_SIZE_PX) {
         params.delete(SETTINGS_QUERY_FONT_KEY);
       } else {
@@ -771,16 +785,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         params.set(SETTINGS_QUERY_USE_TRIAGE_WRITER_KEY, '0');
       } else if (activeTriageWritingMode === 'solo') {
         params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, 'solo');
-      } else if (activeTriageWritingMode === '2one') {
-        params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, '2one');
+      } else if (activeTriageWritingMode === '2') {
+        params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, '2');
+        if (activeTriageTwoOtherLane !== DEFAULT_TRIAGE_TWO_OTHER_LANE) {
+          params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
+        }
       } else if (activeTriageWritingMode === '3') {
         if (activeTriageThreeMeLane === DEFAULT_TRIAGE_THREE_ME_LANE) {
           params.set(SETTINGS_QUERY_TRIAGE_LANES_KEY, '3');
         } else {
           params.set(SETTINGS_QUERY_TRIAGE_ME_KEY, activeTriageThreeMeLane);
         }
-      } else if (activeTriageTwoOtherLane !== DEFAULT_TRIAGE_TWO_OTHER_LANE) {
-        params.set(SETTINGS_QUERY_TRIAGE_TWO_OTHER_KEY, activeTriageTwoOtherLane);
+      }
+      if (showSemCounts) {
+        params.set(SETTINGS_QUERY_SEM_COUNTS_KEY, '1');
+      } else {
+        params.delete(SETTINGS_QUERY_SEM_COUNTS_KEY);
       }
       if (openCourseMapByDefault) {
         params.set(SETTINGS_QUERY_START_KEY, SETTINGS_QUERY_START_COURSE_MAP);
@@ -821,8 +841,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (settingsCardThemeColoursToggle) {
       const coloursOn = activeCardTheme === COLOURED_CARD_THEME;
       settingsCardThemeColoursToggle.checked = coloursOn;
-      const row = settingsCardThemeColoursToggle.closest('.title-settings-check');
-      if (row) row.setAttribute('aria-checked', coloursOn ? 'true' : 'false');
     }
     if (settingsCardThemeColoursLabel) {
       settingsCardThemeColoursLabel.textContent =
@@ -830,16 +848,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (settingsCourseMapDefaultToggle) {
       settingsCourseMapDefaultToggle.checked = !!openCourseMapByDefault;
-      const row = settingsCourseMapDefaultToggle.closest('.title-settings-check');
-      if (row) row.setAttribute('aria-checked', openCourseMapByDefault ? 'true' : 'false');
     }
     if (settingsCourseMapDefaultLabel) {
       settingsCourseMapDefaultLabel.textContent = `Course map mode (is ${openCourseMapByDefault ? 'on' : 'off'})`;
     }
     if (settingsUseTriageWriterToggle) {
       settingsUseTriageWriterToggle.checked = !!useTriageWriter;
-      const row = settingsUseTriageWriterToggle.closest('.title-settings-check');
-      if (row) row.setAttribute('aria-checked', useTriageWriter ? 'true' : 'false');
     }
     if (settingsUseTriageWriterLabel) {
       settingsUseTriageWriterLabel.textContent =
@@ -1051,7 +1065,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const active = activeColourPalette === ACCESSIBLE_COLOUR_PALETTE;
       input.checked = active;
       const row = input.closest('.colour-settings-check');
-      if (row) row.setAttribute('aria-checked', active ? 'true' : 'false');
       const label = row?.querySelector('[data-colour-palette-label]');
       if (label) label.textContent = `Switch to mustard, magenta, and teal (is ${active ? 'on' : 'off'})`;
     });
@@ -1063,7 +1076,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       );
       input.checked = active;
       const row = input.closest('.colour-settings-check');
-      if (row) row.setAttribute('aria-checked', active ? 'true' : 'false');
       const label = row?.querySelector('[data-colour-dark-cards-label]');
       if (label) label.textContent = `Switch to dark cards (is ${active ? 'on' : 'off'})`;
     });
@@ -1071,7 +1083,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const coloursOn = activeCardTheme === COLOURED_CARD_THEME;
       input.checked = coloursOn;
       const row = input.closest('.colour-settings-check');
-      if (row) row.setAttribute('aria-checked', coloursOn ? 'true' : 'false');
       const label = row?.querySelector('[data-colour-card-theme-label]');
       if (label) label.textContent = `Subject cards background colour (is ${coloursOn ? 'on' : 'off'})`;
     });
@@ -1132,15 +1143,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           <div class="colour-settings-defaults-button-host"></div>
           <span class="colour-settings-defaults-label">Default colours</span>
         </div>
-        <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
+        <label class="colour-settings-check">
           <input type="checkbox" data-colour-palette-switch="accessible">
           <span data-colour-palette-label>Switch to mustard, magenta, and teal (is off)</span>
         </label>
-        <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
+        <label class="colour-settings-check">
           <input type="checkbox" data-colour-dark-cards>
           <span data-colour-dark-cards-label>Switch to dark cards (is off)</span>
         </label>
-        <label class="colour-settings-check" role="menuitemcheckbox" aria-checked="false">
+        <label class="colour-settings-check">
           <input type="checkbox" data-colour-card-theme>
           <span data-colour-card-theme-label>Subject cards background colour (is off)</span>
         </label>
@@ -1300,7 +1311,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (key === 'sidebar') {
           panel.style.width = '310px';
           panel.style.flex = '0 0 310px';
-          activePanelWidthPx[key] = 310;
         } else {
           panel.style.width = '';
           panel.style.flex = '';
@@ -1316,7 +1326,45 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch { }
+    document.querySelectorAll('[data-panel-resize="true"]').forEach((panel) => {
+      panel.style.width = '';
+      panel.style.height = '';
+      panel.style.flex = '';
+    });
+    if (typeof resetCourseMapModalDefaultPlacement === 'function') resetCourseMapModalDefaultPlacement();
     updateBookmarkableSettingsUrl();
+  };
+  const pulseSettingsResetButton = (button) => {
+    if (!button) return;
+    button.classList.remove('settings-reset-ring-pulse');
+    void button.offsetWidth;
+    button.classList.add('settings-reset-ring-pulse');
+  };
+  const resetPageToDefaults = () => {
+    clearActiveStudentState();
+    setMajorDropdownSelection('undecided');
+    applyCardTheme(DEFAULT_CARD_THEME);
+    applyRootFontSize(DEFAULT_ROOT_FONT_SIZE_PX);
+    applyFontFamily(DEFAULT_FONT_FAMILY);
+    resetColourSettings();
+    applyUseTriageWriter(DEFAULT_USE_TRIAGE_WRITER);
+    applyTriageWritingSettings({
+      mode: DEFAULT_TRIAGE_WRITING_MODE,
+      twoOtherLane: DEFAULT_TRIAGE_TWO_OTHER_LANE,
+      threeMeLane: DEFAULT_TRIAGE_THREE_ME_LANE,
+    });
+    openCourseMapByDefault = false;
+    courseMapFontScaleEm = DEFAULT_COURSE_MAP_FONT_SCALE;
+    showSemCounts = false;
+    if (toggleSemCountsBtn) toggleSemCountsBtn.checked = false;
+    updateSettingsMenuUi();
+    updateCourseMapFontScale();
+    updateSemCountUI();
+    resetSidebarWidthsToDefault();
+    try {
+      window.localStorage?.removeItem(PWA_LAST_SETTINGS_URL_STORAGE_KEY);
+    } catch { }
+    window.history.replaceState({}, '', window.location.pathname);
   };
   const loadInitialSettingsPreferences = () => {
     const queryTheme = getCardThemeFromQuery();
@@ -2798,8 +2846,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     BIT231: { name: 'Database Systems', note: 'Prerequisite: BIT111', classes: ['core', 'sas'] },
     BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
     BIT235: { name: 'Object Oriented Programming', note: 'Co-requisite: BIT245', classes: ['software'] },
-    BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisite: BIT106, BIT231', classes: ['ba'] },
-    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisite: BIT105, BIT106', classes: ['core'] },
+    BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisites: BIT106, BIT231', classes: ['ba'] },
+    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisites: BIT105, BIT106', classes: ['core'] },
     BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
     BIT214: { name: 'Cloud and IoT Emerging Technologies', note: 'Prerequisite: BIT106', classes: ['network'] },
     BIT245: { name: 'Web Development', note: 'Prerequisites: BIT111', classes: ['dual-split'] },
@@ -3746,6 +3794,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const focusCourseMapSearchInput = () => {
     queueFocusCourseMapSearchIfReady();
   };
+
+  document.addEventListener('keydown', (event) => {
+    if (!event.ctrlKey || !event.altKey || event.metaKey || event.shiftKey || event.key.toLowerCase() !== 's') return;
+    const target = courseMapModal?.classList.contains('show')
+      ? courseMapStudentSearchInput
+      : studentIdInput;
+    if (!target || target.disabled) return;
+    event.preventDefault();
+    target.focus();
+  });
 
   const buildCourseMapAprTooltipHtml = (record) => {
     if (!record) return '';
@@ -5929,6 +5987,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   ]);
 
   let completedMode = false;
+  let withdrawCurrentEnrolmentMode = false;
   let overrideMode = false;
   let livePrereqUpdates = false;
   let livePrereqEnabled = false;
@@ -5970,7 +6029,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let nextSemWarning = null;
   let finalSemWarning = null;
   let warningPayloads = [];
-  let showSemCounts = true;
   let courseMapStudentSemCountsOn = false;
   let initialLoad = true;
   let courseMapPrereqColoursOn = true;
@@ -7119,6 +7177,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (validSubjectCodes.has(code)) currentEnrolmentStudentRecord.add(code);
     });
     updatePassForEnrolmentsAvailability();
+    updateWithdrawCurrentEnrolmentUI();
   };
 
   const applySubjectStateToCells = () => {
@@ -7842,17 +7901,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const visaUpper = String(record?.Visa_Type || '').toUpperCase();
     const visaNumbers = visaUpper.match(/\b\d{3}\b/g) || [];
     const isBridgingVisa = visaNumbers.includes('010') || visaNumbers.includes('020');
-    if (isBridgingVisa) {
-      infoMessages.push({
-        title: 'Visa fee guide',
-        html: getVisaGuideModalHtml(),
-      });
-    }
     const visaDetailHtml = getVisaDetailModalHtml(record?.Visa_Type || '', feeDetails);
     if (visaDetailHtml) {
       infoMessages.push({
         title: 'Visa details',
         html: visaDetailHtml,
+      });
+    }
+    if (isBridgingVisa) {
+      infoMessages.push({
+        title: 'Visa fee guide',
+        html: getVisaGuideModalHtml(),
       });
     }
     const domesticCaveatHtml = getDomesticVisaCaveatHtml(visaNumbers);
@@ -7963,8 +8022,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'refugee (word value in Visa_Type)',
     ],
     edge: [
-      '010 = BVA Bridging Visa A (inherits previous visa fee status)',
-      '020 = BV2 Bridging Visa 2 (inherits previous visa fee status)',
+      '020 = BVB, Bridging Visa B',
+      '030 = BVC, Bridging Visa C',
+      '050 or 051 = BVE, Bridging Visa E',
+      'Sometimes the Bridging Visa is incorrectly given the BR acronym e.g. BRV',
     ],
   };
   const VISA_DETAIL_MAP = {
@@ -7999,6 +8060,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const formatVisaTypeForDisplay = (visaType) =>
     String(visaType || '')
       .replace(/\s*[-–—]\s*MP\s+CoE\s+issued\b/gi, '')
+      .replace(/\bBRA\b/gi, 'BVA')
+      .replace(/\b010\s+BVA:\s*No limitations on study\b/gi, '010 BVA: Typically international student conditions')
       .trim();
   const DOMESTIC_VISA_CAVEATS = {
     humanitarianTemporary: ['785', '790'],
@@ -8060,6 +8123,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const upper = visaType.toUpperCase();
     const visaDisplay = formatVisaTypeForDisplay(visaType);
     const numbers = upper.match(/\b\d{3}\b/g) || [];
+    const visaShortLabel = getVisaShortLabel(visaDisplay);
+    const isBridgingVisa =
+      numbers.some((code) => ['010', '020', '030', '050', '051'].includes(code)) ||
+      /\b(?:BV[A-E]|BR[A-Z0-9]{1,2})\b/i.test(visaDisplay);
+    if (isBridgingVisa) {
+      return `<p><strong class="alert-inline-title alert-title-info">Visa details.</strong> <span class="alert-inline-text">${escapeHtml(
+        visaShortLabel || visaDisplay
+      )}. A bridging visa is a temporary visa, not permanent residence or citizenship. A person on a temporary visa is generally still classified as an overseas student. If so, must still study a full load and will not be eligible for HECS-HELP.</span></p>
+        <p class="alert-inline-text">However, the exact fee category may depend on what substantive visa they have applied for and the institution’s policy.</p>
+        <p class="alert-inline-text">For whether the student is legally subject to a study-related visa condition, such as if they are forced to study a full-load of 4 subject or can study <strong>part-time</strong>, the authoritative sources are:</p>
+        <ol class="alert-inline-list">
+          <li>VEVO</li>
+          <li>The current visa grant notice</li>
+          <li>Your International Office or visa-compliance team</li>
+        </ol>`;
+    }
     const non500 = numbers.filter((code) => code !== '500');
     const isRefugee = upper.includes('REFUGEE');
     const picked = non500[0] || (isRefugee ? 'refugee' : '');
@@ -8967,6 +9046,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     completedCodes.forEach((code) => attempted.add(code));
     passedParsed.resolvedSubjectCodes.forEach((code) => attempted.add(code));
     resultsParsed.resolvedSubjectCodes.forEach((code) => attempted.add(code));
+    subjectState.forEach((state, code) => {
+      if (state?.completed) attempted.add(code);
+    });
     workbookCurrent.forEach((_meta, code) => attempted.add(code));
 
     const issues = [];
@@ -9659,6 +9741,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       requestAnimationFrame(updateCompletedModeSticky);
     }
     document.body.classList.toggle('completed-mode', completedMode);
+    updateWithdrawCurrentEnrolmentUI();
     updatePlaceholderDisplayForMode();
 
     const disableOthers = (btn, disabled) => {
@@ -9670,14 +9753,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     disableOthers(openCodeModal, completedMode);
   };
 
+  const updateWithdrawCurrentEnrolmentUI = () => {
+    if (!withdrawCurrentEnrolmentToggle || !withdrawCurrentEnrolmentControl) return;
+    const show = completedMode && currentEnrolmentStudentRecord.size > 0;
+    if (!show) withdrawCurrentEnrolmentMode = false;
+    withdrawCurrentEnrolmentControl.hidden = !show;
+    withdrawCurrentEnrolmentToggle.checked = withdrawCurrentEnrolmentMode;
+    if (withdrawCurrentEnrolmentLabel) {
+      withdrawCurrentEnrolmentLabel.textContent =
+        `Withdraw from current enrolment mode (is ${withdrawCurrentEnrolmentMode ? 'active' : 'inactive'})`;
+    }
+  };
+
   const updateOverrideUI = () => {
     if (overrideToggle) {
       overrideToggle.checked = overrideMode;
-      overrideToggle.setAttribute('aria-pressed', overrideMode ? 'true' : 'false');
     }
     if (courseMapOverrideToggle) {
       courseMapOverrideToggle.checked = overrideMode;
-      courseMapOverrideToggle.setAttribute('aria-pressed', overrideMode ? 'true' : 'false');
     }
     if (overrideLabel) {
       overrideLabel.textContent = overrideMode ? 'Override prerequisites (active)' : 'Override prerequisites';
@@ -9693,7 +9786,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!livePrereqToggle) return;
     livePrereqToggle.checked = livePrereqUpdates && livePrereqEnabled;
     livePrereqToggle.disabled = !livePrereqEnabled;
-    livePrereqToggle.setAttribute('aria-pressed', livePrereqUpdates ? 'true' : 'false');
     const label = livePrereqToggle.closest('.toggle-row')?.querySelector('.switch-label');
     if (label) {
       label.textContent = livePrereqUpdates ? 'Live prerequisite updates (active)' : 'Live prerequisite updates';
@@ -9705,7 +9797,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateSemCountUI = () => {
     if (!toggleSemCountsBtn) return;
     toggleSemCountsBtn.checked = showSemCounts;
-    toggleSemCountsBtn.setAttribute('aria-pressed', showSemCounts ? 'true' : 'false');
     if (semCountsLabel) {
       semCountsLabel.textContent = showSemCounts
         ? 'Show semesters to complete (active)'
@@ -9750,7 +9841,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const active = passForEnrolmentsEnabled && enabled;
     toggles.forEach((toggle) => {
       toggle.checked = active;
-      toggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   };
 
@@ -10839,6 +10929,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     studentIdInput.addEventListener('input', handleStudentIdInput);
     studentIdInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        const triageButton = studentDataPreview?.querySelector('.student-summary-triage-action:not([disabled])');
+        if (triageButton && triageButton.offsetParent !== null) {
+          event.preventDefault();
+          triageButton.focus();
+          return;
+        }
+      }
       if (
         event.key === 'Backspace' &&
         !event.altKey &&
@@ -11275,7 +11373,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const resetModeOptionsToDefault = () => {
     overrideMode = false;
     fullLoadCap = 4;
-    showSemCounts = true;
+    showSemCounts = false;
     courseMapStudentSemCountsOn = false;
     refreshCurrentEnrolmentStudentRecord();
     passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
@@ -11702,7 +11800,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
     const isOpen = courseMapKeyModal.classList.contains('show');
     openCourseMapKeyButton.checked = isOpen;
-    openCourseMapKeyButton.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
     if (courseMapKeyToggleLabel) {
       courseMapKeyToggleLabel.textContent = isOpen
         ? 'Colour Key (showing)'
@@ -11717,7 +11814,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (toggleCourseMapNotesButton) {
       toggleCourseMapNotesButton.checked = courseMapNotesOn;
-      toggleCourseMapNotesButton.setAttribute('aria-pressed', courseMapNotesOn ? 'true' : 'false');
     }
     if (courseMapNotesToggleLabel) {
       courseMapNotesToggleLabel.textContent = courseMapNotesOn
@@ -11797,6 +11893,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'student-dec-returned', label: 'Student Dec returned' },
     { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner – instructions and Zoom offer' },
     { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner – not sure about what to do', dividerAfter: true },
+    { key: 'eform-strata-welcome-email-sent', label: 'eForm (Strata Welcome) email sent' },
     { key: 'link-to-start-application', label: 'Link to Start Application' },
     { key: 'applying-from-os', label: 'Applying from os' },
     { key: 'in-australia-now-completed-eform-but-no-usi', label: 'In Australia now – completed eForm but no USI' },
@@ -11813,7 +11910,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: '12-credits-post-bachelor-visa-concern', label: '12 credits. Post–bachelor visa concern' },
     { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
     { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to' },
-    { key: 'fee-payment-suspension-blocking-enrolment', label: 'Fee Non-Payment Suspension is blocking enrolment', dividerAfter: true },
+    { key: 'fee-payment-suspension-blocking-enrolment', label: 'Fee Non-Payment Suspension is blocking enrolment' },
+    { key: 'completing-the-course-early', label: 'Completing the course early' },
+    { key: 'summer-school-explained', label: 'Summer Semester Explained' },
+    { key: 'summer-semester-only-a-possibility', label: 'Summer Semester is only a possibility', dividerAfter: true },
     { key: 'enrolling-late-bit111', label: 'BIT111 – Enrolling late' },
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
@@ -11835,9 +11935,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'alternating-subjects-ba-major', label: 'Alternating subjects – BA' },
     { key: 'alternating-subjects-sd', label: 'Alternating subjects – SD' },
     { key: 'alternating-subjects-sd-and-ba', label: 'Alternating subjects – SD & BA' },
-    { key: 'capstone-explained', label: 'Capstone explained' },
-    { key: 'completing-the-course-early', label: 'Completing the course early' },
-    { key: 'summer-school-explained', label: 'Summer school explained', dividerAfter: true },
+    { key: 'capstone-explained', label: 'Capstone explained', dividerAfter: true },
     { key: 'student-hub', label: 'Student Hub' },
     { key: 'who-to-contact-for-help', label: 'Who to contact for help?' },
     { key: 'personal-details-change-your-details', label: 'Personal Details – change your details' },
@@ -11893,6 +11991,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       'Student Dec returned',
       'Student Dec Returned',
     ],
+    'eform-strata-welcome-email-sent': ['eForm (Strata Welcome) email sent'],
     'link-to-start-application': [
       'Link to Start Application',
       'Link to start application',
@@ -11988,7 +12087,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'fee-payment-suspension-blocking-enrolment': ['Fees/Suspension blocking enrolment'],
     'capstone-explained': ['Capstone Explained'],
     'completing-the-course-early': ['Completing The Course Early'],
-    'summer-school-explained': ['Summer School Explained'],
+    'summer-school-explained': ['Summer Semester Explained'],
+    'summer-semester-only-a-possibility': ['Summer Semester is only a possibility'],
     'usi-information': ['USI - information', 'USI – information'],
     'withdrawal-from-course-how-to': [
       'Withdrawal from course - how to',
@@ -13859,6 +13959,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
     }
+    if (completedMode && withdrawCurrentEnrolmentMode) {
+      if (!isCurrentRecord) return;
+      if (withdrawnCurrentEnrolments.has(id)) withdrawnCurrentEnrolments.delete(id);
+      else withdrawnCurrentEnrolments.add(id);
+      subjectState.set(id, { completed: false, toggled: false });
+      applyPassForEnrolmentsState();
+      updateWarnings();
+      updateBookmarkableSettingsUrl();
+      if (courseMapModal?.classList.contains('show')) {
+        updateCourseMapStatuses();
+        scheduleCourseMapRelayout();
+      }
+      return;
+    }
     if (completedMode) {
       // Credits mode
       if (isCurrentRecord) {
@@ -14073,6 +14187,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         conditionalRecompute({ force: true, usePlanned: true });
         updateWarnings();
       }
+    });
+  }
+
+  if (withdrawCurrentEnrolmentToggle) {
+    withdrawCurrentEnrolmentToggle.addEventListener('change', () => {
+      if (!completedMode || currentEnrolmentStudentRecord.size === 0) return;
+      withdrawCurrentEnrolmentMode = withdrawCurrentEnrolmentToggle.checked;
+      updateWithdrawCurrentEnrolmentUI();
     });
   }
 
@@ -14565,6 +14687,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   }
   if (settingsButton && settingsMenu) {
     if (settingsPwaSetupActions) settingsPwaSetupActions.hidden = !isInstalledPwa();
+    if (settingsResetPageButton) settingsResetPageButton.hidden = isInstalledPwa();
     settingsButton.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -14662,12 +14785,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (settingsDefaultSidebarWidthsButton) {
       settingsDefaultSidebarWidthsButton.addEventListener('click', () => {
         resetSidebarWidthsToDefault();
+        pulseSettingsResetButton(settingsDefaultSidebarWidthsButton);
       });
     }
+    settingsResetPageButton?.addEventListener('click', () => {
+      resetPageToDefaults();
+      pulseSettingsResetButton(settingsResetPageButton);
+    });
     settingsLightModeButton?.addEventListener('click', () => applyAppearance(DEFAULT_APPEARANCE));
     settingsDarkModeButton?.addEventListener('click', () => applyAppearance(DARK_APPEARANCE));
     settingsAccessibleColoursButton?.addEventListener('click', () => showColourSettingsModal());
-    settingsResetColoursButton?.addEventListener('click', resetColourSettings);
+    settingsResetColoursButton?.addEventListener('click', () => {
+      resetColourSettings();
+      pulseSettingsResetButton(settingsResetColoursButton);
+    });
     settingsMenu.addEventListener('click', (event) => {
       event.stopPropagation();
       if (!event.target.closest('#settings-triage-writing-explanation')) return;
@@ -21562,7 +21693,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapStaffModeToggle) {
       courseMapStaffModeToggle.checked = staffMode;
       courseMapStaffModeToggle.disabled = !allowCourseMapModeToggle;
-      courseMapStaffModeToggle.setAttribute('aria-pressed', staffMode ? 'true' : 'false');
     }
     if (courseMapStaffModeLabel) {
       courseMapStaffModeLabel.textContent = staffMode ? 'Staff mode is active.' : 'Student mode is active.';
@@ -21642,7 +21772,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const active = !!courseMapStudentSemCountsOn;
     courseMapSemCountsToggle.checked = active;
     courseMapSemCountsToggle.disabled = false;
-    courseMapSemCountsToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
     if (courseMapSemCountsLabel) {
       courseMapSemCountsLabel.textContent = active
         ? 'Show semesters to complete (active)'
@@ -21747,7 +21876,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const showButton = getCourseMapIsStaffMode();
     if (courseMapAiNamesToggleRow) courseMapAiNamesToggleRow.hidden = !showButton;
     courseMapAiNamesToggleButton.checked = !!courseMapAiNamesOn;
-    courseMapAiNamesToggleButton.setAttribute('aria-pressed', courseMapAiNamesOn ? 'true' : 'false');
     if (courseMapAiNamesToggleLabel) {
       courseMapAiNamesToggleLabel.textContent = courseMapAiNamesOn
         ? 'Proposed AI course map names (showing)'
@@ -24885,12 +25013,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const modalBox = colourSettingsModal?.querySelector('.colour-settings-modal');
     if (!modalBox || !mainGrid) return;
     const gridRect = mainGrid.getBoundingClientRect();
-    const firstRowTop = mainGrid.querySelector('.subject-card')?.getBoundingClientRect().top;
-    const secondRowCard = Array.from(mainGrid.querySelectorAll('.subject-card')).find((card) => {
-      const top = card.getBoundingClientRect().top;
-      return Number.isFinite(firstRowTop) && top > firstRowTop + 2;
-    });
-    const preferredTop = secondRowCard?.getBoundingClientRect().top ?? gridRect.top;
+    const instructionsRect = openInstructionsModal?.getBoundingClientRect();
+    const middleSidebarRect = openInstructionsModal?.closest('.sidebar')?.getBoundingClientRect();
+    const preferredTop = instructionsRect
+      ? instructionsRect.top + instructionsRect.height / 2
+      : gridRect.top;
     const viewportPadding = 16;
 
     modalBox.style.position = 'fixed';
@@ -24906,7 +25033,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const left = Math.max(
       viewportPadding,
       Math.min(
-        gridRect.left + (gridRect.width - width) / 2,
+        middleSidebarRect
+          ? middleSidebarRect.left + middleSidebarRect.width / 2
+          : gridRect.left + (gridRect.width - width) / 2,
         window.innerWidth - viewportPadding - width
       )
     );
@@ -25612,11 +25741,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ];
     for (let i = preferredSizes.length - 1; i >= 0; i -= 1) {
       const size = preferredSizes[i];
-      if (size.width <= maxWidth && size.height <= maxHeight) return size;
+      if (size.width <= maxWidth && size.height <= maxHeight) {
+        return { ...size, width: Math.min(1543, size.width) };
+      }
     }
     const fallback = preferredSizes[preferredSizes.length - 1];
     return {
-      width: Math.min(fallback.width, maxWidth),
+      width: Math.min(1543, fallback.width, maxWidth),
       height: Math.min(fallback.height, maxHeight),
     };
   };
@@ -25780,7 +25911,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (toggleCourseMapPrereqButton) {
       toggleCourseMapPrereqButton.checked = courseMapPrereqColoursOn;
-      toggleCourseMapPrereqButton.setAttribute('aria-pressed', courseMapPrereqColoursOn ? 'true' : 'false');
     }
     if (courseMapPrereqToggleLabel) {
       courseMapPrereqToggleLabel.textContent = courseMapPrereqColoursOn
@@ -25800,7 +25930,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (toggleCourseMapListColoursButton) {
       toggleCourseMapListColoursButton.checked = courseMapListColoursOn;
-      toggleCourseMapListColoursButton.setAttribute('aria-pressed', courseMapListColoursOn ? 'true' : 'false');
     }
     if (courseMapListColoursToggleLabel) {
       courseMapListColoursToggleLabel.textContent = courseMapListColoursOn
@@ -25972,7 +26101,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (toggleCourseMapPrereqTextButton) {
       toggleCourseMapPrereqTextButton.checked = courseMapPrereqTextOn;
-      toggleCourseMapPrereqTextButton.setAttribute('aria-pressed', courseMapPrereqTextOn ? 'true' : 'false');
     }
     if (courseMapPrereqTextToggleLabel) {
       courseMapPrereqTextToggleLabel.textContent = courseMapPrereqTextOn
@@ -25988,7 +26116,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateCourseMapIndicatorsToggle = () => {
     if (toggleCourseMapIndicatorsButton) {
       toggleCourseMapIndicatorsButton.checked = courseMapIndicatorsOn;
-      toggleCourseMapIndicatorsButton.setAttribute('aria-pressed', courseMapIndicatorsOn ? 'true' : 'false');
     }
     if (courseMapIndicatorsToggleLabel) {
       courseMapIndicatorsToggleLabel.textContent = courseMapIndicatorsOn
@@ -26129,7 +26256,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const state = alertState[type];
     if (!state) return;
     const arr = Array.from(state.values())
-      .sort((a, b) => b.timestamp - a.timestamp)
+      .sort((a, b) => {
+        const aIsVisaGuide = a.payload?.title === 'Visa fee guide';
+        const bIsVisaGuide = b.payload?.title === 'Visa fee guide';
+        if (aIsVisaGuide !== bIsVisaGuide) return aIsVisaGuide ? 1 : -1;
+        return b.timestamp - a.timestamp;
+      })
       .map(({ payload, seen }) => ({ ...payload, seen }));
     alertContent[type] = arr;
   };
@@ -28057,11 +28189,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     selectedListEl.innerHTML = '';
-    selectedListEl.setAttribute('role', 'list');
+    selectedListEl.setAttribute('role', 'group');
+    selectedListEl.setAttribute('aria-label', 'Available subjects');
     if (!available.length) {
       const li = document.createElement('div');
       li.className = 'available-item';
-      li.setAttribute('role', 'listitem');
+      li.setAttribute('role', 'status');
       if (isFullyGraduated || isRecordGraduated) {
         li.classList.add('available-item-success');
         li.classList.add('graduated-success');
@@ -28083,9 +28216,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } else {
       availableNowError = null;
       available.forEach((item) => {
-        const li = document.createElement('div');
+        const li = document.createElement('button');
+        li.type = 'button';
         li.className = 'available-item';
-        li.setAttribute('role', 'listitem');
         li.classList.toggle('chosen', item.isChosen);
         applyDisplayTypeClass(li, item.cell || item.id);
         const subjectName = getSubjectName(item.id);
@@ -28098,8 +28231,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           `${dayLabel} ${timeLabel}`
         )}</span>`;
         li.dataset.subject = item.id;
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
+        li.setAttribute('aria-pressed', item.isChosen ? 'true' : 'false');
         const activate = (event) => {
           if (!completedMode && areElectivesFull()) {
             const isElectiveItem = isElectiveId(item.id) || isElectiveCandidateId(item.id);
@@ -28121,12 +28253,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           cell.click();
         };
         li.addEventListener('click', activate);
-        li.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' || ev.key === ' ') {
-            ev.preventDefault();
-            activate();
-          }
-        });
         const showSidebarTooltip = (e) => {
           const willRemove = item.isChosen;
           const hasFullLoad = getPlannedCount() >= getLoadThreshold();
@@ -29474,32 +29600,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           syncCourseMapElectiveLandingGuides();
           courseMapModal.classList.remove('course-map-structure-first-expand');
           if (courseMapStructureFirstExpandTimer) clearTimeout(courseMapStructureFirstExpandTimer);
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-              setCourseMapOverviewAnimationOffsets(streamKey, transitionStartRects);
-              setCourseMapElectiveLandingOffsets(transitionStartRects, transitionSharedStartRect);
-              void courseMapModal.offsetWidth;
-              courseMapModal.classList.remove('course-map-structure-preparing-expand');
-              courseMapModal.classList.add('course-map-structure-first-expand');
-              courseMapContent.querySelectorAll('.course-map-structure-use').forEach((cell) => {
-                cell.classList.add('course-map-structure-use-visible');
-              });
-              courseMapContent.querySelectorAll('.course-map-structure-elective-landing').forEach((cell) => {
-                cell.classList.add('course-map-structure-elective-landing-visible');
-              });
-              courseMapStructureFirstExpandTimer = setTimeout(() => {
-                courseMapModal.classList.remove('course-map-structure-first-expand');
-                courseMapModal.classList.remove('course-map-structure-preparing-expand');
-                positionCourseMapSharedBit245();
-                updateCourseMapStreamLabels();
-                courseMapStructureFirstExpandTimer = null;
-              }, 1500);
-                });
-              });
-            });
+          setCourseMapOverviewAnimationOffsets(streamKey, transitionStartRects);
+          setCourseMapElectiveLandingOffsets(transitionStartRects, transitionSharedStartRect);
+          void courseMapModal.offsetWidth;
+          courseMapModal.classList.remove('course-map-structure-preparing-expand');
+          courseMapModal.classList.add('course-map-structure-first-expand');
+          courseMapContent.querySelectorAll('.course-map-structure-use').forEach((cell) => {
+            cell.classList.add('course-map-structure-use-visible');
           });
+          courseMapContent.querySelectorAll('.course-map-structure-elective-landing').forEach((cell) => {
+            cell.classList.add('course-map-structure-elective-landing-visible');
+          });
+          courseMapStructureFirstExpandTimer = setTimeout(() => {
+            courseMapModal.classList.remove('course-map-structure-first-expand');
+            courseMapModal.classList.remove('course-map-structure-preparing-expand');
+            positionCourseMapSharedBit245();
+            updateCourseMapStreamLabels();
+            courseMapStructureFirstExpandTimer = null;
+          }, 1500);
         }
         return;
       }
@@ -30174,6 +30292,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (toggleSemCountsBtn)
     toggleSemCountsBtn.addEventListener('change', () => {
       showSemCounts = toggleSemCountsBtn.checked;
+      updateBookmarkableSettingsUrl();
       updateSemCountUI();
       const completedSet = new Set(
         Array.from(subjectState.entries())

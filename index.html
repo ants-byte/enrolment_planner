@@ -12,7 +12,10 @@ Last Modified: 11/07/2026
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Timetable Planner. Bachelor of IT</title>
+  <meta name="description"
+    content="Plan your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
+  <link rel="canonical" href="https://timetableplanner.adiserio.workers.dev/">
+  <title>Timetable Planner for Bachelor of IT, Melbourne Polytechnic</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -77,7 +80,9 @@ Last Modified: 11/07/2026
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
         <div class="student-search-input-wrap">
-          <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off" />
+          <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off"
+            aria-keyshortcuts="Control+Alt+S"
+            data-tooltip-html="<div>Search by student ID, email, or name.</div><div class=&quot;tooltip-line-gap&quot;>Press Ctrl+Alt+S to move focus here.</div>" />
           <button id="clear-student" class="clear-button secondary student-search-clear" type="button" hidden
             data-tooltip="Clear the student search and remove loaded student history.">Clear</button>
         </div>
@@ -131,6 +136,11 @@ Last Modified: 11/07/2026
             data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">By
             typing</button>
         </div>
+        <label id="withdraw-current-enrolment-control" class="history-withdraw-check" hidden
+          data-tooltip="If you withdraw a student from a current Strata enrolment, a Withdrawal form will need to be prepared">
+          <input id="withdraw-current-enrolment" type="checkbox" />
+          <span id="withdraw-current-enrolment-label">Withdraw from current enrolment mode (is inactive)</span>
+        </label>
       </div>
 
       <div class="sidebar-section timetable-panel dim-when-complete">
@@ -155,7 +165,7 @@ Last Modified: 11/07/2026
               data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">By
               typing</button>
           </div>
-          <div id="selected-list" class="available-list" role="list"></div>
+          <div id="selected-list" class="available-list" role="group" aria-label="Available subjects"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
               data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Subjects
@@ -246,15 +256,15 @@ Last Modified: 11/07/2026
               <h1>Timetable Planner</h1>
               <div id="settings-picker" class="title-settings-picker">
                 <button id="settings-button" class="title-settings-button" type="button" aria-label="Settings"
-                  aria-haspopup="menu" aria-expanded="false" data-tooltip="Settings">
+                  aria-controls="settings-menu" aria-expanded="false" data-tooltip="Settings">
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path
                       d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.22 7.22 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.89 2h-3.78a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.72 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.78a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
                   </svg>
                 </button>
-                <div id="settings-menu" class="title-settings-menu" role="menu" hidden>
+                <div id="settings-menu" class="title-settings-menu" hidden>
                   <label class="title-settings-field title-settings-font-field"
-                    data-tooltip="Set the base font size for the whole site.">
+                    data-tooltip-html="<div>Set the base font size for the whole site.</div><div class=&quot;tooltip-line-gap&quot;>Click this text to reset to default.</div>">
                     <input id="settings-root-font-size" class="title-settings-font-slider" type="range" min="10"
                       max="32" step="1" value="16" />
                     <button id="settings-font-size-label" class="title-settings-font-reset" type="button">Font size:
@@ -273,7 +283,6 @@ Last Modified: 11/07/2026
                       data-font-family="merriweather">Merriweather</button>
                   </div>
                   <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before"
-                    role="menuitemcheckbox"
                     data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
                     <input id="settings-card-theme-colours" type="checkbox" />
                     <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
@@ -297,10 +306,13 @@ Last Modified: 11/07/2026
                       <span>Reset/Default colours</span>
                     </button>
                   </div>
-                  <button id="settings-default-sidebar-widths"
-                    class="title-settings-action title-settings-separator-before" type="button"
-                    data-tooltip-html="<div>Reset the left panel, drop zone, and main content widths.</div><div class=&quot;tooltip-line-gap&quot;>Note that if you resize your sidebars, the new size will be remembered in your URL, so if you bookmark this site and return to it, your preference will be maintained.</div>">Default sidebar
-                    widths</button>
+                  <div class="title-settings-reset-row title-settings-separator-before" role="group"
+                    aria-label="Page reset controls">
+                    <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
+                      data-tooltip-html="<div>Reset the sidebars, main grid, and Course Map to their default widths.</div><div class=&quot;tooltip-line-gap&quot;>All width measurements will be removed from the URL.</div>">Default widths</button>
+                    <button id="settings-reset-page" class="title-settings-action" type="button"
+                      data-tooltip="Clear all entries and reset appearance and size to default">Reset page</button>
+                  </div>
                   <div id="settings-pwa-setup-actions"
                     class="title-settings-pwa-actions title-settings-separator-before" role="group"
                     aria-label="Installed app setup" hidden>
@@ -311,7 +323,7 @@ Last Modified: 11/07/2026
                       data-tooltip="Reset Settings options to their defaults and remove the saved installed-app launch setup. Student and workbook data are not deleted.">Clear
                       setup</button>
                   </div>
-                  <label class="title-settings-check title-settings-separator-before" role="menuitemcheckbox"
+                  <label class="title-settings-check title-settings-separator-before"
                     data-tooltip-html="<div>Tick if you want this page to open the Course Map by default.</div><div class=&quot;tooltip-line-gap&quot;>Tick off if you want to see the main grid (and the sidebar(s)) when the page first loads.</div>">
                     <input id="settings-course-map-default" type="checkbox" />
                     <span id="settings-course-map-label">Course map mode (is off)</span>
@@ -325,7 +337,7 @@ Last Modified: 11/07/2026
                         data-tooltip-html="<div>Click to read long form explanation of how to use this site to write to Triage.xlsx.</div><div class=&quot;tooltip-line-gap&quot;>Or just hover over options for explanations.</div>">Explanation</button>
                     </div>
                     <div class="title-settings-triage-controls">
-                      <label class="title-settings-check title-settings-triage-writer-check" role="menuitemcheckbox"
+                      <label class="title-settings-check title-settings-triage-writer-check"
                         data-tooltip-html="<div>Tick to enable writing to the Triage workbook from this site.</div><div class=&quot;tooltip-line-gap&quot;>Disable to hide all Triage write buttons and reminders from this site.</div><div class=&quot;tooltip-line-gap&quot;>This does not affect reading of Triage.xlsx. All student information from the workbook will still be displayed as normal.</div>">
                         <input id="settings-use-triage-writer" type="checkbox" checked />
                         <span id="settings-use-triage-writer-label">Enable/Disable Triage writing (is enabled)</span>
@@ -470,7 +482,7 @@ Last Modified: 11/07/2026
             <div class="subject-card core clickable" data-subject="BIT241" data-slot="r3c3">
               <span class="subject-code">BIT241</span>
               <span class="subject-note subject-title">Professional IT Practice and Ethics</span>
-              <span class="prerequsites-note">Prerequisite: BIT121, BIT106</span>
+              <span class="prerequsites-note">Prerequisites: BIT121, BIT106</span>
             </div>
             <div class="subject-card network clickable" data-subject="BIT313" data-slot="r3c4">
               <span class="subject-code">BIT313</span>
@@ -552,7 +564,7 @@ Last Modified: 11/07/2026
             <div class="subject-card ba elective-stream clickable" data-slot="r2c1" data-subject="BIT236">
               <span class="subject-code">BIT236</span>
               <span class="subject-note subject-title">Enterprise Resources</span>
-              <span class="prerequsites-note">Prerequisite: BIT106, BIT231</span>
+              <span class="prerequsites-note">Prerequisites: BIT106, BIT231</span>
             </div>
             <div class="subject-card ba elective-stream clickable" data-slot="r2c2" data-subject="BIT355">
               <span class="subject-code">BIT355</span>
@@ -831,6 +843,8 @@ Last Modified: 11/07/2026
             <h3>Enrolment Officers help and instructions</h3>
             <button id="folder-shortcut-help" class="clear-button hidden-initial" type="button"
               aria-label="Enable Windows integration">Enable Windows integration</button>
+            <p class="help-student-site-link">Student site: <a href="https://timetableplanner.adiserio.workers.dev/"
+                target="_blank" rel="noopener noreferrer">here</a></p>
           </div>
           <div class="help-support-section">
             <h3>How to use this site?</h3>
@@ -1321,7 +1335,8 @@ Last Modified: 11/07/2026
         <div id="course-map-header-strip" class="course-map-header-strip" hidden>
           <div class="course-map-header-search-wrap">
             <input id="course-map-student-search" class="course-map-student-search" type="text"
-              placeholder="Search student" autocomplete="off" />
+              placeholder="Search student" autocomplete="off" aria-keyshortcuts="Control+Alt+S"
+              data-tooltip-html="<div>Search by student ID, email, or name.</div><div class=&quot;tooltip-line-gap&quot;>Press Ctrl+Alt+S to move focus here.</div>" />
             <div id="course-map-student-search-dropdown"
               class="student-search-dropdown course-map-student-search-dropdown" hidden></div>
           </div>
@@ -1992,7 +2007,7 @@ Last Modified: 11/07/2026
   </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260714-52"></script>
+  <script src="script.js?v=20260715-26"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 11/07/2026</div>

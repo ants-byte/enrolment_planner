@@ -1008,5 +1008,5 @@ if ($selectPath) {
   exit 0
 }
 
-Start-Process -FilePath 'explorer.exe' -ArgumentList $launchPath | Out-Null
+Start-Process -FilePath 'explorer.exe' -ArgumentList "`"$launchPath`"" | Out-Null
 exit 0

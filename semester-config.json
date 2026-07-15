@@ -3,8 +3,8 @@
   "semesterDetails": {
     "year": "2026",
     "semester_S1_S2_SS": "S2",
-    "semester_Start_Date": "20/06/2026",
-    "end_of_2nd_week_Date": "31/06/2026",
+    "semester_Start_Date": "20/07/2026",
+    "end_of_2nd_week_Date": "31/07/2026",
     "census_Date": "14/08/2026",
     "price_per_Unit": "$2,360.00",
     "price_per_CSP_Unit": "$1,192.00"
@@ -43,7 +43,7 @@
       },
       {
         "code": "BIT364",
-        "name": "Non-relational Database Management"
+        "name": "Non-Relational Database Management"
       }
     ]
   },
@@ -139,7 +139,7 @@
     {
       "day": "Wed",
       "time": "AM",
-      "room": "TBA",
+      "room": "PA114",
       "code": "BIT245",
       "subjectName": "Web Development",
       "staff": "Promise Enwereonye"
@@ -163,10 +163,10 @@
     {
       "day": "Wed",
       "time": "PM",
-      "room": "TBA",
+      "room": "PA110",
       "code": "BIT235",
       "subjectName": "Object Oriented Programming",
-      "staff": "Md Sarwar Kama"
+      "staff": "Md Sarwar Kamal"
     },
     {
       "day": "Thu",
@@ -229,16 +229,16 @@
       "time": "PM",
       "room": "TBA",
       "code": "BIT364",
-      "subjectName": "Non-relational Database Management",
+      "subjectName": "Non-Relational Database Management",
       "staff": "Nidha Qazi"
     },
     {
-      "day": "Fri",
+      "day": "Thu",
       "time": "AM",
       "room": "TBA",
       "code": "BIT246",
       "subjectName": "Object Oriented RAD",
-      "staff": "Md Sarwar Kama"
+      "staff": "Md Sarwar Kamal"
     },
     {
       "day": "Fri",
@@ -501,9 +501,7 @@
     "BIT233": [
       "BIT121"
     ],
-    "BIT235": [
-      "BIT245"
-    ],
+    "BIT235": [],
     "BIT236": [
       "BIT231",
       "BIT106"
