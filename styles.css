@@ -1955,6 +1955,37 @@ body.staff-mode .drop-sidebar.is-active {
   margin-top: 6px;
 }
 
+body.next-semester-planning-mode .sidebar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  border-radius: inherit;
+  background: rgba(8, 11, 14, 0.68);
+  pointer-events: auto;
+  animation: next-semester-sidebar-cover 180ms ease-out both;
+}
+
+body.next-semester-planning-mode #reset-section,
+body.next-semester-planning-mode #move-to-next-semester {
+  position: relative;
+  z-index: 41;
+}
+
+body.next-semester-planning-mode .major-dropdown {
+  z-index: auto;
+}
+
+body.next-semester-planning-mode #btn-data-error,
+body.next-semester-planning-mode #btn-codes {
+  display: none !important;
+}
+
+@keyframes next-semester-sidebar-cover {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .semester-timetable-section {
   display: flex;
   flex-direction: column;
@@ -4939,6 +4970,40 @@ body.graduate-highlight .key {
   align-items: stretch;
 }
 
+.next-semester-planning-note {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  z-index: 42;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 2px solid #f39c12;
+  border-radius: 8px;
+  background: #fff;
+  color: #000;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.next-semester-planning-note > div + div {
+  margin-top: 12px;
+}
+
+.next-semester-planning-note.is-graduating {
+  border-color: #198754;
+}
+
+.next-semester-planning-note.is-completion-mismatch {
+  border-color: #d32f2f;
+  border-width: 4px;
+  color: #d32f2f;
+}
+
+.next-semester-planning-note[hidden] {
+  display: none;
+}
+
 #settings-triage-writing-explanation {
   margin: 0;
   white-space: nowrap;
@@ -6640,6 +6705,51 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   box-sizing: border-box;
 }
 
+#timetable-table .timetable-stream-heading {
+  position: relative;
+  padding-right: 25px;
+}
+
+.timetable-table-only-toggle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 140ms ease;
+}
+
+.timetable-table-only-toggle::before {
+  content: "\2197";
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+#timetable-modal.table-only .timetable-table-only-toggle {
+  transform: rotate(180deg);
+}
+
+#timetable-modal.table-only #timetable-title,
+#timetable-modal.table-only #timetable-fees {
+  display: none !important;
+}
+
+#timetable-modal.table-only .timetable-table-wrapper {
+  margin-left: -8px;
+}
+
+#timetable-modal.table-only #timetable-table th:last-child,
+#timetable-modal.table-only #timetable-table td:last-child {
+  padding-right: 21px;
+}
+
 .subject-table {
   width: max-content;
   max-width: none;
@@ -7573,6 +7683,24 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+#history-modal .modal-action-group > *,
+#remaining-modal .modal-action-group > *,
+#next-semester-modal .modal-action-group > * {
+  order: 3;
+}
+
+#copy-history,
+#copy-remaining,
+#copy-next-semester {
+  order: 1;
+}
+
+#email-history,
+#email-remaining,
+#email-next-semester {
+  order: 2;
 }
 
 .remaining-copy-indent {
@@ -9546,6 +9674,10 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-structure-preparing-expand .course-map-stream.course-map-structure-selected-stream {
+  visibility: hidden;
+}
+
+#course-map-modal.course-map-structure-preparing-expand .course-map-stream.course-map-structure-exploded-stream .course-map-stream-label {
   visibility: hidden;
 }
 

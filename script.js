@@ -236,6 +236,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const currentSemesterKey = getCurrentSemesterKey();
   let planningSemesterOffset = 0;
+  let finalPlanningExpectationIdentity = null;
   const semesterSequence = ['S1', 'S2'];
   const getPlanningSemesterKey = (semester) => (semester === 'SS' ? 'S1' : semester);
   const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
@@ -2452,6 +2453,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyTimetable = document.getElementById('copy-timetable');
   const timetableColoursButton = document.getElementById('timetable-colours');
   const copyTimetableCodes = document.getElementById('copy-timetable-codes');
+  const toggleTimetableTableOnlyButton = document.getElementById('toggle-timetable-table-only');
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
   const timetableFees = document.getElementById('timetable-fees');
@@ -2559,6 +2561,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const historyButton = document.getElementById('open-history');
   const remainingButton = document.getElementById('open-remaining');
   const moveToNextSemesterButton = document.getElementById('move-to-next-semester');
+  const nextSemesterPlanningNote = document.getElementById('next-semester-planning-note');
+  const nextSemesterSelectionPeriod = document.getElementById('next-semester-selection-period');
+  const nextSemesterGraduationPeriod = document.getElementById('next-semester-graduation-period');
   const courseMapButton = document.getElementById('open-course-map');
   const nextSemesterButton = document.getElementById('open-next-semester');
   const oldCodesButton = document.getElementById('open-old-codes');
@@ -2693,10 +2698,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeOldCodes = document.getElementById('close-old-codes');
   const closeOldCodesCta = document.getElementById('close-old-codes-cta');
   const copyHistory = document.getElementById('copy-history');
+  const emailHistoryButton = document.getElementById('email-history');
   const copyHistoryCodes = document.getElementById('copy-history-codes');
   const closeRemaining = document.getElementById('close-remaining');
   const closeRemainingCta = document.getElementById('close-remaining-cta');
   const copyRemaining = document.getElementById('copy-remaining');
+  const emailRemainingButton = document.getElementById('email-remaining');
   const copyRemainingCodes = document.getElementById('copy-remaining-codes');
   const removeCurrentSelectionsButton = document.getElementById('remove-current-selections');
   const nextSemesterModal = document.getElementById('next-semester-modal');
@@ -2705,6 +2712,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeNextSemester = document.getElementById('close-next-semester');
   const closeNextSemesterCta = document.getElementById('close-next-semester-cta');
   const copyNextSemester = document.getElementById('copy-next-semester');
+  const emailNextSemesterButton = document.getElementById('email-next-semester');
   const copyNextSemesterCodes = document.getElementById('copy-next-semester-codes');
   const toggleSemCountsBtn = document.getElementById('toggle-sem-counts');
   const semCountsLabel = toggleSemCountsBtn?.closest('.toggle-row')?.querySelector('.switch-label');
@@ -8576,6 +8584,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
+  const updateSubjectDialogEmailButtons = () => {
+    const record = getActiveStudentRecord();
+    const recipients = record ? buildRecipientListFromTarget(record, 'both') : '';
+    [emailHistoryButton, emailRemainingButton, emailNextSemesterButton].forEach((button) => {
+      if (!button) return;
+      button.hidden = !record;
+      setActionButtonDisabledState(button, !recipients || !clipboardAvailable);
+      button.setAttribute(
+        'title',
+        recipients || (record ? 'No student email address available.' : 'Select a student record to email.')
+      );
+    });
+  };
+
   const updateTimetableEmailButtons = () => {
     const record = getActiveStudentRecord();
     const shouldShow = staffFacing && currentTableMode === 'selected' && !!record;
@@ -9322,6 +9344,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateSubjectCounts = () => {
     if (!subjectCountsEl) return;
+    updateNextSemesterPlanningNote();
     const completed = getCompletedCount();
     const useCredits = getUseCreditsCount();
     const selected = getPlannedCount();
@@ -9633,7 +9656,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const hasCurrentEnrolments = Array.from(currentEnrolmentStudentRecord.values()).some(
         (code) => !withdrawnCurrentEnrolments.has(code)
       );
-      moveToNextSemesterButton.hidden = selectedCount === 0 && !hasCurrentEnrolments;
+      const canAdvanceSemester = selectedCount > 0 || hasCurrentEnrolments;
+      moveToNextSemesterButton.hidden = planningSemesterOffset === 0 && !canAdvanceSemester;
+      moveToNextSemesterButton.disabled = !canAdvanceSemester;
+      moveToNextSemesterButton.classList.toggle('disabled', !canAdvanceSemester);
+      moveToNextSemesterButton.setAttribute('aria-disabled', canAdvanceSemester ? 'false' : 'true');
     }
     const hasAnyState = Array.from(subjectState.values()).some((st) => st?.toggled || st?.completed);
     const hasAnyUse = electivePlaceholderState.some(Boolean);
@@ -11451,6 +11478,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const resetStudentSelections = () => {
     timetableClashError = null;
     planningSemesterOffset = 0;
+    finalPlanningExpectationIdentity = null;
+    document.body.classList.remove('next-semester-planning-mode');
     subjects.forEach((cell) => attachTooltip(cell));
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
       if (restoreStudentSnapshot(loadedStudentSnapshot)) {
@@ -11537,10 +11566,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (!advancingCodes.size) return;
 
+    if (!finalPlanningExpectationIdentity) {
+      finalPlanningExpectationIdentity = getEstimatedGraduationSemesterIdentity();
+    }
+
     advancingCodes.forEach((code) => {
       if (validSubjectCodes.has(code)) subjectState.set(code, { completed: true, toggled: false });
     });
     planningSemesterOffset += 1;
+    document.body.classList.add('next-semester-planning-mode');
     passForEnrolmentsEnabled = false;
     passForEnrolmentsOverrides.clear();
     currentEnrolmentsPlannedOverrides.clear();
@@ -15051,7 +15085,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   let currentTableMode = 'selected';
   let timetableModalReadOnly = false;
+  let timetableTableOnly = false;
   const historySortState = { key: 'date', direction: 'asc' };
+
+  const setTimetableTableOnly = (enabled) => {
+    timetableTableOnly = !!enabled;
+    timetableModal?.classList.toggle('table-only', timetableTableOnly);
+    if (toggleTimetableTableOnlyButton) {
+      toggleTimetableTableOnlyButton.setAttribute('aria-pressed', timetableTableOnly ? 'true' : 'false');
+      toggleTimetableTableOnlyButton.setAttribute(
+        'aria-label',
+        timetableTableOnly ? 'Restore full timetable view' : 'Expand timetable table'
+      );
+      toggleTimetableTableOnlyButton.setAttribute(
+        'data-tooltip',
+        timetableTableOnly ? 'Restore headings and fee information' : 'Show only the timetable table'
+      );
+    }
+    resetTimetableModalHeightToContent();
+    scheduleAdjustTimetable();
+  };
 
   const renderTimetableTable = (rowsOverride = null, highlightSelection = false) => {
     if (!timetableTable) return;
@@ -16512,15 +16565,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       semester,
     };
   };
-  const getEstimatedGraduationSemesterLabel = () => {
-    const configured = getConfiguredSemesterIdentity();
-    const base = configured || {
+  const getSemesterIdentityAfterOffset = (offset = 0) => {
+    const base = getConfiguredSemesterIdentity() || {
       year: new Date().getFullYear(),
       semester: getPlanningSemesterKey(currentSemesterKey),
     };
     let year = base.year;
     let semester = base.semester;
-    let semestersToAdvance = planningSemesterOffset + Math.max(0, getCourseMapRemainingSemesterEstimate() - 1);
+    let semestersToAdvance = Math.max(0, offset);
 
     while (semestersToAdvance > 0) {
       if (semester === 'S1') {
@@ -16531,8 +16583,68 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       semestersToAdvance -= 1;
     }
+    return { year, semester };
+  };
+  const getEstimatedGraduationSemesterIdentity = () =>
+    getSemesterIdentityAfterOffset(
+      planningSemesterOffset + Math.max(0, getCourseMapRemainingSemesterEstimate() - 1)
+    );
+  const getEstimatedGraduationSemesterLabel = () => {
+    const { year, semester } = getEstimatedGraduationSemesterIdentity();
     return `${String(year).slice(-2)} ${semester}`;
   };
+  const formatLongSemesterIdentity = ({ year, semester }) => {
+    const semesterLabel = semester === 'S1'
+      ? 'Semester 1'
+      : semester === 'S2'
+        ? 'Semester 2'
+        : 'Summer Semester';
+    return `${year} ${semesterLabel}`;
+  };
+  const updateNextSemesterPlanningNote = () => {
+    if (!nextSemesterPlanningNote) return;
+    const isActive = planningSemesterOffset > 0;
+    nextSemesterPlanningNote.hidden = !isActive;
+    if (!isActive) return;
+    const selectionPeriod = getSemesterIdentityAfterOffset(planningSemesterOffset);
+    const graduationPeriod = getEstimatedGraduationSemesterIdentity();
+    const isComplete = getRemainingSubjectsCount() === 0;
+    nextSemesterPlanningNote.classList.remove('is-graduating', 'is-completion-mismatch');
+    if (isComplete) {
+      const finalCompletionPeriod = getSemesterIdentityAfterOffset(Math.max(0, planningSemesterOffset - 1));
+      const expectedPeriod = finalPlanningExpectationIdentity || finalCompletionPeriod;
+      const completedAsExpected = expectedPeriod.year === finalCompletionPeriod.year
+        && expectedPeriod.semester === finalCompletionPeriod.semester;
+      nextSemesterPlanningNote.classList.add(
+        completedAsExpected ? 'is-graduating' : 'is-completion-mismatch'
+      );
+      if (nextSemesterSelectionPeriod) {
+        nextSemesterSelectionPeriod.textContent = completedAsExpected
+          ? `Graduating in ${formatLongSemesterIdentity(finalCompletionPeriod)}.`
+          : `Expected to complete in ${formatLongSemesterIdentity(expectedPeriod)}. However final subject will be completed ${formatLongSemesterIdentity(finalCompletionPeriod)}.`;
+      }
+      if (nextSemesterGraduationPeriod) nextSemesterGraduationPeriod.hidden = true;
+    } else {
+      if (nextSemesterSelectionPeriod) {
+        nextSemesterSelectionPeriod.textContent = `Selecting for ${formatLongSemesterIdentity(selectionPeriod)}`;
+      }
+      if (nextSemesterGraduationPeriod) {
+        nextSemesterGraduationPeriod.hidden = false;
+        nextSemesterGraduationPeriod.textContent = `Expected graduation semester: ${formatLongSemesterIdentity(graduationPeriod)}`;
+      }
+    }
+    requestAnimationFrame(() => {
+      const sidebar = nextSemesterPlanningNote.closest('.sidebar');
+      if (!sidebar || nextSemesterPlanningNote.hidden || !resetSection || !moveToNextSemesterButton) return;
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const resetRect = resetSection.getBoundingClientRect();
+      const moveRect = moveToNextSemesterButton.getBoundingClientRect();
+      const gapMidpoint = (resetRect.bottom + moveRect.top) / 2;
+      const top = gapMidpoint - sidebarRect.top - (nextSemesterPlanningNote.offsetHeight / 2);
+      nextSemesterPlanningNote.style.top = `${Math.round(top)}px`;
+    });
+  };
+  window.addEventListener('resize', updateNextSemesterPlanningNote, { passive: true });
   const getConfiguredIntakeName = () => {
     const identity = getConfiguredSemesterIdentity();
     return identity ? `Enrol ${identity.shortYear}_${identity.semester}` : '';
@@ -22551,7 +22663,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  const updateCourseMapStreamLabels = (afterPosition) => {
+  const updateCourseMapStreamLabels = (afterPosition, layoutSettled = false) => {
     const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     const majorKey = explainMajorKey || getMajorKeyFromUi();
     const selectedMajor = courseMapStructureExplainMode ? !!explainMajorKey : hasSelectedMajor();
@@ -22764,7 +22876,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
         }
         updateCourseMapNotesOverlap();
-        if (typeof afterPosition === 'function') afterPosition();
+        if (typeof afterPosition === 'function') {
+          if (!layoutSettled) {
+            requestAnimationFrame(() => updateCourseMapStreamLabels(afterPosition, true));
+          } else {
+            afterPosition();
+          }
+        }
       });
     }
     initTooltips();
@@ -24821,6 +24939,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showTimetableModal = () => {
     if (!timetableModal) return;
+    setTimetableTableOnly(false);
     timetableModalReadOnly = false;
     manualFeeHidden.domestic = false;
     manualFeeHidden.international = false;
@@ -24855,6 +24974,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showAvailableModal = ({ forceAvailable = false } = {}) => {
     if (!timetableModal) return;
+    setTimetableTableOnly(false);
     timetableModalReadOnly = false;
     manualFeeHidden.domestic = false;
     manualFeeHidden.international = false;
@@ -24873,6 +24993,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showSelectedReadOnlyModal = () => {
     if (!timetableModal) return;
+    setTimetableTableOnly(false);
     timetableModalReadOnly = true;
     manualFeeHidden.domestic = false;
     manualFeeHidden.international = false;
@@ -24894,6 +25015,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const showHistoryModal = () => {
     if (!historyModal) return;
     renderHistoryModal();
+    updateSubjectDialogEmailButtons();
     historyModal.classList.add('show');
     historyModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(historyTable);
@@ -24912,6 +25034,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!remainingModal) return;
     remainingHideCurrentSelections = false;
     renderRemainingModal();
+    updateSubjectDialogEmailButtons();
     remainingModal.classList.add('show');
     remainingModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(remainingTable);
@@ -26309,6 +26432,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!nextSemesterModal) return;
     const rows = getNextSemTableRows();
     renderSubjectTable(nextSemesterTable, rows, 'No subjects available next semester.');
+    updateSubjectDialogEmailButtons();
     nextSemesterModal.classList.add('show');
     nextSemesterModal.setAttribute('aria-hidden', 'false');
     syncSubjectTableActions(nextSemesterTable);
@@ -26651,6 +26775,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const copyTimetableToClipboard = async () => {
     if (!timetableTable || !clipboardAvailable) return false;
     const rows = Array.from(timetableTable.querySelectorAll('tr'));
+    const tableOnly = timetableTableOnly && !!timetableModal?.classList.contains('table-only');
     const now = new Date();
     const record = getActiveStudentRecord();
     const studentId = record ? normalizeStudentId(record.Student_IDs_Unique) : '';
@@ -26664,7 +26789,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const heading = isTimetableOptionsClip
       ? `Timetable options${studentHeading ? ` for ${studentHeading}` : ''}. ${timetableLabel}.`
       : studentHeading ? `${headingPrefix}, for ${studentHeading}` : headingPrefix;
-    const includeHeading = !!heading;
+    const includeHeading = !tableOnly && !!heading;
 
     const textBody = rows
       .map((row) =>
@@ -26673,7 +26798,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           .join('\t')
       )
       .join('\n');
-    const feeLines = getVisibleTimetableFeeLines();
+    const feeLines = tableOnly ? [] : getVisibleTimetableFeeLines();
     const feeTextLines = feeLines.filter(Boolean).join('\n');
     const indentPlainTextBlock = (value) =>
       String(value || '')
@@ -26683,7 +26808,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const textCore = includeHeading
       ? `${heading}\n${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`
       : `${textBody}${feeTextLines ? `\n\n${feeTextLines}` : ''}`;
-    const text = `\n${indentPlainTextBlock(textCore)}`;
+    const text = tableOnly ? textBody : `\n${indentPlainTextBlock(textCore)}`;
 
     const headerSample = timetableTable.querySelector('thead th');
     const headerStyle = headerSample ? window.getComputedStyle(headerSample) : null;
@@ -26769,8 +26894,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       feesHtml = `<div style="${feeBoxStyle}">${feesHtml}</div>`;
     }
     const htmlSpacer = `<p style="margin:0 0 10pt 0;mso-margin-top-alt:0;mso-margin-bottom-alt:0;line-height:1;">&nbsp;</p>`;
-    const htmlContent = `${headingHtml}<table style="${tableIndentStyle}border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
-    const htmlCore = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:0;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="width:36pt;min-width:36pt;font-size:0;line-height:0;">&nbsp;</td><td style="padding:0;margin:0;vertical-align:top;">${htmlContent}</td></tr></table>`;
+    const copiedTableHtml = `<table style="${tableIndentStyle}border-collapse:collapse;border:${tableBorder};border-spacing:0;font-family:Calibri, Arial, sans-serif;font-size:11pt;">${htmlRows}</table>`;
+    const htmlContent = `${headingHtml}${copiedTableHtml}${feesHtml ? `${htmlSpacer}${feesHtml}` : ''}`;
+    const htmlCore = tableOnly
+      ? copiedTableHtml
+      : `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:0;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="width:36pt;min-width:36pt;font-size:0;line-height:0;">&nbsp;</td><td style="padding:0;margin:0;vertical-align:top;">${htmlContent}</td></tr></table>`;
     const html = htmlCore;
 
     if (window.ClipboardItem) {
@@ -27365,11 +27493,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       await parseEmailScripts();
       const firstName = getStudentFirstName(record);
       const baseBody = buildTimetableEmailBodySync(firstName);
-      await copyTimetableToClipboard();
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      const ok = await copyStudentDeclaration();
-      if (!ok) {
-        window.alert('Could not copy Student Declaration to clipboard.');
+      const timetableCopied = await copyTimetableToClipboard();
+      if (timetableTableOnly) {
+        if (!timetableCopied) window.alert('Could not copy the timetable table to clipboard.');
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        const ok = await copyStudentDeclaration();
+        if (!ok) {
+          window.alert('Could not copy Student Declaration to clipboard.');
+        }
       }
       openTimetableEmailDraftSafe(
         recipientList,
@@ -27419,6 +27551,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } finally {
       emailInProgress = false;
     }
+  };
+
+  const sendSubjectDialogEmail = (emailButton, copyButton, subjectLine) => {
+    if (!emailButton || emailButton.disabled) return;
+    triggerFlash(emailButton);
+    void sendDeclarationEmail('both', {
+      subjectLine,
+      copyFn: async () => {
+        if (!copyButton || copyButton.disabled || !clipboardAvailable) return false;
+        copyButton.click();
+        return true;
+      },
+      copyFailMessage: `Could not copy the ${subjectLine} contents to the clipboard.`,
+    });
   };
 
   const copySimpleTableToClipboard = (tableEl, headingText = '', options = {}) => {
@@ -28565,6 +28711,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (event.key === 'Escape') closeElectiveFullPopup();
   });
   bindModalCloseControl(hideTimetable, hideTimetableModal);
+  if (toggleTimetableTableOnlyButton) {
+    toggleTimetableTableOnlyButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setTimetableTableOnly(!timetableTableOnly);
+    });
+  }
   if (copyTimetable) {
     copyTimetable.addEventListener('click', () => {
       flashCopyButton(copyTimetable);
@@ -28815,6 +28968,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       copyHistoryToClipboard();
     });
   }
+  if (emailHistoryButton) {
+    emailHistoryButton.addEventListener('click', () => {
+      sendSubjectDialogEmail(emailHistoryButton, copyHistory, 'Your History');
+    });
+  }
   if (historyColoursButton) {
     historyColoursButton.addEventListener('click', () => {
       historyColoursOn = !historyColoursOn;
@@ -28912,6 +29070,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         navigator.clipboard.writeText(text).catch(() => { });
       }
+    });
+  }
+  if (emailRemainingButton) {
+    emailRemainingButton.addEventListener('click', () => {
+      sendSubjectDialogEmail(emailRemainingButton, copyRemaining, 'Remaining Subjects');
     });
   }
   if (removeCurrentSelectionsButton) {
@@ -29500,6 +29663,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         preserveBodyCellColours: true,
         preserveCodeBandBorder: true,
       });
+    });
+  }
+  if (emailNextSemesterButton) {
+    emailNextSemesterButton.addEventListener('click', () => {
+      sendSubjectDialogEmail(emailNextSemesterButton, copyNextSemester, 'Next Semester Options');
     });
   }
   const captureCourseMapStructureRects = () =>

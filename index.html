@@ -237,6 +237,11 @@ Last Modified: 11/07/2026
           data-tooltip="See the complete semester offering from our school.">Full semester timetable</button>
         <button id="open-old-codes" class="clear-button secondary" type="button">Old codes</button>
       </div>
+      <div id="next-semester-planning-note" class="next-semester-planning-note" hidden
+        data-tooltip="Every time you press the &quot;Move to next semester&quot; button, this is recalculated.">
+        <div id="next-semester-selection-period"></div>
+        <div id="next-semester-graduation-period"></div>
+      </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
       <div class="sheet">
@@ -1237,6 +1242,8 @@ Last Modified: 11/07/2026
               </span>
               Copy
             </button>
+            <button id="email-history" class="clear-button secondary" type="button" hidden
+              data-tooltip="Copy this dialog's contents and open an email to both student email addresses.">Email</button>
             <button id="history-colours" class="clear-button secondary semester-timetable-toggle" type="button"
               aria-pressed="false">Colours On</button>
             <button id="history-only-passed" class="clear-button secondary" type="button" aria-pressed="false">
@@ -1306,6 +1313,8 @@ Last Modified: 11/07/2026
               </span>
               Copy
             </button>
+            <button id="email-remaining" class="clear-button secondary" type="button" hidden
+              data-tooltip="Copy this dialog's contents and open an email to both student email addresses.">Email</button>
             <button id="remove-current-selections" class="clear-button secondary" type="button">
               Remove current selections
             </button>
@@ -1736,6 +1745,8 @@ Last Modified: 11/07/2026
               </span>
               Copy
             </button>
+            <button id="email-next-semester" class="clear-button secondary" type="button" hidden
+              data-tooltip="Copy this dialog's contents and open an email to both student email addresses.">Email</button>
             <button id="close-next-semester-cta" class="clear-button secondary" type="button">Close</button>
           </div>
         </div>
@@ -1759,7 +1770,11 @@ Last Modified: 11/07/2026
                 <th>Time</th>
                 <th>Room</th>
                 <th>Lecturer</th>
-                <th>Stream</th>
+                <th class="timetable-stream-heading">Stream
+                  <button id="toggle-timetable-table-only" class="timetable-table-only-toggle" type="button"
+                    aria-label="Expand timetable table" aria-pressed="false"
+                    data-tooltip="Show only the timetable table"></button>
+                </th>
               </tr>
             </thead>
             <tbody></tbody>
