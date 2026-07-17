@@ -235,13 +235,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return 'S1';
   };
   const currentSemesterKey = getCurrentSemesterKey();
+  let planningSemesterOffset = 0;
   const semesterSequence = ['S1', 'S2'];
   const getPlanningSemesterKey = (semester) => (semester === 'SS' ? 'S1' : semester);
   const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
   const getSemesterKeyForOffset = (offset) => {
     const startIndex = semesterSequence.indexOf(getPlanningSemesterKey(currentSemesterKey));
     const safeStartIndex = startIndex >= 0 ? startIndex : 0;
-    return semesterSequence[(safeStartIndex + Math.max(0, offset)) % semesterSequence.length];
+    return semesterSequence[(safeStartIndex + planningSemesterOffset + Math.max(0, offset)) % semesterSequence.length];
   };
   const getSemesterAvailability = (id) => {
     if (semester1OnlyIds.has(id)) return 'S1';
@@ -251,12 +252,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const isSemesterRestricted = (id) => getSemesterAvailability(id) !== 'Any';
   const isRunningThisSemester = (id) => {
     const availability = getSemesterAvailability(id);
-    return availability === 'Any' || availability === currentSemesterKey;
+    return availability === 'Any' || availability === getSemesterKeyForOffset(0);
   };
   const isRunningNextSemester = (id) => {
     const availability = getSemesterAvailability(id);
     if (availability === 'Any') return true;
     return availability === getSemesterKeyForOffset(1);
+  };
+  const getPlanningTimetableData = (id) => {
+    const data = timetable[id] || {};
+    return planningSemesterOffset > 0 ? { ...data, day: 'Day?', slot: 'Time?' } : data;
   };
   const getNotRunningIds = () =>
     new Set(
@@ -2553,6 +2558,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const nextSemList = document.getElementById('next-sem-list');
   const historyButton = document.getElementById('open-history');
   const remainingButton = document.getElementById('open-remaining');
+  const moveToNextSemesterButton = document.getElementById('move-to-next-semester');
   const courseMapButton = document.getElementById('open-course-map');
   const nextSemesterButton = document.getElementById('open-next-semester');
   const oldCodesButton = document.getElementById('open-old-codes');
@@ -3460,7 +3466,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapLoadBusyWatcher = null;
   let courseMapLoadBusyStartedAt = 0;
   const getCourseMapEmailSubject = () => {
-    const label = getCurrentSemesterShortcutLabel(new Date());
+    const label = getConfiguredSemesterShortcutLabel();
     const match = String(label || '').match(/^(\d{2})_(01|02|SS)$/i);
     if (!match) return 'Enrolment';
     const year = 2000 + Number(match[1]);
@@ -3746,7 +3752,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getCourseMapSessionBadgeText = (code, dayLen = 2) => {
-    const data = timetable[code] || {};
+    if (planningSemesterOffset > 0) return 'Day? Time?';
+    const data = getPlanningTimetableData(code);
     const day = getCourseMapDayAbbrev(data.day || '', dayLen);
     const slot = getCourseMapSlotAbbrev(data.slot || '');
     if (!day && !slot) return '';
@@ -7577,8 +7584,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getSummerSchoolOpportunityAlert = () => {
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
-    const isSemesterOneWindow = currentSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent);
-    const isSemesterTwoWindow = currentSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent);
+    const planningSemesterKey = getSemesterKeyForOffset(0);
+    const isSemesterOneWindow = planningSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent);
+    const isSemesterTwoWindow = planningSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent);
     if (!isSemesterOneWindow && !isSemesterTwoWindow) return null;
 
     const currentCodes = getCurrentStudyCodes();
@@ -7587,7 +7595,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const title = severity === 'warning' ? 'Summer school subject selected' : 'Summer school likely';
     const selectedText = summerLikelyCodes.map((code) => `${code} ${getSubjectName(code)}`).join(', ');
     const leadClass = severity === 'warning' ? 'alert-title-warning' : 'alert-title-info';
-    const semesterLabel = getSemesterLabel(currentSemesterKey);
+    const semesterLabel = getSemesterLabel(planningSemesterKey);
     const body =
       severity === 'warning'
         ? `${escapeHtml(selectedText)} ${summerLikelyCodes.length === 1 ? 'is' : 'are'} selected for the current enrolment. Summer school will probably be available, and BIT241/BIT352 are the subjects most likely to run in summer school. Consider whether one of these should be kept for summer school if another suitable current-semester subject is available.`
@@ -7602,9 +7610,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getCapstoneEarlyCompletionCautionAlert = () => {
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
+    const planningSemesterKey = getSemesterKeyForOffset(0);
     const hasEarlyCompletionOption =
-      (currentSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent)) ||
-      (currentSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent));
+      (planningSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent)) ||
+      (planningSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent));
     const fullLoadSelected = getPlannedCount() >= getLoadThreshold() && getLoadThreshold() > 0;
     if (!hasEarlyCompletionOption || !fullLoadSelected) return null;
     if (subjectState.get('BIT371')?.completed || subjectState.get('BIT371')?.toggled) return null;
@@ -9270,20 +9279,40 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getPlannedCount = () => Array.from(subjectState.values()).filter((st) => st?.toggled).length;
   const getCompletedCount = () => Array.from(subjectState.values()).filter((st) => st?.completed).length;
   const getUseCreditsCount = () => electivePlaceholderState.filter(Boolean).length;
+  const getCompletedElectiveCodes = () => {
+    const completedCodes = new Set(
+      electivePlaceholderState
+        .filter(Boolean)
+        .map((code) => String(code).toUpperCase())
+    );
+    const majorKey = getMajorKeyFromUi();
+    const majorSet = new Set(majorLayouts[majorKey] || []);
+    getElectiveSlotCodes(majorKey).forEach((code) => {
+      if (!code || majorSet.has(code) || !subjectState.get(code)?.completed) return;
+      completedCodes.add(String(code).toUpperCase());
+    });
+    return completedCodes;
+  };
+  const getCompletedElectiveCount = () =>
+    Math.min(programRequirements.elective, getCompletedElectiveCodes().size);
+  const getExcessCompletedElectiveCount = () =>
+    Math.max(0, getCompletedElectiveCodes().size - programRequirements.elective);
   const getTotalSubjectsCount = () => programRequirements.total;
   const getRemainingSubjectsCount = () => {
     const total = getTotalSubjectsCount();
     const completed = getCompletedCount();
     const planned = getPlannedCount();
     const useCredits = getUseCreditsCount();
-    return Math.max(0, total - completed - planned - useCredits);
+    const excessElectives = getExcessCompletedElectiveCount();
+    return Math.max(0, total - completed - planned - useCredits + excessElectives);
   };
 
   const getRemainingSubjectsNotPlanned = () => {
     const total = getTotalSubjectsCount();
     const completed = getCompletedCount();
     const useCredits = getUseCreditsCount();
-    return Math.max(0, total - completed - useCredits);
+    const excessElectives = getExcessCompletedElectiveCount();
+    return Math.max(0, total - completed - useCredits + excessElectives);
   };
 
   const hasCompletedAnyChangedCodeSubject = () =>
@@ -9298,6 +9327,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selected = getPlannedCount();
     const remaining = getRemainingSubjectsCount();
     const completedTotal = completed + useCredits;
+    const excessCompletedElectives = getExcessCompletedElectiveCount();
+    const effectiveCompletedTotal = completedTotal - excessCompletedElectives;
     const passCurrentCodes =
       passForEnrolmentsEnabled
         ? Array.from(passForEnrolmentsOverrides)
@@ -9383,7 +9414,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const useTooltipNote = hasCompletedUse
       ? '<div class="ui-tooltip-separator"></div><div class="ui-tooltip-row">USE credits are used for electives when subjects completed at your previous school<br>do not map directly to Melbourne Polytechnic subjects.</div>'
       : '';
-    const completedTooltip = `${formatListHtml('Completed', completedCodesList)}${useTooltipNote}`;
+    const excessElectiveTooltipNote = excessCompletedElectives > 0
+      ? `<div class="ui-tooltip-separator"></div><div class="ui-tooltip-row"><strong>${excessCompletedElectives} completed elective${excessCompletedElectives === 1 ? '' : 's'} cannot count toward graduation because only ${programRequirements.elective} electives are allowed.</strong></div>`
+      : '';
+    const completedTooltip = `${formatListHtml('Completed', completedCodesList)}${useTooltipNote}${excessElectiveTooltipNote}`;
     const selectedTooltip = formatListHtml('Selected', selectedCodes);
     const currentHoldTooltip = formatListHtml('Current H enrolments', currentHoldCodes);
     const remainingTooltip = [
@@ -9397,7 +9431,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     lineOne.className = 'subject-counts-line';
     const completedSpan = document.createElement('span');
     completedSpan.className = 'subject-counts-item';
-    completedSpan.textContent = `${completedTotal} subjects completed`;
+    const completedNumberSpan = document.createElement('span');
+    completedNumberSpan.textContent = String(completedTotal);
+    if (excessCompletedElectives > 0) {
+      completedNumberSpan.classList.add('subject-counts-graduation-warning');
+    }
+    completedSpan.appendChild(completedNumberSpan);
+    completedSpan.appendChild(document.createTextNode(' subjects completed'));
     completedSpan.setAttribute('data-tooltip-html', completedTooltip);
     if (creditMismatch) {
       completedSpan.classList.add('counts-mismatch');
@@ -9412,7 +9452,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     lineTwo.className = 'subject-counts-line';
     const remainingSpan = document.createElement('span');
     remainingSpan.className = 'subject-counts-item';
-    remainingSpan.textContent = `${remaining} remaining`;
+    const graduationSemesterLabel = getEstimatedGraduationSemesterLabel();
+    remainingSpan.textContent = `${remaining} remaining${graduationSemesterLabel ? `. ${graduationSemesterLabel}` : ''}`;
+    if (excessCompletedElectives > 0) {
+      remainingSpan.classList.add('subject-counts-graduation-warning');
+    }
     remainingSpan.setAttribute('data-tooltip-html', remainingTooltip);
     lineTwo.appendChild(selectedSpan);
     lineTwo.appendChild(document.createTextNode(', '));
@@ -9429,7 +9473,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjectCountsEl.appendChild(lineOne);
     subjectCountsEl.appendChild(lineTwo);
     subjectCountsEl.classList.add('is-visible');
-    subjectCountsEl.classList.toggle('all-complete', completedTotal >= programRequirements.total);
+    subjectCountsEl.classList.toggle(
+      'all-complete',
+      effectiveCompletedTotal >= programRequirements.total && remaining === 0
+    );
     initTooltips();
     updateMajorStreamInsights();
     document.querySelectorAll('.student-summary-credit').forEach((el) => {
@@ -9582,6 +9629,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
     const selectedCount = selectedCodes.length;
+    if (moveToNextSemesterButton) {
+      const hasCurrentEnrolments = Array.from(currentEnrolmentStudentRecord.values()).some(
+        (code) => !withdrawnCurrentEnrolments.has(code)
+      );
+      moveToNextSemesterButton.hidden = selectedCount === 0 && !hasCurrentEnrolments;
+    }
     const hasAnyState = Array.from(subjectState.values()).some((st) => st?.toggled || st?.completed);
     const hasAnyUse = electivePlaceholderState.some(Boolean);
     const hasAnyBit = electiveBitState.some(Boolean);
@@ -10034,7 +10087,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (isPlaceholderCell()) {
       setPlaceholderTooltip();
     } else {
-      const data = timetable[id] || {};
+      const data = getPlanningTimetableData(id);
       if (creditWarningIds.has(id)) {
         const creditNote = document.createElement('div');
         creditNote.className = 'credit-note';
@@ -11393,6 +11446,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const resetStudentSelections = () => {
     timetableClashError = null;
+    planningSemesterOffset = 0;
+    subjects.forEach((cell) => attachTooltip(cell));
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
       if (restoreStudentSnapshot(loadedStudentSnapshot)) {
         resetModeOptionsToDefault();
@@ -11467,11 +11522,58 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (timetableModal?.classList.contains('show')) refreshTimetableModalState();
   };
 
+  const moveToNextPlanningSemester = () => {
+    const advancingCodes = new Set(
+      Array.from(subjectState.entries())
+        .filter(([, st]) => st?.toggled)
+        .map(([code]) => code)
+    );
+    currentEnrolmentStudentRecord.forEach((code) => {
+      if (!withdrawnCurrentEnrolments.has(code)) advancingCodes.add(code);
+    });
+    if (!advancingCodes.size) return;
+
+    advancingCodes.forEach((code) => {
+      if (validSubjectCodes.has(code)) subjectState.set(code, { completed: true, toggled: false });
+    });
+    planningSemesterOffset += 1;
+    passForEnrolmentsEnabled = false;
+    passForEnrolmentsOverrides.clear();
+    currentEnrolmentsPlannedOverrides.clear();
+    withdrawnCurrentEnrolments.clear();
+    currentEnrolmentStudentRecord.clear();
+    currentEnrolmentOverrideCodes = null;
+    workbookCurrent.clear();
+    manualEntryCurrent.clear();
+    resetAvailableListSnapshot();
+    timetableClashError = null;
+
+    applySubjectStateToCells();
+    subjects.forEach((cell) => attachTooltip(cell));
+    rebuildElectiveBitStateFromState();
+    setElectiveCredits(buildElectiveAssignments(), true);
+    updatePassForEnrolmentsAvailability();
+    updateElectiveWarning();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateSelectedList();
+    updateResetState();
+    updateWarnings();
+    updateBookmarkableSettingsUrl();
+    if (timetableModal?.classList.contains('show')) refreshTimetableModalState();
+    if (courseMapModal?.classList.contains('show')) {
+      updateCourseMapStatuses();
+      scheduleCourseMapRelayout();
+    }
+  };
+
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       if (clearButton.disabled) return;
       resetStudentSelections();
     });
+  }
+  if (moveToNextSemesterButton) {
+    moveToNextSemesterButton.addEventListener('click', moveToNextPlanningSemester);
   }
 
   const closeAllInstructionSteps = () => {
@@ -14260,7 +14362,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       body = fallbackName ? `Hello ${fallbackName}` : 'Hello';
     }
     const subject = encodeURIComponent(subjectLine || getDefaultStudentEmailSubject());
-    const recipients = encodeURIComponent(list.join(','));
+    const recipients = encodeURIComponent(list.join('; '));
     const encodedBody = encodeURIComponent(body);
     return `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
   };
@@ -14964,7 +15066,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       conflictCounts.set(key, (conflictCounts.get(key) || 0) + 1);
     });
     const loadThreshold = getLoadThreshold();
-    const showConflicts = currentTableMode === 'selected' && rows.length === loadThreshold;
+    const showConflicts =
+      planningSemesterOffset === 0 && currentTableMode === 'selected' && rows.length === loadThreshold;
 
     toRender.forEach(({ cell, id, data, dayShort, slot, placeholder, isChosen }) => {
       const row = document.createElement('tr');
@@ -15708,7 +15811,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     settingsPwaSaveSetupButton?.addEventListener('click', saveInstalledPwaSetup);
     settingsPwaClearSetupButton?.addEventListener('click', clearInstalledPwaSetup);
     updateDateAlerts(staffWorkbookState.getCourseInfo());
+    updateSubjectCounts();
     if (timetableModal?.classList.contains('show')) updateTimetableFees();
+    scheduleFolderShortcutPanelRefresh();
   }
 
   const getCalculatedCensusDate = (courseInfo = {}) => {
@@ -16393,7 +16498,51 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return hasAnySignOffPref(merged) ? merged : null;
   };
 
+  const getConfiguredSemesterIdentity = () => {
+    const yearText = String(semesterConfigDetails?.year || '').trim();
+    const semester = String(semesterConfigDetails?.semester_S1_S2_SS || '').trim().toUpperCase();
+    if (!/^\d{4}$/.test(yearText) || !['S1', 'S2', 'SS'].includes(semester)) return null;
+    return {
+      year: Number(yearText),
+      shortYear: yearText.slice(-2),
+      semester,
+    };
+  };
+  const getEstimatedGraduationSemesterLabel = () => {
+    const configured = getConfiguredSemesterIdentity();
+    const base = configured || {
+      year: new Date().getFullYear(),
+      semester: getPlanningSemesterKey(currentSemesterKey),
+    };
+    let year = base.year;
+    let semester = base.semester;
+    let semestersToAdvance = planningSemesterOffset + Math.max(0, getCourseMapRemainingSemesterEstimate() - 1);
+
+    while (semestersToAdvance > 0) {
+      if (semester === 'S1') {
+        semester = 'S2';
+      } else {
+        semester = 'S1';
+        year += 1;
+      }
+      semestersToAdvance -= 1;
+    }
+    return `${String(year).slice(-2)} ${semester}`;
+  };
+  const getConfiguredIntakeName = () => {
+    const identity = getConfiguredSemesterIdentity();
+    return identity ? `Enrol ${identity.shortYear}_${identity.semester}` : '';
+  };
+  const getConfiguredSemesterShortcutLabel = () => {
+    const identity = getConfiguredSemesterIdentity();
+    if (!identity) return '';
+    const suffix = identity.semester === 'S1' ? '01' : identity.semester === 'S2' ? '02' : 'SS';
+    return `${identity.shortYear}_${suffix}`;
+  };
+
   const getIntakeNameHint = () => {
+    const configuredIntake = getConfiguredIntakeName();
+    if (configuredIntake) return configuredIntake;
     if (fileLocationsIntakeOverride) return fileLocationsIntakeOverride;
     const candidates = [];
     const pathName = window.location.pathname || '';
@@ -16411,10 +16560,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const match = String(raw).match(/Enrol[^/\\\\]+/i);
       if (match && match[0]) return match[0];
     }
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const sem = getCurrentSemesterKey(now);
-    return `Enrol ${yy}_${sem}`;
+    return '';
   };
 
   const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
@@ -18709,7 +18855,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return /(settings|file[_-]?locations)\.(txt|text)$/i.test(cleaned);
   };
 
-  const getExpectedSettingsIntake = (date = new Date()) => {
+  // Validation only: operational semester paths must come from semester-config.json, never the system clock.
+  const getSystemClockIntakeForValidation = (date = new Date()) => {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
     const month = date.getMonth() + 1;
     const yy = String(date.getFullYear()).slice(-2);
@@ -18720,7 +18867,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const warnIfSettingsIntakeLooksOutOfDate = (intakeValue = '') => {
     if (settingsIntakeWarningShown) return;
     const actualMatch = String(intakeValue || '').trim().match(/enrol\s*(\d{2})\s*[_-]?\s*(s1|s2|ss)\b/i);
-    const expected = getExpectedSettingsIntake(new Date());
+    const expected = getSystemClockIntakeForValidation(new Date());
     const expectedMatch = expected.match(/enrol\s*(\d{2})\s*[_-]?\s*(s1|s2|ss)\b/i);
     if (!actualMatch || !expectedMatch) return;
     const actualKey = `${actualMatch[1]}_${actualMatch[2].toUpperCase()}`;
@@ -19317,8 +19464,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       enrolIndex >= 0
         ? segments.slice(0, enrolIndex + 1).join('\\')
         : clean.replace(/\\Enrolment System(?:\\site)?$/i, '');
-    const currentLabel = getCurrentSemesterShortcutLabel(new Date());
-    return normalizeEnrolProtocolPath(getSemesterShortcutPath(semesterRoot, currentLabel) || semesterRoot);
+    const configuredLabel = getConfiguredSemesterShortcutLabel();
+    return normalizeEnrolProtocolPath(getSemesterShortcutPath(semesterRoot, configuredLabel) || semesterRoot);
   };
 
   const getOperationalSemesterFolderPath = async () => {
@@ -19771,29 +19918,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return getIntakeNameHint() || 'Enrol';
   };
 
-  const getCurrentSemesterShortcutLabel = (date = new Date()) => {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
-    const monthIndex = date.getMonth();
-    let year = date.getFullYear();
-    let suffix = '01';
-    if (monthIndex >= 8) {
-      suffix = 'SS';
-    } else if (monthIndex >= 4) {
-      suffix = '02';
-    }
-    return `${String(year % 100).padStart(2, '0')}_${suffix}`;
-  };
-
   const getSemesterShortcutPath = (semesterPath = '', label = '') => {
     const cleanPath = String(semesterPath || '').replace(/[\\/]+$/, '');
-    const m = String(label || '').trim().match(/^(\d{2})_(0[12])$/);
+    const m = String(label || '').trim().match(/^(\d{2})_(01|02|SS)$/i);
     if (!cleanPath || !m) return semesterPath;
     const [, yy, suffix] = m;
-    const sem = suffix === '01' ? '1' : '2';
+    const sem = suffix.toUpperCase() === 'SS' ? 'S' : suffix === '01' ? '1' : '2';
     const base = getPathBasename(cleanPath);
-    let nextBase = base.replace(/^(enrol\s*)\d{2}(\s*[_-]?\s*s)[12]/i, `$1${yy}$2${sem}`);
+    let nextBase = base.replace(/^(enrol\s*)\d{2}(\s*[_-]?\s*s)(?:1|2|s)/i, `$1${yy}$2${sem}`);
     if (nextBase === base) {
-      nextBase = base.replace(/\b\d{2}_0[12]\b/, `${yy}_${suffix}`);
+      nextBase = base.replace(/\b\d{2}_(?:0[12]|SS)\b/i, `${yy}_${suffix.toUpperCase()}`);
     }
     if (!nextBase || nextBase === base) return semesterPath;
     return joinPath(getPathDirname(cleanPath), nextBase);
@@ -19860,8 +19994,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const semesterPath = getSemesterFolderPath();
     const semesterLabelRaw = getSemesterFolderNameHint();
     const semesterLabel = (() => {
-      const dateLabel = getCurrentSemesterShortcutLabel(new Date());
-      if (dateLabel) return dateLabel;
+      const configuredLabel = getConfiguredSemesterShortcutLabel();
+      if (configuredLabel) return configuredLabel;
       const raw = String(semesterLabelRaw || '').trim();
       // Example: "Enrol 26_S1" -> "26_01"
       const m = raw.match(/enrol\s*(\d{2})\s*[_-]?\s*s([12])/i);
@@ -22413,7 +22547,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  const updateCourseMapStreamLabels = () => {
+  const updateCourseMapStreamLabels = (afterPosition) => {
     const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     const majorKey = explainMajorKey || getMajorKeyFromUi();
     const selectedMajor = courseMapStructureExplainMode ? !!explainMajorKey : hasSelectedMajor();
@@ -22587,7 +22721,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
           // Keep labels fully to the left of the subject blocks (no overlap into the grid).
           // For elective labels, reduce the gap slightly so they sit closer without crossing into cards.
-          const gap = isExplodedExplainLabel ? 20 : (isElective ? 2 : 6);
+          const gap = isExplodedExplainLabel ? 4 : (isElective ? 2 : 6);
           const sectionRect = section?.getBoundingClientRect?.();
           const normalGridLeft =
             isExplodedExplainLabel && sectionRect
@@ -22619,13 +22753,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             if (firstGridRect && secondGridRect) {
               const blockTop = firstGridRect.top - containerRect.top;
               const blockBottom = secondGridRect.bottom - containerRect.top;
-              const labelTop = blockTop + ((blockBottom - blockTop) - firstLabel.offsetHeight - secondLabel.offsetHeight - 4) / 2;
+              const labelTop = blockTop + ((blockBottom - blockTop) - firstLabel.offsetHeight - secondLabel.offsetHeight - 4) / 2 - 12;
               firstLabel.style.top = `${Math.round(labelTop)}px`;
               secondLabel.style.top = `${Math.round(labelTop + firstLabel.offsetHeight + 4)}px`;
             }
           }
         }
         updateCourseMapNotesOverlap();
+        if (typeof afterPosition === 'function') afterPosition();
       });
     }
     initTooltips();
@@ -27528,9 +27663,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .map(([code]) => code);
     return selectedCodes
       .map((id) => {
-        const data = timetable[id] || {};
+        const data = getPlanningTimetableData(id);
         const dayFull = data.day || '';
-        const dayShort = dayFull.slice(0, 3);
+        const dayShort = planningSemesterOffset > 0 ? dayFull : dayFull.slice(0, 3);
         const slot = data.slot || '';
         const cell = getCellByCode(id);
         return { cell, id, data, dayFull, dayShort, slot, isChosen: true };
@@ -27991,9 +28126,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       })
       .map((cell) => {
         const id = cell.dataset.subject || '';
-        const data = timetable[id] || {};
+        const data = getPlanningTimetableData(id);
         const dayFull = data.day || '';
-        const dayShort = dayFull.slice(0, 3);
+        const dayShort = planningSemesterOffset > 0 ? dayFull : dayFull.slice(0, 3);
         const slot = data.slot || '';
         const st = subjectState.get(id);
         const isChosen = !!st?.toggled;
@@ -28021,6 +28156,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return [
       studentKey,
       majorKey,
+      planningSemesterOffset,
       overrideKey,
       liveKey,
       currentKey,
@@ -28263,7 +28399,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               : 'Add this subject to my timetable';
           const data = item.data || timetable[item.id] || {};
           const fullDay = item.dayFull || data.day || 'N/A';
-          const timeRange = formatTimeRange(timeSlots[item.slot] || timeSlots[data.slot] || '');
+          const timeRange = formatTimeRange(
+            timeSlots[item.slot] || timeSlots[data.slot] || item.slot || data.slot || ''
+          );
           const timeText = timeRange ? timeRange.replace(' - ', ' to ') : 'N/A';
           const teacherText = data.teacher || 'N/A';
           sidebarTooltip.innerHTML = `<div class="selected-list-tooltip-action">${escapeHtml(actionText)}</div>
@@ -29594,12 +29732,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const firstExpand = !wasExpanded && !!courseMapStructureExpandedStream;
         updateCourseMapModeUi();
         updateCourseMapStatuses();
-        updateCourseMapStreamLabels();
-        positionCourseMapArrows();
         if (firstExpand && courseMapModal) {
-          syncCourseMapElectiveLandingGuides();
           courseMapModal.classList.remove('course-map-structure-first-expand');
           if (courseMapStructureFirstExpandTimer) clearTimeout(courseMapStructureFirstExpandTimer);
+        }
+        updateCourseMapStreamLabels(firstExpand && courseMapModal ? () => {
+          syncCourseMapElectiveLandingGuides();
           setCourseMapOverviewAnimationOffsets(streamKey, transitionStartRects);
           setCourseMapElectiveLandingOffsets(transitionStartRects, transitionSharedStartRect);
           void courseMapModal.offsetWidth;
@@ -29615,10 +29753,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             courseMapModal.classList.remove('course-map-structure-first-expand');
             courseMapModal.classList.remove('course-map-structure-preparing-expand');
             positionCourseMapSharedBit245();
-            updateCourseMapStreamLabels();
+            scheduleCourseMapRelayout();
             courseMapStructureFirstExpandTimer = null;
           }, 1500);
-        }
+        } : null);
+        positionCourseMapArrows();
         return;
       }
       const nextMajorValue = mapStreamKeyToDropdownValue(streamKey);
@@ -29920,21 +30059,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return st?.completed || st?.toggled;
     });
     return [...useCodes, ...activeBits];
-  };
-  const getCompletedElectiveCount = () => {
-    const useCodes = electivePlaceholderState.filter(Boolean).map((code) => String(code).toUpperCase());
-    const majorKey = getMajorKeyFromUi();
-    const majorSet = new Set(majorLayouts[majorKey] || []);
-    const slotCodes = getElectiveSlotCodes(majorKey);
-    const completedBits = slotCodes
-      .filter((code) => {
-        if (!code || majorSet.has(code)) return false;
-        const st = subjectState.get(code);
-        return st?.completed;
-      })
-      .map((code) => String(code).toUpperCase());
-    const unique = new Set([...useCodes, ...completedBits]);
-    return Math.min(programRequirements.elective, unique.size);
   };
   const getRemainingElectiveCount = () =>
     Math.max(0, programRequirements.elective - getCompletedElectiveCount());

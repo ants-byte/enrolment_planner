@@ -1001,7 +1001,9 @@ button {
 }
 
 .folder-shortcuts-modal-section h3 {
-  margin: 28px 0 6px;
+  margin: 18px 0 6px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(160, 160, 160, 0.35);
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.2;
@@ -3755,6 +3757,11 @@ input:checked+.slider:before {
   cursor: default;
 }
 
+.subject-counts .subject-counts-graduation-warning {
+  color: #ff4a4a !important;
+  font-weight: 800 !important;
+}
+
 .subject-counts.all-complete,
 .subject-counts.all-complete .subject-counts-line,
 .subject-counts.all-complete .subject-counts-item {
@@ -3765,6 +3772,10 @@ input:checked+.slider:before {
 .counts-mismatch {
   color: #f2b3b3;
   font-weight: 700;
+}
+
+.subject-counts .counts-mismatch {
+  color: var(--bright-blue);
 }
 
 .ui-tooltip.ui-tooltip-counts {

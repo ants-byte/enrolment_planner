@@ -9,42 +9,148 @@
     "price_per_Unit": "$2,360.00",
     "price_per_CSP_Unit": "$1,192.00"
   },
+  "fileNaming": {
+    "_instructions": [
+      "The site replaces {YYYY} with the four-digit year from semesterDetails.year.",
+      "The site replaces {SEMESTER} with semesterDetails.semester_S1_S2_SS, which must be S1, S2, or SS.",
+      "Keep the filename extension in the pattern."
+    ],
+    "triageFilePattern": "Triage {YYYY} {SEMESTER}.xlsx"
+  },
+  "programRequirements": {
+    "_instructions": [
+      "These are the numbers of subjects required to graduate.",
+      "core + major + elective must equal total.",
+      "Keep core equal to the number of codes in subjectClassifications.core."
+    ],
+    "total": 24,
+    "core": 14,
+    "major": 6,
+    "elective": 4
+  },
+  "subjects": {
+    "BIT105": "Business Enquiry & Communication",
+    "BIT106": "Foundations of Software, Hardware & Cloud Computing",
+    "BIT108": "Foundations of Business",
+    "BIT111": "Programming Concepts",
+    "BIT112": "Mathematics for Information Technology",
+    "BIT121": "Network Communication Concepts",
+    "BIT213": "Network & Cyber Security Essentials",
+    "BIT214": "Cloud and IoT Emerging Technologies",
+    "BIT230": "System Analysis & Design",
+    "BIT231": "Database Systems",
+    "BIT233": "Network Design",
+    "BIT235": "Object Oriented Programming",
+    "BIT236": "Enterprise Resources Planning",
+    "BIT241": "Professional IT Practice & Ethics",
+    "BIT242": "IT Project Management",
+    "BIT245": "Web Development",
+    "BIT246": "Object Oriented RAD",
+    "BIT313": "Cyber Vulnerability & Hardening",
+    "BIT314": "Cybersecurity Management & Governance",
+    "BIT351": "Mobile Application Development",
+    "BIT352": "System Implementation & Service Management",
+    "BIT353": "Network Architecture & Protocols",
+    "BIT355": "Business Intelligence",
+    "BIT356": "Knowledge Management Systems",
+    "BIT357": "Business Analysis",
+    "BIT358": "Advanced Databases",
+    "BIT362": "Digital Forensics",
+    "BIT363": "E-Business Systems",
+    "BIT364": "Non-Relational Database Management",
+    "BIT371": "Capstone Experience 1",
+    "BIT372": "Capstone Experience 2"
+  },
+  "subjectClassifications": {
+    "_instructions": [
+      "List subject codes only; subject names come from subjects.",
+      "Every code here must also exist in subjects.",
+      "core must contain programRequirements.core subject codes.",
+      "sasEnabled controls which subjects display the SAS badge/certificate marker.",
+      "Major-stream membership is defined only in majorSubjects. A subject listed in more than one major is automatically shared-stream (currently BIT245 in Business Analytics and Software Development)."
+    ],
+    "core": [
+      "BIT105",
+      "BIT106",
+      "BIT108",
+      "BIT111",
+      "BIT112",
+      "BIT121",
+      "BIT230",
+      "BIT231",
+      "BIT241",
+      "BIT242",
+      "BIT314",
+      "BIT352",
+      "BIT371",
+      "BIT372"
+    ],
+    "sasEnabled": [
+      "BIT106",
+      "BIT112",
+      "BIT231",
+      "BIT355",
+      "BIT356",
+      "BIT358"
+    ]
+  },
+  "staff": {
+    "AD": {
+      "displayName": "Antony Di Serio"
+    },
+    "AO": {
+      "displayName": "Anthony Overmars"
+    },
+    "CT": {
+      "displayName": "Tony, Sita, TBA",
+      "isTeam": true
+    },
+    "DM": {
+      "displayName": "Dominic Mammone"
+    },
+    "DR": {
+      "displayName": "David Robinson"
+    },
+    "MK": {
+      "displayName": "Md Sarwar Kamal"
+    },
+    "NQ": {
+      "displayName": "Nidha Qazi"
+    },
+    "NW": {
+      "displayName": "Nikki Wan"
+    },
+    "PE": {
+      "displayName": "Promise Enwereonye"
+    },
+    "RA": {
+      "displayName": "Russul Al-Anni"
+    },
+    "SH": {
+      "displayName": "Sarang Hashemi"
+    },
+    "SN": {
+      "displayName": "Shzaa Niazi"
+    },
+    "XW": {
+      "displayName": "Xiaodong Wang (Tony)"
+    },
+    "YW": {
+      "displayName": "Ye Wei (Silva)"
+    }
+  },
   "subjectsRunning": {
     "semester1Only": [
-      {
-        "code": "BIT351",
-        "name": "Mobile Application Development"
-      },
-      {
-        "code": "BIT355",
-        "name": "Business Intelligence"
-      },
-      {
-        "code": "BIT357",
-        "name": "Business Analysis"
-      },
-      {
-        "code": "BIT358",
-        "name": "Advanced Databases"
-      }
+      "BIT351",
+      "BIT355",
+      "BIT357",
+      "BIT358"
     ],
     "semester2Only": [
-      {
-        "code": "BIT246",
-        "name": "Object Oriented RAD"
-      },
-      {
-        "code": "BIT363",
-        "name": "E-Business Systems"
-      },
-      {
-        "code": "BIT356",
-        "name": "Knowledge Management Systems"
-      },
-      {
-        "code": "BIT364",
-        "name": "Non-Relational Database Management"
-      }
+      "BIT246",
+      "BIT363",
+      "BIT356",
+      "BIT364"
     ]
   },
   "timetable": [
@@ -53,216 +159,189 @@
       "time": "AM",
       "room": "PA113",
       "code": "BIT121",
-      "subjectName": "Network Communication Concepts",
-      "staff": "Russul Al-Anni"
+      "staffId": "RA"
     },
     {
       "day": "Mon",
       "time": "AM",
       "room": "PE110",
       "code": "BIT372",
-      "subjectName": "Capstone Experience 2",
-      "staff": "Tony, Sita, TBA"
+      "staffId": "CT"
     },
     {
       "day": "Mon",
       "time": "PM",
       "room": "PA113",
       "code": "BIT112",
-      "subjectName": "Mathematics for Information Technology",
-      "staff": "Dominic Mammone"
+      "staffId": "DM"
     },
     {
       "day": "Mon",
       "time": "PM",
       "room": "PE110",
       "code": "BIT371",
-      "subjectName": "Capstone Experience 1",
-      "staff": "Tony, Sita, TBA"
+      "staffId": "CT"
     },
     {
       "day": "Tue",
       "time": "AM",
       "room": "PE227",
       "code": "BIT105",
-      "subjectName": "Business Enquiry & Communication",
-      "staff": "Shzaa Niazi"
+      "staffId": "SN"
     },
     {
       "day": "Tue",
       "time": "AM",
       "room": "PE226",
       "code": "BIT313",
-      "subjectName": "Cyber Vulnerability & Hardening",
-      "staff": "Anthony Overmars"
+      "staffId": "AO"
     },
     {
       "day": "Tue",
       "time": "AM",
       "room": "TBA",
       "code": "BIT230",
-      "subjectName": "System Analysis & Design",
-      "staff": "Sarang Hashemi"
+      "staffId": "SH"
     },
     {
       "day": "Tue",
       "time": "PM",
       "room": "PA113",
       "code": "BIT106",
-      "subjectName": "Foundations of Software, Hardware & Cloud Computing",
-      "staff": "Sarang Hashemi"
+      "staffId": "SH"
     },
     {
       "day": "Tue",
       "time": "PM",
       "room": "PA114",
       "code": "BIT241",
-      "subjectName": "Professional IT Practice & Ethics",
-      "staff": "Dominic Mammone"
+      "staffId": "DM"
     },
     {
       "day": "Tue",
       "time": "PM",
       "room": "PE227",
       "code": "BIT353",
-      "subjectName": "Network Architecture & Protocols",
-      "staff": "Anthony Overmars"
+      "staffId": "AO"
     },
     {
       "day": "Wed",
       "time": "AM",
       "room": "PE226",
       "code": "BIT214",
-      "subjectName": "Cloud and IoT Emerging Technologies",
-      "staff": "Russul Al-Anni"
+      "staffId": "RA"
     },
     {
       "day": "Wed",
       "time": "AM",
       "room": "PA114",
       "code": "BIT245",
-      "subjectName": "Web Development",
-      "staff": "Promise Enwereonye"
+      "staffId": "PE"
     },
     {
       "day": "Wed",
       "time": "PM",
       "room": "PA113",
       "code": "BIT111",
-      "subjectName": "Programming Concepts",
-      "staff": "Promise Enwereonye"
+      "staffId": "PE"
     },
     {
       "day": "Wed",
       "time": "PM",
       "room": "PE226",
       "code": "BIT213",
-      "subjectName": "Network & Cyber Security Essentials",
-      "staff": "Xiaodong Wang (Tony)"
+      "staffId": "XW"
     },
     {
       "day": "Wed",
       "time": "PM",
       "room": "PA110",
       "code": "BIT235",
-      "subjectName": "Object Oriented Programming",
-      "staff": "Md Sarwar Kamal"
+      "staffId": "MK"
     },
     {
       "day": "Thu",
       "time": "AM",
       "room": "PA113",
       "code": "BIT108",
-      "subjectName": "Foundations of Business",
-      "staff": "Shzaa Niazi"
+      "staffId": "SN"
     },
     {
       "day": "Thu",
       "time": "AM",
       "room": "PE227",
       "code": "BIT231",
-      "subjectName": "Database Systems",
-      "staff": "Nidha Qazi"
+      "staffId": "NQ"
     },
     {
       "day": "Thu",
       "time": "AM",
       "room": "PE226",
       "code": "BIT233",
-      "subjectName": "Network Design",
-      "staff": "Nikki Wan"
+      "staffId": "NW"
     },
     {
       "day": "Thu",
       "time": "AM",
       "room": "PA114",
       "code": "BIT356",
-      "subjectName": "Knowledge Management Systems",
-      "staff": "Ye Wei (Silva)"
+      "staffId": "YW"
     },
     {
       "day": "Thu",
       "time": "PM",
       "room": "TBA",
       "code": "BIT242",
-      "subjectName": "IT Project Management",
-      "staff": "David Robinson"
+      "staffId": "DR"
     },
     {
       "day": "Thu",
       "time": "PM",
       "room": "PA114",
       "code": "BIT362",
-      "subjectName": "Digital Forensics",
-      "staff": "Nikki Wan"
+      "staffId": "NW"
     },
     {
       "day": "Thu",
       "time": "PM",
       "room": "PA113",
       "code": "BIT363",
-      "subjectName": "E-Business Systems",
-      "staff": "Ye Wei (Silva)"
+      "staffId": "YW"
     },
     {
       "day": "Thu",
       "time": "PM",
       "room": "TBA",
       "code": "BIT364",
-      "subjectName": "Non-Relational Database Management",
-      "staff": "Nidha Qazi"
+      "staffId": "NQ"
     },
     {
       "day": "Thu",
       "time": "AM",
       "room": "TBA",
       "code": "BIT246",
-      "subjectName": "Object Oriented RAD",
-      "staff": "Md Sarwar Kamal"
+      "staffId": "MK"
     },
     {
       "day": "Fri",
       "time": "AM",
       "room": "PA113",
       "code": "BIT314",
-      "subjectName": "Cybersecurity Management & Governance",
-      "staff": "David Robinson"
+      "staffId": "DR"
     },
     {
       "day": "Fri",
       "time": "PM",
       "room": "TBA",
       "code": "BIT236",
-      "subjectName": "Enterprise Resources Planning",
-      "staff": "Ye Wei (Silva)"
+      "staffId": "YW"
     },
     {
       "day": "Fri",
       "time": "PM",
       "room": "PA114",
       "code": "BIT352",
-      "subjectName": "System Implementation & Service Management",
-      "staff": "David Robinson"
+      "staffId": "DR"
     }
   ],
   "timeSlots": {
@@ -275,203 +354,78 @@
       "end": "5:00 PM"
     }
   },
-  "oldCodes": [
-    {
-      "oldCode": "BIT100",
-      "newCode": "BIT105",
-      "subjectName": "Business Enquiry & Communication"
-    },
-    {
-      "oldCode": "BIT101",
-      "newCode": "BIT106",
-      "subjectName": "Foundations of Software, Hardware & Cloud Computing"
-    },
-    {
-      "oldCode": "BIT234",
-      "newCode": "BIT236",
-      "subjectName": "Enterprise Resources Planning"
-    },
-    {
-      "oldCode": "BIT243",
-      "newCode": "BIT213",
-      "subjectName": "Network & Cyber Security Essentials"
-    },
-    {
-      "oldCode": "BIT244",
-      "newCode": "BIT214",
-      "subjectName": "Cloud and IoT Emerging Technologies"
-    },
-    {
-      "oldCode": "BIT306",
-      "newCode": "BIT363",
-      "subjectName": "E-Business Systems"
-    },
-    {
-      "oldCode": "BIT354",
-      "newCode": "BIT313",
-      "subjectName": "Cyber Vulnerability & Hardening"
-    },
-    {
-      "oldCode": "BIT361",
-      "newCode": "BIT314",
-      "subjectName": "Cybersecurity Management & Governance"
-    },
-    {
-      "oldCode": "BIT102",
-      "newCode": "BIT121",
-      "subjectName": "Network Communication Concepts"
-    },
-    {
-      "oldCode": "BIT103",
-      "newCode": "BIT108",
-      "subjectName": "Foundations of Business"
-    },
-    {
-      "oldCode": "BIT104",
-      "newCode": "BIT111",
-      "subjectName": "Programming Concepts"
-    },
-    {
-      "oldCode": "BIT110",
-      "newCode": "BIT112",
-      "subjectName": "Mathematics for Information Technology"
-    },
-    {
-      "oldCode": "BIT123",
-      "newCode": "USE201",
-      "subjectName": "USE201"
-    },
-    {
-      "oldCode": "BIT201",
-      "newCode": "BIT231",
-      "subjectName": "Database Systems"
-    },
-    {
-      "oldCode": "BIT202",
-      "newCode": "USE201",
-      "subjectName": "USE201"
-    },
-    {
-      "oldCode": "BIT203",
-      "newCode": "BIT241",
-      "subjectName": "Professional IT Practice & Ethics"
-    },
-    {
-      "oldCode": "BIT204",
-      "newCode": "BIT236",
-      "subjectName": "Enterprise Resources Planning"
-    },
-    {
-      "oldCode": "BIT205",
-      "newCode": "BIT245",
-      "subjectName": "Web Development"
-    },
-    {
-      "oldCode": "BIT206",
-      "newCode": "BIT233",
-      "subjectName": "Network Design"
-    },
-    {
-      "oldCode": "BIT207",
-      "newCode": "BIT313",
-      "subjectName": "Cyber Vulnerability & Hardening"
-    },
-    {
-      "oldCode": "BIT208",
-      "newCode": "BIT214",
-      "subjectName": "Cloud and IoT Emerging Technologies"
-    },
-    {
-      "oldCode": "BIT209",
-      "newCode": "BIT235",
-      "subjectName": "Object Oriented Programming"
-    },
-    {
-      "oldCode": "BIT210",
-      "newCode": "BIT246",
-      "subjectName": "Object Oriented RAD"
-    },
-    {
-      "oldCode": "BIT211",
-      "newCode": "BIT231",
-      "subjectName": "Database Systems"
-    },
-    {
-      "oldCode": "BIT212",
-      "newCode": "BIT357",
-      "subjectName": "Business Analysis"
-    },
-    {
-      "oldCode": "BIT232",
-      "newCode": "BIT230",
-      "subjectName": "System Analysis & Design"
-    },
-    {
-      "oldCode": "BIT247",
-      "newCode": "BIT357",
-      "subjectName": "Business Analysis"
-    },
-    {
-      "oldCode": "BIT2I0",
-      "newCode": "BIT246",
-      "subjectName": "Object Oriented RAD"
-    },
-    {
-      "oldCode": "BIT301",
-      "newCode": "BIT230",
-      "subjectName": "System Analysis & Design"
-    },
-    {
-      "oldCode": "BIT302",
-      "newCode": "BIT242",
-      "subjectName": "IT Project Management"
-    },
-    {
-      "oldCode": "BIT303",
-      "newCode": "USE301",
-      "subjectName": "USE301"
-    },
-    {
-      "oldCode": "BIT304",
-      "newCode": "BIT355",
-      "subjectName": "Business Intelligence"
-    },
-    {
-      "oldCode": "BIT305",
-      "newCode": "BIT356",
-      "subjectName": "Knowledge Management Systems"
-    },
-    {
-      "oldCode": "BIT307",
-      "newCode": "BIT313",
-      "subjectName": "Cyber Vulnerability & Hardening"
-    },
-    {
-      "oldCode": "BIT308",
-      "newCode": "BIT213",
-      "subjectName": "Network & Cyber Security Essentials"
-    },
-    {
-      "oldCode": "BIT309",
-      "newCode": "BIT314",
-      "subjectName": "Cybersecurity Management & Governance"
-    },
-    {
-      "oldCode": "BIT310",
-      "newCode": "BIT358",
-      "subjectName": "Advanced Databases"
-    },
-    {
-      "oldCode": "BIT311",
-      "newCode": "BIT245",
-      "subjectName": "Web Development"
-    },
-    {
-      "oldCode": "BIT312",
-      "newCode": "BIT352",
-      "subjectName": "System Implementation & Service Management"
+  "oldCodes": {
+    "BIT100": "BIT105",
+    "BIT101": "BIT106",
+    "BIT234": "BIT236",
+    "BIT243": "BIT213",
+    "BIT244": "BIT214",
+    "BIT306": "BIT363",
+    "BIT354": "BIT313",
+    "BIT361": "BIT314",
+    "BIT102": "BIT121",
+    "BIT103": "BIT108",
+    "BIT104": "BIT111",
+    "BIT110": "BIT112",
+    "BIT123": "USE201",
+    "BIT201": "BIT231",
+    "BIT202": "USE201",
+    "BIT203": "BIT241",
+    "BIT204": "BIT236",
+    "BIT205": "BIT245",
+    "BIT206": "BIT233",
+    "BIT207": "BIT313",
+    "BIT208": "BIT214",
+    "BIT209": "BIT235",
+    "BIT210": "BIT246",
+    "BIT211": "BIT231",
+    "BIT212": "BIT357",
+    "BIT232": "BIT230",
+    "BIT247": "BIT357",
+    "BIT301": "BIT230",
+    "BIT302": "BIT242",
+    "BIT303": "USE301",
+    "BIT304": "BIT355",
+    "BIT305": "BIT356",
+    "BIT307": "BIT313",
+    "BIT308": "BIT213",
+    "BIT309": "BIT314",
+    "BIT310": "BIT358",
+    "BIT311": "BIT245",
+    "BIT312": "BIT352"
+  },
+  "acceptedSubjectCodeAliases": {
+    "_instructions": [
+      "These are common typing or OCR mistakes accepted during manual entry.",
+      "They are not former subject codes and must not appear in the Old Codes display."
+    ],
+    "BIT2I0": "BIT246",
+    "BITIOO": "BIT105",
+    "BIT1OO": "BIT105"
+  },
+  "oldCodeDisplay": {
+    "_instructions": [
+      "Code conversion is defined only in oldCodes; this section controls presentation.",
+      "showFirst lists the important old codes that appear first in the Old Codes display.",
+      "previousSubjectNames is keyed by old code. The current code and current name come from oldCodes and subjects."
+    ],
+    "showFirst": [
+      "BIT100",
+      "BIT101",
+      "BIT234",
+      "BIT243",
+      "BIT244",
+      "BIT306",
+      "BIT354",
+      "BIT361"
+    ],
+    "previousSubjectNames": {
+      "BIT243": "Network Security",
+      "BIT244": "IT and Business Crime",
+      "BIT354": "Network Vulnerability and Penetration Testing",
+      "BIT361": "Security Management and Governance"
     }
-  ],
+  },
   "corequisites": {
     "BIT213": [
       "BIT121"
@@ -566,6 +520,12 @@
       "BIT371"
     ]
   },
+  "specialRequirements": {
+    "BIT371": {
+      "minimumCompletedMajorSubjects": 3,
+      "minimumCompletedOrConcurrentMajorSubjects": 5
+    }
+  },
   "majorSubjects": {
     "Network Security (NS)": [
       "BIT213",
@@ -592,7 +552,16 @@
       "BIT351"
     ]
   },
+
+  "_guiLayoutSection": "-------------------- Everything below this point is purely about how the website GUI should be laid out. --------------------",
+
   "courseMapLayout": {
+    "_instructions": [
+      "Each nested array is one visible row; entries are displayed from left to right.",
+      "Use subject codes exactly as listed in subjects. Keep topRows at 2 rows of 7 subjects.",
+      "Keep majorPlaceholders at 2 rows of 5 labels, and each major stream at 2 rows of 3 subjects.",
+      "Change the order of codes here only when the visual Course Map layout should change."
+    ],
     "topRows": [
       [
         "BIT106",
@@ -667,6 +636,12 @@
     ]
   },
   "mainPage": {
+    "_instructions": [
+      "mainGridLayout controls the visible Main Page grid. Each nested array is one row, displayed left to right.",
+      "The first row contains the five column headings. Every remaining row must also contain exactly five entries.",
+      "Use subject codes exactly as listed in subjects.",
+      "MAJOR, INFO, and ELECTIVE1 through ELECTIVE4 are special placeholders; keep their spelling and capitalisation unchanged."
+    ],
     "mainGridLayout": [
       [
         "Year 1",
@@ -711,92 +686,15 @@
         "ELECTIVE4"
       ]
     ],
-    "majorSequence": {
-      "networkSecurity": [
-        "BIT213",
-        "BIT233",
-        "BIT353",
-        "BIT214",
-        "BIT362",
-        "BIT313"
-      ],
-      "businessAnalytics": [
-        "BIT245",
-        "BIT236",
-        "BIT357",
-        "BIT356",
-        "BIT363",
-        "BIT355"
-      ],
-      "softwareDevelopment": [
-        "BIT245",
-        "BIT235",
-        "BIT246",
-        "BIT358",
-        "BIT364",
-        "BIT351"
-      ]
-    },
     "electiveSequence": {
-      "networkSecurity": [
-        [
-          "Column 1",
-          "Column 2",
-          "Column 3"
-        ],
-        [
-          "BIT233",
-          "BIT214",
-          "BIT313"
-        ],
-        [
-          "BIT213",
-          "BIT353",
-          "BIT362"
-        ]
-      ],
-      "businessAnalytics": [
-        [
-          "Column 1",
-          "Column 2",
-          "Column 3"
-        ],
-        [
-          "BIT236",
-          "BIT357",
-          "BIT356"
-        ],
-        [
-          "BIT245",
-          "BIT355",
-          "BIT363"
-        ]
-      ],
-      "softwareDevelopment": [
-        [
-          "Column 1",
-          "Column 2",
-          "Column 3"
-        ],
-        [
-          "BIT245",
-          "BIT246",
-          "BIT358"
-        ],
-        [
-          "BIT235",
-          "BIT351",
-          "BIT364"
-        ]
+      "headings": [
+        "Elective 1",
+        "Elective 2",
+        "Elective 3",
+        "Elective 4",
+        "Elective 5"
       ],
       "networkSecurityAsMajor": [
-        [
-          "Elective 1",
-          "Elective 2",
-          "Elective 3",
-          "Elective 4",
-          "Elective 5"
-        ],
         [
           "BIT245",
           "",
@@ -821,13 +719,6 @@
       ],
       "businessAnalyticsAsMajor": [
         [
-          "Elective 1",
-          "Elective 2",
-          "Elective 3",
-          "Elective 4",
-          "Elective 5"
-        ],
-        [
           "BIT235",
           "BIT246",
           "BIT358",
@@ -850,13 +741,6 @@
         ]
       ],
       "softwareDevelopmentAsMajor": [
-        [
-          "Elective 1",
-          "Elective 2",
-          "Elective 3",
-          "Elective 4",
-          "Elective 5"
-        ],
         [
           "BIT236",
           "BIT355",
