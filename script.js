@@ -11360,6 +11360,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     manualEntryUnknown: manualEntryUnknown.map((entry) => ({ ...entry })),
     passForEnrolmentsOverrides: new Set(passForEnrolmentsOverrides),
     currentEnrolmentsPlannedOverrides: new Set(currentEnrolmentsPlannedOverrides),
+    passForEnrolmentsEnabled,
     workbookCurrent: new Map(
       Array.from(workbookCurrent.entries()).map(([code, meta]) => [code, { ...meta }])
     ),
@@ -11405,6 +11406,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     snapshot.currentEnrolmentsPlannedOverrides.forEach((code) =>
       currentEnrolmentsPlannedOverrides.add(code)
     );
+    passForEnrolmentsEnabled = !!snapshot.passForEnrolmentsEnabled;
     subjectState.clear();
     snapshot.subjectState.forEach((st, code) => subjectState.set(code, { ...st }));
     if (snapshot.majorValue) setMajorDropdownSelection(snapshot.majorValue);
@@ -11423,13 +11425,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return true;
   };
 
-  const resetModeOptionsToDefault = () => {
+  const resetModeOptionsToDefault = ({ preservePassForEnrolments = false } = {}) => {
     overrideMode = false;
     fullLoadCap = 4;
     showSemCounts = false;
     courseMapStudentSemCountsOn = false;
     refreshCurrentEnrolmentStudentRecord();
-    passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
+    if (!preservePassForEnrolments) {
+      passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
+    }
     exceptionalLoadApproved = false;
     remainingConfirmed = false;
     setLoadError('');
@@ -11450,7 +11454,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => attachTooltip(cell));
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
       if (restoreStudentSnapshot(loadedStudentSnapshot)) {
-        resetModeOptionsToDefault();
+        resetModeOptionsToDefault({ preservePassForEnrolments: true });
         conditionalRecompute({ force: true, usePlanned: false });
         updateResetState();
         updateSelectedList();
