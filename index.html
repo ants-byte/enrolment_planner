@@ -21,7 +21,7 @@ Last Modified: 11/07/2026
   <link
     href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260718-65">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -74,7 +74,7 @@ Last Modified: 11/07/2026
         <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
           data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load
           from folder</button>
-        <div class="drop-zone-text">(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx',
+        <div class="drop-zone-text">(Or for lesser functionality, drag-and-drop the configured Triage workbook,
           'Source.xlsx', and 'Email Scripts.htm'. here.<br>Double-clicking here also gives the reduced functionality).</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
@@ -417,6 +417,10 @@ Last Modified: 11/07/2026
 
         <div id="container">
           <div class="main-grid">
+            <div class="graduation-celebration" aria-label="Congratulations! Graduated!">
+              <div class="graduation-speech">Congratulations!<br>Graduated!!</div>
+              <div class="graduation-smiley" aria-hidden="true">🙂</div>
+            </div>
             <div class="subject-card core clickable" data-subject="BIT121" data-slot="r1c1">
               <span class="subject-code">BIT121</span>
               <span class="subject-note subject-title">Network Communication Concepts</span>
@@ -662,22 +666,7 @@ Last Modified: 11/07/2026
                   semester</span>
               </div>
             </div>
-            <div class="footnote">
-              <img class="sas-key-badge" src="images/SAS-MelbournePoly%20badge.png"
-                alt="SAS Melbourne Polytechnic badge">
-              <div class="sas-inline"></div><span class="sas-heading-line1">A SAS enabled subjects.</span><span
-                class="sas-heading-line2">Two certificates, with a badge, are available:</span>
-              <ul class="sas-notes-list">
-                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i"
-                    target="_blank" rel="noopener noreferrer">SAS Academic Specialisation in IT Analytics</a> for
-                  completion of 3 core subjects (BIT106, BIT231, BIT112)
-                  and 1 of BIT355 or BIT356 from the Business Analytics stream.<br></li>
-                <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1"
-                    target="_blank" rel="noopener noreferrer">Academic Specialisation in Software Development
-                    Analytics</a> for completion of 3 core subjects (BIT106,
-                  BIT231, BIT112) and BIT358 from the Software Development stream.</li>
-              </ul>
-            </div>
+            <div class="footnote" id="sas-footnote"></div>
           </div>
         </div>
       </div>
@@ -1756,7 +1745,13 @@ Last Modified: 11/07/2026
   <div id="timetable-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title" id="timetable-title">Timetable</div>
+        <div class="timetable-header-main">
+          <div class="modal-title" id="timetable-title">Timetable</div>
+          <button id="timetable-move-to-next-semester" class="clear-button secondary" type="button" hidden
+            style="display: none;">
+            Move to next semester...
+          </button>
+        </div>
         <button class="modal-close" id="close-timetable" aria-label="Close timetable">X</button>
       </div>
       <div class="modal-body">
@@ -1802,7 +1797,7 @@ Last Modified: 11/07/2026
                     fill="currentColor" />
                 </svg>
               </span>
-              Copy all
+              Copy to clipboard
             </button>
             <button id="copy-student-declaration" class="clear-button secondary" type="button">
               <span class="clipboard-icon" aria-hidden="true">
@@ -2025,7 +2020,7 @@ Last Modified: 11/07/2026
   </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260715-26"></script>
+  <script src="script.js?v=20260718-64"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 11/07/2026</div>

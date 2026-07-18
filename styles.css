@@ -1961,7 +1961,7 @@ body.next-semester-planning-mode .sidebar::after {
   inset: 0;
   z-index: 40;
   border-radius: inherit;
-  background: rgba(8, 11, 14, 0.68);
+  background: rgba(8, 11, 14, 0.88);
   pointer-events: auto;
   animation: next-semester-sidebar-cover 180ms ease-out both;
 }
@@ -1970,6 +1970,24 @@ body.next-semester-planning-mode #reset-section,
 body.next-semester-planning-mode #move-to-next-semester {
   position: relative;
   z-index: 41;
+}
+
+body.next-semester-planning-mode #reset-section {
+  margin-bottom: 0;
+}
+
+body.next-semester-planning-mode #move-to-next-semester {
+  display: flex;
+  width: 100%;
+  margin: 4px 0 0;
+}
+
+body.next-semester-planning-mode .next-semester-planning-note {
+  position: relative;
+  left: auto;
+  right: auto;
+  width: 100%;
+  margin: 4px 0 0;
 }
 
 body.next-semester-planning-mode .major-dropdown {
@@ -2305,6 +2323,35 @@ body.next-semester-planning-mode #btn-codes {
   font-weight: 700;
   cursor: default;
   background-color: black;
+}
+
+.available-list .available-item.available-item-configuration-error {
+  display: block;
+  padding: 10px 12px;
+  border: 2px solid var(--alert-error);
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.available-list .available-item.available-item-configuration-error::before {
+  background: var(--alert-error);
+}
+
+#timetable-table td.timetable-configuration-error {
+  padding: 14px;
+  border: 2px solid var(--alert-error);
+  background: #fff0f0;
+  color: var(--alert-error);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+:root[data-appearance="dark"] .available-list .available-item.available-item-configuration-error,
+:root[data-appearance="dark"] #timetable-table td.timetable-configuration-error {
+  background: #2b1111 !important;
+  color: #ff8a80 !important;
+  border-color: #ff8a80 !important;
 }
 
 .available-list .available-item.available-item-warning {
@@ -3796,7 +3843,7 @@ input:checked+.slider:before {
 .subject-counts.all-complete,
 .subject-counts.all-complete .subject-counts-line,
 .subject-counts.all-complete .subject-counts-item {
-  color: var(--bright-blue) !important;
+  color: var(--bright-green) !important;
   font-weight: 700 !important;
 }
 
@@ -4962,12 +5009,93 @@ body.graduate-highlight .key {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   gap: 8px;
+  position: relative;
   margin-bottom: 18px;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   overflow: visible;
   align-items: stretch;
+}
+
+.graduation-celebration {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 20px);
+  z-index: 100001;
+  transform: translate(-50%, -50%);
+  width: clamp(150px, 18vw, 280px);
+  height: clamp(150px, 15vw, 230px);
+  pointer-events: none;
+}
+
+body.history-graduated:not(.graduation-dismissed) .graduation-celebration {
+  display: block;
+}
+
+.graduation-smiley {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: clamp(72px, 9vw, 165px);
+  line-height: 1;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.48));
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.graduation-speech {
+  position: absolute;
+  left: calc(38% + 20px);
+  top: -25px;
+  z-index: 1;
+  min-width: clamp(220px, 24vw, 330px);
+  padding: 12px 18px;
+  background: #fff7b2;
+  color: #111;
+  border: 3px solid #d6a900;
+  border-radius: 22px;
+  font-size: clamp(16px, 1.7vw, 26px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.graduation-speech::after {
+  content: "";
+  position: absolute;
+  left: 28px;
+  bottom: -17px;
+  width: 30px;
+  height: 30px;
+  background: #fff7b2;
+  border-left: 3px solid #d6a900;
+  border-bottom: 3px solid #d6a900;
+  transform: skewX(-18deg) rotate(-45deg);
+  box-shadow: -6px 7px 8px rgba(0, 0, 0, 0.2);
+}
+
+body:has(#course-map-modal.show) .main-grid .graduation-speech {
+  left: calc(38% + 60px);
+  top: 5px;
+}
+
+#course-map-modal .graduation-celebration {
+  width: clamp(135px, 15vw, 230px);
+  height: clamp(135px, 13vw, 200px);
+}
+
+#course-map-modal .graduation-smiley {
+  font-size: clamp(66px, 7.5vw, 135px);
+}
+
+#course-map-modal .graduation-speech {
+  min-width: clamp(200px, 21vw, 300px);
+  font-size: clamp(14px, 1.4vw, 22px);
 }
 
 .next-semester-planning-note {
@@ -5010,7 +5138,7 @@ body.graduate-highlight .key {
 }
 
 body.graduate-highlight #container {
-  background: #001b0b;
+  background: #1a3223;
 }
 
 body.graduate-highlight .main-grid .subject-card,
@@ -5623,7 +5751,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 }
 
 .sas::after {
-  content: "This is a SAS enabled subject. Complete 4 SAS subjects to receive a badge and certificate from SAS. See key at bottom of this page";
+  content: attr(data-sas-tooltip);
   position: absolute;
   right: 0;
   bottom: 100%;
@@ -5633,8 +5761,8 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   font-size: 11px;
   padding: 6px 8px;
   border-radius: 4px;
-  white-space: normal;
-  width: 240px;
+  white-space: pre-line;
+  width: 280px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
   opacity: 0;
   pointer-events: none;
@@ -5644,6 +5772,18 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 
 .sas:hover::after {
   opacity: 1;
+}
+
+:root[data-card-theme="clear-cards"] .subject-card.toggled .sas {
+  background: none;
+}
+
+:root[data-card-theme="clear-cards"] .subject-card.toggled .sas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("images/sas_logo.png") no-repeat center center / contain;
+  filter: brightness(0) invert(1);
 }
 
 .title-settings-font-family-row {
@@ -6030,6 +6170,20 @@ body.student-mode #select-by-typing-button {
 
 .sas-notes-list li {
   margin-top: 4px;
+}
+
+.sas-award-completed,
+.sas-award-current-selection {
+  display: block;
+  font-weight: 700;
+}
+
+.sas-award-completed {
+  color: #b8860b;
+}
+
+.sas-award-current-selection {
+  color: #137333;
 }
 
 .toggled {
@@ -6703,6 +6857,14 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   white-space: nowrap;
   word-break: normal;
   box-sizing: border-box;
+}
+
+body.history-graduated .elective-warning {
+  display: none !important;
+}
+
+body.history-graduated #btn-codes {
+  display: none !important;
 }
 
 #timetable-table .timetable-stream-heading {
@@ -10224,17 +10386,17 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
-  z-index: 7;
+  z-index: 20;
 }
 
 #course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable:focus-visible {
   outline: 2px solid #0b3d91;
   outline-offset: 1px;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
   box-shadow: 0 4px 10px rgba(11, 61, 145, 0.28);
-  z-index: 7;
+  z-index: 20;
 }
 
 .course-map-placeholder {
@@ -10726,6 +10888,7 @@ body.completed-mode .completed:hover::after {
   bottom: calc(-1 * (var(--course-map-separator-width) + 2px));
   background: var(--core-band-strong);
   pointer-events: none;
+  transition: transform 120ms ease;
 }
 
 /* Extend the left end slightly and add a short vertical elbow up to the existing left border. */
@@ -10742,6 +10905,19 @@ body.completed-mode .completed:hover::after {
   bottom: -2px;
   background: var(--core-band-strong);
   pointer-events: none;
+  transition: transform 120ms ease;
+}
+
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT105"]:hover::after,
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT121"]:hover::after,
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT121"]:hover::before {
+  transform: translateY(3px);
+}
+
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT105"]:focus-visible::after,
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT121"]:focus-visible::after,
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable[data-subject="BIT121"]:focus-visible::before {
+  transform: translateY(1.5px);
 }
 
 .course-map-elective-landing-guide {
@@ -10980,7 +11156,7 @@ body.completed-mode .completed:hover::after {
   overflow: visible;
   position: absolute;
   left: 0;
-  top: 160px;
+  top: 200px;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -12458,6 +12634,25 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
 
 #timetable-modal .modal-header {
   align-items: flex-start;
+}
+
+#timetable-modal .timetable-header-main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: 40px;
+  min-width: 0;
+}
+
+#timetable-modal .timetable-header-main #timetable-title {
+  flex: 0 1 auto;
+}
+
+#timetable-modal #timetable-move-to-next-semester {
+  flex: 0 0 auto;
+  width: auto;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 #timetable-title {

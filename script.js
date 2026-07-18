@@ -93,148 +93,213 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     .map((code) => subjects.find((cell) => cell.dataset.subject === code))
     .filter(Boolean);
 
-  const prerequisites = {
-    BIT105: [],
-    BIT106: [],
-    BIT108: [],
-    BIT111: [],
-    BIT112: [],
-    BIT121: [],
-    BIT230: ['BIT111', 'BIT106'],
-    BIT231: ['BIT111'],
-    BIT233: ['BIT121'],
-    BIT236: ['BIT231', 'BIT106'],
-    BIT235: [],
-    BIT241: ['BIT106', 'BIT105'],
-    BIT242: ['BIT230'],
-    BIT213: [],
-    BIT214: ['BIT106'],
-    BIT245: ['BIT111'],
-    BIT246: ['BIT235'],
-    BIT351: ['BIT235', 'BIT231'],
-    BIT352: ['BIT242'],
-    BIT353: ['BIT233'],
-    BIT313: ['BIT213'],
-    BIT355: ['BIT236', 'BIT230'],
-    BIT356: ['BIT236', 'BIT230'],
-    BIT357: ['BIT230'],
-    BIT358: ['BIT231'],
-    BIT314: ['BIT241'],
-    BIT362: ['BIT213'],
-    BIT363: ['BIT245', 'BIT230'],
-    BIT364: ['BIT231'],
-    BIT371: ['BIT242'],
-    BIT372: ['BIT371'],
+  const prerequisites = {};
+  const corequisites = {};
+  const specialRequirements = {};
+  const sasSpecialisations = {
+    commonRequiredSubjects: [],
+    awards: {},
   };
-  const corequisites = {
-    BIT213: ['BIT121'],
-    BIT235: ['BIT245'],
+  const getSasAwardEntries = () => Object.entries(sasSpecialisations.awards);
+  const joinWithFinalWord = (values, finalWord = 'and') => {
+    if (values.length <= 1) return values.join('');
+    if (values.length === 2) return `${values[0]} ${finalWord} ${values[1]}`;
+    return `${values.slice(0, -1).join(', ')} ${finalWord} ${values.at(-1)}`;
+  };
+  const getSasAwardRequirementText = (award) => {
+    const commonSubjects = sasSpecialisations.commonRequiredSubjects;
+    const commonLabel = `${commonSubjects.length} core subject${commonSubjects.length === 1 ? '' : 's'} (${joinWithFinalWord(commonSubjects)})`;
+    const additionalSubjects = award?.additionalSubjects || [];
+    const minimumCompleted = award?.minimumCompleted || 0;
+    let additionalLabel = '';
+    if (minimumCompleted === additionalSubjects.length) {
+      additionalLabel = joinWithFinalWord(additionalSubjects);
+    } else {
+      additionalLabel = `${minimumCompleted} of ${joinWithFinalWord(additionalSubjects, 'or')}`;
+    }
+    const groupLabel = String(award?.additionalSubjectGroupLabel || '').trim();
+    return `completion of ${commonLabel}${additionalLabel ? ` and ${additionalLabel}${groupLabel ? ` from the ${groupLabel}` : ''}` : ''}`;
+  };
+  const getSasAwardsForSubject = (code) =>
+    getSasAwardEntries()
+      .filter(([, award]) =>
+        sasSpecialisations.commonRequiredSubjects.includes(code) ||
+        award.additionalSubjects.includes(code)
+      );
+  const getSasAwardCompletionPath = (award) => {
+    const commonSubjects = sasSpecialisations.commonRequiredSubjects;
+    const additionalSubjects = award?.additionalSubjects || [];
+    const minimumCompleted = award?.minimumCompleted || 0;
+    if (minimumCompleted === additionalSubjects.length) {
+      return joinWithFinalWord([...commonSubjects, ...additionalSubjects]);
+    }
+    const additionalText = minimumCompleted === 1
+      ? `either ${joinWithFinalWord(additionalSubjects, 'or')}`
+      : `${minimumCompleted} of ${joinWithFinalWord(additionalSubjects, 'or')}`;
+    return `${joinWithFinalWord(commonSubjects)}, plus ${additionalText}`;
+  };
+  const getSasBadgeTooltip = (code) => {
+    const awards = getSasAwardsForSubject(code);
+    if (!awards.length) return '';
+    if (sasSpecialisations.commonRequiredSubjects.includes(code)) {
+      const awardCount = awards.length === 2 ? 'two' : String(awards.length);
+      const possibilities = awards.map(([, award]) =>
+        `• Complete ${getSasAwardCompletionPath(award)} and be awarded the ${award.name}.`
+      );
+      return `This subject is part of ${awardCount} SAS award${awards.length === 1 ? '' : 's'}. The possibilities are:\n${possibilities.join('\n')}`;
+    }
+    return awards.map(([, award]) => {
+      const otherAdditionalSubjects = award.additionalSubjects
+        .filter((subjectCode) => subjectCode !== code);
+      const otherAdditionalNeeded = Math.max(0, award.minimumCompleted - 1);
+      let additionalCompanions = '';
+      if (otherAdditionalNeeded === otherAdditionalSubjects.length && otherAdditionalNeeded > 0) {
+        additionalCompanions = joinWithFinalWord(otherAdditionalSubjects);
+      } else if (otherAdditionalNeeded > 0) {
+        additionalCompanions = `${otherAdditionalNeeded} of ${joinWithFinalWord(otherAdditionalSubjects, 'or')}`;
+      }
+      const companionSubjects = [
+        joinWithFinalWord(sasSpecialisations.commonRequiredSubjects),
+        additionalCompanions,
+      ].filter(Boolean).join(' and ');
+      return `Completion of this subject, along with ${companionSubjects}, would award you the ${award.name}.`;
+    }).join('\n');
+  };
+  const isSasAwardCompleted = (award, hasCompleted) =>
+    sasSpecialisations.commonRequiredSubjects.every(hasCompleted) &&
+    award.additionalSubjects.filter(hasCompleted).length >= award.minimumCompleted;
+  const willCurrentSelectionsCompleteSasAward = (award, hasCompleted, currentSelections) =>
+    !isSasAwardCompleted(award, hasCompleted) &&
+    isSasAwardCompleted(
+      award,
+      (code) => hasCompleted(code) || currentSelections.has(code)
+    );
+  const renderSasFootnote = () => {
+    const footnote = document.getElementById('sas-footnote');
+    if (!footnote) return;
+    const awards = getSasAwardEntries();
+    if (!awards.length) {
+      footnote.innerHTML = '';
+      return;
+    }
+    const hasCompleted = (code) => !!subjectState.get(code)?.completed;
+    const currentSelections = new Set(
+      Array.from(currentEnrolmentStudentRecord)
+        .filter((code) => !withdrawnCurrentEnrolments.has(code))
+    );
+    if (planningSemesterOffset === 0) {
+      subjectState.forEach((state, code) => {
+        if (state?.toggled) currentSelections.add(code);
+      });
+    }
+    const awardItems = awards.map(([, award]) => {
+      let statusHtml = ` for ${escapeHtml(getSasAwardRequirementText(award))}.`;
+      if (isSasAwardCompleted(award, hasCompleted)) {
+        statusHtml =
+          '<span class="sas-award-completed">You have completed the requirements. Congratulations!</span>';
+      } else if (willCurrentSelectionsCompleteSasAward(award, hasCompleted, currentSelections)) {
+        statusHtml =
+          '<span class="sas-award-current-selection">Completing your current selections will satisfy the requirements for this certificate!</span>';
+      }
+      return `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+        award.name
+      )}</a>${statusHtml}</li>`;
+    }).join('');
+    footnote.innerHTML = `
+      <img class="sas-key-badge" src="images/SAS-MelbournePoly%20badge.png" alt="SAS Melbourne Polytechnic badge">
+      <div class="sas-inline"></div><span class="sas-heading-line1">SAS-enabled subjects.</span>
+      <span class="sas-heading-line2">${awards.length} certificate${awards.length === 1 ? '' : 's'}, with a badge, ${awards.length === 1 ? 'is' : 'are'} available:</span>
+      <ul class="sas-notes-list">${awardItems}</ul>`;
+  };
+  const getBit371SpecialRequirement = () => specialRequirements.BIT371 || null;
+  const getBit371MajorRequirementText = ({ includeCompletedMinimum = false } = {}) => {
+    const requirement = getBit371SpecialRequirement();
+    if (!requirement) return '';
+    const completedMinimum = requirement.minimumCompletedMajorSubjects;
+    const totalMinimum = requirement.minimumCompletedOrConcurrentMajorSubjects;
+    const subjectLabel = totalMinimum === 1 ? 'major subject' : 'major subjects';
+    if (!includeCompletedMinimum) return `${totalMinimum} ${subjectLabel}`;
+    const concurrentCount = Math.max(0, totalMinimum - completedMinimum);
+    const concurrentText = concurrentCount
+      ? `; remaining ${concurrentCount === 1 ? 'subject' : 'subjects'} can be concurrent`
+      : '; all must be completed';
+    return `${totalMinimum} ${subjectLabel} (at least ${completedMinimum} completed${concurrentText})`;
+  };
+  const getPrerequisiteDisplayValue = (code, { includeCompletedMinimum = true } = {}) => {
+    const prereqText = (prerequisites[code] || []).join(', ');
+    if (code !== 'BIT371') return prereqText || 'None';
+    const majorText = getBit371MajorRequirementText({ includeCompletedMinimum });
+    return [prereqText, majorText].filter(Boolean).join(' & ') || 'None';
   };
   const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
   let currentMajorKey = 'ns';
   let currentMajorValue = 'undecided';
   const majorConfig = {
     ns: {
-      codes: ['BIT213', 'BIT233', 'BIT353', 'BIT214', 'BIT362', 'BIT313'],
+      code: 'NS',
+      configKey: 'Network Security (NS)',
+      courseMapLayoutKey: 'networkSecurity',
+      electiveSequenceKey: 'networkSecurityAsMajor',
+      codes: [],
       typeClass: 'network',
     },
     ba: {
-      codes: ['BIT245', 'BIT236', 'BIT357', 'BIT356', 'BIT363', 'BIT355'],
+      code: 'BA',
+      configKey: 'Business Analytics (BA)',
+      courseMapLayoutKey: 'businessAnalytics',
+      electiveSequenceKey: 'businessAnalyticsAsMajor',
+      codes: [],
       typeClass: 'ba',
     },
     sd: {
-      codes: ['BIT245', 'BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
+      code: 'SD',
+      configKey: 'Software Development (SD)',
+      courseMapLayoutKey: 'softwareDevelopment',
+      electiveSequenceKey: 'softwareDevelopmentAsMajor',
+      codes: [],
       typeClass: 'software',
     },
   };
-  const mainGridLayout = [
-    ['BIT121', 'MAJOR', 'MAJOR', 'MAJOR', 'INFO'],
-    ['BIT106', 'BIT108', 'MAJOR', 'MAJOR', 'BIT314'],
-    ['BIT112', 'BIT231', 'BIT241', 'MAJOR', 'BIT352'],
-    ['BIT111', 'BIT230', 'BIT242', 'BIT371', 'BIT372'],
-    ['BIT105', 'ELECTIVE1', 'ELECTIVE2', 'ELECTIVE3', 'ELECTIVE4'],
-  ];
+  const mainGridLayout = [];
   const majorLayouts = {
-    ns: ['BIT213', 'BIT233', 'BIT353', 'BIT214', 'BIT362', 'BIT313'],
-    ba: ['BIT245', 'BIT236', 'BIT357', 'BIT356', 'BIT363', 'BIT355'],
-    sd: ['BIT245', 'BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
+    ns: [],
+    ba: [],
+    sd: [],
   };
+  const courseMapTopRows = [];
+  const courseMapMajorPlaceholderRows = [];
   const courseMapStreamLayouts = {
-    ns: [
-      ['BIT233', 'BIT214', 'BIT313'],
-      ['BIT213', 'BIT353', 'BIT362'],
-    ],
-    ba: [
-      ['BIT236', 'BIT357', 'BIT356'],
-      [{ placeholder: 'bit245-ba', code: 'BIT245' }, 'BIT355', 'BIT363'],
-    ],
-    sd: [
-      [{ placeholder: 'bit245-sd', code: 'BIT245' }, 'BIT246', 'BIT358'],
-      ['BIT235', 'BIT351', 'BIT364'],
-    ],
+    ns: [],
+    ba: [],
+    sd: [],
   };
   const electiveGridLayouts = {
-    ns: [
-      ['BIT245', null, null, null, null],
-      ['BIT236', 'BIT355', 'BIT356', 'BIT357', 'BIT363'],
-      ['BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
-    ],
-    ba: [
-      ['BIT235', 'BIT246', 'BIT358', 'BIT364', 'BIT351'],
-      [null, 'BIT213', 'BIT233', 'BIT353', null],
-      [null, 'BIT214', 'BIT313', 'BIT362', null],
-    ],
-    sd: [
-      ['BIT236', 'BIT355', 'BIT356', 'BIT357', 'BIT363'],
-      [null, 'BIT213', 'BIT233', 'BIT353', null],
-      [null, 'BIT214', 'BIT313', 'BIT362', null],
-    ],
+    ns: [],
+    ba: [],
+    sd: [],
   };
 
   const timeSlots = {
-    Morning: '8:30am - 12:30pm',
-    Afternoon: '1:00pm - 5:00pm',
+    Morning: '',
+    Afternoon: '',
   };
 
-  const timetable = {
-    BIT121: { day: 'Monday', slot: 'Morning', room: 'PA113', teacher: 'Russul Al-Anni' },
-    BIT372: { day: 'Monday', slot: 'Morning', room: 'PE110', teacher: 'Tony, Sita, TBA' },
-    BIT371: { day: 'Monday', slot: 'Afternoon', room: 'PE110', teacher: 'Tony, Sita, TBA' },
-    BIT112: { day: 'Monday', slot: 'Afternoon', room: 'PA113', teacher: 'Dominic Mammone' },
-    BIT105: { day: 'Tuesday', slot: 'Morning', room: 'PE227', teacher: 'Shzaa Niazi' },
-    BIT313: { day: 'Tuesday', slot: 'Morning', room: 'PE226', teacher: 'Anthony Overmars' },
-    BIT230: { day: 'Tuesday', slot: 'Morning', room: 'TBA', teacher: 'Sarang Hashemi' },
-    BIT106: { day: 'Tuesday', slot: 'Afternoon', room: 'PA113', teacher: 'Sarang Hashemi' },
-    BIT241: { day: 'Tuesday', slot: 'Afternoon', room: 'PA114', teacher: 'Dominic Mammone' },
-    BIT353: { day: 'Tuesday', slot: 'Afternoon', room: 'PE227', teacher: 'Anthony Overmars' },
-    BIT245: { day: 'Wednesday', slot: 'Morning', room: 'PA114', teacher: 'Promise Enwereonye' },
-    BIT214: { day: 'Wednesday', slot: 'Morning', room: 'PE226', teacher: 'Russul Al-Anni' },
-    BIT213: { day: 'Wednesday', slot: 'Afternoon', room: 'PE226', teacher: 'Xiaodong Wang (Tony)' },
-    BIT111: { day: 'Wednesday', slot: 'Afternoon', room: 'PA113', teacher: 'Promise Enwereonye' },
-    BIT235: { day: 'Wednesday', slot: 'Afternoon', room: 'PA110', teacher: 'Md Sarwar Kamal' },
-    BIT108: { day: 'Thursday', slot: 'Morning', room: 'PA113', teacher: 'Shzaa Niazi' },
-    BIT231: { day: 'Thursday', slot: 'Morning', room: 'PE227', teacher: 'Nidha Qazi' },
-    BIT233: { day: 'Thursday', slot: 'Morning', room: 'PE226', teacher: 'Nikki Wan' },
-    BIT356: { day: 'Thursday', slot: 'Morning', room: 'PA114', teacher: 'Ye Wei (Silva)' },
-    BIT242: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'David Robinson' },
-    BIT362: { day: 'Thursday', slot: 'Afternoon', room: 'PA114', teacher: 'Nikki Wan' },
-    BIT363: { day: 'Thursday', slot: 'Afternoon', room: 'PA113', teacher: 'Ye Wei (Silva)' },
-    BIT364: { day: 'Thursday', slot: 'Afternoon', room: 'TBA', teacher: 'Nidha Qazi' },
-    BIT246: { day: 'Thursday', slot: 'Morning', room: 'TBA', teacher: 'Md Sarwar Kamal' },
-    BIT314: { day: 'Friday', slot: 'Morning', room: 'PA113', teacher: 'David Robinson' },
-    BIT352: { day: 'Friday', slot: 'Afternoon', room: 'PA114', teacher: 'David Robinson' },
-    BIT236: { day: 'Friday', slot: 'Afternoon', room: 'TBA', teacher: 'Ye Wei (Silva)' },
-  };
+  const timetable = {};
 
-  const semester1OnlyIds = new Set(['BIT351', 'BIT355', 'BIT357', 'BIT358']);
-  const semester2OnlyIds = new Set(['BIT246', 'BIT363', 'BIT356', 'BIT364']);
+  const semester1OnlyIds = new Set();
+  const semester2OnlyIds = new Set();
+  let semesterConfig = null;
+  let semesterConfigDetails = null;
+  let semesterConfigError = '';
+  let configuredTriageFileName = '';
+  let semesterConfigReady = Promise.resolve();
   const getCurrentSemesterKey = (date = new Date()) => {
     const month = date instanceof Date && !Number.isNaN(date.getTime()) ? date.getMonth() : 0;
     if (month >= 8) return 'SS';
     if (month >= 4) return 'S2';
     return 'S1';
   };
-  const currentSemesterKey = getCurrentSemesterKey();
+  let currentSemesterKey = getCurrentSemesterKey();
   let planningSemesterOffset = 0;
   let finalPlanningExpectationIdentity = null;
   const semesterSequence = ['S1', 'S2'];
@@ -260,6 +325,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (availability === 'Any') return true;
     return availability === getSemesterKeyForOffset(1);
   };
+  const unplannedDayAndTimeText = 'Day and time not yet planned';
   const getPlanningTimetableData = (id) => {
     const data = timetable[id] || {};
     return planningSemesterOffset > 0 ? { ...data, day: 'Day?', slot: 'Time?' } : data;
@@ -281,13 +347,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const dependents = {};
-  Object.keys(prerequisites).forEach((id) => { dependents[id] = []; });
-  Object.entries(prerequisites).forEach(([course, prereqs]) => {
-    prereqs.forEach((pre) => {
-      if (!dependents[pre]) dependents[pre] = [];
-      dependents[pre].push(course);
+  const rebuildDependents = () => {
+    Object.keys(dependents).forEach((id) => delete dependents[id]);
+    Object.keys(prerequisites).forEach((id) => { dependents[id] = []; });
+    Object.entries(prerequisites).forEach(([course, prereqs]) => {
+      prereqs.forEach((pre) => {
+        if (!dependents[pre]) dependents[pre] = [];
+        dependents[pre].push(course);
+      });
     });
-  });
+  };
 
   const clearButton = document.getElementById('clear-selections');
   const completedModeButton = document.getElementById('toggle-completed-mode');
@@ -449,9 +518,36 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'main-content': 'main',
   };
   const SETTINGS_QUERY_START_COURSE_MAP = 'course-map';
+  const hostName = window.location.hostname || '';
+  function getQueryParamLower(key) {
+    const search = String(window.location.search || '');
+    if (typeof URLSearchParams !== 'undefined') {
+      try {
+        const raw = new URLSearchParams(search).get(key);
+        if (raw !== null && raw !== undefined) return String(raw).trim().toLowerCase();
+      } catch {
+        // fall through to manual parsing
+      }
+    }
+    const pattern = new RegExp(`[?&]${key}=([^&]+)`, 'i');
+    const match = pattern.exec(search);
+    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')).trim().toLowerCase() : '';
+  }
+  const modeParam = getQueryParamLower('mode');
+  const isStaffModeParam = modeParam === 'staff';
+  const isStudentModeParam = modeParam === 'student';
+  const isStaffHost =
+    hostName === 'localhost' ||
+    hostName === '127.0.0.1' ||
+    hostName === '[::1]' ||
+    hostName.includes('sharepoint');
+  const isStaffMode =
+    isStaffModeParam || (!isStudentModeParam && (window.location.protocol === 'file:' || isStaffHost));
+  const isStudentMode =
+    isStudentModeParam || (['http:', 'https:'].includes(window.location.protocol) && !isStaffMode);
   const COLOURED_CARD_THEME = 'default';
   const CLEAR_CARDS_THEME = 'clear-cards';
-  const DEFAULT_CARD_THEME = CLEAR_CARDS_THEME;
+  const DEFAULT_CARD_THEME = isStudentMode ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME;
   const MIN_ROOT_FONT_SIZE_PX = 10;
   const MAX_ROOT_FONT_SIZE_PX = 32;
   const DEFAULT_ROOT_FONT_SIZE_PX = 16;
@@ -517,10 +613,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getCardThemeFromQuery = () => {
     const raw = getQueryParamLower(SETTINGS_QUERY_CARDS_KEY);
     if (!raw) return '';
-    if (['coloured', 'colored', 'colour', 'color', 'default'].includes(raw)) {
-      return raw === 'default' ? DEFAULT_CARD_THEME : COLOURED_CARD_THEME;
-    }
-    if (['clear-cards', 'clear', 'plain'].includes(raw)) return DEFAULT_CARD_THEME;
+    if (raw === 'default') return DEFAULT_CARD_THEME;
+    if (['coloured', 'colored', 'colour', 'color'].includes(raw)) return COLOURED_CARD_THEME;
+    if (['clear-cards', 'clear', 'plain'].includes(raw)) return CLEAR_CARDS_THEME;
     return '';
   };
   const getCourseMapDefaultOpenFromQuery = () => {
@@ -716,10 +811,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (name.includes('antony')) return '2';
     return '';
   };
-  const normalizeCardTheme = (value) =>
-    value === COLOURED_CARD_THEME ? COLOURED_CARD_THEME : DEFAULT_CARD_THEME;
+  const normalizeCardTheme = (value) => {
+    if (value === COLOURED_CARD_THEME) return COLOURED_CARD_THEME;
+    if (value === CLEAR_CARDS_THEME) return CLEAR_CARDS_THEME;
+    return DEFAULT_CARD_THEME;
+  };
   const getCardThemeQueryValue = (theme = activeCardTheme) =>
-    normalizeCardTheme(theme) === COLOURED_CARD_THEME ? 'coloured' : 'default';
+    normalizeCardTheme(theme) === COLOURED_CARD_THEME ? 'coloured' : 'clear';
   const getRootFontSizeQueryValue = (sizePx = activeRootFontSizePx) =>
     String(normalizeRootFontSizePx(sizePx));
   const getFontFamilyQueryValue = (fontFamily = activeFontFamily) => normalizeFontFamily(fontFamily);
@@ -841,7 +939,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       settingsButton.dataset.theme = activeCardTheme;
       settingsButton.setAttribute(
         'aria-label',
-        activeCardTheme === CLEAR_CARDS_THEME ? 'Settings (cards: Default)' : 'Settings (cards: Coloured card)'
+        `Settings (card background colours: ${activeCardTheme === COLOURED_CARD_THEME ? 'on' : 'off'})`
       );
     }
     if (settingsCardThemeColoursToggle) {
@@ -1919,7 +2017,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
-    "(Or for lesser functionality, drag-and-drop 'Triage 2026 S2.xlsx', 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here also gives the lesser functionality.).";
+    "(Or for lesser functionality, drag-and-drop the configured Triage workbook, 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here also gives the lesser functionality.).";
   const dropZoneSpinner = dropZone
     ? (() => {
       const spinner = document.createElement('div');
@@ -2416,33 +2514,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       ? currentId.slice(0, 5)
       : currentId.slice(0, 4);
   };
-  const hostName = window.location.hostname || '';
-  function getQueryParamLower(key) {
-    const search = String(window.location.search || '');
-    if (typeof URLSearchParams !== 'undefined') {
-      try {
-        const raw = new URLSearchParams(search).get(key);
-        if (raw !== null && raw !== undefined) return String(raw).trim().toLowerCase();
-      } catch {
-        // fall through to manual parsing
-      }
-    }
-    const pattern = new RegExp(`[?&]${key}=([^&]+)`, 'i');
-    const match = pattern.exec(search);
-    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')).trim().toLowerCase() : '';
-  }
-  const modeParam = getQueryParamLower('mode');
-  const isStaffModeParam = modeParam === 'staff';
-  const isStudentModeParam = modeParam === 'student';
-  const isStaffHost =
-    hostName === 'localhost' ||
-    hostName === '127.0.0.1' ||
-    hostName === '[::1]' ||
-    hostName.includes('sharepoint');
-  const isStaffMode =
-    isStaffModeParam || (!isStudentModeParam && (window.location.protocol === 'file:' || isStaffHost));
-  const isStudentMode =
-    isStudentModeParam || (['http:', 'https:'].includes(window.location.protocol) && !isStaffMode);
   const isWorkbookFlag = (value) => {
     const raw = String(value ?? '').trim().toLowerCase();
     return raw === 'y' || raw === 'yes' || raw === 'true' || raw === '1';
@@ -2451,6 +2522,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const closeTimetable = document.getElementById('close-timetable');
   const hideTimetable = document.getElementById('hide-timetable');
   const copyTimetable = document.getElementById('copy-timetable');
+  const timetableMoveToNextSemesterButton = document.getElementById(
+    'timetable-move-to-next-semester'
+  );
   const timetableColoursButton = document.getElementById('timetable-colours');
   const copyTimetableCodes = document.getElementById('copy-timetable-codes');
   const toggleTimetableTableOnlyButton = document.getElementById('toggle-timetable-table-only');
@@ -2562,6 +2636,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const remainingButton = document.getElementById('open-remaining');
   const moveToNextSemesterButton = document.getElementById('move-to-next-semester');
   const nextSemesterPlanningNote = document.getElementById('next-semester-planning-note');
+  const moveToNextSemesterOriginalParent = moveToNextSemesterButton?.parentElement || null;
+  const moveToNextSemesterOriginalNextSibling = moveToNextSemesterButton?.nextSibling || null;
+  const nextSemesterPlanningNoteOriginalParent = nextSemesterPlanningNote?.parentElement || null;
+  const nextSemesterPlanningNoteOriginalNextSibling = nextSemesterPlanningNote?.nextSibling || null;
   const nextSemesterSelectionPeriod = document.getElementById('next-semester-selection-period');
   const nextSemesterGraduationPeriod = document.getElementById('next-semester-graduation-period');
   const courseMapButton = document.getElementById('open-course-map');
@@ -2848,42 +2926,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   document.body.appendChild(whitespaceHintTooltip);
   let hoverTooltipTimer = null;
   let whitespaceHintTimer = null;
-  const subjectMeta = {
-    BIT105: { name: 'Business Enquiry & Communication', note: '', classes: ['core'] },
-    BIT106: { name: 'Foundations of Software, Hardware & Cloud Computing', note: '', classes: ['core', 'sas'] },
-    BIT108: { name: 'Foundations of Business', note: '', classes: ['core'] },
-    BIT111: { name: 'Programming Concepts', note: '', classes: ['core'] },
-    BIT112: { name: 'Mathematics for Information Technology', note: '', classes: ['core', 'sas'] },
-    BIT121: { name: 'Network Communication Concepts', note: '', classes: ['core'] },
-    BIT213: { name: 'Network & Cyber Security Essentials', note: 'Co-requisite: BIT121', classes: ['network'] },
-    BIT230: { name: 'System Analysis & Design', note: 'Prerequisites: BIT106, BIT111', classes: ['core'] },
-    BIT231: { name: 'Database Systems', note: 'Prerequisite: BIT111', classes: ['core', 'sas'] },
-    BIT233: { name: 'Network Design', note: 'Prerequisite: BIT121', classes: ['network'] },
-    BIT235: { name: 'Object Oriented Programming', note: 'Co-requisite: BIT245', classes: ['software'] },
-    BIT236: { name: 'Enterprise Resources Planning', note: 'Prerequisites: BIT106, BIT231', classes: ['ba'] },
-    BIT241: { name: 'Professional IT Practice & Ethics', note: 'Prerequisites: BIT105, BIT106', classes: ['core'] },
-    BIT242: { name: 'IT Project Management', note: 'Prerequisite: BIT230', classes: ['core'] },
-    BIT214: { name: 'Cloud and IoT Emerging Technologies', note: 'Prerequisite: BIT106', classes: ['network'] },
-    BIT245: { name: 'Web Development', note: 'Prerequisites: BIT111', classes: ['dual-split'] },
-    BIT246: { name: 'Object Oriented RAD', note: 'Prerequisites: BIT235', classes: ['software'] },
-    BIT313: { name: 'Cyber Vulnerability & Hardening', note: 'Prerequisite: BIT213', classes: ['network'] },
-    BIT314: { name: 'Cybersecurity Management & Governance', note: 'Prerequisite: BIT241', classes: ['core'] },
-    BIT351: { name: 'Mobile Application Development', note: 'Prerequisites: BIT231, BIT235', classes: ['software'] },
-    BIT352: { name: 'System Implementation & Service Management', note: 'Prerequisite: BIT242', classes: ['core'] },
-    BIT353: { name: 'Network Architecture & Protocols', note: 'Prerequisite: BIT233', classes: ['network'] },
-    BIT355: { name: 'Business Intelligence', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
-    BIT356: { name: 'Knowledge Management Systems', note: 'Prerequisites: BIT230, BIT236', classes: ['ba', 'sas'] },
-    BIT357: { name: 'Business Analysis', note: 'Prerequisite: BIT230', classes: ['ba'] },
-    BIT358: { name: 'Advanced Databases', note: 'Prerequisites: BIT231', classes: ['software', 'sas'] },
-    BIT362: { name: 'Digital Forensics', note: 'Prerequisite: BIT213', classes: ['network'] },
-    BIT363: { name: 'E-Business Systems', note: 'Prerequisites: BIT230, BIT245', classes: ['ba'] },
-    BIT364: { name: 'Non-Relational Database Management', note: 'Prerequisites: BIT231', classes: ['software'] },
-    BIT371: {
-      name: 'Capstone Experience 1',
-      note: 'Prerequisites: BIT242 & 5 major subjects (2 can be concurrent)',
-      classes: ['core'],
-    },
-    BIT372: { name: 'Capstone Experience 2', note: 'Prerequisite: BIT371', classes: ['core'] },
+  const subjectMeta = {};
+  const getSubjectRequisiteNote = (code) => {
+    const prereqList = prerequisites[code] || [];
+    const coreqList = corequisites[code] || [];
+    const parts = [];
+    const prerequisiteDisplay = getPrerequisiteDisplayValue(code);
+    if (prerequisiteDisplay !== 'None') {
+      const label = code === 'BIT371' || prereqList.length !== 1 ? 'Prerequisites' : 'Prerequisite';
+      parts.push(`${label}: ${prerequisiteDisplay}`);
+    }
+    if (coreqList.length) {
+      parts.push(`${coreqList.length === 1 ? 'Co-requisite' : 'Co-requisites'}: ${coreqList.join(', ')}`);
+    }
+    return parts.join('; ');
+  };
+  const syncSubjectRequisiteNotes = () => {
+    subjects.forEach((cell) => {
+      const code = cell.dataset.subject || '';
+      if (!code || isPlaceholder(cell)) return;
+      const noteEl = cell.querySelector('.prerequsites-note');
+      if (!noteEl) return;
+      const note = getSubjectRequisiteNote(code);
+      noteEl.textContent = note || '\u00a0';
+      noteEl.dataset.originalText = note;
+      cell.dataset.originalNote = note;
+    });
   };
   const normalizeSubjectCode = (value) =>
     (value || '')
@@ -2938,9 +3006,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     };
   })();
   const getAllSubjectCodes = () => {
-    const baseCodes = Object.keys(subjectMeta).map((code) => normalizeSubjectCode(code));
+    const configuredCodes = Object.keys(subjectMeta).map((code) => normalizeSubjectCode(code));
+    const cardCodes = subjects
+      .map((cell) => normalizeSubjectCode(cell.dataset.subject || ''))
+      .filter((code) => /^BIT\d{3}$/.test(code));
     const workbookCodes = staffWorkbookState.getSubjectCodes();
-    return new Set([...baseCodes, ...workbookCodes]);
+    return new Set([...configuredCodes, ...cardCodes, ...workbookCodes]);
   };
   const validSubjectCodes = new Set();
   const refreshValidSubjectCodes = () => {
@@ -3072,6 +3143,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const baseTypeClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective', 'dual-split', 'dual'];
   const displayTypeClasses = ['core', 'network', 'ba', 'software', 'dual', 'dual-split', 'elective'];
   const placeholderStyleClasses = ['network', 'ba', 'software', 'dual', 'dual-split', 'core', 'elective-stream'];
+  const getSubjectMajorKeys = (code) =>
+    Object.entries(majorConfig)
+      .filter(([, config]) => config.codes.includes(code))
+      .map(([key]) => key);
+  const isSubjectInMajor = (code, majorKey) => !!majorConfig[majorKey]?.codes.includes(code);
+  const getSelectedMajorKey = () => {
+    const value = currentMajorValue || majorDropdown?.dataset?.value || 'undecided';
+    if (value === 'ba' || value === 'sd') return value;
+    return value === 'network' ? 'ns' : '';
+  };
   const applyCourseMapCellStreamClasses = (cell, code = '') => {
     if (!cell) return;
     cell.classList.remove(...displayTypeClasses);
@@ -3760,7 +3841,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getCourseMapSessionBadgeText = (code, dayLen = 2) => {
-    if (planningSemesterOffset > 0) return 'Day? Time?';
+    if (planningSemesterOffset > 0) return unplannedDayAndTimeText;
     const data = getPlanningTimetableData(code);
     const day = getCourseMapDayAbbrev(data.day || '', dayLen);
     const slot = getCourseMapSlotAbbrev(data.slot || '');
@@ -4003,8 +4084,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getCurrentStudySemesterIndex = () => {
-    const now = new Date();
-    return now.getFullYear() * 2 + (currentSemesterKey === 'S1' ? 0 : 1);
+    const identity = getConfiguredSemesterIdentity();
+    const year = identity?.year || new Date().getFullYear();
+    return year * 2 + (currentSemesterKey === 'S1' ? 0 : 1);
   };
 
   const getStudySemesterInfoFromDate = (value) => {
@@ -5204,7 +5286,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (courseMapStaffPanelRaf) cancelAnimationFrame(courseMapStaffPanelRaf);
     courseMapStaffPanelRaf = requestAnimationFrame(() => {
       if (!courseMapStaffPanelEl || courseMapStaffPanelEl.hidden || !courseMapContent) return;
-      courseMapStaffPanelEl.style.top = '160px';
+      courseMapStaffPanelEl.style.top = '200px';
     });
   };
 
@@ -6050,7 +6132,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapPrereqTextOn = true;
   let courseMapIndicatorsOn = true;
   let courseMapNotesOn = !staffFacing;
-  let semesterConfigDetails = null;
   let courseMapStructureExplainMode = false;
   let courseMapStructureExpandedStream = '';
   let courseMapMajorElectivesReturnMode = '';
@@ -6162,23 +6243,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getCurrentMajor = () => currentMajorValue || 'undecided';
 
   const getMajorCounts = () => {
-    const major = getCurrentMajor();
-    const isMajorCode = (code) => {
-      const meta = subjectMeta[code] || {};
-      const classes = meta.classes || [];
-      const hasMajorTag =
-        classes.includes('network') || classes.includes('ba') || classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
-      if (!hasMajorTag) return false;
-      if (major === 'undecided') return true;
-      if (major === 'network') return classes.includes('network') || classes.includes('dual') || classes.includes('dual-split');
-      if (major === 'ba') return classes.includes('ba') || classes.includes('dual') || classes.includes('dual-split');
-      if (major === 'sd') return classes.includes('software') || classes.includes('dual') || classes.includes('dual-split');
-      return false;
-    };
+    const selectedMajorKey = getSelectedMajorKey();
     let completedMajorCount = 0;
     let plannedMajorCount = 0;
     subjectState.forEach((st, code) => {
-      if (!isMajorCode(code)) return;
+      const isMajorCode = selectedMajorKey
+        ? isSubjectInMajor(code, selectedMajorKey)
+        : getSubjectMajorKeys(code).length > 0;
+      if (!isMajorCode) return;
       if (st?.completed) completedMajorCount += 1;
       if (st?.toggled) plannedMajorCount += 1;
     });
@@ -6261,7 +6333,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorKey = getMajorKeyFromUi();
     const majorCodes = majorConfig[majorKey]?.codes || [];
     if (!majorCodes.length) return 0;
-    const requiredTotal = Math.min(5, majorCodes.length);
+    const capstoneRequirement = getBit371SpecialRequirement();
+    if (!capstoneRequirement) return Infinity;
+    const requiredCompleted = capstoneRequirement.minimumCompletedMajorSubjects;
+    const requiredTotal = capstoneRequirement.minimumCompletedOrConcurrentMajorSubjects;
+    if (requiredTotal > majorCodes.length) return Infinity;
     const compute = useDelay ? computeSemesterDistance : computeSemesterDistanceNoDelay;
     const memo = new Map();
     const majorDistances = majorCodes
@@ -6292,7 +6368,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
         }
       });
-      if (completedBefore.size >= 3 && totalPossible.size >= requiredTotal) {
+      if (completedBefore.size >= requiredCompleted && totalPossible.size >= requiredTotal) {
         return semester - 1;
       }
     }
@@ -6981,13 +7057,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getBit371Requirement = ({ completedSet, plannedSet, usePlanned, completedMajorCount, plannedMajorCount }) => {
-    const baseMetNow = completedSet.has('BIT242');
-    const baseMetPlanned = baseMetNow || (usePlanned && plannedSet.has('BIT242'));
-    const majorCompletedEnough = completedMajorCount >= 3;
+    const requirement = getBit371SpecialRequirement();
+    const minimumCompleted = requirement?.minimumCompletedMajorSubjects ?? Infinity;
+    const minimumCompletedOrConcurrent =
+      requirement?.minimumCompletedOrConcurrentMajorSubjects ?? Infinity;
+    const capstonePrerequisites = prerequisites.BIT371 || [];
+    const baseMetNow = capstonePrerequisites.every((code) => completedSet.has(code));
+    const baseMetPlanned = capstonePrerequisites.every(
+      (code) => completedSet.has(code) || (usePlanned && plannedSet.has(code))
+    );
+    const majorCompletedEnough = completedMajorCount >= minimumCompleted;
     const majorConcurrentOk =
-      completedMajorCount >= 5 ||
-      (majorCompletedEnough && completedMajorCount + plannedMajorCount >= 5);
-    const majorMetNow = completedMajorCount >= 5;
+      completedMajorCount >= minimumCompletedOrConcurrent ||
+      (majorCompletedEnough && completedMajorCount + plannedMajorCount >= minimumCompletedOrConcurrent);
+    const majorMetNow = completedMajorCount >= minimumCompletedOrConcurrent;
     const metNow = baseMetNow && majorCompletedEnough;
     const metPlanned = baseMetNow && majorCompletedEnough;
     return {
@@ -7426,12 +7509,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!resultDate) return false;
     const year = resultDate.getFullYear();
     const month = resultDate.getMonth();
+    const configuredYear = getConfiguredSemesterIdentity()?.year || new Date().getFullYear();
     if (currentSemesterKey === 'S2') {
-      return month >= 5 && month <= 6 && year === new Date().getFullYear();
+      return month >= 5 && month <= 6 && year === configuredYear;
     }
     if (currentSemesterKey === 'S1') {
-      const currentYear = new Date().getFullYear();
-      return month >= 10 && month <= 11 && year === currentYear - 1;
+      return month >= 10 && month <= 11 && year === configuredYear - 1;
     }
     return false;
   };
@@ -7817,9 +7900,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (fmpDiplomaHebsitadAlert) infoMessages.push(fmpDiplomaHebsitadAlert);
     const majorKey = getMajorKeyFromUi();
     const hasCompleted = (code) => !!subjectState.get(code)?.completed;
-    const hasSasCore = ['BIT106', 'BIT231', 'BIT112'].every(hasCompleted);
-    const hasBaCert = hasSasCore && (hasCompleted('BIT355') || hasCompleted('BIT356'));
-    const hasSdCert = hasSasCore && hasCompleted('BIT358');
+    const sasAwards = getSasAwardEntries();
+    const hasSasCore =
+      sasSpecialisations.commonRequiredSubjects.length > 0 &&
+      sasSpecialisations.commonRequiredSubjects.every(hasCompleted);
+    const completedSasAwards = sasAwards
+      .filter(([, award]) => isSasAwardCompleted(award, hasCompleted));
+    const incompleteSasAwards = sasAwards
+      .filter(([, award]) => !isSasAwardCompleted(award, hasCompleted));
+    if (completedSasAwards.length) {
+      const completedAwardItems = completedSasAwards.map(([, award]) =>
+        `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+          award.name
+        )}</a>: The student has completed the subject requirements for this award. Congratulations!</li>`
+      ).join('');
+      infoMessages.push({
+        title: 'SAS award requirements completed',
+        html: `<p><strong class="alert-inline-title alert-title-info">SAS award requirements completed</strong></p>
+        <ul class="alert-inline-list">${completedAwardItems}</ul>`,
+      });
+    }
     if (chainDelayError?.severity === 'info') {
       infoMessages.push({
         title: chainDelayError.title || 'Running tight on prerequisite chains',
@@ -7830,15 +7930,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       remainingNoticeUnlocked &&
       remainingCount <= 9 &&
       hasSasCore &&
-      !(hasBaCert && hasSdCert) &&
+      incompleteSasAwards.length > 0 &&
       ['ns', 'ba', 'sd'].includes(majorKey);
     if (shouldShowSasNotice) {
+      const sasAwardItems = incompleteSasAwards.map(([, award]) =>
+        `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+          award.name
+        )}</a> for ${escapeHtml(getSasAwardRequirementText(award))}.</li>`
+      ).join('');
       infoMessages.push({
         title: 'SAS certificates',
         html: `<div class="sas-alert-header"><p><strong class="alert-inline-title alert-title-info">Opportunity for a SAS badge and certificate.</strong></p>
-        <img class="sas-alert-badge" src="images/SAS-MelbournePoly%20badge.png" alt="SAS Melbourne Polytechnic badge"><p class="alert-inline-text">Two certificates are available:</p></div>
-        <ul class="alert-inline-list"><li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i" target="_blank" rel="noopener noreferrer">SAS Academic Specialisation in IT Analytics</a> for completion of core subjects (BIT106, BIT231, BIT112) and 1 of the Business Analytics subjects BIT355 or BIT356.</li>
-        <li><a href="https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1" target="_blank" rel="noopener noreferrer">Academic Specialisation in Software Development Analytics</a> for completion of core subjects (BIT106, BIT231, BIT112) and the Software Development subject BIT358.</li></ul>`,
+        <img class="sas-alert-badge" src="images/SAS-MelbournePoly%20badge.png" alt="SAS Melbourne Polytechnic badge"><p class="alert-inline-text">${incompleteSasAwards.length} certificate${incompleteSasAwards.length === 1 ? ' is' : 's are'} still available:</p></div>
+        <ul class="alert-inline-list">${sasAwardItems}</ul>`,
       });
     }
     const studentFlag = getStudentFlagText(record);
@@ -8315,16 +8419,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const setTimetableHeading = (mode) => {
     if (!timetableTitleEl) return;
     if (mode === 'available' && !staffFacing) {
-      timetableTitleEl.textContent = 'Available Subjects. Click a row to select that subject.';
+      timetableTitleEl.textContent = getTimetableHeadingText(mode);
       return;
     }
     const now = new Date();
-    const label = getTimetableLabel(now);
+    const headingText = getTimetableHeadingText(mode);
     const prepared = formatDate(now);
     timetablePreparedEl = null;
     if (!staffFacing) {
       timetableTitleEl.textContent = '';
-      timetableTitleEl.appendChild(document.createTextNode(`Timetable for ${label}`));
+      timetableTitleEl.appendChild(document.createTextNode(headingText));
       const preparedLine = document.createElement('span');
       preparedLine.className = 'timetable-prepared-line';
       preparedLine.appendChild(document.createTextNode('Prepared '));
@@ -8377,14 +8481,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       parent.appendChild(detailsSpan);
       return true;
     };
-    const strongText =
-      mode === 'available'
-        ? 'Available Subjects. Click a row to select that subject.'
-        : `Timetable for ${label}`;
     timetableTitleEl.textContent = '';
     const strongEl = document.createElement('span');
     strongEl.className = 'timetable-title-strong';
-    strongEl.textContent = strongText;
+    strongEl.textContent = headingText;
     timetableTitleEl.appendChild(strongEl);
     const preparedLine = document.createElement('span');
     preparedLine.className = 'timetable-prepared-line';
@@ -8426,7 +8526,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selectedCount = getSelectedRows().length;
     const threshold = getLoadThreshold();
     const fullLoadSelected = selectedCount >= threshold && threshold > 0;
-    if (!staffFacing || currentTableMode !== 'selected' || !fullLoadSelected) {
+    if (
+      !staffFacing ||
+      currentTableMode !== 'selected' ||
+      !fullLoadSelected ||
+      planningSemesterOffset > 0
+    ) {
       timetableFees.hidden = true;
       timetableFees.textContent = '';
       lastFullLoadSelected = false;
@@ -8440,8 +8545,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const courseInfo = staffWorkbookState.getCourseInfo();
     timetableFees.classList.toggle('fees-known-student', !!record);
     updateDateAlerts(courseInfo);
-    const census = formatShortDate(getCalculatedCensusDate(courseInfo));
+    const semesterStart = formatShortDate(getConfiguredSemesterDate('semester_Start_Date'));
+    const census = formatShortDate(getCalculatedCensusDate());
     const censusText = census || 'not set';
+    const internationalUnitPrice = getConfiguredSemesterFee('price_per_Unit');
+    const domesticUnitPrice = getConfiguredSemesterFee('price_per_CSP_Unit');
+    const internationalUnitText = internationalUnitPrice ? formatCurrency(internationalUnitPrice) : 'not set';
+    const domesticUnitText = domesticUnitPrice ? formatCurrency(domesticUnitPrice) : 'not set';
 
     const bachelorUrl = 'https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/';
     const bachelorLink = `<a class="timetable-fee-link" href="${bachelorUrl}" target="_blank" rel="noopener">Bachelor of IT</a>`;
@@ -8450,12 +8560,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const feeDetails = getFeeStatusDetails(record);
 
     timetableFees.innerHTML = [
+      `<p class="timetable-fee-paragraph"><strong>Semester start date:</strong> ${escapeHtml(semesterStart || 'not set')}.</p>`,
       `<p class="timetable-fee-paragraph census"><strong>Census Date:</strong> ${escapeHtml(
         censusText
       )}. Subjects withdrawn before this day are graded W (Withdrawal), not N (Fail), and are eligible for refund.</p>`,
       feeChoiceHeading,
-      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="international"><strong class="timetable-fee-heading">International student fees: </strong> For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
-      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="domestic"><strong class="timetable-fee-heading">Domestic student fees: </strong> See the ${bachelorLink} web site. .</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="international"><strong class="timetable-fee-heading">International student fees: </strong> ${escapeHtml(internationalUnitText)} per unit. For students holding a Student Visa (SV), tuition fees are set based on the commencement date of the course. All fee-related enquiries must be directed to the International Office.</p>`,
+      `<p class="timetable-fee-paragraph timetable-fee-hideable" data-fee-option="domestic"><strong class="timetable-fee-heading">Domestic student fees: </strong> ${escapeHtml(domesticUnitText)} per CSP unit. See the ${bachelorLink} website.</p>`,
     ].join('');
     if (feeDetails.feeStatus && feeDetails.feeStatus !== 'unknown') {
       const hiddenOption = feeDetails.domesticFees ? 'international' : 'domestic';
@@ -9114,9 +9225,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const canSelectPlanned = () => {
     const plannedCount = Array.from(subjectState.values()).filter((st) => st?.toggled).length;
-    const completedCount = getCompletedCount();
-    const totalSubjects = getTotalSubjectsCount();
-    const remaining = totalSubjects - completedCount;
+    // Surplus electives do not satisfy outstanding core or major requirements.
+    const remaining = getRemainingSubjectsNotPlanned();
     const baseCap = Math.min(getLoadThreshold(), remaining || getLoadThreshold());
     const finishCap = remaining <= 5 ? remaining : baseCap;
     const cap = Math.max(baseCap, finishCap);
@@ -9343,6 +9453,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     ['BIT214', 'BIT213', 'BIT313', 'BIT314'].filter((code) => !!subjectState.get(code)?.completed);
 
   const updateSubjectCounts = () => {
+    renderSasFootnote();
     if (!subjectCountsEl) return;
     updateNextSemesterPlanningNote();
     const completed = getCompletedCount();
@@ -9652,12 +9763,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
     const selectedCount = selectedCodes.length;
+    const threshold = getLoadThreshold();
+    const hasSelected = selectedCount >= threshold && threshold > 0;
     if (moveToNextSemesterButton) {
       const hasCurrentEnrolments = Array.from(currentEnrolmentStudentRecord.values()).some(
         (code) => !withdrawnCurrentEnrolments.has(code)
       );
       const canAdvanceSemester = selectedCount > 0 || hasCurrentEnrolments;
-      moveToNextSemesterButton.hidden = planningSemesterOffset === 0 && !canAdvanceSemester;
+      const showMoveToNextSemester = planningSemesterOffset > 0 || hasSelected;
+      moveToNextSemesterButton.hidden = !showMoveToNextSemester;
+      moveToNextSemesterButton.style.display = showMoveToNextSemester ? '' : 'none';
       moveToNextSemesterButton.disabled = !canAdvanceSemester;
       moveToNextSemesterButton.classList.toggle('disabled', !canAdvanceSemester);
       moveToNextSemesterButton.setAttribute('aria-disabled', canAdvanceSemester ? 'false' : 'true');
@@ -9669,8 +9784,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     clearButton.disabled = !hasAny;
     clearButton.classList.toggle('disabled', !hasAny);
     clearButton.style.display = hasAny ? '' : 'none';
-    const threshold = getLoadThreshold();
-    const hasSelected = selectedCount >= threshold && threshold > 0;
     if (mainGridDetailsButton) {
       mainGridDetailsButton.textContent = hasSelected ? 'My times' : 'Subject details';
       mainGridDetailsButton.dataset.mode = hasSelected ? 'selected' : 'available';
@@ -10131,20 +10244,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       titleBlock.className = 'tooltip-title';
       titleBlock.innerHTML = `<div class="tooltip-code">${id}</div><div class="tooltip-name">${name}</div>`;
       tooltip.appendChild(titleBlock);
-      const prereqList = prerequisites[id] || [];
+      const prerequisiteDisplay = getPrerequisiteDisplayValue(id);
       const prereqHtml =
-        prereqList.length === 0
+        prerequisiteDisplay === 'None'
           ? '<div class="pre-block"><span class="inline-strong">Prerequisites:</span> None</div>'
-          : `<div class="pre-block"><span class="inline-strong">Prerequisites:</span> ${prereqList
-            .map((code) => `<span class="inline-strong prereq-item">${code}</span>`)
-            .join(', ')}</div>`;
-      const slot = timeSlots[data.slot] || data.slot || '';
-      const day = data.day || '';
-      const timeHtml =
-        slot || day
-          ? `<div class="tooltip-day"><strong class="tooltip-day-text">${day || 'N/A'} ${slot || ''}</strong></div>`
-          : '';
-      const hasTooltipTime = !!timeHtml;
+          : `<div class="pre-block"><span class="inline-strong">Prerequisites:</span> ${escapeHtml(
+            prerequisiteDisplay
+          )}</div>`;
+      const timeHtml = '<div class="tooltip-day"><strong class="tooltip-day-text">Time?  Not set</strong></div>';
+      const hasTooltipTime = true;
       const availability = getSemesterAvailability(id);
       const canSelectThisSemesterForTooltip = () => {
         if (!isRunningThisSemester(id)) return false;
@@ -10198,8 +10306,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const streamLabel = buildStreamLabel(id);
       const categoryInfo = describeSubjectCategory(id);
       const majorCoreText = categoryInfo.category === 'Core' ? 'Core' : categoryInfo.stream || 'Elective';
-      const roomHtml = data.room ? `<div><span class="inline-strong">Room:</span> ${data.room}</div>` : '';
-      const lecturerHtml = data.teacher ? `<div><span class="inline-strong">Lecturer:</span> ${data.teacher}</div>` : '';
+      const roomHtml = '<div class="tooltip-room"><span class="inline-strong">Room:</span> <span class="tooltip-room-name">TBA</span></div>';
+      const lecturerHtml = '<div class="tooltip-lecturer"><span class="inline-strong">Lecturer:</span> <span class="tooltip-lecturer-name">TBA</span></div>';
       const depsList =
         dependents[id] && dependents[id].length
           ? dependents[id].filter((d) => !String(d).toUpperCase().startsWith('ELECTIVE'))
@@ -10275,6 +10383,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       tooltip.style.top = `${offsetY}px`;
     };
     const showTooltip = (event) => {
+      if (!isPlaceholderCell()) {
+        const currentId = cell.dataset.subject || id;
+        const currentData = getPlanningTimetableData(currentId);
+        const currentRange = formatTimeRange(timeSlots[currentData.slot] || '');
+        const currentTime = currentData.slot === 'Time?'
+          ? 'Time?'
+          : currentRange || 'Time?  Not set';
+        const tooltipDayText = tooltip.querySelector('.tooltip-day-text');
+        if (tooltipDayText) {
+          tooltipDayText.textContent = planningSemesterOffset > 0
+            ? unplannedDayAndTimeText
+            : !isRunningThisSemester(currentId)
+              ? 'Day and time not set'
+              : `${currentData.day || 'N/A'} ${currentTime}`.trim();
+        }
+        const roomName = tooltip.querySelector('.tooltip-room-name');
+        if (roomName) roomName.textContent = currentData.room || 'TBA';
+        const lecturerName = tooltip.querySelector('.tooltip-lecturer-name');
+        if (lecturerName) lecturerName.textContent = currentData.teacher || 'TBA';
+      }
       if (document.querySelector('.modal-overlay.show')) {
         cell.classList.remove('show-tooltip', 'hover-active');
         return;
@@ -10332,7 +10460,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     cell.classList.add('clickable');
     cell.tabIndex = 0;
     cell.setAttribute('role', 'button');
-    const base = typeClass || meta.classes.find((c) => baseTypeClasses.includes(c)) || '';
+    const base = meta.classes.includes('core')
+      ? 'core'
+      : typeClass || meta.classes.find((c) => baseTypeClasses.includes(c)) || '';
     cell.classList.add(base || 'elective');
     const inElectivesGrid = isElectivesGridCell(cell);
     const isPlaceholderCode = code.startsWith('ELECTIVE');
@@ -10362,7 +10492,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const noteEl = document.createElement('span');
     noteEl.className = 'prerequsites-note';
-    noteEl.textContent = meta.note || '\u00a0';
+    noteEl.textContent = getSubjectRequisiteNote(code) || '\u00a0';
 
     cell.appendChild(codeEl);
     cell.appendChild(titleEl);
@@ -10370,6 +10500,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (hasSas) {
       const sasEl = document.createElement('div');
       sasEl.className = 'sas';
+      sasEl.dataset.sasTooltip = getSasBadgeTooltip(code);
       cell.appendChild(sasEl);
     }
   };
@@ -10429,7 +10560,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           attachTooltip(cell);
           return;
         }
-        renderSubjectInCell(cell, entry, 'core');
+        renderSubjectInCell(cell, entry, null);
         attachTooltip(cell);
       });
     });
@@ -10463,14 +10594,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     );
     cell.classList.add('elective');
     cell.classList.add('elective-stream');
-    const isNS = majorConfig.ns.codes.includes(code);
-    const isBA = majorConfig.ba.codes.includes(code);
-    const isSD = majorConfig.sd.codes.includes(code);
-    if (isNS) cell.classList.add('network');
-    else if (isBA) cell.classList.add('ba');
-    else if (isSD) cell.classList.add('software', 'sd-elective');
-    if (code === 'BIT245') {
-      if (currentMajor === 'ns') cell.classList.add('dual-split');
+    const majorKeys = getSubjectMajorKeys(code);
+    if (majorKeys.length > 1) {
+      cell.classList.add('dual-split');
+    } else if (majorKeys[0] === 'ns') {
+      cell.classList.add('network');
+    } else if (majorKeys[0] === 'ba') {
+      cell.classList.add('ba');
+    } else if (majorKeys[0] === 'sd') {
+      cell.classList.add('software', 'sd-elective');
     }
   };
 
@@ -10645,7 +10777,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         const fullLoadSelected = plannedCount >= loadThreshold;
         if (!bitReqPlanned.majorCompletedEnough || (fullLoadSelected && !bitReqPlanned.majorConcurrentOk)) {
-          missing.push('5 major subjects (at least 3 completed; remaining concurrent)');
+          missing.push(getBit371MajorRequirementText({ includeCompletedMinimum: true }));
         }
       }
       if (missing.length) {
@@ -11613,6 +11745,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   if (moveToNextSemesterButton) {
     moveToNextSemesterButton.addEventListener('click', moveToNextPlanningSemester);
   }
+  if (timetableMoveToNextSemesterButton) {
+    timetableMoveToNextSemesterButton.addEventListener('click', () => {
+      if (timetableMoveToNextSemesterButton.hidden) return;
+      hideTimetableModal();
+      moveToNextPlanningSemester();
+    });
+  }
 
   const closeAllInstructionSteps = () => {
     instructionsStepToggles.forEach((toggle) => {
@@ -12512,31 +12651,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getSlotHeading = (slot = '') => {
-    const normalized = slot.trim().toLowerCase();
-    if (normalized === 'morning') return `Morning.  ${timeSlots.Morning}`;
-    if (normalized === 'afternoon') return `Afternoon.  ${timeSlots.Afternoon}`;
-    return slot;
+    const abbrev = getSlotAbbreviation(slot);
+    const range = formatTimeRange(timeSlots[slot] || '');
+    return range ? `${abbrev}. ${range}` : `${abbrev}. Time?  Not set`;
   };
 
   const formatTimeValue = (value = '') =>
-    value.replace(/(\d)(am|pm)/gi, '$1 $2').replace(/am|pm/gi, (match) => match.toUpperCase());
+    String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s*(am|pm)$/, ' $1');
 
   const formatTimeRange = (range = '') => {
     if (!range) return '';
     return range
       .split('-')
       .map((part) => formatTimeValue(part.trim()))
-      .join(' - ');
+      .join(' : ');
   };
 
   const getSemesterNote = (date = new Date()) => {
-    return getCurrentSemesterKey(date);
+    return getConfiguredSemesterIdentity()?.semester || getCurrentSemesterKey(date);
   };
 
   const getSlotHeadingWithTime = (slot = '') => {
     const abbrev = getSlotAbbreviation(slot);
     const range = formatTimeRange(timeSlots[slot] || '');
-    if (!range) return abbrev;
+    if (!range) return `${abbrev}. Time?  Not set`;
     return `${abbrev}. ${range}`;
   };
 
@@ -12580,7 +12721,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const isCore = categoryInfo.category === 'Core';
     const categoryLabel = isCore ? 'Core subject' : 'Major/Elective subject';
     const streamLabel = !isCore ? (categoryInfo.stream || buildStreamLabel(id)) : '';
-    const prereqList = prerequisites[id] || [];
     const coreqList = corequisites[id] || [];
     const depsList =
       dependents[id] && dependents[id].length
@@ -12589,7 +12729,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const lines = [
       { label: 'Category', value: categoryLabel },
       !isCore ? { label: 'Stream', value: streamLabel } : null,
-      { label: 'Prerequisites', value: prereqList.length ? prereqList.join(', ') : 'None' },
+      { label: 'Prerequisites', value: getPrerequisiteDisplayValue(id) },
       coreqList.length ? { label: 'Co-requisites', value: coreqList.join(', ') } : null,
       { label: 'Needed for', value: depsList.length ? depsList.join(', ') : 'None' },
     ].filter(Boolean);
@@ -13468,7 +13608,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   };
 
-  const showCourseTimetableModal = () => {
+  const showCourseTimetableModal = async () => {
+    await semesterConfigReady;
     if (!courseTimetableModal) return;
     renderCourseTimetableModal();
     updateCourseTimetableTeacherCopyButton();
@@ -14342,12 +14483,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     overrideToggle.addEventListener('change', () => {
       overrideMode = overrideToggle.checked;
       updateOverrideUI();
+      if (courseMapModal?.classList.contains('show')) updateCourseMapStatuses();
     });
   }
   if (courseMapOverrideToggle) {
     courseMapOverrideToggle.addEventListener('change', () => {
       overrideMode = courseMapOverrideToggle.checked;
       updateOverrideUI();
+      if (courseMapModal?.classList.contains('show')) updateCourseMapStatuses();
     });
   }
   if (livePrereqToggle) {
@@ -14377,14 +14520,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     el.classList.add('copy-flash');
   };
   const getDefaultStudentEmailSubject = (date = new Date()) => {
-    const semesterKey = getCurrentSemesterKey(date);
+    const identity = getConfiguredSemesterIdentity();
+    const semesterKey = identity?.semester || getCurrentSemesterKey(date);
     const semester = semesterKey === 'S1' ? '1' : semesterKey === 'S2' ? '2' : 'Summer';
-    return `Enrolment ${date.getFullYear()} Semester ${semester}`;
+    return `Enrolment ${identity?.year || date.getFullYear()} Semester ${semester}`;
   };
   const getStudentEnrolmentEmailSubject = (date = new Date()) => {
-    const semesterKey = getCurrentSemesterKey(date);
+    const identity = getConfiguredSemesterIdentity();
+    const semesterKey = identity?.semester || getCurrentSemesterKey(date);
     const semester = semesterKey === 'S1' ? '1' : semesterKey === 'S2' ? '2' : 'Summer';
-    return `Enrolment, ${date.getFullYear()} Sem ${semester}`;
+    return `Enrolment, ${identity?.year || date.getFullYear()} Sem ${semester}`;
   };
   const buildStudentMailto = async (emails, firstName, subjectLine = '') => {
     const list = (emails || []).map((email) => email.trim()).filter(Boolean);
@@ -14835,8 +14980,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (settingsCardThemeColoursToggle) {
       settingsCardThemeColoursToggle.addEventListener('change', () => {
-        if (!settingsCardThemeColoursToggle.checked) resetColourBackgroundSettingsForCurrentPalette();
-        applyCardTheme(settingsCardThemeColoursToggle.checked ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME);
+        const coloursOn = settingsCardThemeColoursToggle.checked;
+        if (!coloursOn) resetColourBackgroundSettingsForCurrentPalette();
+        applyCardTheme(coloursOn ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME);
       });
     }
     if (settingsCourseMapDefaultToggle) {
@@ -15062,10 +15208,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const has = (cls) =>
       metaClasses.includes(cls) || (cellOrId?.classList && cellOrId.classList.contains(cls));
     if (has('core')) return 'Core';
-    if (has('network')) return 'Network Security';
-    if (has('software')) return 'Software Development';
-    if (has('ba')) return 'Business Analytics';
-    if (has('dual') || has('dual-split')) return 'Business Analytics | Software Development';
+    const majorNames = getSubjectMajorKeys(id).map((key) =>
+      String(majorConfig[key]?.configKey || key).replace(/\s*\([^)]+\)\s*$/, '')
+    );
+    if (majorNames.length) return majorNames.join(' | ');
     if (id && (id.startsWith('ELECTIVE') || id.startsWith('USE'))) return 'Elective';
     if (has('elective')) return 'Elective';
     return 'Other';
@@ -15076,11 +15222,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!id) return { category: 'Subject', stream: '' };
     const metaClasses = subjectMeta[id]?.classes || [];
     const isCore = metaClasses.includes('core');
-    const isElective = metaClasses.includes('elective') || id.startsWith('ELECTIVE') || id.startsWith('USE');
     const stream = buildStreamLabel(cellOrId || id);
     if (isCore) return { category: 'Core', stream: '' };
-    if (isElective) return { category: 'Elective', stream };
-    return { category: 'Major', stream };
+    if (id.startsWith('ELECTIVE') || id.startsWith('USE')) return { category: 'Elective', stream };
+    const majorKeys = getSubjectMajorKeys(id);
+    const selectedMajorKey = getSelectedMajorKey();
+    const isSelectedMajorSubject = selectedMajorKey
+      ? majorKeys.includes(selectedMajorKey)
+      : majorKeys.length > 0;
+    return { category: isSelectedMajorSubject ? 'Major' : 'Elective', stream };
   }
 
   let currentTableMode = 'selected';
@@ -15110,6 +15260,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!timetableTable) return;
     const tbody = timetableTable.querySelector('tbody');
     tbody.innerHTML = '';
+    if (semesterConfigError) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.className = 'timetable-configuration-error';
+      cell.colSpan = 7;
+      cell.setAttribute('role', 'alert');
+      cell.textContent = semesterConfigError;
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      timetableClashError = null;
+      refreshErrorAlerts();
+      syncSubjectTableActions(timetableTable);
+      return;
+    }
     const rows = rowsOverride || getSelectedRows();
 
     const toRender = rows.length ? rows : [{ id: 'N/A', data: {}, cell: null, dayShort: '', slot: '', placeholder: true }];
@@ -15136,7 +15300,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         const name = getSubjectName(id);
         const day = dayShort || 'N/A';
-        const time = data.slot ? (timeSlots[data.slot] || data.slot) : 'N/A';
+        const time = data.slot ? (formatTimeRange(timeSlots[data.slot] || '') || 'Time?  Not set') : 'N/A';
         const room = data.room || 'N/A';
         const teacher = data.teacher || 'N/A';
         const stream = buildStreamLabel(id);
@@ -15201,7 +15365,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const conflictLabels = conflictKeys
         .map((key) => {
           const [day, slotName] = key.split('|');
-          const timeLabel = slotName ? `${slotName} (${timeSlots[slotName] || slotName})` : slotName;
+          const timeRange = formatTimeRange(timeSlots[slotName] || '');
+          const timeLabel = slotName
+            ? `${getSlotAbbreviation(slotName)}${timeRange ? ` (${timeRange})` : ''}`
+            : slotName;
           return `${day} ${timeLabel}`.trim();
         })
         .filter(Boolean);
@@ -15396,7 +15563,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!id) return false;
     if (id.startsWith('ELECTIVE') || id.startsWith('USE')) return true;
     const meta = subjectMeta[id]?.classes || [];
-    return meta.includes('elective');
+    if (meta.includes('core')) return false;
+    const effectiveMajorKey = getSelectedMajorKey() || currentMajorKey;
+    return !isSubjectInMajor(id, effectiveMajorKey);
   };
 
   const isElectiveLabel = (value = '') => String(value || '').toLowerCase().includes('elective');
@@ -15840,9 +16009,939 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const parseConfig = (text) => {
       try {
         const parsed = JSON.parse(text);
-        semesterConfigDetails = parsed?.semesterDetails || null;
-      } catch {
+        const details = parsed?.semesterDetails || {};
+        const year = String(details.year || '').trim();
+        const semester = String(details.semester_S1_S2_SS || '').trim().toUpperCase();
+        const pattern = String(parsed?.fileNaming?.triageFilePattern || '').trim();
+        if (!/^\d{4}$/.test(year)) throw new Error('semesterDetails.year must be a four-digit year.');
+        if (!['S1', 'S2', 'SS'].includes(semester)) {
+          throw new Error('semesterDetails.semester_S1_S2_SS must be S1, S2, or SS.');
+        }
+        const parseDate = (key) => {
+          const value = String(details[key] || '').trim();
+          const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+          if (!match) throw new Error(`semesterDetails.${key} must use DD/MM/YYYY.`);
+          const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+          if (
+            date.getFullYear() !== Number(match[3]) ||
+            date.getMonth() !== Number(match[2]) - 1 ||
+            date.getDate() !== Number(match[1])
+          ) {
+            throw new Error(`semesterDetails.${key} is not a valid date.`);
+          }
+          return date;
+        };
+        const semesterStart = parseDate('semester_Start_Date');
+        const endWeekTwo = parseDate('end_of_2nd_week_Date');
+        const censusDate = parseDate('census_Date');
+        if (semesterStart.getFullYear() !== Number(year)) {
+          throw new Error('semesterDetails.semester_Start_Date must be in semesterDetails.year.');
+        }
+        if (endWeekTwo < semesterStart || censusDate < endWeekTwo) {
+          throw new Error('Semester dates must be ordered: start, end of week 2, then census.');
+        }
+        ['price_per_Unit', 'price_per_CSP_Unit'].forEach((key) => {
+          const amount = Number(String(details[key] || '').replace(/[^0-9.-]/g, ''));
+          if (!Number.isFinite(amount) || amount <= 0) {
+            throw new Error(`semesterDetails.${key} must be a positive currency amount.`);
+          }
+        });
+        const configuredTimeSlots = parsed?.timeSlots || {};
+        const parseTime = (slotId, key) => {
+          const value = String(configuredTimeSlots?.[slotId]?.[key] || '').trim();
+          const match = value.match(/^(0?[1-9]|1[0-2]):([0-5]\d)\s+(am|pm)$/);
+          if (!match) {
+            throw new Error(`timeSlots.${slotId}.${key} must use a time such as 9:00 am or 2:30 pm.`);
+          }
+          const hour = (Number(match[1]) % 12) + (match[3] === 'pm' ? 12 : 0);
+          const minutes = Number(match[2]);
+          return {
+            value: `${Number(match[1])}:${String(minutes).padStart(2, '0')} ${match[3]}`,
+            minutes: hour * 60 + minutes,
+          };
+        };
+        const amStart = parseTime('AM', 'start');
+        const amEnd = parseTime('AM', 'end');
+        const pmStart = parseTime('PM', 'start');
+        const pmEnd = parseTime('PM', 'end');
+        if (amEnd.minutes <= amStart.minutes || pmEnd.minutes <= pmStart.minutes) {
+          throw new Error('Each configured time slot must end after it starts.');
+        }
+        const configuredStaff = parsed?.staff;
+        if (!configuredStaff || typeof configuredStaff !== 'object' || Array.isArray(configuredStaff)) {
+          throw new Error('staff must be an object keyed by staff ID.');
+        }
+        const staffNamesById = new Map();
+        Object.entries(configuredStaff).forEach(([rawStaffId, staffDetails]) => {
+          const staffId = String(rawStaffId || '').trim().toUpperCase();
+          const displayName = String(staffDetails?.displayName || '').trim();
+          if (!/^[A-Z0-9]+$/.test(staffId)) throw new Error(`staff ID "${rawStaffId}" is invalid.`);
+          if (!displayName) throw new Error(`staff.${staffId}.displayName is required.`);
+          if (staffDetails?.isTeam !== undefined && typeof staffDetails.isTeam !== 'boolean') {
+            throw new Error(`staff.${staffId}.isTeam must be true or false.`);
+          }
+          staffNamesById.set(staffId, displayName);
+        });
+        const configuredTimetable = parsed?.timetable;
+        if (!configuredTimetable || typeof configuredTimetable !== 'object' || Array.isArray(configuredTimetable)) {
+          throw new Error('timetable must be an object keyed by subject code.');
+        }
+        const configuredSubjects = parsed?.subjects;
+        if (!configuredSubjects || typeof configuredSubjects !== 'object' || Array.isArray(configuredSubjects)) {
+          throw new Error('subjects must be an object keyed by subject code.');
+        }
+        const resolvedSubjectNames = {};
+        const resolvedCoreCodes = [];
+        const resolvedMajorCodes = Object.fromEntries(
+          Object.keys(majorConfig).map((majorKey) => [majorKey, []])
+        );
+        const majorKeyByCode = new Map(
+          Object.entries(majorConfig).map(([majorKey, config]) => [config.code, majorKey])
+        );
+        const supportedSubjectDefinitionKeys = new Set([
+          'name',
+          'core',
+          'majorStreams',
+          'prerequisites',
+          'corequisites',
+          'majorSubjectRequirement',
+        ]);
+        Object.entries(configuredSubjects).forEach(([rawCode, definition]) => {
+          if (rawCode.startsWith('_')) return;
+          const code = String(rawCode || '').trim().toUpperCase();
+          if (!/^BIT\d{3}$/.test(code) || rawCode !== code) {
+            throw new Error(`subjects key "${rawCode}" must be an uppercase subject code such as BIT105.`);
+          }
+          if (!definition || typeof definition !== 'object' || Array.isArray(definition)) {
+            throw new Error(`subjects.${code} must be an object.`);
+          }
+          const unsupportedDefinitionKeys = Object.keys(definition)
+            .filter((key) => !key.startsWith('_') && !supportedSubjectDefinitionKeys.has(key));
+          if (unsupportedDefinitionKeys.length) {
+            throw new Error(
+              `subjects.${code} contains unsupported field${unsupportedDefinitionKeys.length === 1 ? '' : 's'}: ${unsupportedDefinitionKeys.join(', ')}.`
+            );
+          }
+          const name = String(definition.name || '').trim();
+          if (!name || /[\r\n\t]/.test(name)) {
+            throw new Error(`subjects.${code}.name must be a non-empty, single-line name.`);
+          }
+          if (definition.core !== undefined && typeof definition.core !== 'boolean') {
+            throw new Error(`subjects.${code}.core must be true or false.`);
+          }
+          const configuredStreams = definition.majorStreams ?? [];
+          if (!Array.isArray(configuredStreams)) {
+            throw new Error(`subjects.${code}.majorStreams must be an array.`);
+          }
+          const seenStreams = new Set();
+          const majorKeys = configuredStreams.map((rawStream) => {
+            const streamCode = String(rawStream || '').trim().toUpperCase();
+            const majorKey = majorKeyByCode.get(streamCode);
+            if (!majorKey) {
+              throw new Error(`subjects.${code}.majorStreams contains unsupported stream "${rawStream}". Use NS, BA, or SD.`);
+            }
+            if (seenStreams.has(streamCode)) {
+              throw new Error(`subjects.${code}.majorStreams contains duplicate stream "${streamCode}".`);
+            }
+            seenStreams.add(streamCode);
+            return majorKey;
+          });
+          if (definition.core === true && majorKeys.length) {
+            throw new Error(`subjects.${code} cannot be both core and a major subject.`);
+          }
+          resolvedSubjectNames[code] = name;
+          if (definition.core === true) resolvedCoreCodes.push(code);
+          majorKeys.forEach((majorKey) => resolvedMajorCodes[majorKey].push(code));
+        });
+        if (!Object.keys(resolvedSubjectNames).length) throw new Error('subjects must contain at least one subject.');
+        if (resolvedCoreCodes.length !== programRequirements.core) {
+          throw new Error(`subjects must contain ${programRequirements.core} subjects with core set to true.`);
+        }
+        Object.entries(resolvedMajorCodes).forEach(([majorKey, codes]) => {
+          if (codes.length !== programRequirements.major) {
+            throw new Error(
+              `subjects must assign ${programRequirements.major} subjects to the ${majorConfig[majorKey].code} stream.`
+            );
+          }
+        });
+        const resolvedCoreSet = new Set(resolvedCoreCodes);
+        const parseSubjectCodeList = (values, path) => {
+          if (!Array.isArray(values)) throw new Error(`${path} must be an array.`);
+          const resolved = [];
+          const seen = new Set();
+          values.forEach((rawCode) => {
+            const code = String(rawCode || '').trim().toUpperCase();
+            if (!Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)) {
+              throw new Error(`${path} contains unknown subject code "${rawCode}".`);
+            }
+            if (seen.has(code)) {
+              throw new Error(`${path} contains duplicate subject code "${code}".`);
+            }
+            seen.add(code);
+            resolved.push(code);
+          });
+          return resolved;
+        };
+        const configuredCourseMapLayout = parsed?.courseMapLayout;
+        if (
+          !configuredCourseMapLayout ||
+          typeof configuredCourseMapLayout !== 'object' ||
+          Array.isArray(configuredCourseMapLayout)
+        ) {
+          throw new Error('courseMapLayout must be an object.');
+        }
+        const supportedCourseMapLayoutKeys = new Set([
+          'topRows',
+          'majorPlaceholders',
+          ...Object.values(majorConfig).map((config) => config.courseMapLayoutKey),
+        ]);
+        const unsupportedCourseMapLayoutKeys = Object.keys(configuredCourseMapLayout)
+          .filter((key) => !key.startsWith('_') && !supportedCourseMapLayoutKeys.has(key));
+        if (unsupportedCourseMapLayoutKeys.length) {
+          throw new Error(
+            `courseMapLayout contains unsupported layout${unsupportedCourseMapLayoutKeys.length === 1 ? '' : 's'}: ${unsupportedCourseMapLayoutKeys.join(', ')}.`
+          );
+        }
+        const parseCourseMapSubjectRows = (values, path, columnCount, expectedCodes) => {
+          if (!Array.isArray(values) || values.length !== 2) {
+            throw new Error(`${path} must contain exactly two rows.`);
+          }
+          const seen = new Set();
+          const resolvedRows = values.map((row, rowIndex) => {
+            if (!Array.isArray(row) || row.length !== columnCount) {
+              throw new Error(`${path} row ${rowIndex + 1} must contain exactly ${columnCount} subject codes.`);
+            }
+            return row.map((rawCode, columnIndex) => {
+              if (typeof rawCode !== 'string') {
+                throw new Error(`${path} row ${rowIndex + 1}, column ${columnIndex + 1} must be a subject code.`);
+              }
+              const code = rawCode.trim().toUpperCase();
+              if (!Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)) {
+                throw new Error(`${path} contains unknown subject code "${rawCode}".`);
+              }
+              if (seen.has(code)) {
+                throw new Error(`${path} contains duplicate subject code "${code}".`);
+              }
+              seen.add(code);
+              return code;
+            });
+          });
+          const expectedSet = new Set(expectedCodes);
+          const missingCodes = expectedCodes.filter((code) => !seen.has(code));
+          const unexpectedCodes = [...seen].filter((code) => !expectedSet.has(code));
+          if (missingCodes.length || unexpectedCodes.length) {
+            const details = [
+              missingCodes.length ? `missing ${missingCodes.join(', ')}` : '',
+              unexpectedCodes.length ? `unexpected ${unexpectedCodes.join(', ')}` : '',
+            ].filter(Boolean).join('; ');
+            throw new Error(`${path} does not match the configured subjects (${details}).`);
+          }
+          return resolvedRows;
+        };
+        const resolvedCourseMapTopRows = parseCourseMapSubjectRows(
+          configuredCourseMapLayout.topRows,
+          'courseMapLayout.topRows',
+          7,
+          resolvedCoreCodes
+        );
+        const configuredCourseMapPlaceholders = configuredCourseMapLayout.majorPlaceholders;
+        if (!Array.isArray(configuredCourseMapPlaceholders) || configuredCourseMapPlaceholders.length !== 2) {
+          throw new Error('courseMapLayout.majorPlaceholders must contain exactly two rows.');
+        }
+        const seenCourseMapPlaceholders = new Set();
+        const resolvedCourseMapMajorPlaceholderRows = configuredCourseMapPlaceholders.map((row, rowIndex) => {
+          if (!Array.isArray(row) || row.length !== 5) {
+            throw new Error(`courseMapLayout.majorPlaceholders row ${rowIndex + 1} must contain exactly five labels.`);
+          }
+          return row.map((rawLabel, columnIndex) => {
+            if (typeof rawLabel !== 'string') {
+              throw new Error(
+                `courseMapLayout.majorPlaceholders row ${rowIndex + 1}, column ${columnIndex + 1} must be a label.`
+              );
+            }
+            const match = rawLabel.trim().match(/^(Major|Elective)(?:\s+Subject)?\s+([1-9]\d*)$/i);
+            if (!match) {
+              throw new Error(`courseMapLayout.majorPlaceholders label "${rawLabel}" must use Major 1 or Elective 1 format.`);
+            }
+            const type = match[1].toLowerCase() === 'major' ? 'Major' : 'Elective';
+            const slot = Number(match[2]);
+            const maximum = type === 'Major' ? programRequirements.major : programRequirements.elective;
+            if (slot > maximum) {
+              throw new Error(`courseMapLayout.majorPlaceholders contains unsupported label "${rawLabel}".`);
+            }
+            const expectedColumn = type === 'Major'
+              ? Math.floor((slot - 1) / 2)
+              : 3 + Math.floor((slot - 1) / 2);
+            if (columnIndex !== expectedColumn) {
+              throw new Error(
+                `courseMapLayout.majorPlaceholders ${type} ${slot} must stay in column ${expectedColumn + 1}.`
+              );
+            }
+            const label = `${type} Subject ${slot}`;
+            if (seenCourseMapPlaceholders.has(label)) {
+              throw new Error(`courseMapLayout.majorPlaceholders contains duplicate label "${type} ${slot}".`);
+            }
+            seenCourseMapPlaceholders.add(label);
+            return label;
+          });
+        });
+        const requiredCourseMapPlaceholders = [
+          ...Array.from({ length: programRequirements.major }, (_, index) => `Major Subject ${index + 1}`),
+          ...Array.from({ length: programRequirements.elective }, (_, index) => `Elective Subject ${index + 1}`),
+        ];
+        const missingCourseMapPlaceholders = requiredCourseMapPlaceholders
+          .filter((label) => !seenCourseMapPlaceholders.has(label));
+        if (missingCourseMapPlaceholders.length) {
+          throw new Error(
+            `courseMapLayout.majorPlaceholders is missing ${missingCourseMapPlaceholders.map((label) => label.replace(' Subject', '')).join(', ')}.`
+          );
+        }
+        const bit245MajorKeys = Object.entries(resolvedMajorCodes)
+          .filter(([, codes]) => codes.includes('BIT245'))
+          .map(([majorKey]) => majorKey);
+        const unsupportedSharedSubjects = Object.keys(resolvedSubjectNames).filter((code) => {
+          const majorKeys = Object.entries(resolvedMajorCodes)
+            .filter(([, codes]) => codes.includes(code))
+            .map(([majorKey]) => majorKey);
+          return majorKeys.length > 1 && code !== 'BIT245';
+        });
+        if (unsupportedSharedSubjects.length) {
+          throw new Error(
+            `Course Map layout currently supports BIT245 as its only shared-stream subject; also shared: ${unsupportedSharedSubjects.join(', ')}.`
+          );
+        }
+        if (
+          bit245MajorKeys.length !== 2 ||
+          !bit245MajorKeys.includes('ba') ||
+          !bit245MajorKeys.includes('sd')
+        ) {
+          throw new Error('subjects.BIT245.majorStreams must contain BA and SD for the shared Course Map card.');
+        }
+        const resolvedCourseMapStreamLayouts = {};
+        Object.entries(majorConfig).forEach(([majorKey, config]) => {
+          const path = `courseMapLayout.${config.courseMapLayoutKey}`;
+          const rows = parseCourseMapSubjectRows(
+            configuredCourseMapLayout[config.courseMapLayoutKey],
+            path,
+            3,
+            resolvedMajorCodes[majorKey]
+          );
+          resolvedCourseMapStreamLayouts[majorKey] = rows.map((row) =>
+            row.map((code) => code === 'BIT245'
+              ? { placeholder: `bit245-${majorKey}`, code }
+              : code)
+          );
+        });
+        const configuredSasSpecialisations = parsed?.sasSpecialisations;
+        if (
+          !configuredSasSpecialisations ||
+          typeof configuredSasSpecialisations !== 'object' ||
+          Array.isArray(configuredSasSpecialisations)
+        ) {
+          throw new Error('sasSpecialisations must be an object.');
+        }
+        const resolvedSasCommonCodes = parseSubjectCodeList(
+          configuredSasSpecialisations.commonRequiredSubjects,
+          'sasSpecialisations.commonRequiredSubjects'
+        );
+        if (!resolvedSasCommonCodes.length) {
+          throw new Error('sasSpecialisations.commonRequiredSubjects must contain at least one subject.');
+        }
+        resolvedSasCommonCodes.forEach((code) => {
+          if (!resolvedCoreSet.has(code)) {
+            throw new Error(`sasSpecialisations.commonRequiredSubjects contains non-core subject "${code}".`);
+          }
+        });
+        const configuredSasAwards = configuredSasSpecialisations.awards;
+        if (
+          !configuredSasAwards ||
+          typeof configuredSasAwards !== 'object' ||
+          Array.isArray(configuredSasAwards)
+        ) {
+          throw new Error('sasSpecialisations.awards must be an object.');
+        }
+        const resolvedSasAwards = {};
+        Object.entries(configuredSasAwards).forEach(([awardKey, award]) => {
+          if (awardKey.startsWith('_')) return;
+          if (!award || typeof award !== 'object' || Array.isArray(award)) {
+            throw new Error(`sasSpecialisations.awards.${awardKey} must be an object.`);
+          }
+          const name = String(award.name || '').trim();
+          const url = String(award.url || '').trim();
+          const minimumCompleted = Number(award.minimumCompleted);
+          const groupLabel = String(award.additionalSubjectGroupLabel || '').trim();
+          if (!name || /[\r\n\t]/.test(name)) {
+            throw new Error(`sasSpecialisations.awards.${awardKey}.name must be a non-empty, single-line name.`);
+          }
+          try {
+            const parsedUrl = new URL(url);
+            if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') throw new Error();
+          } catch {
+            throw new Error(`sasSpecialisations.awards.${awardKey}.url must be a valid web address.`);
+          }
+          const additionalSubjects = parseSubjectCodeList(
+            award.additionalSubjects,
+            `sasSpecialisations.awards.${awardKey}.additionalSubjects`
+          );
+          if (!additionalSubjects.length) {
+            throw new Error(`sasSpecialisations.awards.${awardKey}.additionalSubjects must contain at least one subject.`);
+          }
+          if (
+            !Number.isInteger(minimumCompleted) ||
+            minimumCompleted < 1 ||
+            minimumCompleted > additionalSubjects.length
+          ) {
+            throw new Error(
+              `sasSpecialisations.awards.${awardKey}.minimumCompleted must be a whole number from 1 to ${additionalSubjects.length}.`
+            );
+          }
+          const commonDuplicates = additionalSubjects.filter((code) => resolvedSasCommonCodes.includes(code));
+          if (commonDuplicates.length) {
+            throw new Error(
+              `sasSpecialisations.awards.${awardKey}.additionalSubjects repeats common subject${commonDuplicates.length === 1 ? '' : 's'}: ${commonDuplicates.join(', ')}.`
+            );
+          }
+          if (
+            award.additionalSubjectGroupLabel !== undefined &&
+            (!groupLabel || /[\r\n\t]/.test(groupLabel))
+          ) {
+            throw new Error(
+              `sasSpecialisations.awards.${awardKey}.additionalSubjectGroupLabel must be a non-empty, single-line label.`
+            );
+          }
+          resolvedSasAwards[awardKey] = {
+            name,
+            url,
+            minimumCompleted,
+            additionalSubjects,
+            additionalSubjectGroupLabel: groupLabel,
+          };
+        });
+        if (!Object.keys(resolvedSasAwards).length) {
+          throw new Error('sasSpecialisations.awards must contain at least one award.');
+        }
+        const resolvedSasSpecialisations = {
+          commonRequiredSubjects: resolvedSasCommonCodes,
+          awards: resolvedSasAwards,
+        };
+        const resolvedSasSet = new Set(resolvedSasCommonCodes);
+        Object.values(resolvedSasAwards).forEach((award) => {
+          award.additionalSubjects.forEach((code) => resolvedSasSet.add(code));
+        });
+        const configuredMainPage = parsed?.mainPage;
+        if (
+          !configuredMainPage ||
+          typeof configuredMainPage !== 'object' ||
+          Array.isArray(configuredMainPage)
+        ) {
+          throw new Error('mainPage must be an object.');
+        }
+        const configuredMajorSubjectOrder = configuredMainPage.majorSubjectOrder;
+        if (
+          !configuredMajorSubjectOrder ||
+          typeof configuredMajorSubjectOrder !== 'object' ||
+          Array.isArray(configuredMajorSubjectOrder)
+        ) {
+          throw new Error('mainPage.majorSubjectOrder must be an object.');
+        }
+        const supportedOrderKeys = new Set(Object.values(majorConfig).map((config) => config.code));
+        const unsupportedOrderKeys = Object.keys(configuredMajorSubjectOrder)
+          .filter((key) => !key.startsWith('_') && !supportedOrderKeys.has(key));
+        if (unsupportedOrderKeys.length) {
+          throw new Error(
+            `mainPage.majorSubjectOrder contains unsupported stream${unsupportedOrderKeys.length === 1 ? '' : 's'}: ${unsupportedOrderKeys.join(', ')}.`
+          );
+        }
+        const resolvedMajorDisplayOrder = {};
+        Object.entries(majorConfig).forEach(([majorKey, config]) => {
+          const orderedCodes = parseSubjectCodeList(
+            configuredMajorSubjectOrder[config.code],
+            `mainPage.majorSubjectOrder.${config.code}`
+          );
+          const memberSet = new Set(resolvedMajorCodes[majorKey]);
+          const missingCodes = resolvedMajorCodes[majorKey].filter((code) => !orderedCodes.includes(code));
+          const unexpectedCodes = orderedCodes.filter((code) => !memberSet.has(code));
+          if (missingCodes.length || unexpectedCodes.length) {
+            const details = [
+              missingCodes.length ? `missing ${missingCodes.join(', ')}` : '',
+              unexpectedCodes.length ? `unexpected ${unexpectedCodes.join(', ')}` : '',
+            ].filter(Boolean).join('; ');
+            throw new Error(`mainPage.majorSubjectOrder.${config.code} must match subjects.majorStreams (${details}).`);
+          }
+          resolvedMajorDisplayOrder[majorKey] = orderedCodes;
+        });
+        const parseLayoutHeadings = (values, path) => {
+          if (!Array.isArray(values) || values.length !== 5) {
+            throw new Error(`${path} must contain exactly five headings.`);
+          }
+          return values.map((rawHeading, index) => {
+            if (typeof rawHeading !== 'string') {
+              throw new Error(`${path}[${index + 1}] must be text.`);
+            }
+            const heading = rawHeading.trim();
+            if (!heading || /[\r\n\t]/.test(heading)) {
+              throw new Error(`${path}[${index + 1}] must be a non-empty, single-line heading.`);
+            }
+            return heading;
+          });
+        };
+        const configuredMainGridLayout = configuredMainPage.mainGridLayout;
+        if (!Array.isArray(configuredMainGridLayout) || configuredMainGridLayout.length !== 6) {
+          throw new Error('mainPage.mainGridLayout must contain one heading row and five subject rows.');
+        }
+        parseLayoutHeadings(configuredMainGridLayout[0], 'mainPage.mainGridLayout heading row');
+        const mainGridPlaceholderCounts = {
+          MAJOR: 0,
+          INFO: 0,
+          ELECTIVE1: 0,
+          ELECTIVE2: 0,
+          ELECTIVE3: 0,
+          ELECTIVE4: 0,
+        };
+        const mainGridFixedCodes = [];
+        const resolvedMainGridLayout = configuredMainGridLayout.slice(1).map((row, rowIndex) => {
+          if (!Array.isArray(row) || row.length !== 5) {
+            throw new Error(`mainPage.mainGridLayout subject row ${rowIndex + 1} must contain exactly five entries.`);
+          }
+          return row.map((rawEntry, columnIndex) => {
+            if (typeof rawEntry !== 'string') {
+              throw new Error(
+                `mainPage.mainGridLayout subject row ${rowIndex + 1}, column ${columnIndex + 1} must be text.`
+              );
+            }
+            const entry = rawEntry.trim().toUpperCase();
+            if (!entry) {
+              throw new Error(
+                `mainPage.mainGridLayout subject row ${rowIndex + 1}, column ${columnIndex + 1} cannot be blank.`
+              );
+            }
+            if (Object.prototype.hasOwnProperty.call(mainGridPlaceholderCounts, entry)) {
+              mainGridPlaceholderCounts[entry] += 1;
+              return entry;
+            }
+            if (!Object.prototype.hasOwnProperty.call(resolvedSubjectNames, entry)) {
+              throw new Error(
+                `mainPage.mainGridLayout contains unknown subject or placeholder "${rawEntry}".`
+              );
+            }
+            mainGridFixedCodes.push(entry);
+            return entry;
+          });
+        });
+        if (mainGridPlaceholderCounts.MAJOR !== programRequirements.major) {
+          throw new Error(
+            `mainPage.mainGridLayout must contain exactly ${programRequirements.major} MAJOR placeholders.`
+          );
+        }
+        if (mainGridPlaceholderCounts.INFO !== 1 || resolvedMainGridLayout[0][4] !== 'INFO') {
+          throw new Error(
+            'mainPage.mainGridLayout must keep its single INFO placeholder in subject row 1, column 5.'
+          );
+        }
+        ['ELECTIVE1', 'ELECTIVE2', 'ELECTIVE3', 'ELECTIVE4'].forEach((placeholder) => {
+          if (mainGridPlaceholderCounts[placeholder] !== 1) {
+            throw new Error(`mainPage.mainGridLayout must contain exactly one ${placeholder} placeholder.`);
+          }
+        });
+        const duplicateMainGridCodes = mainGridFixedCodes.filter(
+          (code, index) => mainGridFixedCodes.indexOf(code) !== index
+        );
+        const missingMainGridCodes = resolvedCoreCodes.filter((code) => !mainGridFixedCodes.includes(code));
+        const unexpectedMainGridCodes = mainGridFixedCodes.filter((code) => !resolvedCoreSet.has(code));
+        if (duplicateMainGridCodes.length || missingMainGridCodes.length || unexpectedMainGridCodes.length) {
+          const details = [
+            duplicateMainGridCodes.length
+              ? `duplicate ${[...new Set(duplicateMainGridCodes)].join(', ')}`
+              : '',
+            missingMainGridCodes.length ? `missing core ${missingMainGridCodes.join(', ')}` : '',
+            unexpectedMainGridCodes.length ? `non-core ${unexpectedMainGridCodes.join(', ')}` : '',
+          ].filter(Boolean).join('; ');
+          throw new Error(`mainPage.mainGridLayout fixed subjects must match all core subjects (${details}).`);
+        }
+        const configuredElectiveSequence = configuredMainPage.electiveSequence;
+        if (
+          !configuredElectiveSequence ||
+          typeof configuredElectiveSequence !== 'object' ||
+          Array.isArray(configuredElectiveSequence)
+        ) {
+          throw new Error('mainPage.electiveSequence must be an object.');
+        }
+        parseLayoutHeadings(
+          configuredElectiveSequence.headings,
+          'mainPage.electiveSequence.headings'
+        );
+        const supportedElectiveSequenceKeys = new Set([
+          'headings',
+          ...Object.values(majorConfig).map((config) => config.electiveSequenceKey),
+        ]);
+        const unsupportedElectiveSequenceKeys = Object.keys(configuredElectiveSequence)
+          .filter((key) => !key.startsWith('_') && !supportedElectiveSequenceKeys.has(key));
+        if (unsupportedElectiveSequenceKeys.length) {
+          throw new Error(
+            `mainPage.electiveSequence contains unsupported layout${unsupportedElectiveSequenceKeys.length === 1 ? '' : 's'}: ${unsupportedElectiveSequenceKeys.join(', ')}.`
+          );
+        }
+        const resolvedElectiveGridLayouts = {};
+        Object.entries(majorConfig).forEach(([majorKey, config]) => {
+          const path = `mainPage.electiveSequence.${config.electiveSequenceKey}`;
+          const configuredRows = configuredElectiveSequence[config.electiveSequenceKey];
+          if (!Array.isArray(configuredRows) || configuredRows.length !== 3) {
+            throw new Error(`${path} must contain exactly three rows.`);
+          }
+          const seenCodes = new Set();
+          const layoutCodes = [];
+          const resolvedRows = configuredRows.map((row, rowIndex) => {
+            if (!Array.isArray(row) || row.length !== 5) {
+              throw new Error(`${path} row ${rowIndex + 1} must contain exactly five entries.`);
+            }
+            return row.map((rawCode, columnIndex) => {
+              if (typeof rawCode !== 'string') {
+                throw new Error(
+                  `${path} row ${rowIndex + 1}, column ${columnIndex + 1} must be a subject code or an empty string.`
+                );
+              }
+              const code = rawCode.trim().toUpperCase();
+              if (!code) return null;
+              if (!Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)) {
+                throw new Error(`${path} contains unknown subject code "${rawCode}".`);
+              }
+              if (seenCodes.has(code)) {
+                throw new Error(`${path} contains duplicate subject code "${code}".`);
+              }
+              seenCodes.add(code);
+              layoutCodes.push(code);
+              return code;
+            });
+          });
+          const eligibleCodes = Object.keys(resolvedSubjectNames).filter(
+            (code) => !resolvedCoreSet.has(code) && !resolvedMajorCodes[majorKey].includes(code)
+          );
+          const missingCodes = eligibleCodes.filter((code) => !seenCodes.has(code));
+          const unexpectedCodes = layoutCodes.filter((code) => !eligibleCodes.includes(code));
+          if (missingCodes.length || unexpectedCodes.length) {
+            const details = [
+              missingCodes.length ? `missing ${missingCodes.join(', ')}` : '',
+              unexpectedCodes.length ? `not eligible ${unexpectedCodes.join(', ')}` : '',
+            ].filter(Boolean).join('; ');
+            throw new Error(`${path} must contain every available elective exactly once (${details}).`);
+          }
+          resolvedElectiveGridLayouts[majorKey] = resolvedRows;
+        });
+        const resolvedSubjectMeta = {};
+        Object.entries(resolvedSubjectNames).forEach(([code, name]) => {
+          const classes = [];
+          if (resolvedCoreSet.has(code)) {
+            classes.push('core');
+          } else {
+            const majorKeys = Object.entries(resolvedMajorCodes)
+              .filter(([, codes]) => codes.includes(code))
+              .map(([key]) => key);
+            if (majorKeys.length > 1) {
+              classes.push('dual-split');
+            } else if (majorKeys.length === 1) {
+              classes.push(majorConfig[majorKeys[0]].typeClass);
+            } else {
+              classes.push('elective');
+            }
+          }
+          if (resolvedSasSet.has(code)) classes.push('sas');
+          resolvedSubjectMeta[code] = { name, classes };
+        });
+        const legacyRequisiteKeys = ['prerequisites', 'corequisites', 'specialRequirements']
+          .filter((key) => Object.prototype.hasOwnProperty.call(parsed, key));
+        if (legacyRequisiteKeys.length) {
+          throw new Error(
+            `Move the legacy ${legacyRequisiteKeys.join(', ')} section${legacyRequisiteKeys.length === 1 ? '' : 's'} into the relevant subjects objects.`
+          );
+        }
+        const resolvedPrerequisites = Object.fromEntries(
+          Object.keys(resolvedSubjectNames).map((code) => [code, []])
+        );
+        const resolvedCorequisites = {};
+        Object.keys(resolvedSubjectNames).forEach((code) => {
+          const definition = configuredSubjects[code];
+          const parseRequisites = (key) => {
+            if (definition[key] === undefined) return [];
+            const requirements = parseSubjectCodeList(
+              definition[key],
+              `subjects.${code}.${key}`
+            );
+            if (requirements.includes(code)) {
+              throw new Error(`subjects.${code}.${key} cannot refer to itself.`);
+            }
+            return requirements;
+          };
+          const subjectPrerequisites = parseRequisites('prerequisites');
+          const subjectCorequisites = parseRequisites('corequisites');
+          const prereqSet = new Set(subjectPrerequisites);
+          const conflictingCodes = subjectCorequisites
+            .filter((requirement) => prereqSet.has(requirement));
+          if (conflictingCodes.length) {
+            throw new Error(
+              `${code} cannot list the same subject as both a prerequisite and corequisite: ${conflictingCodes.join(', ')}.`
+            );
+          }
+          resolvedPrerequisites[code] = subjectPrerequisites;
+          if (subjectCorequisites.length) resolvedCorequisites[code] = subjectCorequisites;
+        });
+        const prerequisiteVisitState = new Map();
+        const validatePrerequisitePath = (code, path = []) => {
+          const visitState = prerequisiteVisitState.get(code) || 0;
+          if (visitState === 2) return;
+          if (visitState === 1) {
+            const cycleStart = path.indexOf(code);
+            const cycle = [...path.slice(Math.max(0, cycleStart)), code];
+            throw new Error(`Prerequisite cycle detected: ${cycle.join(' -> ')}.`);
+          }
+          prerequisiteVisitState.set(code, 1);
+          (resolvedPrerequisites[code] || []).forEach((requirement) => {
+            validatePrerequisitePath(requirement, [...path, code]);
+          });
+          prerequisiteVisitState.set(code, 2);
+        };
+        Object.keys(resolvedSubjectNames).forEach((code) => validatePrerequisitePath(code));
+        const unsupportedMajorSubjectRequirements = Object.entries(configuredSubjects)
+          .filter(([code, definition]) =>
+            !code.startsWith('_') &&
+            code !== 'BIT371' &&
+            definition?.majorSubjectRequirement !== undefined
+          )
+          .map(([code]) => code);
+        if (unsupportedMajorSubjectRequirements.length) {
+          throw new Error(
+            `majorSubjectRequirement is currently supported only for BIT371; also configured for ${unsupportedMajorSubjectRequirements.join(', ')}.`
+          );
+        }
+        const configuredBit371Requirement = configuredSubjects.BIT371?.majorSubjectRequirement;
+        if (
+          !configuredBit371Requirement ||
+          typeof configuredBit371Requirement !== 'object' ||
+          Array.isArray(configuredBit371Requirement)
+        ) {
+          throw new Error('subjects.BIT371.majorSubjectRequirement must be an object.');
+        }
+        const supportedMajorSubjectRequirementKeys = new Set([
+          'minimumCompletedMajorSubjects',
+          'minimumCompletedOrConcurrentMajorSubjects',
+        ]);
+        const unsupportedMajorSubjectRequirementKeys = Object.keys(configuredBit371Requirement)
+          .filter((key) => !key.startsWith('_') && !supportedMajorSubjectRequirementKeys.has(key));
+        if (unsupportedMajorSubjectRequirementKeys.length) {
+          throw new Error(
+            `subjects.BIT371.majorSubjectRequirement contains unsupported field${unsupportedMajorSubjectRequirementKeys.length === 1 ? '' : 's'}: ${unsupportedMajorSubjectRequirementKeys.join(', ')}.`
+          );
+        }
+        const minimumCompletedMajorSubjects =
+          Number(configuredBit371Requirement.minimumCompletedMajorSubjects);
+        const minimumCompletedOrConcurrentMajorSubjects =
+          Number(configuredBit371Requirement.minimumCompletedOrConcurrentMajorSubjects);
+        if (!Number.isInteger(minimumCompletedMajorSubjects) || minimumCompletedMajorSubjects < 1) {
+          throw new Error(
+            'subjects.BIT371.majorSubjectRequirement.minimumCompletedMajorSubjects must be a positive whole number.'
+          );
+        }
+        if (
+          !Number.isInteger(minimumCompletedOrConcurrentMajorSubjects) ||
+          minimumCompletedOrConcurrentMajorSubjects < minimumCompletedMajorSubjects
+        ) {
+          throw new Error(
+            'subjects.BIT371.majorSubjectRequirement.minimumCompletedOrConcurrentMajorSubjects must be a whole number greater than or equal to minimumCompletedMajorSubjects.'
+          );
+        }
+        if (minimumCompletedOrConcurrentMajorSubjects > programRequirements.major) {
+          throw new Error(
+            `subjects.BIT371.majorSubjectRequirement cannot require more than ${programRequirements.major} major subjects.`
+          );
+        }
+        const resolvedSpecialRequirements = {
+          BIT371: {
+            minimumCompletedMajorSubjects,
+            minimumCompletedOrConcurrentMajorSubjects,
+          },
+        };
+        const configuredSubjectsRunning = parsed?.subjectsRunning;
+        if (
+          !configuredSubjectsRunning ||
+          typeof configuredSubjectsRunning !== 'object' ||
+          Array.isArray(configuredSubjectsRunning)
+        ) {
+          throw new Error('subjectsRunning must be an object.');
+        }
+        const parseSemesterOnlyCodes = (key) => {
+          const codes = configuredSubjectsRunning[key];
+          if (!Array.isArray(codes)) throw new Error(`subjectsRunning.${key} must be an array.`);
+          const resolved = new Set();
+          codes.forEach((rawCode) => {
+            const code = String(rawCode || '').trim().toUpperCase();
+            if (!/^BIT\d{3}$/.test(code) || !Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)) {
+              throw new Error(`subjectsRunning.${key} contains invalid or unknown subject code "${rawCode}".`);
+            }
+            if (resolved.has(code)) {
+              throw new Error(`subjectsRunning.${key} contains duplicate subject code "${code}".`);
+            }
+            resolved.add(code);
+          });
+          return resolved;
+        };
+        const resolvedSemester1OnlyIds = parseSemesterOnlyCodes('semester1Only');
+        const resolvedSemester2OnlyIds = parseSemesterOnlyCodes('semester2Only');
+        const overlappingSemesterCodes = [...resolvedSemester1OnlyIds]
+          .filter((code) => resolvedSemester2OnlyIds.has(code));
+        if (overlappingSemesterCodes.length) {
+          throw new Error(
+            `subjectsRunning cannot list the same subject in both semesters: ${overlappingSemesterCodes.join(', ')}.`
+          );
+        }
+        const allowedDays = new Set(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
+        const slotNameById = { AM: 'Morning', PM: 'Afternoon' };
+        const resolvedTimetable = {};
+        const occupiedRooms = new Set();
+        Object.entries(configuredTimetable).forEach(([rawCode, row]) => {
+          const code = String(rawCode || '').trim();
+          if (!/^BIT\d{3}$/.test(code) || !Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)) {
+            throw new Error(`timetable subject code "${rawCode}" is invalid or missing from subjects.`);
+          }
+          if (!row || typeof row !== 'object' || Array.isArray(row)) {
+            throw new Error(`timetable.${code} must be an object.`);
+          }
+          const day = String(row.day || '').trim();
+          const timeId = String(row.time || '').trim().toUpperCase();
+          const room = String(row.room || '').trim();
+          const staffId = String(row?.staffId || '').trim().toUpperCase();
+          if (!allowedDays.has(day)) {
+            throw new Error(`timetable.${code}.day must be Monday, Tuesday, Wednesday, Thursday, or Friday.`);
+          }
+          if (!Object.prototype.hasOwnProperty.call(slotNameById, timeId)) {
+            throw new Error(`timetable.${code}.time must be AM or PM.`);
+          }
+          if (!room || /[\r\n\t]/.test(room)) {
+            throw new Error(`timetable.${code}.room is required and must be a single line.`);
+          }
+          if (!staffNamesById.has(staffId)) {
+            throw new Error(`timetable ${code} references unknown staff ID "${staffId || '(blank)'}".`);
+          }
+          const roomKey = `${day}|${timeId}|${room.toUpperCase()}`;
+          if (room.toUpperCase() !== 'TBA' && occupiedRooms.has(roomKey)) {
+            throw new Error(`timetable assigns ${room} to more than one subject on ${day} ${timeId}.`);
+          }
+          if (room.toUpperCase() !== 'TBA') occupiedRooms.add(roomKey);
+          resolvedTimetable[code] = {
+            day,
+            slot: slotNameById[timeId],
+            room,
+            teacher: staffNamesById.get(staffId),
+          };
+        });
+        if (!Object.keys(resolvedTimetable).length) throw new Error('timetable must contain at least one subject.');
+        if (semester === 'S1' || semester === 'S2') {
+          const excludedSet = semester === 'S1' ? resolvedSemester2OnlyIds : resolvedSemester1OnlyIds;
+          const expectedCodes = Object.keys(resolvedSubjectNames).filter((code) => !excludedSet.has(code));
+          const missingCodes = expectedCodes.filter((code) => !Object.prototype.hasOwnProperty.call(resolvedTimetable, code));
+          const unexpectedCodes = Object.keys(resolvedTimetable).filter((code) => excludedSet.has(code));
+          if (missingCodes.length) {
+            throw new Error(`timetable is missing ${semester} subject${missingCodes.length === 1 ? '' : 's'}: ${missingCodes.join(', ')}.`);
+          }
+          if (unexpectedCodes.length) {
+            throw new Error(`timetable includes subject${unexpectedCodes.length === 1 ? '' : 's'} not running in ${semester}: ${unexpectedCodes.join(', ')}.`);
+          }
+        }
+        if (
+          !pattern ||
+          !pattern.includes('{YYYY}') ||
+          !pattern.includes('{SEMESTER}') ||
+          !/\.xlsx$/i.test(pattern) ||
+          /[\\/]/.test(pattern) ||
+          /\{(?!YYYY\}|SEMESTER\})[^}]*\}/.test(pattern)
+        ) {
+          throw new Error('fileNaming.triageFilePattern must contain {YYYY}, {SEMESTER}, and an .xlsx extension.');
+        }
+        semesterConfig = parsed;
+        semesterConfigDetails = details;
+        currentSemesterKey = semester;
+        timeSlots.Morning = `${amStart.value} - ${amEnd.value}`;
+        timeSlots.Afternoon = `${pmStart.value} - ${pmEnd.value}`;
+        Object.keys(timetable).forEach((code) => delete timetable[code]);
+        Object.assign(timetable, resolvedTimetable);
+        semester1OnlyIds.clear();
+        resolvedSemester1OnlyIds.forEach((code) => semester1OnlyIds.add(code));
+        semester2OnlyIds.clear();
+        resolvedSemester2OnlyIds.forEach((code) => semester2OnlyIds.add(code));
+        Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
+        Object.assign(subjectMeta, resolvedSubjectMeta);
+        Object.entries(resolvedMajorCodes).forEach(([majorKey, codes]) => {
+          majorConfig[majorKey].codes = [...codes];
+          majorLayouts[majorKey] = [...resolvedMajorDisplayOrder[majorKey]];
+        });
+        mainGridLayout.splice(
+          0,
+          mainGridLayout.length,
+          ...resolvedMainGridLayout.map((row) => [...row])
+        );
+        Object.entries(resolvedElectiveGridLayouts).forEach(([majorKey, rows]) => {
+          electiveGridLayouts[majorKey] = rows.map((row) => [...row]);
+        });
+        courseMapTopRows.splice(
+          0,
+          courseMapTopRows.length,
+          ...resolvedCourseMapTopRows.map((row) => [...row])
+        );
+        courseMapMajorPlaceholderRows.splice(
+          0,
+          courseMapMajorPlaceholderRows.length,
+          ...resolvedCourseMapMajorPlaceholderRows.map((row) => [...row])
+        );
+        Object.entries(resolvedCourseMapStreamLayouts).forEach(([majorKey, rows]) => {
+          courseMapStreamLayouts[majorKey] = rows.map((row) =>
+            row.map((entry) => typeof entry === 'object' ? { ...entry } : entry)
+          );
+        });
+        sasSpecialisations.commonRequiredSubjects = [
+          ...resolvedSasSpecialisations.commonRequiredSubjects,
+        ];
+        Object.keys(sasSpecialisations.awards).forEach((awardKey) => {
+          delete sasSpecialisations.awards[awardKey];
+        });
+        Object.assign(sasSpecialisations.awards, resolvedSasSpecialisations.awards);
+        Object.keys(prerequisites).forEach((code) => delete prerequisites[code]);
+        Object.assign(prerequisites, resolvedPrerequisites);
+        Object.keys(corequisites).forEach((code) => delete corequisites[code]);
+        Object.assign(corequisites, resolvedCorequisites);
+        Object.keys(specialRequirements).forEach((code) => delete specialRequirements[code]);
+        Object.assign(specialRequirements, resolvedSpecialRequirements);
+        rebuildDependents();
+        courseMapTooltipHtmlCache.clear();
+        configuredTriageFileName = pattern
+          .replace(/\{YYYY\}/g, year)
+          .replace(/\{SEMESTER\}/g, semester);
+        semesterConfigError = '';
+      } catch (error) {
+        semesterConfig = null;
         semesterConfigDetails = null;
+        configuredTriageFileName = '';
+        timeSlots.Morning = '';
+        timeSlots.Afternoon = '';
+        Object.keys(timetable).forEach((code) => delete timetable[code]);
+        semester1OnlyIds.clear();
+        semester2OnlyIds.clear();
+        Object.keys(prerequisites).forEach((code) => delete prerequisites[code]);
+        Object.keys(corequisites).forEach((code) => delete corequisites[code]);
+        Object.keys(specialRequirements).forEach((code) => delete specialRequirements[code]);
+        Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
+        Object.keys(majorConfig).forEach((majorKey) => {
+          majorConfig[majorKey].codes = [];
+          majorLayouts[majorKey] = [];
+          electiveGridLayouts[majorKey] = [];
+          courseMapStreamLayouts[majorKey] = [];
+        });
+        mainGridLayout.length = 0;
+        courseMapTopRows.length = 0;
+        courseMapMajorPlaceholderRows.length = 0;
+        sasSpecialisations.commonRequiredSubjects = [];
+        Object.keys(sasSpecialisations.awards).forEach((awardKey) => {
+          delete sasSpecialisations.awards[awardKey];
+        });
+        rebuildDependents();
+        semesterConfigError = `Configuration error: ${error?.message || 'semester-config.json is invalid.'}`;
       }
     };
     if (isFileProtocol) {
@@ -15852,37 +16951,96 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         xhr.overrideMimeType('application/json');
         xhr.onload = () => {
           if (String(xhr.responseText || '').trim()) parseConfig(xhr.responseText);
+          else semesterConfigError = 'Configuration error: semester-config.json is empty or could not be loaded.';
           resolve();
         };
-        xhr.onerror = () => resolve();
+        xhr.onerror = () => {
+          semesterConfigError = 'Configuration error: semester-config.json could not be loaded.';
+          resolve();
+        };
         xhr.send();
       });
     } else {
       try {
         const response = await fetch('semester-config.json', { cache: 'no-store' });
         if (response.ok) parseConfig(await response.text());
+        else semesterConfigError = 'Configuration error: semester-config.json could not be loaded.';
       } catch {
+        semesterConfig = null;
         semesterConfigDetails = null;
+        configuredTriageFileName = '';
+        timeSlots.Morning = '';
+        timeSlots.Afternoon = '';
+        Object.keys(timetable).forEach((code) => delete timetable[code]);
+        semester1OnlyIds.clear();
+        semester2OnlyIds.clear();
+        Object.keys(prerequisites).forEach((code) => delete prerequisites[code]);
+        Object.keys(corequisites).forEach((code) => delete corequisites[code]);
+        Object.keys(specialRequirements).forEach((code) => delete specialRequirements[code]);
+        Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
+        Object.keys(majorConfig).forEach((majorKey) => {
+          majorConfig[majorKey].codes = [];
+          majorLayouts[majorKey] = [];
+          electiveGridLayouts[majorKey] = [];
+          courseMapStreamLayouts[majorKey] = [];
+        });
+        mainGridLayout.length = 0;
+        courseMapTopRows.length = 0;
+        courseMapMajorPlaceholderRows.length = 0;
+        sasSpecialisations.commonRequiredSubjects = [];
+        Object.keys(sasSpecialisations.awards).forEach((awardKey) => {
+          delete sasSpecialisations.awards[awardKey];
+        });
+        rebuildDependents();
+        semesterConfigError = 'Configuration error: semester-config.json could not be loaded.';
       }
+    }
+    if (dropZoneTextEl && !lastDroppedFileInfo) {
+      dropZoneTextEl.textContent = semesterConfigError ||
+        `(Or for lesser functionality, drag-and-drop '${configuredTriageFileName}', 'Source.xlsx', and 'Email Scripts.htm'. Double-clicking here also gives the reduced functionality.)`;
     }
     settingsPwaSaveSetupButton?.addEventListener('click', saveInstalledPwaSetup);
     settingsPwaClearSetupButton?.addEventListener('click', clearInstalledPwaSetup);
     updateDateAlerts(staffWorkbookState.getCourseInfo());
+    refreshValidSubjectCodes();
+    renderSasFootnote();
+    if (!semesterConfigError) {
+      getAllSubjectCodes().forEach((code) => {
+        if (!subjectState.has(code)) subjectState.set(code, { completed: false, toggled: false });
+      });
+      applyPlannerStateFromUrl();
+      applyMajorConfig(currentMajorValue);
+      if (courseMapBuilt) {
+        restoreCourseMapSelectedListToSidebar();
+        courseMapBuilt = false;
+        if (courseMapModal?.classList.contains('show')) renderCourseMapModal();
+      }
+    }
+    applySubjectStateToCells();
+    syncSubjectRequisiteNotes();
+    subjects.forEach((cell) => attachTooltip(cell));
+    conditionalRecompute({ force: true, usePlanned: completedMode ? false : null });
     updateSubjectCounts();
-    if (timetableModal?.classList.contains('show')) updateTimetableFees();
+    resetAvailableListSnapshot();
+    updateSelectedList();
+    if (timetableModal?.classList.contains('show')) {
+      const rows = currentTableMode === 'available' ? getAvailableRowsForDisplay() : getSelectedRows();
+      renderTimetableTable(rows, true);
+      updateTimetableFees();
+    }
+    if (courseTimetableModal?.classList.contains('show')) renderCourseTimetableModal();
     scheduleFolderShortcutPanelRefresh();
   }
 
-  const getCalculatedCensusDate = (courseInfo = {}) => {
-    const fromConfig = getDateOnly(toDateValue(semesterConfigDetails?.census_Date || semesterConfigDetails?.Census_Date));
-    if (fromConfig) return fromConfig;
-    const fromSemesterStart = getCensusDateFromSemesterStart(courseInfo?.Semester_Start_Date);
-    if (fromSemesterStart) return fromSemesterStart;
-    const fromNamedCensus = getDateOnly(toDateValue(courseInfo?.Census_Date || courseInfo?.CensusDate));
-    if (fromNamedCensus) return fromNamedCensus;
-    const endWeekTwo = getDateOnly(toDateValue(courseInfo?.EndOfWeekTwoDate));
-    return endWeekTwo ? addDays(endWeekTwo, 14) : null;
+  const getConfiguredSemesterDate = (key) =>
+    getDateOnly(toDateValue(semesterConfigDetails?.[key]));
+
+  const getConfiguredSemesterFee = (key) => {
+    const value = Number(String(semesterConfigDetails?.[key] || '').replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(value) && value > 0 ? value : null;
   };
+
+  const getCalculatedCensusDate = () => getConfiguredSemesterDate('census_Date');
 
   const updateDateAlerts = (courseInfo) => {
     censusWarning = null;
@@ -15891,13 +17049,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     lateEnrolmentInfo = null;
     dateNoticeLines = [];
 
-    if (!courseInfo) return;
     const today = getDateOnly(new Date());
     if (!today) return;
 
-    const semesterStart = getDateOnly(toDateValue(courseInfo.Semester_Start_Date));
-    const endWeekTwo = getDateOnly(toDateValue(courseInfo.EndOfWeekTwoDate));
-    const censusDate = getCalculatedCensusDate(courseInfo);
+    const semesterStart = getConfiguredSemesterDate('semester_Start_Date');
+    const endWeekTwo = getConfiguredSemesterDate('end_of_2nd_week_Date');
+    const censusDate = getCalculatedCensusDate();
 
     if (endWeekTwo) {
       const weekOneEnd = semesterStart ? addDays(semesterStart, 7) : addDays(endWeekTwo, -7);
@@ -16293,7 +17450,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         `${feeTypeLabelHtml}${visaSuffix ? ` ${visaSuffix}` : ''}${scheduleLink}`
       );
       if (!feeDetails.domesticFees && feeDetails.feeStatus !== 'unknown') {
-        const unitPriceValue = parseCreditPoints(courseInfo?.Price_per_Unit || '');
+        const unitPriceValue = getConfiguredSemesterFee('price_per_Unit');
         const unitPrice = unitPriceValue && unitPriceValue > 0 ? formatCurrency(unitPriceValue) : '';
         if (unitPrice) {
           lines.push(`<span class="student-summary-lead">Cost Per Unit:</span> ${escapeHtml(unitPrice)}`);
@@ -16555,7 +17712,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return hasAnySignOffPref(merged) ? merged : null;
   };
 
-  const getConfiguredSemesterIdentity = () => {
+  function getConfiguredSemesterIdentity() {
     const yearText = String(semesterConfigDetails?.year || '').trim();
     const semester = String(semesterConfigDetails?.semester_S1_S2_SS || '').trim().toUpperCase();
     if (!/^\d{4}$/.test(yearText) || !['S1', 'S2', 'SS'].includes(semester)) return null;
@@ -16564,7 +17721,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       shortYear: yearText.slice(-2),
       semester,
     };
-  };
+  }
   const getSemesterIdentityAfterOffset = (offset = 0) => {
     const base = getConfiguredSemesterIdentity() || {
       year: new Date().getFullYear(),
@@ -16601,11 +17758,46 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         : 'Summer Semester';
     return `${year} ${semesterLabel}`;
   };
+  const getTimetableSemesterLabel = () =>
+    formatLongSemesterIdentity(getSemesterIdentityAfterOffset(planningSemesterOffset));
+  const getTimetableHeadingText = (mode) => {
+    const semesterLabel = getTimetableSemesterLabel();
+    if (mode === 'available') {
+      return planningSemesterOffset > 0
+        ? `Available subjects for ${semesterLabel}. Click a row to select that subject.`
+        : 'Available Subjects. Click a row to select that subject.';
+    }
+    return planningSemesterOffset > 0
+      ? `Subjects planned for ${semesterLabel}`
+      : `Timetable for ${semesterLabel}`;
+  };
   const updateNextSemesterPlanningNote = () => {
     if (!nextSemesterPlanningNote) return;
     const isActive = planningSemesterOffset > 0;
     nextSemesterPlanningNote.hidden = !isActive;
-    if (!isActive) return;
+    const restorePosition = (element, parent, nextSibling) => {
+      if (!element || !parent) return;
+      if (nextSibling?.parentElement === parent) parent.insertBefore(element, nextSibling);
+      else parent.appendChild(element);
+    };
+    if (!isActive) {
+      restorePosition(
+        moveToNextSemesterButton,
+        moveToNextSemesterOriginalParent,
+        moveToNextSemesterOriginalNextSibling
+      );
+      restorePosition(
+        nextSemesterPlanningNote,
+        nextSemesterPlanningNoteOriginalParent,
+        nextSemesterPlanningNoteOriginalNextSibling
+      );
+      return;
+    }
+    const sidebar = resetSection?.closest('.sidebar');
+    if (sidebar && moveToNextSemesterButton) {
+      resetSection.insertAdjacentElement('afterend', moveToNextSemesterButton);
+      moveToNextSemesterButton.insertAdjacentElement('afterend', nextSemesterPlanningNote);
+    }
     const selectionPeriod = getSemesterIdentityAfterOffset(planningSemesterOffset);
     const graduationPeriod = getEstimatedGraduationSemesterIdentity();
     const isComplete = getRemainingSubjectsCount() === 0;
@@ -16633,16 +17825,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         nextSemesterGraduationPeriod.textContent = `Expected graduation semester: ${formatLongSemesterIdentity(graduationPeriod)}`;
       }
     }
-    requestAnimationFrame(() => {
-      const sidebar = nextSemesterPlanningNote.closest('.sidebar');
-      if (!sidebar || nextSemesterPlanningNote.hidden || !resetSection || !moveToNextSemesterButton) return;
-      const sidebarRect = sidebar.getBoundingClientRect();
-      const resetRect = resetSection.getBoundingClientRect();
-      const moveRect = moveToNextSemesterButton.getBoundingClientRect();
-      const gapMidpoint = (resetRect.bottom + moveRect.top) / 2;
-      const top = gapMidpoint - sidebarRect.top - (nextSemesterPlanningNote.offsetHeight / 2);
-      nextSemesterPlanningNote.style.top = `${Math.round(top)}px`;
-    });
   };
   window.addEventListener('resize', updateNextSemesterPlanningNote, { passive: true });
   const getConfiguredIntakeName = () => {
@@ -19762,15 +20944,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return opened;
   }
 
-  const buildStudentFormsReturnedClipboardText = async () => {
+  const buildStudentFormsReturnedClipboardData = async () => {
     await parseEmailScripts();
     const section = await extractEmailScriptsSectionByHeadings(
       getEmailScriptsSectionHeadings('student-dec-returned')
     );
     const sectionText = String(section?.text || '').trim();
-    return ['Received, thanks ', '', sectionText]
-      .filter((part, index) => index < 2 || part)
-      .join('\n');
+    return {
+      plain: ['Received, thanks ', '', sectionText]
+        .filter((part, index) => index < 2 || part)
+        .join('\n'),
+      html: `<p>Received, thanks </p>${section?.html || ''}`,
+    };
   };
 
   async function launchStudentFormsCreateWorkflow(button = null) {
@@ -19792,8 +20977,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     try {
       const opened = await openFolderShortcutPath(targetPath, 'Student Forms student folder', { mkdirPath: targetPath });
       if (!opened) return false;
-      const responseText = await buildStudentFormsReturnedClipboardText().catch(() => 'Received, thanks ');
-      await copyPlainText(responseText);
+      const response = await buildStudentFormsReturnedClipboardData().catch(() => ({
+        plain: 'Received, thanks ',
+        html: '<p>Received, thanks </p>',
+      }));
+      await copyHtmlPlainToClipboard(response.html, response.plain);
       await new Promise((resolve) => setTimeout(resolve, 150));
       await copyPlainText(targetPath);
       if (button) triggerFlash(button);
@@ -20661,17 +21849,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getPreferredTriageNames = () => {
-    const intakeRaw = String(getIntakeNameHint() || '').trim();
-    // Expected intake form like "Enrol 26_S1" -> triage targets "Triage_2026_S1.xlsx" / "Triage_26_S1.xlsx".
-    const m = intakeRaw.match(/enrol\s*(\d{2,4})\s*[_-]?\s*s([12])/i);
-    if (!m) return [];
-    const yyOrYear = String(m[1] || '');
-    const sem = `S${m[2]}`;
-    const year4 = yyOrYear.length === 2 ? `20${yyOrYear}` : yyOrYear;
-    const names = new Set([
-      `triage_${year4}_${sem}.xlsx`,
-    ]);
-    return Array.from(names);
+    return configuredTriageFileName ? [configuredTriageFileName] : [];
   };
 
   const isCopyVariantName = (name = '') => {
@@ -20681,11 +21859,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const isTriageWorkbookName = (name = '') => {
     const clean = String(name || '').trim();
+    if (configuredTriageFileName && clean.toLowerCase() === configuredTriageFileName.toLowerCase()) return true;
     if (!/^triage(?:$|[\s_-]).*\.xlsx$/i.test(clean)) return false;
     if (/^triage\s*updates?\.xlsx$/i.test(clean)) return false;
     if (/^triage[_\s-]*updates?\.xlsx$/i.test(clean)) return false;
     const base = clean.replace(/\.xlsx$/i, '').trim();
-    return /^triage(?:[\s_-]+)(20\d{2})(?:[\s_-]+)(?:s(?:em(?:ester)?)?[\s_-]*[12])$/i.test(base);
+    return /^triage(?:[\s_-]+)(20\d{2})(?:[\s_-]+)(?:s(?:em(?:ester)?)?[\s_-]*(?:1|2|s))$/i.test(base);
   };
 
   const pickPreferredTriageName = (names = []) => {
@@ -20914,6 +22093,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const loadFilesFromDirectoryHandle = async (dirHandle, options = {}) => {
     const { sourceOnly = false } = options || {};
+    await semesterConfigReady;
+    if (semesterConfigError) {
+      renderDropZoneStatus([semesterConfigError]);
+      return false;
+    }
     if (!dirHandle) return false;
     const allowed = await ensureHandlePermission(dirHandle);
     if (!allowed) return false;
@@ -21598,7 +22782,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return loadFileLocationsFromText(content, options);
   };
 
-  const handleSourceFilesSelection = (files = []) => {
+  const handleSourceFilesSelection = async (files = []) => {
+    await semesterConfigReady;
+    if (semesterConfigError) {
+      renderDropZoneStatus([semesterConfigError]);
+      return;
+    }
     const list = Array.from(files || []);
     if (!list.length) return;
     const sourceWorkbook = list.find((f) => /^source.*\.xlsx$/i.test(f.name || ''));
@@ -22185,7 +23374,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const prereqEl = document.createElement('div');
       prereqEl.className = 'course-map-prereqs';
       if (code === 'BIT371') {
-        prereqEl.textContent = 'Pre: BIT242 & 5 majors';
+        prereqEl.textContent = `Pre: ${getPrerequisiteDisplayValue(code, { includeCompletedMinimum: false })}`;
         cell.appendChild(prereqEl);
       } else if (prereqs.length || coreqs.length) {
         const parts = [];
@@ -22424,14 +23613,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStaffFullTimetableButton = null;
     courseMapStaffAlertButtonsHostEl = null;
 
-    const coreRows = [
-      ['BIT106', 'BIT111', 'BIT112', 'BIT231', 'BIT241', 'BIT314', 'BIT352'],
-      ['BIT121', 'BIT105', 'BIT108', 'BIT230', 'BIT242', 'BIT371', 'BIT372'],
-    ];
-    const majorRows = [
-      ['Major Subject 1', 'Major Subject 3', 'Major Subject 5', 'Elective Subject 1', 'Elective Subject 3'],
-      ['Major Subject 2', 'Major Subject 4', 'Major Subject 6', 'Elective Subject 2', 'Elective Subject 4'],
-    ];
+    const coreRows = courseMapTopRows;
+    const majorRows = courseMapMajorPlaceholderRows;
     const networkRows = courseMapStreamLayouts.ns;
     const baRows = courseMapStreamLayouts.ba;
     const sdRows = courseMapStreamLayouts.sd;
@@ -22958,14 +24141,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (isCurrent) return 'course-map-status-current';
       if (st.toggled) return 'course-map-status-selected';
       if (st.completed) return 'course-map-status-passed';
-      const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
+      const { prereqMetNow, coreqMetPlanned } = getRequisiteStatus({
         id: code,
         completedSet,
         plannedSet,
         usePlanned: false,
       });
       const hasCoreq = (corequisites[code] || []).length > 0;
-      let meetsNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
+      let meetsNow = hasCoreq ? prereqMetNow && coreqMetPlanned : prereqMetNow;
       if (code === 'BIT371') {
         const bitReq = getBit371Requirement({
           completedSet,
@@ -23063,7 +24246,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         cell.removeAttribute('data-withdrawal-ribbon-label');
       }
-      const staffClickable = getCourseMapIsStaffMode() && !completedMode && !!st && !st.completed;
+      const isBlockedByRequisites =
+        !overrideMode &&
+        (status === 'course-map-status-next' || status === 'course-map-status-later');
+      const staffClickable =
+        getCourseMapIsStaffMode() &&
+        !completedMode &&
+        !!st &&
+        !st.completed &&
+        !isBlockedByRequisites;
       cell.classList.toggle('course-map-staff-clickable', staffClickable);
       cell.classList.toggle('course-map-staff-toggleable-current', staffClickable && currentCodes.has(code));
       if (staffClickable) {
@@ -23287,6 +24478,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!id || !validSubjectCodes.has(id)) return false;
     const st = subjectState.get(id);
     if (!st || st.completed) return false;
+    if (!courseMapCells.get(id)?.classList.contains('course-map-staff-clickable')) return false;
 
     const isCurrentRecord = currentEnrolmentStudentRecord.has(id);
     if (isCurrentRecord) {
@@ -24929,15 +26121,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   };
 
+  const syncTimetablePlanningActions = (mode = currentTableMode) => {
+    const showPlanningActions =
+      planningSemesterOffset > 0 &&
+      mode === 'selected' &&
+      !timetableModalReadOnly &&
+      !semesterConfigError &&
+      getSelectedRows().length > 0;
+    if (timetableMoveToNextSemesterButton) {
+      timetableMoveToNextSemesterButton.hidden = !showPlanningActions;
+      timetableMoveToNextSemesterButton.style.display = showPlanningActions ? '' : 'none';
+    }
+    if (isStudentMode && copyTimetable) {
+      copyTimetable.hidden = !showPlanningActions;
+      copyTimetable.style.display = showPlanningActions ? '' : 'none';
+    }
+  };
+
   const setTimetableModalMode = (mode) => {
     if (!timetableModal) return;
     timetableModal.dataset.mode = mode;
     timetableModal.classList.toggle('mode-available', mode === 'available');
     timetableModal.classList.toggle('mode-selected', mode === 'selected');
     updateTimetableAvailableColoursButton();
+    syncTimetablePlanningActions(mode);
   };
 
-  const showTimetableModal = () => {
+  const showTimetableModal = async () => {
+    await semesterConfigReady;
     if (!timetableModal) return;
     setTimetableTableOnly(false);
     timetableModalReadOnly = false;
@@ -24972,7 +26183,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     resetTimetableModalHeightToContent();
   };
 
-  const showAvailableModal = ({ forceAvailable = false } = {}) => {
+  const showAvailableModal = async ({ forceAvailable = false } = {}) => {
+    await semesterConfigReady;
     if (!timetableModal) return;
     setTimetableTableOnly(false);
     timetableModalReadOnly = false;
@@ -24991,7 +26203,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     schedulePositionTimetableModalForContext();
   };
 
-  const showSelectedReadOnlyModal = () => {
+  const showSelectedReadOnlyModal = async () => {
+    await semesterConfigReady;
     if (!timetableModal) return;
     setTimetableTableOnly(false);
     timetableModalReadOnly = true;
@@ -26616,7 +27829,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         button.classList.toggle('alert-pending', hasUnread);
         if (hasUnread) button.setAttribute('data-tooltip', getUnreadAlertTooltip(type, unreadCount));
         else button.setAttribute('data-tooltip', '');
-        if (!hasUnread) {
+        if (type === 'codes') {
+          button.textContent = labels[type];
+          button.classList.remove('has-unread');
+        } else if (!hasUnread) {
           button.textContent = labels[type] || type;
           button.classList.remove('has-unread');
         } else {
@@ -26783,9 +27999,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const familyName = record ? String(record.Family_Name || '').trim().toUpperCase() : '';
     const studentName = [givenName, familyName].filter(Boolean).join(' ').trim();
     const studentHeading = [studentId, studentName].filter(Boolean).join(' ').trim();
-    const timetableLabel = getTimetableLabel(now);
+    const timetableLabel = getTimetableSemesterLabel();
     const isTimetableOptionsClip = timetableModal?.dataset?.mode === 'available';
-    const headingPrefix = `Timetable for ${timetableLabel}. Prepared ${formatDate(now)}`;
+    const headingPrefix = `${getTimetableHeadingText('selected')}. Prepared ${formatDate(now)}`;
     const heading = isTimetableOptionsClip
       ? `Timetable options${studentHeading ? ` for ${studentHeading}` : ''}. ${timetableLabel}.`
       : studentHeading ? `${headingPrefix}, for ${studentHeading}` : headingPrefix;
@@ -26994,8 +28210,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return feeText ? `${tableText}\n\n${feeText}` : tableText;
   };
 
-  const getCurrentSemesterEmailLabel = (date = new Date()) =>
-    `${getSemesterLabel(getCurrentSemesterKey(date))} ${date.getFullYear()}`;
+  const getCurrentSemesterEmailLabel = (date = new Date()) => {
+    const identity = getConfiguredSemesterIdentity();
+    return `${getSemesterLabel(identity?.semester || getCurrentSemesterKey(date))} ${identity?.year || date.getFullYear()}`;
+  };
 
   const getTimetableMarkerMatch = (text) => {
     const dynamicMarker = `The subjects you have chosen for ${getCurrentSemesterEmailLabel()}:`;
@@ -27470,9 +28688,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getStudentDeclarationEmailSubject = (date = new Date()) => {
-    const semesterKey = getCurrentSemesterKey(date);
+    const identity = getConfiguredSemesterIdentity();
+    const semesterKey = identity?.semester || getCurrentSemesterKey(date);
     const semester = semesterKey === 'S1' ? 'S1' : semesterKey === 'S2' ? 'S2' : 'SS';
-    return `Student Declaration ${String(date.getFullYear()).slice(-2)} ${semester}`;
+    return `Student Declaration ${String(identity?.year || date.getFullYear()).slice(-2)} ${semester}`;
   };
 
   const sendTimetableEmail = async (target, subjectLine = '') => {
@@ -28370,8 +29589,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const hasCoreq = (corequisites[id] || []).length > 0;
         let meets = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
         if (id === 'BIT371') {
-          const baseMetNext = completedSet.has('BIT242') || plannedSet.has('BIT242');
-          const majorCompletedNext = completedMajorCount + plannedMajorCount >= 3;
+          const baseMetNext = (prerequisites.BIT371 || [])
+            .every((code) => completedSet.has(code) || plannedSet.has(code));
+          const minimumCompleted =
+            getBit371SpecialRequirement()?.minimumCompletedMajorSubjects ?? Infinity;
+          const majorCompletedNext = completedMajorCount + plannedMajorCount >= minimumCompleted;
           meets = baseMetNext && majorCompletedNext;
         }
         return meets;
@@ -28405,6 +29627,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateSelectedList = () => {
     if (!selectedListSection || !selectedListEl) return;
+    if (semesterConfigError) {
+      selectedListEl.innerHTML = '';
+      selectedListEl.classList.remove('available-list-warning');
+      selectedListEl.setAttribute('role', 'group');
+      selectedListEl.setAttribute('aria-label', 'Configuration error');
+      const message = document.createElement('div');
+      message.className = 'available-item available-item-error available-item-configuration-error';
+      message.setAttribute('role', 'alert');
+      message.textContent = semesterConfigError;
+      selectedListEl.appendChild(message);
+      if (sidebarTooltip) sidebarTooltip.style.display = 'none';
+      availableLoadError = null;
+      availableNowError = {
+        title: 'Configuration error',
+        html: `<p><strong class="alert-inline-title alert-title-error">Configuration error</strong> <span class="alert-inline-text">${escapeHtml(semesterConfigError)}</span></p>`,
+      };
+      selectedListSection.style.display = '';
+      syncCourseMapSelectedListScrollThreshold();
+      syncCourseMapStaffTimetableButton();
+      updateCourseMapStaffPanelState();
+      refreshErrorAlerts();
+      return;
+    }
     const available = getAvailableRowsForDisplay();
     const plannedCount = getPlannedCount();
     const completedCount = getCompletedCount();
@@ -28420,6 +29665,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasManualSelections = plannedCount > 0;
     const isFullyGraduated = remainingCount === 0 && plannedCount === 0 && completedTotal >= totalSubjects;
     const isRecordGraduated = isActiveStudentGraduated();
+    const historyGraduated = isFullyGraduated || isRecordGraduated;
     const graduatingWithCurrent =
       !isFullyGraduated &&
       !available.length &&
@@ -28431,6 +29677,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         'graduate-highlight',
         isFullyGraduated || isRecordGraduated || graduatingWithCurrent
       );
+      document.body.classList.toggle(
+        'history-graduated',
+        historyGraduated
+      );
+      if (!historyGraduated) document.body.classList.remove('graduation-dismissed');
+      if (historyGraduated) {
+        document.querySelectorAll('.elective-overlimit').forEach((cell) => {
+          cell.classList.remove('elective-overlimit');
+        });
+        if (electiveWarningEl) electiveWarningEl.style.display = 'none';
+        electiveError = null;
+      }
     }
     if (plannerContainer) {
       plannerContainer.classList.toggle('is-graduated-24', isFullyGraduated);
@@ -28511,10 +29769,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const subjectNameDisplay = abbreviateSelectedListSubjectName(subjectName);
         const dayLabel = item.dayShort || 'N/A';
         const timeLabel = getSlotAbbreviation(item.slot || 'N/A');
+        const dayAndTimeLabel = planningSemesterOffset > 0
+          ? unplannedDayAndTimeText
+          : `${dayLabel} ${timeLabel}`;
         li.innerHTML = `<span class="avail-main"><span class="avail-code">${escapeHtml(
           item.id
         )}</span><span class="avail-name">${escapeHtml(subjectNameDisplay)}</span></span><span class="avail-slot">${escapeHtml(
-          `${dayLabel} ${timeLabel}`
+          dayAndTimeLabel
         )}</span>`;
         li.dataset.subject = item.id;
         li.setAttribute('aria-pressed', item.isChosen ? 'true' : 'false');
@@ -28553,10 +29814,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             timeSlots[item.slot] || timeSlots[data.slot] || item.slot || data.slot || ''
           );
           const timeText = timeRange ? timeRange.replace(' - ', ' to ') : 'N/A';
+          const dayAndTimeText = planningSemesterOffset > 0
+            ? unplannedDayAndTimeText
+            : `${fullDay} ${timeText}`;
           const teacherText = data.teacher || 'N/A';
           sidebarTooltip.innerHTML = `<div class="selected-list-tooltip-action">${escapeHtml(actionText)}</div>
             <div class="selected-list-tooltip-line">${escapeHtml(item.id)} - ${escapeHtml(subjectName || '')}</div>
-            <div class="selected-list-tooltip-line">${escapeHtml(fullDay)} ${escapeHtml(timeText)}</div>
+            <div class="selected-list-tooltip-line">${escapeHtml(dayAndTimeText)}</div>
             <div class="selected-list-tooltip-line">Teacher: ${escapeHtml(teacherText)}</div>`;
           sidebarTooltip.style.left = `${(e?.clientX || 0) + 18}px`;
           sidebarTooltip.style.top = `${(e?.clientY || 0) + 6}px`;
@@ -28585,6 +29849,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSubjectCounts();
     refreshErrorAlerts();
   };
+
+  document.addEventListener('click', (event) => {
+    if (!document.body.classList.contains('history-graduated')) return;
+    if (!event.target?.closest?.('.graduation-celebration')) return;
+    document.body.classList.add('graduation-dismissed');
+  });
+  const restoreGraduationCelebration = () => {
+    document.body.classList.remove('graduation-dismissed');
+  };
+  restoreGraduationCelebration();
+  document.addEventListener('DOMContentLoaded', restoreGraduationCelebration);
+  window.addEventListener('load', restoreGraduationCelebration);
+  window.addEventListener('pageshow', restoreGraduationCelebration);
 
   const clearAlertState = () => {
     electiveError = null;
@@ -30132,7 +31409,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   enableOutsideClickClose(alertModal, hideAlertModal);
 
   [timetableModal, historyModal, remainingModal, oldCodesModal, nextSemesterModal].forEach(installModalScrollScrim);
-  loadSemesterConfigDetails();
+  semesterConfigReady = loadSemesterConfigDetails();
 
   const getElectiveStreams = (majorKey) => {
     const key = majorKey === 'network' || majorKey === 'undecided' || majorKey === 'ns' ? 'network' : majorKey;
@@ -30313,7 +31590,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const placeholders = getElectivePlaceholders();
     // Always rebuild from current state so the count/message matches what is actually selected/completed
     electiveAssignments = buildElectiveAssignments();
-    if (isActiveStudentGraduated()) {
+    if (isActiveStudentGraduated() || document.body.classList.contains('history-graduated')) {
       placeholders.forEach((cell) => cell.classList.remove('elective-overlimit'));
       electiveError = null;
       const el = ensureElectiveWarning();

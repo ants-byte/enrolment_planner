@@ -1,5 +1,4 @@
 {
-  "sourceDocument": "Settings for site - subjects, dates, etc.docx",
   "semesterDetails": {
     "year": "2026",
     "semester_S1_S2_SS": "S2",
@@ -11,17 +10,78 @@
   },
   "fileNaming": {
     "_instructions": [
-      "The site replaces {YYYY} with the four-digit year from semesterDetails.year.",
-      "The site replaces {SEMESTER} with semesterDetails.semester_S1_S2_SS, which must be S1, S2, or SS.",
-      "Keep the filename extension in the pattern."
+      "'Source.xlsx' should be named exactly that, and 'Email Scripts.html' exactly that.",
+      "For the Triage workbook, stick with this naming convention so that there will be ",
+      "nothing for you to change here...",
+      "When naming your Triage workbook, use S1, S2, or SS for the semester, and ",
+      "use 4-digits for the year.  An example: for Summer 2027, do",
+      "name your Triage file 'Triage 2027 SS.xlsx'.",
+      "DO NOT change the 'triageFilePattern' line below here."
     ],
     "triageFilePattern": "Triage {YYYY} {SEMESTER}.xlsx"
+  },
+  "staff": {
+    "AD": { "displayName": "Antony Di Serio" },
+    "AO": { "displayName": "Anthony Overmars" },
+    "CT": { "displayName": "Tony, Sita, TBA", "isTeam": true },
+    "DM": { "displayName": "Dominic Mammone" },
+    "DR": { "displayName": "David Robinson" },
+    "MK": { "displayName": "Md Sarwar Kamal" },
+    "NQ": { "displayName": "Nidha Qazi" },
+    "NW": { "displayName": "Nikki Wan" },
+    "PE": { "displayName": "Promise Enwereonye" },
+    "RA": { "displayName": "Russul Al-Anni" },
+    "SH": { "displayName": "Sarang Hashemi" },
+    "SN": { "displayName": "Shzaa Niazi" },
+    "XW": { "displayName": "Xiaodong Wang (Tony)" },
+    "YW": { "displayName": "Ye Wei (Silva)" }
+  },
+  "timetable": {
+    "BIT121": { "day": "Monday", "time": "AM", "room": "PA113", "staffId": "RA" },
+    "BIT372": { "day": "Monday", "time": "AM", "room": "PE110", "staffId": "CT" },
+    "BIT112": { "day": "Monday", "time": "PM", "room": "PA113", "staffId": "DM" },
+    "BIT371": { "day": "Monday", "time": "PM", "room": "PE110", "staffId": "CT" },
+
+    "BIT105": { "day": "Tuesday", "time": "AM", "room": "PE227", "staffId": "SN" },
+    "BIT313": { "day": "Tuesday", "time": "AM", "room": "PE226", "staffId": "AO" },
+    "BIT230": { "day": "Tuesday", "time": "AM", "room": "TBA", "staffId": "SH" },
+    "BIT106": { "day": "Tuesday", "time": "PM", "room": "PA113", "staffId": "SH" },
+    "BIT241": { "day": "Tuesday", "time": "PM", "room": "PA114", "staffId": "DM" },
+    "BIT353": { "day": "Tuesday", "time": "PM", "room": "PE227", "staffId": "AO" },
+
+    "BIT214": { "day": "Wednesday", "time": "AM", "room": "PE226", "staffId": "RA" },
+    "BIT245": { "day": "Wednesday", "time": "AM", "room": "PA114", "staffId": "PE" },
+    "BIT111": { "day": "Wednesday", "time": "PM", "room": "PA113", "staffId": "PE" },
+    "BIT213": { "day": "Wednesday", "time": "PM", "room": "PE226", "staffId": "XW" },
+    "BIT235": { "day": "Wednesday", "time": "PM", "room": "PA110", "staffId": "MK" },
+
+    "BIT108": { "day": "Thursday", "time": "AM", "room": "PA113", "staffId": "SN" },
+    "BIT231": { "day": "Thursday", "time": "AM", "room": "PE227", "staffId": "NQ" },
+    "BIT233": { "day": "Thursday", "time": "AM", "room": "PE226", "staffId": "NW" },
+    "BIT356": { "day": "Thursday", "time": "AM", "room": "PA114", "staffId": "YW" },
+    "BIT246": { "day": "Thursday", "time": "AM", "room": "TBA", "staffId": "MK" },
+    "BIT242": { "day": "Thursday", "time": "PM", "room": "PE227", "staffId": "DR" },
+    "BIT362": { "day": "Thursday", "time": "PM", "room": "PA114", "staffId": "NW" },
+    "BIT363": { "day": "Thursday", "time": "PM", "room": "PA113", "staffId": "YW" },
+    "BIT364": { "day": "Thursday", "time": "PM", "room": "PE226", "staffId": "NQ" },
+
+    "BIT314": { "day": "Friday", "time": "AM", "room": "PA113", "staffId": "DR" },
+    "BIT236": { "day": "Friday", "time": "PM", "room": "PE226", "staffId": "YW" },
+    "BIT352": { "day": "Friday", "time": "PM", "room": "PA114", "staffId": "DR" }
+  },
+  "subjectsRunning": {
+    "semester1Only": ["BIT351", "BIT355", "BIT357", "BIT358"],
+    "semester2Only": ["BIT246", "BIT363", "BIT356", "BIT364"]
+  },
+  "timeSlots": {
+    "AM": { "start": "8:30 am", "end": "12:30 pm" },
+    "PM": { "start": "1:00 pm", "end": "5:00 pm" }
   },
   "programRequirements": {
     "_instructions": [
       "These are the numbers of subjects required to graduate.",
       "core + major + elective must equal total.",
-      "Keep core equal to the number of codes in subjectClassifications.core."
+      "Keep core equal to the number of subjects with core set to true in the 'subjects' section below."
     ],
     "total": 24,
     "core": 14,
@@ -29,329 +89,79 @@
     "elective": 4
   },
   "subjects": {
-    "BIT105": "Business Enquiry & Communication",
-    "BIT106": "Foundations of Software, Hardware & Cloud Computing",
-    "BIT108": "Foundations of Business",
-    "BIT111": "Programming Concepts",
-    "BIT112": "Mathematics for Information Technology",
-    "BIT121": "Network Communication Concepts",
-    "BIT213": "Network & Cyber Security Essentials",
-    "BIT214": "Cloud and IoT Emerging Technologies",
-    "BIT230": "System Analysis & Design",
-    "BIT231": "Database Systems",
-    "BIT233": "Network Design",
-    "BIT235": "Object Oriented Programming",
-    "BIT236": "Enterprise Resources Planning",
-    "BIT241": "Professional IT Practice & Ethics",
-    "BIT242": "IT Project Management",
-    "BIT245": "Web Development",
-    "BIT246": "Object Oriented RAD",
-    "BIT313": "Cyber Vulnerability & Hardening",
-    "BIT314": "Cybersecurity Management & Governance",
-    "BIT351": "Mobile Application Development",
-    "BIT352": "System Implementation & Service Management",
-    "BIT353": "Network Architecture & Protocols",
-    "BIT355": "Business Intelligence",
-    "BIT356": "Knowledge Management Systems",
-    "BIT357": "Business Analysis",
-    "BIT358": "Advanced Databases",
-    "BIT362": "Digital Forensics",
-    "BIT363": "E-Business Systems",
-    "BIT364": "Non-Relational Database Management",
-    "BIT371": "Capstone Experience 1",
-    "BIT372": "Capstone Experience 2"
-  },
-  "subjectClassifications": {
     "_instructions": [
-      "List subject codes only; subject names come from subjects.",
-      "Every code here must also exist in subjects.",
-      "core must contain programRequirements.core subject codes.",
-      "sasEnabled controls which subjects display the SAS badge/certificate marker.",
-      "Major-stream membership is defined only in majorSubjects. A subject listed in more than one major is automatically shared-stream (currently BIT245 in Business Analytics and Software Development)."
+      "Each subject is defined once here.",
+      "Set core to true for compulsory core subjects.",
+      "Use majorStreams with NS, BA, or SD for major membership. Multiple values make a shared-stream subject.",
+      "A core subject cannot also have majorStreams. A subject with neither is treated as a standalone elective.",
+      "Use prerequisites for subjects that must be completed first, and corequisites for subjects that may be completed at the same time.",
+      "Omit prerequisites and corequisites when none apply.",
+      "BIT371's majorSubjectRequirement controls its additional completed-major and concurrent-major thresholds.",
+      "SAS badge subjects are derived from sasSpecialisations; do not flag them here."
     ],
-    "core": [
-      "BIT105",
+    "BIT105": { "name": "Business Enquiry and Communication", "core": true },
+    "BIT106": { "name": "Foundations of Software, Hardware & Cloud Computing", "core": true },
+    "BIT108": { "name": "Foundations of Business", "core": true },
+    "BIT111": { "name": "Programming Concepts", "core": true },
+    "BIT112": { "name": "Mathematics for Information Technology", "core": true },
+    "BIT121": { "name": "Network Communication Concepts", "core": true },
+    "BIT213": { "name": "Network & Cyber Security Essentials", "majorStreams": ["NS"], "corequisites": ["BIT121"] },
+    "BIT214": { "name": "Cloud and IoT Emerging Technologies", "majorStreams": ["NS"], "prerequisites": ["BIT106"] },
+    "BIT230": { "name": "System Analysis & Design", "core": true, "prerequisites": ["BIT106", "BIT111"] },
+    "BIT231": { "name": "Database Systems", "core": true, "prerequisites": ["BIT111"] },
+    "BIT233": { "name": "Network Design", "majorStreams": ["NS"], "prerequisites": ["BIT121"] },
+    "BIT235": { "name": "Object Oriented Programming", "majorStreams": ["SD"], "corequisites": ["BIT245"] },
+    "BIT236": { "name": "Enterprise Resources Planning", "majorStreams": ["BA"], "prerequisites": ["BIT106", "BIT231"] },
+    "BIT241": { "name": "Professional IT Practice & Ethics", "core": true, "prerequisites": ["BIT105", "BIT106"] },
+    "BIT242": { "name": "IT Project Management", "core": true, "prerequisites": ["BIT230"] },
+    "BIT245": { "name": "Web Development", "majorStreams": ["BA", "SD"], "prerequisites": ["BIT111"] },
+    "BIT246": { "name": "Object Oriented RAD", "majorStreams": ["SD"], "prerequisites": ["BIT235"] },
+    "BIT313": { "name": "Cyber Vulnerability & Hardening", "majorStreams": ["NS"], "prerequisites": ["BIT213"] },
+    "BIT314": { "name": "Cybersecurity Management & Governance", "core": true, "prerequisites": ["BIT241"] },
+    "BIT351": { "name": "Mobile Application Development", "majorStreams": ["SD"], "prerequisites": ["BIT231", "BIT235"] },
+    "BIT352": { "name": "System Implementation & Service Management", "core": true, "prerequisites": ["BIT242"] },
+    "BIT353": { "name": "Network Architecture & Protocols", "majorStreams": ["NS"], "prerequisites": ["BIT233"] },
+    "BIT355": { "name": "Business Intelligence", "majorStreams": ["BA"], "prerequisites": ["BIT230", "BIT236"] },
+    "BIT356": { "name": "Knowledge Management Systems", "majorStreams": ["BA"], "prerequisites": ["BIT230", "BIT236"] },
+    "BIT357": { "name": "Business Analysis", "majorStreams": ["BA"], "prerequisites": ["BIT230"] },
+    "BIT358": { "name": "Advanced Databases", "majorStreams": ["SD"], "prerequisites": ["BIT231"] },
+    "BIT362": { "name": "Digital Forensics", "majorStreams": ["NS"], "prerequisites": ["BIT213"] },
+    "BIT363": { "name": "E-Business Systems", "majorStreams": ["BA"], "prerequisites": ["BIT230", "BIT245"] },
+    "BIT364": { "name": "Non-Relational Database Management", "majorStreams": ["SD"], "prerequisites": ["BIT231"] },
+    "BIT371": { "name": "Capstone Experience 1", "core": true, "prerequisites": ["BIT242"], "majorSubjectRequirement": { "minimumCompletedMajorSubjects": 2, "minimumCompletedOrConcurrentMajorSubjects": 5 } },
+    "BIT372": { "name": "Capstone Experience 2", "core": true, "prerequisites": ["BIT371"] }
+  },
+  "sasSpecialisations": {
+    "_instructions": [
+      "Every award requires all commonRequiredSubjects.",
+      "Each award also requires minimumCompleted subjects from its additionalSubjects list.",
+      "A SAS marker is displayed on every subject referenced by these rules."
+    ],
+    "commonRequiredSubjects": [
       "BIT106",
-      "BIT108",
-      "BIT111",
       "BIT112",
-      "BIT121",
-      "BIT230",
-      "BIT231",
-      "BIT241",
-      "BIT242",
-      "BIT314",
-      "BIT352",
-      "BIT371",
-      "BIT372"
+      "BIT231"
     ],
-    "sasEnabled": [
-      "BIT106",
-      "BIT112",
-      "BIT231",
-      "BIT355",
-      "BIT356",
-      "BIT358"
-    ]
-  },
-  "staff": {
-    "AD": {
-      "displayName": "Antony Di Serio"
-    },
-    "AO": {
-      "displayName": "Anthony Overmars"
-    },
-    "CT": {
-      "displayName": "Tony, Sita, TBA",
-      "isTeam": true
-    },
-    "DM": {
-      "displayName": "Dominic Mammone"
-    },
-    "DR": {
-      "displayName": "David Robinson"
-    },
-    "MK": {
-      "displayName": "Md Sarwar Kamal"
-    },
-    "NQ": {
-      "displayName": "Nidha Qazi"
-    },
-    "NW": {
-      "displayName": "Nikki Wan"
-    },
-    "PE": {
-      "displayName": "Promise Enwereonye"
-    },
-    "RA": {
-      "displayName": "Russul Al-Anni"
-    },
-    "SH": {
-      "displayName": "Sarang Hashemi"
-    },
-    "SN": {
-      "displayName": "Shzaa Niazi"
-    },
-    "XW": {
-      "displayName": "Xiaodong Wang (Tony)"
-    },
-    "YW": {
-      "displayName": "Ye Wei (Silva)"
-    }
-  },
-  "subjectsRunning": {
-    "semester1Only": [
-      "BIT351",
-      "BIT355",
-      "BIT357",
-      "BIT358"
-    ],
-    "semester2Only": [
-      "BIT246",
-      "BIT363",
-      "BIT356",
-      "BIT364"
-    ]
-  },
-  "timetable": [
-    {
-      "day": "Mon",
-      "time": "AM",
-      "room": "PA113",
-      "code": "BIT121",
-      "staffId": "RA"
-    },
-    {
-      "day": "Mon",
-      "time": "AM",
-      "room": "PE110",
-      "code": "BIT372",
-      "staffId": "CT"
-    },
-    {
-      "day": "Mon",
-      "time": "PM",
-      "room": "PA113",
-      "code": "BIT112",
-      "staffId": "DM"
-    },
-    {
-      "day": "Mon",
-      "time": "PM",
-      "room": "PE110",
-      "code": "BIT371",
-      "staffId": "CT"
-    },
-    {
-      "day": "Tue",
-      "time": "AM",
-      "room": "PE227",
-      "code": "BIT105",
-      "staffId": "SN"
-    },
-    {
-      "day": "Tue",
-      "time": "AM",
-      "room": "PE226",
-      "code": "BIT313",
-      "staffId": "AO"
-    },
-    {
-      "day": "Tue",
-      "time": "AM",
-      "room": "TBA",
-      "code": "BIT230",
-      "staffId": "SH"
-    },
-    {
-      "day": "Tue",
-      "time": "PM",
-      "room": "PA113",
-      "code": "BIT106",
-      "staffId": "SH"
-    },
-    {
-      "day": "Tue",
-      "time": "PM",
-      "room": "PA114",
-      "code": "BIT241",
-      "staffId": "DM"
-    },
-    {
-      "day": "Tue",
-      "time": "PM",
-      "room": "PE227",
-      "code": "BIT353",
-      "staffId": "AO"
-    },
-    {
-      "day": "Wed",
-      "time": "AM",
-      "room": "PE226",
-      "code": "BIT214",
-      "staffId": "RA"
-    },
-    {
-      "day": "Wed",
-      "time": "AM",
-      "room": "PA114",
-      "code": "BIT245",
-      "staffId": "PE"
-    },
-    {
-      "day": "Wed",
-      "time": "PM",
-      "room": "PA113",
-      "code": "BIT111",
-      "staffId": "PE"
-    },
-    {
-      "day": "Wed",
-      "time": "PM",
-      "room": "PE226",
-      "code": "BIT213",
-      "staffId": "XW"
-    },
-    {
-      "day": "Wed",
-      "time": "PM",
-      "room": "PA110",
-      "code": "BIT235",
-      "staffId": "MK"
-    },
-    {
-      "day": "Thu",
-      "time": "AM",
-      "room": "PA113",
-      "code": "BIT108",
-      "staffId": "SN"
-    },
-    {
-      "day": "Thu",
-      "time": "AM",
-      "room": "PE227",
-      "code": "BIT231",
-      "staffId": "NQ"
-    },
-    {
-      "day": "Thu",
-      "time": "AM",
-      "room": "PE226",
-      "code": "BIT233",
-      "staffId": "NW"
-    },
-    {
-      "day": "Thu",
-      "time": "AM",
-      "room": "PA114",
-      "code": "BIT356",
-      "staffId": "YW"
-    },
-    {
-      "day": "Thu",
-      "time": "PM",
-      "room": "TBA",
-      "code": "BIT242",
-      "staffId": "DR"
-    },
-    {
-      "day": "Thu",
-      "time": "PM",
-      "room": "PA114",
-      "code": "BIT362",
-      "staffId": "NW"
-    },
-    {
-      "day": "Thu",
-      "time": "PM",
-      "room": "PA113",
-      "code": "BIT363",
-      "staffId": "YW"
-    },
-    {
-      "day": "Thu",
-      "time": "PM",
-      "room": "TBA",
-      "code": "BIT364",
-      "staffId": "NQ"
-    },
-    {
-      "day": "Thu",
-      "time": "AM",
-      "room": "TBA",
-      "code": "BIT246",
-      "staffId": "MK"
-    },
-    {
-      "day": "Fri",
-      "time": "AM",
-      "room": "PA113",
-      "code": "BIT314",
-      "staffId": "DR"
-    },
-    {
-      "day": "Fri",
-      "time": "PM",
-      "room": "TBA",
-      "code": "BIT236",
-      "staffId": "YW"
-    },
-    {
-      "day": "Fri",
-      "time": "PM",
-      "room": "PA114",
-      "code": "BIT352",
-      "staffId": "DR"
-    }
-  ],
-  "timeSlots": {
-    "AM": {
-      "start": "8:30 AM",
-      "end": "12:30 PM"
-    },
-    "PM": {
-      "start": "1:00 PM",
-      "end": "5:00 PM"
+    "awards": {
+      "itAnalytics": {
+        "name": "SAS Academic Certificate in IT Analytics",
+        "url": "https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i",
+        "minimumCompleted": 1,
+        "additionalSubjects": [
+          "BIT355",
+          "BIT356"
+        ],
+        "additionalSubjectGroupLabel": "Business Analytics stream"
+      },
+      "softwareDevelopmentAnalytics": {
+        "name": "Academic Certificate in Software Development Analytics",
+        "url": "https://www.credly.com/org/sas/badge/sas-melbourne-polytechnic-academic-specialisation-i.1",
+        "minimumCompleted": 1,
+        "additionalSubjects": [
+          "BIT358"
+        ],
+        "additionalSubjectGroupLabel": "Software Development stream"
+      }
     }
   },
   "oldCodes": {
@@ -409,16 +219,7 @@
       "showFirst lists the important old codes that appear first in the Old Codes display.",
       "previousSubjectNames is keyed by old code. The current code and current name come from oldCodes and subjects."
     ],
-    "showFirst": [
-      "BIT100",
-      "BIT101",
-      "BIT234",
-      "BIT243",
-      "BIT244",
-      "BIT306",
-      "BIT354",
-      "BIT361"
-    ],
+    "showFirst": ["BIT100", "BIT101", "BIT234", "BIT243", "BIT244", "BIT306", "BIT354", "BIT361"],
     "previousSubjectNames": {
       "BIT243": "Network Security",
       "BIT244": "IT and Business Crime",
@@ -426,132 +227,7 @@
       "BIT361": "Security Management and Governance"
     }
   },
-  "corequisites": {
-    "BIT213": [
-      "BIT121"
-    ],
-    "BIT235": [
-      "BIT245"
-    ]
-  },
-  "prerequisites": {
-    "BIT105": [],
-    "BIT106": [],
-    "BIT108": [],
-    "BIT111": [],
-    "BIT112": [],
-    "BIT121": [],
-    "BIT213": [],
-    "BIT214": [
-      "BIT106"
-    ],
-    "BIT230": [
-      "BIT111",
-      "BIT106"
-    ],
-    "BIT231": [
-      "BIT111"
-    ],
-    "BIT233": [
-      "BIT121"
-    ],
-    "BIT235": [],
-    "BIT236": [
-      "BIT231",
-      "BIT106"
-    ],
-    "BIT241": [
-      "BIT106",
-      "BIT105"
-    ],
-    "BIT242": [
-      "BIT230"
-    ],
-    "BIT245": [
-      "BIT111"
-    ],
-    "BIT246": [
-      "BIT235"
-    ],
-    "BIT313": [
-      "BIT213"
-    ],
-    "BIT314": [
-      "BIT241"
-    ],
-    "BIT351": [
-      "BIT235",
-      "BIT231"
-    ],
-    "BIT352": [
-      "BIT242"
-    ],
-    "BIT353": [
-      "BIT233"
-    ],
-    "BIT355": [
-      "BIT236",
-      "BIT230"
-    ],
-    "BIT356": [
-      "BIT236",
-      "BIT230"
-    ],
-    "BIT357": [
-      "BIT230"
-    ],
-    "BIT358": [
-      "BIT231"
-    ],
-    "BIT362": [
-      "BIT213"
-    ],
-    "BIT363": [
-      "BIT245",
-      "BIT230"
-    ],
-    "BIT364": [
-      "BIT231"
-    ],
-    "BIT371": [
-      "BIT242"
-    ],
-    "BIT372": [
-      "BIT371"
-    ]
-  },
-  "specialRequirements": {
-    "BIT371": {
-      "minimumCompletedMajorSubjects": 3,
-      "minimumCompletedOrConcurrentMajorSubjects": 5
-    }
-  },
-  "majorSubjects": {
-    "Network Security (NS)": [
-      "BIT213",
-      "BIT233",
-      "BIT353",
-      "BIT214",
-      "BIT362",
-      "BIT313"
-    ],
-    "Business Analytics (BA)": [
-      "BIT245",
-      "BIT236",
-      "BIT357",
-      "BIT356",
-      "BIT363",
-      "BIT355"
-    ],
-    "Software Development (SD)": [
-      "BIT245",
-      "BIT235",
-      "BIT246",
-      "BIT358",
-      "BIT364",
-      "BIT351"
-    ]
-  },
+
 
   "_guiLayoutSection": "-------------------- Everything below this point is purely about how the website GUI should be laid out. --------------------",
 
@@ -560,79 +236,29 @@
       "Each nested array is one visible row; entries are displayed from left to right.",
       "Use subject codes exactly as listed in subjects. Keep topRows at 2 rows of 7 subjects.",
       "Keep majorPlaceholders at 2 rows of 5 labels, and each major stream at 2 rows of 3 subjects.",
+      "In majorPlaceholders, keep Major 1/2, 3/4 and 5/6 in the first three paired columns, then Elective 1/2 and 3/4.",
+      "Keep BIT245 once in Business Analytics and once in Software Development; the site turns those entries into one shared card.",
       "Change the order of codes here only when the visual Course Map layout should change."
     ],
     "topRows": [
-      [
-        "BIT106",
-        "BIT111",
-        "BIT112",
-        "BIT231",
-        "BIT241",
-        "BIT314",
-        "BIT352"
-      ],
-      [
-        "BIT121",
-        "BIT105",
-        "BIT108",
-        "BIT230",
-        "BIT242",
-        "BIT371",
-        "BIT372"
-      ]
+      ["BIT106", "BIT111", "BIT112", "BIT231", "BIT241", "BIT314", "BIT352"],
+      ["BIT121", "BIT105", "BIT108", "BIT230", "BIT242", "BIT371", "BIT372"]
     ],
     "majorPlaceholders": [
-      [
-        "Major 1",
-        "Major 3",
-        "Major 5",
-        "Elective 1",
-        "Elective 3"
-      ],
-      [
-        "Major 2",
-        "Major 4",
-        "Major 6",
-        "Elective 2",
-        "Elective 4"
-      ]
+      ["Major 1", "Major 3", "Major 5", "Elective 1", "Elective 3"],
+      ["Major 2", "Major 4", "Major 6", "Elective 2", "Elective 4"]
     ],
     "networkSecurity": [
-      [
-        "BIT233",
-        "BIT214",
-        "BIT313"
-      ],
-      [
-        "BIT213",
-        "BIT353",
-        "BIT362"
-      ]
+      ["BIT233", "BIT214", "BIT313"],
+      ["BIT213", "BIT353", "BIT362"]
     ],
     "businessAnalytics": [
-      [
-        "BIT236",
-        "BIT357",
-        "BIT356"
-      ],
-      [
-        "BIT245",
-        "BIT355",
-        "BIT363"
-      ]
+      ["BIT236", "BIT357", "BIT356"],
+      ["BIT245", "BIT355", "BIT363"]
     ],
     "softwareDevelopment": [
-      [
-        "BIT245",
-        "BIT246",
-        "BIT358"
-      ],
-      [
-        "BIT235",
-        "BIT351",
-        "BIT364"
-      ]
+      ["BIT245", "BIT246", "BIT358"],
+      ["BIT235", "BIT351", "BIT364"]
     ]
   },
   "mainPage": {
@@ -640,128 +266,40 @@
       "mainGridLayout controls the visible Main Page grid. Each nested array is one row, displayed left to right.",
       "The first row contains the five column headings. Every remaining row must also contain exactly five entries.",
       "Use subject codes exactly as listed in subjects.",
-      "MAJOR, INFO, and ELECTIVE1 through ELECTIVE4 are special placeholders; keep their spelling and capitalisation unchanged."
+      "majorSubjectOrder controls which major subject fills each MAJOR placeholder, in reading order.",
+      "MAJOR, INFO, and ELECTIVE1 through ELECTIVE4 are special placeholders; keep their spelling and capitalisation unchanged.",
+      "Keep INFO in the first subject row's fifth column while the existing information card is reused.",
+      "electiveSequence controls the 3 by 5 Available Electives grid for each selected major. Use an empty string for a blank cell."
     ],
+    "majorSubjectOrder": {
+      "NS": ["BIT213", "BIT233", "BIT353", "BIT214", "BIT362", "BIT313"],
+      "BA": ["BIT245", "BIT236", "BIT357", "BIT356", "BIT363", "BIT355"],
+      "SD": ["BIT245", "BIT235", "BIT246", "BIT358", "BIT364", "BIT351"]
+    },
     "mainGridLayout": [
-      [
-        "Year 1",
-        "Year 2",
-        "Year 3",
-        "Year 4",
-        "Year 5"
-      ],
-      [
-        "BIT121",
-        "MAJOR",
-        "MAJOR",
-        "MAJOR",
-        "INFO"
-      ],
-      [
-        "BIT106",
-        "BIT108",
-        "MAJOR",
-        "MAJOR",
-        "BIT314"
-      ],
-      [
-        "BIT112",
-        "BIT231",
-        "BIT241",
-        "MAJOR",
-        "BIT352"
-      ],
-      [
-        "BIT111",
-        "BIT230",
-        "BIT242",
-        "BIT371",
-        "BIT372"
-      ],
-      [
-        "BIT105",
-        "ELECTIVE1",
-        "ELECTIVE2",
-        "ELECTIVE3",
-        "ELECTIVE4"
-      ]
+      ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"],
+      ["BIT121", "MAJOR", "MAJOR", "MAJOR", "INFO"],
+      ["BIT106", "BIT108", "MAJOR", "MAJOR", "BIT314"],
+      ["BIT112", "BIT231", "BIT241", "MAJOR", "BIT352"],
+      ["BIT111", "BIT230", "BIT242", "BIT371", "BIT372"],
+      ["BIT105", "ELECTIVE1", "ELECTIVE2", "ELECTIVE3", "ELECTIVE4"]
     ],
     "electiveSequence": {
-      "headings": [
-        "Elective 1",
-        "Elective 2",
-        "Elective 3",
-        "Elective 4",
-        "Elective 5"
-      ],
+      "headings": ["Elective 1", "Elective 2", "Elective 3", "Elective 4", "Elective 5"],
       "networkSecurityAsMajor": [
-        [
-          "BIT245",
-          "",
-          "",
-          "",
-          ""
-        ],
-        [
-          "BIT236",
-          "BIT355",
-          "BIT356",
-          "BIT357",
-          "BIT363"
-        ],
-        [
-          "BIT235",
-          "BIT246",
-          "BIT358",
-          "BIT364",
-          "BIT351"
-        ]
+        ["BIT245", "", "", "", ""],
+        ["BIT236", "BIT355", "BIT356", "BIT357", "BIT363"],
+        ["BIT235", "BIT246", "BIT358", "BIT364", "BIT351"]
       ],
       "businessAnalyticsAsMajor": [
-        [
-          "BIT235",
-          "BIT246",
-          "BIT358",
-          "BIT364",
-          "BIT351"
-        ],
-        [
-          "",
-          "BIT213",
-          "BIT233",
-          "BIT353",
-          ""
-        ],
-        [
-          "",
-          "BIT214",
-          "BIT313",
-          "BIT362",
-          ""
-        ]
+        ["BIT235", "BIT246", "BIT358", "BIT364", "BIT351"],
+        ["", "BIT213", "BIT233", "BIT353", ""],
+        ["", "BIT214", "BIT313", "BIT362", ""]
       ],
       "softwareDevelopmentAsMajor": [
-        [
-          "BIT236",
-          "BIT355",
-          "BIT356",
-          "BIT357",
-          "BIT363"
-        ],
-        [
-          "",
-          "BIT213",
-          "BIT233",
-          "BIT353",
-          ""
-        ],
-        [
-          "",
-          "BIT214",
-          "BIT313",
-          "BIT362",
-          ""
-        ]
+        ["BIT236", "BIT355", "BIT356", "BIT357", "BIT363"],
+        ["", "BIT213", "BIT233", "BIT353", ""],
+        ["", "BIT214", "BIT313", "BIT362", ""]
       ]
     }
   }
