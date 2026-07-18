@@ -128,7 +128,7 @@
     "BIT362": { "name": "Digital Forensics", "majorStreams": ["NS"], "prerequisites": ["BIT213"] },
     "BIT363": { "name": "E-Business Systems", "majorStreams": ["BA"], "prerequisites": ["BIT230", "BIT245"] },
     "BIT364": { "name": "Non-Relational Database Management", "majorStreams": ["SD"], "prerequisites": ["BIT231"] },
-    "BIT371": { "name": "Capstone Experience 1", "core": true, "prerequisites": ["BIT242"], "majorSubjectRequirement": { "minimumCompletedMajorSubjects": 2, "minimumCompletedOrConcurrentMajorSubjects": 5 } },
+    "BIT371": { "name": "Capstone Experience 1", "core": true, "prerequisites": ["BIT242"], "majorSubjectRequirement": { "minimumCompletedMajorSubjects": 3, "minimumCompletedOrConcurrentMajorSubjects": 5 } },
     "BIT372": { "name": "Capstone Experience 2", "core": true, "prerequisites": ["BIT371"] }
   },
   "sasSpecialisations": {
@@ -228,9 +228,87 @@
     }
   },
 
+  "creditAndArticulation": {
+    "_instructions": [
+      "These lists fill the four shortcut buttons in the Enter subject codes dialog.",
+      "The FMP Diploma and FMP Associate Degree lists are also used to recognise those credit-entry patterns.",
+      "Use current subject codes from subjects, or a supported USE elective code.",
+      "hebsitadRequirements describes the minimum Associate Degree exit-award structure used by the FMP timing message."
+    ],
+    "codeEntryPresets": {
+      "fmpAssociateDegree": ["BIT105", "BIT106", "BIT108", "BIT111", "BIT112", "BIT121", "BIT213", "BIT230", "BIT231", "BIT233", "BIT235", "BIT241", "BIT242", "BIT214", "BIT245", "BIT358"],
+      "fmpDiploma": ["BIT106", "BIT111", "BIT121", "BIT230", "BIT231", "BIT233", "BIT242", "BIT245"],
+      "melbournePolytechnicDiploma2027": ["BIT105", "BIT106", "BIT108", "BIT111", "BIT121", "BIT233", "BIT213", "USE101"],
+      "melbournePolytechnicDiplomaPrevious": ["BIT106", "BIT111", "BIT121", "BIT230", "BIT233", "BIT242", "BIT245", "USE101"]
+    },
+    "hebsitadRequirements": { "total": 16, "core": 10, "major": 3, "elective": 3 }
+  },
+  "summerSchool": {
+    "_instructions": [
+      "likelySubjects are subjects worth considering saving for Summer School.",
+      "This does not promise that a subject will run; it controls only the Summer School planning message.",
+      "The remaining values supply factual numbers and subject/stream lists used in the explanatory help text."
+    ],
+    "likelySubjects": ["BIT241", "BIT352"],
+    "durationWeeks": 7,
+    "maximumSubjects": 2,
+    "typicalSubjectCount": { "minimum": 2, "maximum": 4 },
+    "minimumStudentDemand": 5,
+    "notOfferedMajorStreams": ["SD"],
+    "notOfferedSubjects": ["BIT371", "BIT372"]
+  },
+  "planningGuidance": {
+    "_instructions": [
+      "This section contains structured facts used by the site's explanatory prose; it does not contain paragraphs of website content.",
+      "Subject codes must exist in subjects.",
+      "Early-completion counts and grade values must agree with the planner rules."
+    ],
+    "firstSemesterRecommendations": {
+      "networkSecurityOptionSubjects": ["BIT121"],
+      "generalSubjects": ["BIT105", "BIT111"],
+      "softwareDevelopmentOptionSubjects": ["BIT111"]
+    },
+    "majorDecision": {
+      "completedSubjectsThreshold": 8,
+      "minimumMajorSubjectsByEndOfSecondYear": 3,
+      "preferredMajorSubjectsByEndOfSecondYear": 5
+    },
+    "earlyCompletion": {
+      "semesterOneRemainingCounts": [9, 10],
+      "semesterTwoRemainingCounts": [5, 6, 9, 10],
+      "noticeRemainingCounts": [9, 5],
+      "capstoneRestrictedNoticeCount": 5,
+      "standardSemesterLoad": 4,
+      "overloadSubjectCount": 5,
+      "minimumGrade": { "label": "CR", "minimumPercent": 60, "maximumPercent": 69 }
+    }
+  },
+  "courseMapAlternativeNames": {
+    "_instructions": [
+      "These are the optional proposed names shown by the Course Map alternative-names switch.",
+      "Stream keys must be NS, BA, and SD.",
+      "Subject keys must exist in subjects. code is the proposed replacement code shown with the proposed name."
+    ],
+    "streams": {
+      "NS": "Cyber Security",
+      "BA": "AI Data Analytics",
+      "SD": "Intelligent Software Development"
+    },
+    "subjects": {
+      "BIT245": { "code": "BIT2XX", "name": "Web Application Development" },
+      "BIT246": { "code": "BIT2XX", "name": "Applied AI for Software Solutions" },
+      "BIT351": { "code": "BIT3XX", "name": "Mobile and Intelligent Application Development" },
+      "BIT358": { "code": "BIT3XX", "name": "Advanced Databases and Data Intelligence" },
+      "BIT364": { "code": "BIT3XX", "name": "Software Delivery Automation" },
+      "BIT236": { "code": "BIT2XX", "name": "AI-enabled Enterprise Big Data Visualisation" },
+      "BIT357": { "code": "BIT3XX", "name": "Business Process Automation" },
+      "BIT363": { "code": "BIT3XX", "name": "AI-powered e-Business" }
+    }
+  },
 
-  "_guiLayoutSection": "-------------------- Everything below this point is purely about how the website GUI should be laid out. --------------------",
-
+  "_guiLayoutSection": ["--------------------------------------------------------------",
+  "Everything below this point is purely about how the website GUI should be laid out.",
+  "------------------------------------------------------------------------------------"],
   "courseMapLayout": {
     "_instructions": [
       "Each nested array is one visible row; entries are displayed from left to right.",

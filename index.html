@@ -104,9 +104,10 @@ Last Modified: 11/07/2026
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
             id="major-section-descriptor" class="sidebar-section-descriptor"
-            data-tooltip-html="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
+            data-guidance-template="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
             By <b>2nd semester or 2nd year</b><br> - You should have decided what your major will be.  You'll need to start completing those subjects, being careful not to study too many Electives (which will be subjects from the other 2 streams) and preparing yourself for Capstone
-            <br>What is <b>Capstone</b>? <br>Capstone is BIT371 and BIT372.<br>It is a 1 year project focused on your major. You must have 3 major subjects completed before you can start BIT371 and 5 completed for BIT372'<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><b>Major.</b>
+            <br>What is <b>Capstone</b>?<br>Capstone is [[CAPSTONE_CODES]].<br>It is a 1 year project focused on your major. [[CAPSTONE_REQUIREMENTS]]<br><br>Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."
+            data-tooltip-html=""><b>Major.</b>
             Select what's likely for you.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
           <button type="button" class="major-toggle" id="major-toggle" aria-haspopup="listbox" aria-expanded="false">
@@ -190,12 +191,14 @@ Last Modified: 11/07/2026
           </div>
           <div class="toggle-row load-row">
             <button id="vary-load" class="clear-button secondary load-button" type="button"
-              data-tooltip="Will you be studying a full load of 4 subjects, or something else?">4</button>
-            <span id="load-label" data-tooltip-html="A <b>full load</b> is <b>4</b> subjects.  
+              data-guidance-template="Will you be studying a full load of [[STANDARD_LOAD]] subjects, or something else?"
+              data-tooltip=""></button>
+            <span id="load-label" data-guidance-template="A <b>full load</b> is <b>[[STANDARD_LOAD]]</b> subjects.
               A Student Visa condition is that students must study a full load where possible.<br>
               <b>Want to study less than a full load?</b>Domestic students and internationals with special conditions can study less than a full load<br>
-              <b>Want to study more than a full load?</b>Only when a load of 5 subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average CR or above<br>
-              This website uses this count to determine when you've selected your full complement of subjects">Subjects
+              <b>Want to study more than a full load?</b>Only when a load of [[OVERLOAD_COUNT]] subjects for 1 semester will allow you to graduate this year. This is only possible when their grades average [[GRADE_LABEL]] or above<br>
+              This website uses this count to determine when you've selected your full complement of subjects"
+              data-tooltip-html="">Subjects
               this semester?</span>
           </div>
           <div class="toggle-row hidden-initial" id="live-prereq-row">
@@ -291,7 +294,8 @@ Last Modified: 11/07/2026
                       data-font-family="merriweather">Merriweather</button>
                   </div>
                   <label class="title-settings-check title-settings-card-theme-check title-settings-separator-before"
-                    data-tooltip="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the 4 Elective placeholders).">
+                    data-guidance-template="Tick to show background colours on subject cards (orange for core subjects, green for Network Security, blue for Business Analytics, purple for Software Development, and grey for the [[ELECTIVE_COUNT]] Elective placeholders)."
+                    data-tooltip="">
                     <input id="settings-card-theme-colours" type="checkbox" />
                     <span id="settings-card-theme-label">Subject cards background colours (are off)</span>
                   </label>
@@ -443,11 +447,11 @@ Last Modified: 11/07/2026
             </div>
             <div class="subject-card info-card" data-slot="r1c5">
               <div class="hover-zone"></div>
-              <div class="info-tooltip">Complete all 24 subjects in this top grid to graduate. That is:
+              <div class="info-tooltip">Complete all <span id="program-total-subjects"></span> subjects in this top grid to graduate. That is:
                 <ul>
-                  <li>14 Core subjects</li>
-                  <li>6 major subjects</li>
-                  <li>4 Elective subjects.</li>
+                  <li><span id="program-core-subjects"></span> Core subjects</li>
+                  <li><span id="program-major-subjects"></span> major subjects</li>
+                  <li><span id="program-elective-subjects"></span> Elective subjects.</li>
                 </ul>
               </div>
             </div>
@@ -650,7 +654,7 @@ Last Modified: 11/07/2026
               </div>
               <div class="key-item">
                 <div class="swatch dual"></div>
-                BIT245 belongs to both Business Analytics &amp; Software Development.
+                <span id="shared-stream-subject-guidance"></span>
               </div>
               <div class="key-item">
                 <div class="swatch core-completed"></div>
@@ -745,17 +749,17 @@ Last Modified: 11/07/2026
                 <li>You can just leave the dropdown as Undecided or switch it to another.</li>
                 <li>Some soft advice that will help keep your options for next semester and beyond:
                   <ul class="instructions-sublist">
-                    <li>Choose BIT121 if you have a feeling that Network Security may become your major.</li>
-                    <li>Study BIT105 and BIT111 this semester.</li>
-                    <li>If you have a feeling Software Development may become your major, study BIT111 now.</li>
+                    <li>Choose <span id="guidance-first-semester-network-subjects"></span> if you have a feeling that Network Security may become your major.</li>
+                    <li>Study <span id="guidance-first-semester-general-subjects"></span> this semester.</li>
+                    <li>If you have a feeling Software Development may become your major, study <span id="guidance-first-semester-software-subjects"></span> now.</li>
                   </ul>
                 </li>
               </ul>
               <p><strong>Your 2nd semester?</strong> By second semester, you should be starting to settle on your choice
                 for major. If unsure, try dipping your toe into 1 or 2 streams.</p>
-              <p><strong>Your 2nd year?</strong> If you have passes or credits for 8 subjects or more, you should now be
-                certain about which major stream will be yours. Your goal now is to complete 3 of your major's subjects,
-                but preferably 5 of them, by the end of your 2nd year.</p>
+              <p><strong>Your 2nd year?</strong> If you have passes or credits for <span id="guidance-major-decision-threshold"></span> subjects or more, you should now be
+                certain about which major stream will be yours. Your goal now is to complete <span id="guidance-major-minimum"></span> of your major's subjects,
+                but preferably <span id="guidance-major-preferred"></span> of them, by the end of your 2nd year.</p>
             </div>
           </li>
           <li class="instructions-step">
@@ -782,7 +786,7 @@ Last Modified: 11/07/2026
                 <li>Its subject card greys-out.</li>
                 <li>Subjects that are <strong>available to you now</strong>, to study this semester, changes. You'll see
                   them highlighted with background shadows in the main grid, and in the
-                  sidebar list. Note that all 2nd and 3rd year level subjects have prerequisites
+                  sidebar list. Subjects with prerequisites become available as their requirements are completed.
                 </li>
               </ul>
             </div>
@@ -889,8 +893,8 @@ Last Modified: 11/07/2026
               <summary>Summer Semester and studying five subjects in a semester</summary>
               <p>You may be able to complete your course 1 semester earlier if:</p>
               <ul>
-                <li>You have <strong>9 or 10 subjects remaining</strong></li>
-                <li>You have <strong>5 or 6 subjects remaining</strong></li>
+                <li>You have <strong><span id="help-early-window-one"></span> subjects remaining</strong></li>
+                <li>You have <strong><span id="help-early-window-two"></span> subjects remaining</strong></li>
               </ul>
               <p>Whether this is possible depends on:</p>
               <ul>
@@ -902,30 +906,28 @@ Last Modified: 11/07/2026
               <p>There are two possible ways to complete your course earlier. Click to expand:</p>
               <details class="help-support-accordion" data-help-exclusive-accordion>
                 <summary>1. Summer Semester</summary>
-                <p>You may be able to study one or two subjects during Summer Semester, which is a 7-week intensive that
+                <p>You may be able to study subjects during Summer Semester, which is a <span id="help-summer-duration-weeks"></span>-week intensive that
                   runs November to February.</p>
-                <p>Summer Semester is optional. Students may enrol in a maximum of 2 Summer Semester subjects. You can
+                <p>Summer Semester is optional. Students may enrol in a maximum of <span id="help-summer-maximum-subjects"></span> Summer Semester subjects. You can
                   study in Summer Semester at any point during your course (some students begin their studies in Summer
                   Semester).</p>
-                <p>There is no guarantee that Summer Semester will be offered. We normally offer only 2 to 4 subjects,
+                <p>There is no guarantee that Summer Semester will be offered. We normally offer only <span id="help-summer-typical-count"></span> subjects,
                   depending on student demand.</p>
-                <p>When we have run Summer Semester, we have always offered <em>BIT241 Professional IT Practice and
-                    Ethics</em> and <em>BIT313 Cybersecurity &amp; Governance</em> plus 1 or 2 others, perhaps
-                  <em>BIT105 Business Enquiry and Communication</em>.</p>
-                <p>When at least 5 students want to enrol in one of the subjects, we then run it. If less than 5 are
+                <p>The subjects currently considered most likely to run are <em id="help-summer-likely-subjects"></em>. Other subjects may also be offered.</p>
+                <p>When at least <span id="help-summer-minimum-demand"></span> students want to enrol in one of the subjects, we then run it. If fewer than that are
                   interested, we withdraw it from the semester.</p>
                 <p>Please let us know if there is a subject that you want us to offer in Summer. We make that decision
-                  in early October, so please write to us then. We won't try to run Software Development subjects, and
-                  <strong>cannot</strong> run Capstone (BIT371 or BIT372).</p>
+                  in early October, so please write to us then. We won't try to run <span id="help-summer-not-offered-streams"></span> subjects, and
+                  <strong>cannot</strong> run <span id="help-summer-not-offered-subjects"></span>.</p>
                 <p>Regarding visa and work considerations: if an international student opts to study in Summer Semester,
                   the same visa conditions apply to paid-work hour limits as apply in Semesters 1 and 2.</p>
               </details>
               <details class="help-support-accordion" data-help-exclusive-accordion>
-                <summary>2. Studying 5 subjects in one semester</summary>
-                <p>You may be permitted to study 5 subjects in a semester only when:</p>
+                <summary>2. Studying <span id="help-overload-subject-count-heading"></span> subjects in one semester</summary>
+                <p>You may be permitted to study <span id="help-overload-subject-count"></span> subjects in a semester only when:</p>
                 <ul>
                   <li>doing so would allow you to complete your course and graduate within that year; and</li>
-                  <li>your average grade over the previous year is at least 70%.</li>
+                  <li>your average grade over the previous year is at least <span id="help-overload-grade"></span>.</li>
                 </ul>
                 <p>Approval is not automatic and will also depend on subject availability, prerequisites and whether the
                   proposed study load is considered manageable.</p>
@@ -956,9 +958,9 @@ Last Modified: 11/07/2026
       </div>
       <div class="modal-body">
         <section class="help-support-content early-completion-content" aria-label="Completing early information">
-          <h3>Summer School and studying 5 subjects per semester</h3>
-          <p>If you have 10 or 9 subjects remaining, you would normally take 3 semesters to complete them, but there may
-            be a way to complete them in 2 semesters. Similarly, if you have 6 or 5 subjects remaining, you may be able
+          <h3>Summer School and studying <span id="early-overload-subject-count-heading"></span> subjects per semester</h3>
+          <p>If you have <span id="early-window-one"></span> subjects remaining, you would normally take 3 semesters to complete them, but there may
+            be a way to complete them in 2 semesters. Similarly, if you have <span id="early-window-two"></span> subjects remaining, you may be able
             to complete them in 1 semester instead of 2.</p>
           <p>It may be possible to complete your course earlier by taking extra subjects, but this depends on which
             subjects are available, whether this is the first or second semester, and whether you meet the
@@ -966,10 +968,10 @@ Last Modified: 11/07/2026
           <p>There are two possibilities:</p>
           <ul>
             <li>You may be able to study subjects during Summer School, but only if suitable subjects are running and
-              you are eligible to enrol in them. We only run 2 to 4 subjects. It depends on how many students are
-              interested. Students can enrol in a maximum of 2 subjects over summer. It is completely optional.</li>
-            <li>The only time you can study 5 subjects in a semester is when it will allow you to graduate that year and
-              when your average grade for the past year has been at least 70%.</li>
+              you are eligible to enrol in them. We only run <span id="early-summer-typical-count"></span> subjects. It depends on how many students are
+              interested. Students can enrol in a maximum of <span id="early-summer-maximum-subjects"></span> subjects over summer. It is completely optional.</li>
+            <li>The only time you can study <span id="early-overload-subject-count"></span> subjects in a semester is when it will allow you to graduate that year and
+              when your average grade for the past year has been at least <span id="early-overload-grade"></span>.</li>
           </ul>
         </section>
       </div>
@@ -1964,18 +1966,18 @@ Last Modified: 11/07/2026
       <div class="modal-body">
         <div class="load-explanations">
           <div class="load-explanations-title">Explanations:</div>
-          <p><strong>Domestic students</strong> can study full-time or part-time (so, 1, 2, 3, or 4 subjects) each
+          <p><strong>Domestic students</strong> can study full-time or part-time, up to the standard load of <span id="load-standard-count-domestic"></span> subjects each
             semester.</p>
-          <p><strong>International students</strong> must normally study a full load of 4 subjects (visa requirement).
+          <p><strong>International students</strong> must normally study a full load of <span id="load-standard-count-international"></span> subjects (visa requirement).
             This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
             intervention.</p>
-          <p><strong>More the 4 subjects?</strong> Studying more than 4 subjects is only possible when <strong>9 or
+          <p><strong>More than <span id="load-standard-count-overload"></span> subjects?</strong> Studying more than the standard load is only possible when <strong><span id="load-remaining-count-one"></span> or
               fewer</strong> subjects remain in the final
-            year or <strong>5 or fewer</strong> subjects remain in the final semester <strong>AND</strong> a CR average
-            (which is 60 to 69%) has been achieved over the past year.</p>
+            year or <strong><span id="load-remaining-count-two"></span> or fewer</strong> subjects remain in the final semester <strong>AND</strong> a <span id="load-overload-grade-label"></span> average
+            (which is <span id="load-overload-grade-range"></span>) has been achieved over the past year.</p>
         </div>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have 9 or 5 subjects remaining and a CR
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have <span id="load-confirm-remaining-counts"></span> subjects remaining and a <span id="load-confirm-grade-label"></span>
             average over the past year.
           </label>
         </div>
@@ -1997,7 +1999,7 @@ Last Modified: 11/07/2026
           <label for="load-value">How many subjects I will study this semester:</label>
           <select id="load-value" class="load-value-select"></select>
           <span id="load-lock-msg" class="load-lock-msg">You must study
-            4 subjects - a full load</span>
+            <span id="load-lock-standard-count"></span> subjects - a full load</span>
         </div>
         <div id="load-error" class="load-error"></div>
       </div>

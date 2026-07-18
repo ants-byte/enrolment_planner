@@ -231,7 +231,28 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorText = getBit371MajorRequirementText({ includeCompletedMinimum });
     return [prereqText, majorText].filter(Boolean).join(' & ') || 'None';
   };
-  const programRequirements = { total: 24, core: 14, major: 6, elective: 4 };
+  const programRequirements = { total: 0, core: 0, major: 0, elective: 0 };
+  const planningGuidance = {
+    firstSemesterRecommendations: {
+      networkSecurityOptionSubjects: [],
+      generalSubjects: [],
+      softwareDevelopmentOptionSubjects: [],
+    },
+    majorDecision: {
+      completedSubjectsThreshold: 0,
+      minimumMajorSubjectsByEndOfSecondYear: 0,
+      preferredMajorSubjectsByEndOfSecondYear: 0,
+    },
+    earlyCompletion: {
+      semesterOneRemainingCounts: [],
+      semesterTwoRemainingCounts: [],
+      noticeRemainingCounts: [],
+      capstoneRestrictedNoticeCount: 0,
+      standardSemesterLoad: 0,
+      overloadSubjectCount: 0,
+      minimumGrade: { label: '', minimumPercent: 0, maximumPercent: 0 },
+    },
+  };
   let currentMajorKey = 'ns';
   let currentMajorValue = 'undecided';
   const majorConfig = {
@@ -3023,83 +3044,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const creditGradeTokens = new Set(['CRT', 'RPL', 'CR']);
   const failGrades = new Set(['W', 'WNA', 'N', 'WE', 'H', 'SC', 'SAH', 'CNI', 'WN']);
   const currentEnrolmentGradeTokens = new Set(['H', 'XH']);
-  const legacySubjectPairs = [
-    ['BIT102', 'BIT121'],
-    ['BIT103', 'BIT108'],
-    ['BIT104', 'BIT111'],
-    ['BIT123', 'USE201'],
-    ['BIT201', 'BIT231'],
-    ['BIT202', 'USE201'],
-    ['BIT203', 'BIT241'],
-    ['BIT204', 'BIT236'],
-    ['BIT205', 'BIT245'],
-    ['BIT206', 'BIT233'],
-    ['BIT207', 'BIT213'],
-    ['BIT208', 'BIT214'],
-    ['BIT244', 'BIT214'],
-    ['BIT209', 'BIT235'],
-    ['BIT210', 'BIT246'],
-    ['BIT211', 'BIT231'],
-    ['BIT212', 'BIT247'],
-    ['BIT232', 'BIT230'],
-    ['BIT211', 'BIT231'],
-    ['BIT210', 'BIT246'],
-    ['BIT201', 'BIT231'],
-    ['BIT301', 'BIT230'],
-    ['BIT302', 'BIT242'],
-    ['BIT303', 'USE301'],
-    ['BIT304', 'BIT355'],
-    ['BIT305', 'BIT356'],
-    ['BIT307', 'BIT353'],
-    ['BIT308', 'BIT362'],
-    ['BIT309', 'BIT314'],
-    ['BIT310', 'BIT358'],
-    ['BIT311', 'BIT245'],
-    ['BIT312', 'BIT352'],
-    ['BIT311', 'BIT245'],
-    ['BIT310', 'BIT358'],
-    ['BIT301', 'BIT230'],
-    ['BIT111', 'BIT111'],
-    ['BIT110', 'BIT112'],
-    ['BIT102', 'BIT121'],
-    ['BIT101', 'BIT106'],
-    ['BIT100', 'BIT105'],
-    ['BIT100', 'BIT105'],
-    ['BIT234', 'BIT236'],
-    ['BIT306', 'BIT363'],
-    ['BIT247', 'BIT357'],
-    ['BIT101', 'BIT106'],
-    ['BIT207', 'BIT313'],
-    ['BIT209', 'BIT235'],
-    ['BIT210', 'BIT246'],
-    ['BIT2I0', 'BIT246'],
-    ['BIT305', 'BIT356'],
-    ['BIT307', 'BIT313'],
-    ['BIT308', 'BIT213'],
-    ['BIT312', 'BIT352'],
-    ['BITIOO', 'BIT100'],
-    ['BIT361', 'BIT314'],
-    ['BIT354', 'BIT313'],
-    ['BIT243', 'BIT213'],
-  ];
-  const previousCodeByNew = {
-    BIT213: 'BIT243 Network Security',
-    BIT214: 'BIT244 IT and Business Crime',
-    BIT313: 'BIT354 Network Vulnerability and Penetration Testing',
-    BIT314: 'BIT361 Security Management and Governance',
-  };
-  const legacySubjectMap = new Map(legacySubjectPairs);
-  const priorityOldCodeRows = new Set([
-    'BIT100',
-    'BIT101',
-    'BIT234',
-    'BIT243',
-    'BIT244',
-    'BIT306',
-    'BIT354',
-    'BIT361',
-  ]);
-  const hiddenOldCodeRows = new Set(['BITIOO', 'BIT1OO']);
+  const legacySubjectPairs = [];
+  const previousCodeByNew = {};
+  const legacySubjectMap = new Map();
+  const priorityOldCodeRows = new Set();
   const validUseCodes = new Set(['USE101', 'USE102', 'USE201', 'USE202', 'USE301']);
   const manualEntryAliases = new Map();
   const manualEntryMeta = new Map();
@@ -3566,23 +3514,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return `Enrolment ${semester} ${year}`;
   };
   const COURSE_MAP_LOAD_BUSY_MAX_MS = 30000;
-  const courseMapAiNameOverlay = {
-    streams: {
-      ns: 'Cyber Security',
-      ba: 'AI Data Analytics',
-      sd: 'Intelligent Software Development',
-    },
-    subjects: {
-      BIT245: { code: 'BIT2XX', name: 'Web Application Development' },
-      BIT246: { code: 'BIT2XX', name: 'Applied AI for Software Solutions' },
-      BIT351: { code: 'BIT3XX', name: 'Mobile and Intelligent Application Development' },
-      BIT358: { code: 'BIT3XX', name: 'Advanced Databases and Data Intelligence' },
-      BIT364: { code: 'BIT3XX', name: 'Software Delivery Automation' },
-      BIT236: { code: 'BIT2XX', name: 'AI-enabled Enterprise Big Data Visualisation' },
-      BIT357: { code: 'BIT3XX', name: 'Business Process Automation' },
-      BIT363: { code: 'BIT3XX', name: 'AI-powered e-Business' },
-    },
-  };
+  const courseMapAiNameOverlay = { streams: {}, subjects: {} };
 
   function getCourseMapIsStaffMode() { return !!staffFacing && !!courseMapStaffMode; }
   function hasCourseMapSourceWorkbookLoaded() {
@@ -7649,8 +7581,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const shouldShowRemainingNotice = (remainingCount) => {
     if (!remainingNoticeUnlocked) return false;
-    if (remainingCount !== 9 && remainingCount !== 5) return false;
-    if (remainingCount === 5 && areCapstonesBothRemaining()) return false;
+    if (!planningGuidance.earlyCompletion.noticeRemainingCounts.includes(remainingCount)) return false;
+    if (
+      remainingCount === planningGuidance.earlyCompletion.capstoneRestrictedNoticeCount &&
+      areCapstonesBothRemaining()
+    ) return false;
     return true;
   };
 
@@ -7673,23 +7608,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return !token || token === 'H';
     });
 
+  const summerSchoolLikelySubjectCodes = [];
+  const summerSchoolGuidance = {
+    durationWeeks: 0,
+    maximumSubjects: 0,
+    typicalSubjectCount: { minimum: 0, maximum: 0 },
+    minimumStudentDemand: 0,
+    notOfferedMajorStreams: [],
+    notOfferedSubjects: [],
+  };
+
   const getSummerSchoolOpportunityAlert = () => {
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const planningSemesterKey = getSemesterKeyForOffset(0);
-    const isSemesterOneWindow = planningSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent);
-    const isSemesterTwoWindow = planningSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent);
+    const isSemesterOneWindow =
+      planningSemesterKey === 'S1' &&
+      planningGuidance.earlyCompletion.semesterOneRemainingCounts.includes(remainingBeforeCurrent);
+    const isSemesterTwoWindow =
+      planningSemesterKey === 'S2' &&
+      planningGuidance.earlyCompletion.semesterTwoRemainingCounts.includes(remainingBeforeCurrent);
     if (!isSemesterOneWindow && !isSemesterTwoWindow) return null;
 
     const currentCodes = getCurrentStudyCodes();
-    const summerLikelyCodes = ['BIT241', 'BIT352'].filter((code) => currentCodes.has(code));
+    const summerLikelyCodes = summerSchoolLikelySubjectCodes.filter((code) => currentCodes.has(code));
     const severity = summerLikelyCodes.length ? 'warning' : 'info';
     const title = severity === 'warning' ? 'Summer school subject selected' : 'Summer school likely';
     const selectedText = summerLikelyCodes.map((code) => `${code} ${getSubjectName(code)}`).join(', ');
+    const likelyCodesText = summerSchoolLikelySubjectCodes.join('/');
     const leadClass = severity === 'warning' ? 'alert-title-warning' : 'alert-title-info';
     const semesterLabel = getSemesterLabel(planningSemesterKey);
     const body =
       severity === 'warning'
-        ? `${escapeHtml(selectedText)} ${summerLikelyCodes.length === 1 ? 'is' : 'are'} selected for the current enrolment. Summer school will probably be available, and BIT241/BIT352 are the subjects most likely to run in summer school. Consider whether one of these should be kept for summer school if another suitable current-semester subject is available.`
+        ? `${escapeHtml(selectedText)} ${summerLikelyCodes.length === 1 ? 'is' : 'are'} selected for the current enrolment. Summer school will probably be available, and ${escapeHtml(likelyCodesText)} ${summerSchoolLikelySubjectCodes.length === 1 ? 'is the subject' : 'are the subjects'} most likely to run in summer school. Consider whether one of these should be kept for summer school if another suitable current-semester subject is available.`
         : `Summer school will probably be available. This student has ${remainingBeforeCurrent} subjects remaining before the current ${semesterLabel.toLowerCase()} enrolment, so summer school may help keep the completion plan on track.`;
 
     return {
@@ -7703,37 +7653,32 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const planningSemesterKey = getSemesterKeyForOffset(0);
     const hasEarlyCompletionOption =
-      (planningSemesterKey === 'S1' && [9, 10].includes(remainingBeforeCurrent)) ||
-      (planningSemesterKey === 'S2' && [5, 6, 9, 10].includes(remainingBeforeCurrent));
+      (
+        planningSemesterKey === 'S1' &&
+        planningGuidance.earlyCompletion.semesterOneRemainingCounts.includes(remainingBeforeCurrent)
+      ) ||
+      (
+        planningSemesterKey === 'S2' &&
+        planningGuidance.earlyCompletion.semesterTwoRemainingCounts.includes(remainingBeforeCurrent)
+      );
     const fullLoadSelected = getPlannedCount() >= getLoadThreshold() && getLoadThreshold() > 0;
     if (!hasEarlyCompletionOption || !fullLoadSelected) return null;
     if (subjectState.get('BIT371')?.completed || subjectState.get('BIT371')?.toggled) return null;
     return {
       title: 'Capstone may affect early completion',
-      html: '<p><strong class="alert-inline-title alert-title-warning">Capstone may affect early completion</strong> <span class="alert-inline-text">BIT371 is still required after the selected full load. Because Capstone runs as a sequence, completing BIT371 may prevent Summer School, or possibly a 5-subject final semester, from allowing this student to complete a semester early.</span></p>',
+      html: `<p><strong class="alert-inline-title alert-title-warning">Capstone may affect early completion</strong> <span class="alert-inline-text">BIT371 is still required after the selected full load. Because Capstone runs as a sequence, completing BIT371 may prevent Summer School, or possibly a ${planningGuidance.earlyCompletion.overloadSubjectCount}-subject final semester, from allowing this student to complete a semester early.</span></p>`,
     };
   };
 
-  const FMP_DIPLOMA_CREDIT_CODES = ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'];
-  const FMP_ASSOCIATE_CREDIT_CODES = [
-    'BIT105',
-    'BIT106',
-    'BIT108',
-    'BIT111',
-    'BIT112',
-    'BIT121',
-    'BIT213',
-    'BIT230',
-    'BIT231',
-    'BIT233',
-    'BIT235',
-    'BIT241',
-    'BIT242',
-    'BIT214',
-    'BIT245',
-    'BIT358',
-  ];
-  const HEBSITAD_REQUIREMENTS = { total: 16, core: 10, major: 3, elective: 3 };
+  const codeModalPresets = {
+    fmpAssoc: [],
+    fmpDip: [],
+    mpDip: [],
+    mpDipOld: [],
+  };
+  const FMP_DIPLOMA_CREDIT_CODES = codeModalPresets.fmpDip;
+  const FMP_ASSOCIATE_CREDIT_CODES = codeModalPresets.fmpAssoc;
+  const HEBSITAD_REQUIREMENTS = { total: 0, core: 0, major: 0, elective: 0 };
   const getCompletedSubjectCodeSet = () =>
     new Set(
       Array.from(subjectState.entries())
@@ -7891,7 +7836,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         title: 'Subjects remaining',
         html: `<p><strong class="alert-inline-title alert-title-info">${remainingCount} subjects remaining</strong> <span class="alert-inline-text">Median grade (past year, median): ${escapeHtml(
           medianGradePastYear
-        )}.</span></p><p class="alert-inline-text">Students can study 5 subjects in 1 semester in their final year if it gives them the option of graduating that year. This option is open to those with a CR average (60 to 69%).</p>`,
+        )}.</span></p><p class="alert-inline-text">Students can study ${planningGuidance.earlyCompletion.overloadSubjectCount} subjects in 1 semester in their final year if it gives them the option of graduating that year. This option is open to those with a ${escapeHtml(
+          planningGuidance.earlyCompletion.minimumGrade.label
+        )} average (${planningGuidance.earlyCompletion.minimumGrade.minimumPercent} to ${planningGuidance.earlyCompletion.minimumGrade.maximumPercent}%).</p>`,
       });
     }
     const summerSchoolAlert = getSummerSchoolOpportunityAlert();
@@ -7960,30 +7907,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     }
     if (hasCompletedAnyChangedCodeSubject()) {
-      const changedRows = [
-        {
-          newCode: 'BIT214',
-          newLabel: 'BIT214 Cloud and IoT Emerging Technologies',
-          oldLabel: 'BIT244 IT and Business Crime',
-        },
-        {
-          newCode: 'BIT213',
-          newLabel: 'BIT213 Network and Cyber Security Essentials',
-          oldLabel: 'BIT243 Network Security',
-        },
-        {
-          newCode: 'BIT313',
-          newLabel: 'BIT313 Cyber Vulnerability and Hardening',
-          oldLabel: 'BIT354 Network Vulnerability and Penetration Testing',
-        },
-        {
-          newCode: 'BIT314',
-          newLabel: 'BIT314 Cybersecurity Management and Governance',
-          oldLabel: 'BIT361 Network Management and Governance',
-        },
-      ];
+      const changedRows = getChangedCodeRows()
+        .filter(({ newCode }) => !!subjectState.get(newCode)?.completed);
       const changedRowsHtml = changedRows
-        .map(({ newLabel, oldLabel }) => `<li>${newLabel} was <strong>${oldLabel}</strong></li>`)
+        .map(
+          ({ newLabel, oldLabel }) =>
+            `<li>${escapeHtml(newLabel)} was <strong>${escapeHtml(oldLabel)}</strong></li>`
+        )
         .join('');
       infoMessages.push({
         title: 'Changed subject codes/names',
@@ -8851,30 +8781,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return name && name !== code ? `${code} ${name}` : code;
   };
 
-  const codeModalPresets = {
-    fmpAssoc: [
-      'BIT105',
-      'BIT106',
-      'BIT108',
-      'BIT111',
-      'BIT112',
-      'BIT121',
-      'BIT213',
-      'BIT230',
-      'BIT231',
-      'BIT233',
-      'BIT235',
-      'BIT241',
-      'BIT242',
-      'BIT214',
-      'BIT245',
-      'BIT358',
-    ],
-    fmpDip: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT231', 'BIT233', 'BIT242', 'BIT245'],
-    mpDip: ['BIT105', 'BIT106', 'BIT108', 'BIT111', 'BIT121', 'BIT233', 'BIT213', 'USE101'],
-    mpDipOld: ['BIT106', 'BIT111', 'BIT121', 'BIT230', 'BIT233', 'BIT242', 'BIT245', 'USE101'],
-  };
-
   const fillCodeInputWithPreset = (codes = []) => {
     if (!codeInput) return;
     const lines = codes.map((code) => formatPresetLine(code)).filter(Boolean).join('\n');
@@ -9361,7 +9267,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     updateSemesterCounts(completed, planned);
 
     if (majorHeading) {
-      if (completedCount >= 8) {
+      if (completedCount >= planningGuidance.majorDecision.completedSubjectsThreshold) {
         majorHeading.textContent = 'You must choose your major in the sidebar.';
         majorHeading.classList.add('major-warning');
       } else {
@@ -9447,10 +9353,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return Math.max(0, total - completed - useCredits + excessElectives);
   };
 
+  const getChangedCodeRows = () =>
+    Object.entries(previousCodeByNew).map(([newCode, oldLabel]) => ({
+      newCode,
+      newLabel: `${newCode} ${getSubjectName(newCode)}`,
+      oldLabel,
+    }));
   const hasCompletedAnyChangedCodeSubject = () =>
-    ['BIT214', 'BIT213', 'BIT313', 'BIT314'].some((code) => !!subjectState.get(code)?.completed);
+    getChangedCodeRows().some(({ newCode }) => !!subjectState.get(newCode)?.completed);
   const getCompletedChangedCodeSubjects = () =>
-    ['BIT214', 'BIT213', 'BIT313', 'BIT314'].filter((code) => !!subjectState.get(code)?.completed);
+    getChangedCodeRows()
+      .map(({ newCode }) => newCode)
+      .filter((code) => !!subjectState.get(code)?.completed);
 
   const updateSubjectCounts = () => {
     renderSasFootnote();
@@ -10232,10 +10146,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const creditNote = document.createElement('div');
         creditNote.className = 'credit-note';
         creditNote.dataset.creditOnly = 'true';
-        creditNote.innerHTML =
-          id === 'BIT371' || id === 'BIT372'
-            ? 'Capstone cannot be credited.'
-            : '3rd year subjects and BIT241 can normally not be credited.';
+        creditNote.innerHTML = '3rd year subjects and BIT241 can normally not be credited.';
         creditNote.style.display = 'none';
         tooltip.appendChild(creditNote);
       }
@@ -10334,7 +10245,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (previousCodeByNew[id]) {
         tooltip.insertAdjacentHTML(
           'beforeend',
-          `<div class="tooltip-gap"></div><div class="pre-block"><span class="tooltip-prev-heading">Previously:</span> <span class="tooltip-prev-value">${previousCodeByNew[id]}</span></div>`
+          `<div class="tooltip-gap"></div><div class="pre-block"><span class="tooltip-prev-heading">Previously:</span> <span class="tooltip-prev-value">${escapeHtml(previousCodeByNew[id])}</span></div>`
         );
       }
       if (hasTooltipTime && availabilityHtml) {
@@ -10924,7 +10835,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const resetLoadToFullLoad = () => {
     studentType = domesticLoad ? 'domestic' : 'international';
     exceptionalLoadApproved = false;
-    fullLoadCap = 4;
+    fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
     setLoadError('');
     hideLoadModal();
     conditionalRecompute({ force: true, usePlanned: false });
@@ -11586,7 +11497,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const resetModeOptionsToDefault = ({ preservePassForEnrolments = false } = {}) => {
     overrideMode = false;
-    fullLoadCap = 4;
+    fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
     showSemCounts = false;
     courseMapStudentSemCountsOn = false;
     refreshCurrentEnrolmentStudentRecord();
@@ -14467,6 +14378,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!completedMode) {
         conditionalRecompute({ force: true, usePlanned: true });
         updateWarnings();
+        activateDeferredAlertInteractionBlocker();
       }
     });
   }
@@ -15431,6 +15343,187 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
+  const syncConfiguredGuidance = () => {
+    const setText = (id, value) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = String(value ?? '');
+    };
+    const naturalList = (values = [], conjunction = 'and') => {
+      const items = values.map((value) => String(value || '').trim()).filter(Boolean);
+      if (items.length < 2) return items[0] || '';
+      if (items.length === 2) return `${items[0]} ${conjunction} ${items[1]}`;
+      return `${items.slice(0, -1).join(', ')}, ${conjunction} ${items.at(-1)}`;
+    };
+    const subjectList = (codes = [], includeNames = false) =>
+      naturalList(
+        codes.map((code) =>
+          includeNames ? `${code} ${getSubjectName(code)}` : code
+        )
+      );
+    const countList = (counts = []) => naturalList(counts.map(String), 'or');
+    const grade = planningGuidance.earlyCompletion.minimumGrade;
+    const gradeRange = `${grade.minimumPercent} to ${grade.maximumPercent}%`;
+    const gradeDescription = `${grade.label} (${gradeRange})`;
+
+    setText('program-total-subjects', programRequirements.total);
+    setText('program-core-subjects', programRequirements.core);
+    setText('program-major-subjects', programRequirements.major);
+    setText('program-elective-subjects', programRequirements.elective);
+
+    const configuredSubjectDefinitions = semesterConfig?.subjects || {};
+    const sharedStreamDescriptions = Object.entries(configuredSubjectDefinitions)
+      .filter(([code, definition]) =>
+        !code.startsWith('_') &&
+        Array.isArray(definition?.majorStreams) &&
+        definition.majorStreams.length > 1
+      )
+      .map(([code, definition]) => {
+        const streamNames = definition.majorStreams.map((streamCode) => {
+          const config = Object.values(majorConfig).find((entry) => entry.code === streamCode);
+          return config?.configKey?.replace(/\s+\([A-Z]+\)$/, '') || streamCode;
+        });
+        return `${code} belongs to both ${naturalList(streamNames)}.`;
+      });
+    setText('shared-stream-subject-guidance', sharedStreamDescriptions.join(' '));
+
+    const recommendations = planningGuidance.firstSemesterRecommendations;
+    setText(
+      'guidance-first-semester-network-subjects',
+      subjectList(recommendations.networkSecurityOptionSubjects)
+    );
+    setText(
+      'guidance-first-semester-general-subjects',
+      subjectList(recommendations.generalSubjects)
+    );
+    setText(
+      'guidance-first-semester-software-subjects',
+      subjectList(recommendations.softwareDevelopmentOptionSubjects)
+    );
+    setText(
+      'guidance-major-decision-threshold',
+      planningGuidance.majorDecision.completedSubjectsThreshold
+    );
+    setText(
+      'guidance-major-minimum',
+      planningGuidance.majorDecision.minimumMajorSubjectsByEndOfSecondYear
+    );
+    setText(
+      'guidance-major-preferred',
+      planningGuidance.majorDecision.preferredMajorSubjectsByEndOfSecondYear
+    );
+
+    const semesterOneCounts = planningGuidance.earlyCompletion.semesterOneRemainingCounts;
+    const semesterTwoOnlyCounts =
+      planningGuidance.earlyCompletion.semesterTwoRemainingCounts
+        .filter((count) => !semesterOneCounts.includes(count));
+    const firstWindowText = countList(semesterOneCounts);
+    const secondWindowText = countList(semesterTwoOnlyCounts);
+    ['help-early-window-one', 'early-window-one'].forEach((id) => setText(id, firstWindowText));
+    ['help-early-window-two', 'early-window-two'].forEach((id) => setText(id, secondWindowText));
+
+    setText('help-summer-duration-weeks', summerSchoolGuidance.durationWeeks);
+    ['help-summer-maximum-subjects', 'early-summer-maximum-subjects']
+      .forEach((id) => setText(id, summerSchoolGuidance.maximumSubjects));
+    const typicalSummerCount =
+      `${summerSchoolGuidance.typicalSubjectCount.minimum} to ${summerSchoolGuidance.typicalSubjectCount.maximum}`;
+    ['help-summer-typical-count', 'early-summer-typical-count']
+      .forEach((id) => setText(id, typicalSummerCount));
+    setText('help-summer-minimum-demand', summerSchoolGuidance.minimumStudentDemand);
+    setText(
+      'help-summer-likely-subjects',
+      subjectList(summerSchoolLikelySubjectCodes, true)
+    );
+    const notOfferedStreamNames = summerSchoolGuidance.notOfferedMajorStreams.map((majorKey) =>
+      majorConfig[majorKey]?.configKey?.replace(/\s+\([A-Z]+\)$/, '') || majorKey.toUpperCase()
+    );
+    setText('help-summer-not-offered-streams', naturalList(notOfferedStreamNames));
+    const notOfferedSubjectText =
+      summerSchoolGuidance.notOfferedSubjects.length &&
+      summerSchoolGuidance.notOfferedSubjects.every((code) =>
+        /capstone/i.test(getSubjectName(code))
+      )
+        ? `Capstone (${subjectList(summerSchoolGuidance.notOfferedSubjects)})`
+        : subjectList(summerSchoolGuidance.notOfferedSubjects, true);
+    setText('help-summer-not-offered-subjects', notOfferedSubjectText);
+
+    const overloadCount = planningGuidance.earlyCompletion.overloadSubjectCount;
+    [
+      'help-overload-subject-count-heading',
+      'help-overload-subject-count',
+      'early-overload-subject-count-heading',
+      'early-overload-subject-count',
+    ].forEach((id) => setText(id, overloadCount));
+    ['help-overload-grade', 'early-overload-grade']
+      .forEach((id) => setText(id, gradeDescription));
+
+    const standardLoad = planningGuidance.earlyCompletion.standardSemesterLoad;
+    [
+      'load-standard-count-domestic',
+      'load-standard-count-international',
+      'load-standard-count-overload',
+      'load-lock-standard-count',
+    ].forEach((id) => setText(id, standardLoad));
+    if (varyLoadButton) {
+      varyLoadButton.textContent = String(standardLoad);
+      varyLoadButton.setAttribute(
+        'data-tooltip',
+        (varyLoadButton.dataset.guidanceTemplate || '')
+          .replace(/\[\[STANDARD_LOAD\]\]/g, String(standardLoad))
+      );
+    }
+    const loadLabel = document.getElementById('load-label');
+    if (loadLabel) {
+      loadLabel.setAttribute(
+        'data-tooltip-html',
+        (loadLabel.dataset.guidanceTemplate || '')
+          .replace(/\[\[STANDARD_LOAD\]\]/g, String(standardLoad))
+          .replace(/\[\[OVERLOAD_COUNT\]\]/g, String(overloadCount))
+          .replace(/\[\[GRADE_LABEL\]\]/g, escapeHtml(grade.label))
+      );
+    }
+    const noticeCounts = planningGuidance.earlyCompletion.noticeRemainingCounts;
+    setText('load-remaining-count-one', noticeCounts[0] || '');
+    setText('load-remaining-count-two', noticeCounts[1] || '');
+    setText('load-confirm-remaining-counts', countList(noticeCounts));
+    setText('load-overload-grade-label', grade.label);
+    setText('load-overload-grade-range', gradeRange);
+    setText('load-confirm-grade-label', grade.label);
+
+    const capstoneStartCodes = Object.keys(specialRequirements);
+    const capstoneCodes = Array.from(
+      new Set([
+        ...capstoneStartCodes,
+        ...Object.entries(prerequisites)
+          .filter(([, requiredCodes]) =>
+            requiredCodes.some((code) => capstoneStartCodes.includes(code))
+          )
+          .map(([code]) => code),
+      ])
+    ).sort();
+    const capstoneRequirements = capstoneCodes
+      .map((code) => `${code} requires ${getPrerequisiteDisplayValue(code)}.`)
+      .join(' ');
+    const cardThemeGuidance = document.querySelector(
+      '[data-guidance-template*="[[ELECTIVE_COUNT]]"]'
+    );
+    if (cardThemeGuidance) {
+      cardThemeGuidance.setAttribute(
+        'data-tooltip',
+        (cardThemeGuidance.dataset.guidanceTemplate || '')
+          .replace(/\[\[ELECTIVE_COUNT\]\]/g, String(programRequirements.elective))
+      );
+    }
+    if (majorSectionDescriptor) {
+      const template = majorSectionDescriptor.dataset.guidanceTemplate || '';
+      majorSectionDescriptor.setAttribute(
+        'data-tooltip-html',
+        template
+          .replace(/\[\[CAPSTONE_CODES\]\]/g, escapeHtml(subjectList(capstoneCodes)))
+          .replace(/\[\[CAPSTONE_REQUIREMENTS\]\]/g, escapeHtml(capstoneRequirements))
+      );
+    }
+  };
+
   const parseInStrataCodes = (value) => {
     const matches = String(value || '').toUpperCase().match(manualCodeRegexGlobal) || [];
     const unique = [];
@@ -16086,6 +16179,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!configuredTimetable || typeof configuredTimetable !== 'object' || Array.isArray(configuredTimetable)) {
           throw new Error('timetable must be an object keyed by subject code.');
         }
+        const configuredProgramRequirements = parsed?.programRequirements;
+        if (
+          !configuredProgramRequirements ||
+          typeof configuredProgramRequirements !== 'object' ||
+          Array.isArray(configuredProgramRequirements)
+        ) {
+          throw new Error('programRequirements must be an object.');
+        }
+        const resolvedProgramRequirements = {};
+        ['total', 'core', 'major', 'elective'].forEach((key) => {
+          const value = Number(configuredProgramRequirements[key]);
+          if (!Number.isInteger(value) || value < 1) {
+            throw new Error(`programRequirements.${key} must be a positive whole number.`);
+          }
+          resolvedProgramRequirements[key] = value;
+        });
+        if (
+          resolvedProgramRequirements.core +
+          resolvedProgramRequirements.major +
+          resolvedProgramRequirements.elective !==
+          resolvedProgramRequirements.total
+        ) {
+          throw new Error('programRequirements core + major + elective must equal total.');
+        }
         const configuredSubjects = parsed?.subjects;
         if (!configuredSubjects || typeof configuredSubjects !== 'object' || Array.isArray(configuredSubjects)) {
           throw new Error('subjects must be an object keyed by subject code.');
@@ -16154,13 +16271,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           majorKeys.forEach((majorKey) => resolvedMajorCodes[majorKey].push(code));
         });
         if (!Object.keys(resolvedSubjectNames).length) throw new Error('subjects must contain at least one subject.');
-        if (resolvedCoreCodes.length !== programRequirements.core) {
-          throw new Error(`subjects must contain ${programRequirements.core} subjects with core set to true.`);
+        if (resolvedCoreCodes.length !== resolvedProgramRequirements.core) {
+          throw new Error(`subjects must contain ${resolvedProgramRequirements.core} subjects with core set to true.`);
         }
         Object.entries(resolvedMajorCodes).forEach(([majorKey, codes]) => {
-          if (codes.length !== programRequirements.major) {
+          if (codes.length !== resolvedProgramRequirements.major) {
             throw new Error(
-              `subjects must assign ${programRequirements.major} subjects to the ${majorConfig[majorKey].code} stream.`
+              `subjects must assign ${resolvedProgramRequirements.major} subjects to the ${majorConfig[majorKey].code} stream.`
             );
           }
         });
@@ -16182,6 +16299,497 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           });
           return resolved;
         };
+        const requireConfigObject = (value, path) => {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            throw new Error(`${path} must be an object.`);
+          }
+          return value;
+        };
+        const configuredOldCodes = requireConfigObject(parsed?.oldCodes, 'oldCodes');
+        const configuredAliases = requireConfigObject(
+          parsed?.acceptedSubjectCodeAliases,
+          'acceptedSubjectCodeAliases'
+        );
+        const resolvedOldCodePairs = [];
+        const resolvedLegacySubjectMap = new Map();
+        const addLegacyMapping = (rawSource, rawTarget, path, sourcePattern) => {
+          if (rawSource.startsWith('_')) return;
+          const source = String(rawSource || '').trim().toUpperCase();
+          const target = String(rawTarget || '').trim().toUpperCase();
+          if (!sourcePattern.test(source) || rawSource !== source) {
+            throw new Error(`${path} key "${rawSource}" is invalid.`);
+          }
+          if (!/^(?:BIT\d{3}|USE\d{3})$/.test(target)) {
+            throw new Error(`${path}.${source} must map to a BIT or USE subject code.`);
+          }
+          if (Object.prototype.hasOwnProperty.call(resolvedSubjectNames, source)) {
+            throw new Error(`${path}.${source} cannot replace a current subject code.`);
+          }
+          if (resolvedLegacySubjectMap.has(source)) {
+            throw new Error(`${path}.${source} duplicates another old code or alias.`);
+          }
+          resolvedLegacySubjectMap.set(source, target);
+        };
+        Object.entries(configuredOldCodes).forEach(([oldCode, newCode]) => {
+          addLegacyMapping(oldCode, newCode, 'oldCodes', /^BIT\d{3}$/);
+          if (!oldCode.startsWith('_')) {
+            resolvedOldCodePairs.push([
+              String(oldCode).trim().toUpperCase(),
+              String(newCode).trim().toUpperCase(),
+            ]);
+          }
+        });
+        Object.entries(configuredAliases).forEach(([alias, newCode]) => {
+          addLegacyMapping(alias, newCode, 'acceptedSubjectCodeAliases', /^BIT[A-Z0-9]{3}$/);
+        });
+        if (!resolvedOldCodePairs.length) throw new Error('oldCodes must contain at least one old subject code.');
+        const resolveConfiguredLegacyCode = (rawCode) => {
+          let code = String(rawCode || '').trim().toUpperCase();
+          const seen = new Set();
+          while (resolvedLegacySubjectMap.has(code)) {
+            if (seen.has(code)) throw new Error(`Old-code mapping contains a cycle involving ${code}.`);
+            seen.add(code);
+            code = resolvedLegacySubjectMap.get(code);
+          }
+          if (
+            !Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code) &&
+            !validUseCodes.has(code)
+          ) {
+            throw new Error(`Old-code mapping for ${rawCode} ends at unknown subject code "${code}".`);
+          }
+          return code;
+        };
+        resolvedLegacySubjectMap.forEach((unusedTarget, source) => {
+          resolveConfiguredLegacyCode(source);
+        });
+        const configuredOldCodeDisplay = requireConfigObject(parsed?.oldCodeDisplay, 'oldCodeDisplay');
+        const supportedOldCodeDisplayKeys = new Set(['showFirst', 'previousSubjectNames']);
+        const unsupportedOldCodeDisplayKeys = Object.keys(configuredOldCodeDisplay)
+          .filter((key) => !key.startsWith('_') && !supportedOldCodeDisplayKeys.has(key));
+        if (unsupportedOldCodeDisplayKeys.length) {
+          throw new Error(
+            `oldCodeDisplay contains unsupported field${unsupportedOldCodeDisplayKeys.length === 1 ? '' : 's'}: ${unsupportedOldCodeDisplayKeys.join(', ')}.`
+          );
+        }
+        if (!Array.isArray(configuredOldCodeDisplay.showFirst)) {
+          throw new Error('oldCodeDisplay.showFirst must be an array.');
+        }
+        const resolvedPriorityOldCodeRows = new Set();
+        configuredOldCodeDisplay.showFirst.forEach((rawCode) => {
+          const code = String(rawCode || '').trim().toUpperCase();
+          if (!configuredOldCodes[code]) {
+            throw new Error(`oldCodeDisplay.showFirst contains code "${rawCode}" that is not in oldCodes.`);
+          }
+          if (resolvedPriorityOldCodeRows.has(code)) {
+            throw new Error(`oldCodeDisplay.showFirst contains duplicate code "${code}".`);
+          }
+          resolvedPriorityOldCodeRows.add(code);
+        });
+        const configuredPreviousSubjectNames = requireConfigObject(
+          configuredOldCodeDisplay.previousSubjectNames,
+          'oldCodeDisplay.previousSubjectNames'
+        );
+        const resolvedPreviousCodeByNew = {};
+        Object.entries(configuredPreviousSubjectNames).forEach(([rawOldCode, rawName]) => {
+          if (rawOldCode.startsWith('_')) return;
+          const oldCode = String(rawOldCode || '').trim().toUpperCase();
+          const previousName = String(rawName || '').trim();
+          if (!configuredOldCodes[oldCode]) {
+            throw new Error(
+              `oldCodeDisplay.previousSubjectNames key "${rawOldCode}" is not defined in oldCodes.`
+            );
+          }
+          if (!previousName || /[\r\n\t]/.test(previousName)) {
+            throw new Error(
+              `oldCodeDisplay.previousSubjectNames.${oldCode} must be a non-empty, single-line name.`
+            );
+          }
+          const newCode = resolveConfiguredLegacyCode(oldCode);
+          if (!Object.prototype.hasOwnProperty.call(resolvedSubjectNames, newCode)) {
+            throw new Error(
+              `oldCodeDisplay.previousSubjectNames.${oldCode} must resolve to a current BIT subject.`
+            );
+          }
+          if (resolvedPreviousCodeByNew[newCode]) {
+            throw new Error(`oldCodeDisplay defines more than one previous name for ${newCode}.`);
+          }
+          resolvedPreviousCodeByNew[newCode] = `${oldCode} ${previousName}`;
+        });
+
+        const parseConfiguredStudyCodeList = (values, path) => {
+          if (!Array.isArray(values) || !values.length) {
+            throw new Error(`${path} must be a non-empty array.`);
+          }
+          const resolved = [];
+          const seen = new Set();
+          values.forEach((rawCode) => {
+            const code = String(rawCode || '').trim().toUpperCase();
+            if (
+              !Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code) &&
+              !validUseCodes.has(code)
+            ) {
+              throw new Error(`${path} contains unknown subject code "${rawCode}".`);
+            }
+            if (seen.has(code)) throw new Error(`${path} contains duplicate subject code "${code}".`);
+            seen.add(code);
+            resolved.push(code);
+          });
+          return resolved;
+        };
+        const configuredCreditAndArticulation = requireConfigObject(
+          parsed?.creditAndArticulation,
+          'creditAndArticulation'
+        );
+        const configuredCodeEntryPresets = requireConfigObject(
+          configuredCreditAndArticulation.codeEntryPresets,
+          'creditAndArticulation.codeEntryPresets'
+        );
+        const configuredPresetKeys = {
+          fmpAssociateDegree: 'fmpAssoc',
+          fmpDiploma: 'fmpDip',
+          melbournePolytechnicDiploma2027: 'mpDip',
+          melbournePolytechnicDiplomaPrevious: 'mpDipOld',
+        };
+        const unsupportedPresetKeys = Object.keys(configuredCodeEntryPresets)
+          .filter((key) => !key.startsWith('_') && !configuredPresetKeys[key]);
+        if (unsupportedPresetKeys.length) {
+          throw new Error(
+            `creditAndArticulation.codeEntryPresets contains unsupported preset${unsupportedPresetKeys.length === 1 ? '' : 's'}: ${unsupportedPresetKeys.join(', ')}.`
+          );
+        }
+        const resolvedCodeModalPresets = {};
+        Object.entries(configuredPresetKeys).forEach(([configKey, runtimeKey]) => {
+          resolvedCodeModalPresets[runtimeKey] = parseConfiguredStudyCodeList(
+            configuredCodeEntryPresets[configKey],
+            `creditAndArticulation.codeEntryPresets.${configKey}`
+          );
+        });
+        if (
+          !resolvedCodeModalPresets.fmpDip.every((code) =>
+            resolvedCodeModalPresets.fmpAssoc.includes(code)
+          )
+        ) {
+          throw new Error(
+            'creditAndArticulation.codeEntryPresets.fmpDiploma must be contained in fmpAssociateDegree.'
+          );
+        }
+        const configuredHebsitadRequirements = requireConfigObject(
+          configuredCreditAndArticulation.hebsitadRequirements,
+          'creditAndArticulation.hebsitadRequirements'
+        );
+        const requirementKeys = ['total', 'core', 'major', 'elective'];
+        const unsupportedRequirementKeys = Object.keys(configuredHebsitadRequirements)
+          .filter((key) => !key.startsWith('_') && !requirementKeys.includes(key));
+        if (unsupportedRequirementKeys.length) {
+          throw new Error(
+            `creditAndArticulation.hebsitadRequirements contains unsupported field${unsupportedRequirementKeys.length === 1 ? '' : 's'}: ${unsupportedRequirementKeys.join(', ')}.`
+          );
+        }
+        const resolvedHebsitadRequirements = {};
+        requirementKeys.forEach((key) => {
+          const value = Number(configuredHebsitadRequirements[key]);
+          if (!Number.isInteger(value) || value < 1) {
+            throw new Error(
+              `creditAndArticulation.hebsitadRequirements.${key} must be a positive whole number.`
+            );
+          }
+          resolvedHebsitadRequirements[key] = value;
+        });
+        if (
+          resolvedHebsitadRequirements.core +
+          resolvedHebsitadRequirements.major +
+          resolvedHebsitadRequirements.elective !==
+          resolvedHebsitadRequirements.total
+        ) {
+          throw new Error(
+            'creditAndArticulation.hebsitadRequirements core + major + elective must equal total.'
+          );
+        }
+
+        const configuredSummerSchool = requireConfigObject(parsed?.summerSchool, 'summerSchool');
+        const resolvedSummerSchoolLikelySubjectCodes = parseSubjectCodeList(
+          configuredSummerSchool.likelySubjects,
+          'summerSchool.likelySubjects'
+        );
+        if (!resolvedSummerSchoolLikelySubjectCodes.length) {
+          throw new Error('summerSchool.likelySubjects must contain at least one subject.');
+        }
+        const parsePositiveWholeNumber = (value, path) => {
+          const number = Number(value);
+          if (!Number.isInteger(number) || number < 1) {
+            throw new Error(`${path} must be a positive whole number.`);
+          }
+          return number;
+        };
+        const resolvedSummerSchoolGuidance = {
+          durationWeeks: parsePositiveWholeNumber(
+            configuredSummerSchool.durationWeeks,
+            'summerSchool.durationWeeks'
+          ),
+          maximumSubjects: parsePositiveWholeNumber(
+            configuredSummerSchool.maximumSubjects,
+            'summerSchool.maximumSubjects'
+          ),
+          minimumStudentDemand: parsePositiveWholeNumber(
+            configuredSummerSchool.minimumStudentDemand,
+            'summerSchool.minimumStudentDemand'
+          ),
+          typicalSubjectCount: {},
+          notOfferedMajorStreams: [],
+          notOfferedSubjects: parseSubjectCodeList(
+            configuredSummerSchool.notOfferedSubjects,
+            'summerSchool.notOfferedSubjects'
+          ),
+        };
+        const configuredTypicalSubjectCount = requireConfigObject(
+          configuredSummerSchool.typicalSubjectCount,
+          'summerSchool.typicalSubjectCount'
+        );
+        resolvedSummerSchoolGuidance.typicalSubjectCount.minimum = parsePositiveWholeNumber(
+          configuredTypicalSubjectCount.minimum,
+          'summerSchool.typicalSubjectCount.minimum'
+        );
+        resolvedSummerSchoolGuidance.typicalSubjectCount.maximum = parsePositiveWholeNumber(
+          configuredTypicalSubjectCount.maximum,
+          'summerSchool.typicalSubjectCount.maximum'
+        );
+        if (
+          resolvedSummerSchoolGuidance.typicalSubjectCount.maximum <
+          resolvedSummerSchoolGuidance.typicalSubjectCount.minimum
+        ) {
+          throw new Error('summerSchool.typicalSubjectCount.maximum must be at least minimum.');
+        }
+        if (!Array.isArray(configuredSummerSchool.notOfferedMajorStreams)) {
+          throw new Error('summerSchool.notOfferedMajorStreams must be an array.');
+        }
+        const seenNotOfferedStreams = new Set();
+        configuredSummerSchool.notOfferedMajorStreams.forEach((rawStream) => {
+          const streamCode = String(rawStream || '').trim().toUpperCase();
+          const majorKey = majorKeyByCode.get(streamCode);
+          if (!majorKey) {
+            throw new Error(
+              `summerSchool.notOfferedMajorStreams contains unsupported stream "${rawStream}".`
+            );
+          }
+          if (seenNotOfferedStreams.has(majorKey)) {
+            throw new Error(
+              `summerSchool.notOfferedMajorStreams contains duplicate stream "${streamCode}".`
+            );
+          }
+          seenNotOfferedStreams.add(majorKey);
+          resolvedSummerSchoolGuidance.notOfferedMajorStreams.push(majorKey);
+        });
+
+        const configuredPlanningGuidance = requireConfigObject(
+          parsed?.planningGuidance,
+          'planningGuidance'
+        );
+        const configuredFirstSemesterRecommendations = requireConfigObject(
+          configuredPlanningGuidance.firstSemesterRecommendations,
+          'planningGuidance.firstSemesterRecommendations'
+        );
+        const resolvedFirstSemesterRecommendations = {};
+        [
+          'networkSecurityOptionSubjects',
+          'generalSubjects',
+          'softwareDevelopmentOptionSubjects',
+        ].forEach((key) => {
+          resolvedFirstSemesterRecommendations[key] = parseSubjectCodeList(
+            configuredFirstSemesterRecommendations[key],
+            `planningGuidance.firstSemesterRecommendations.${key}`
+          );
+          if (!resolvedFirstSemesterRecommendations[key].length) {
+            throw new Error(
+              `planningGuidance.firstSemesterRecommendations.${key} must contain at least one subject.`
+            );
+          }
+        });
+        const configuredMajorDecision = requireConfigObject(
+          configuredPlanningGuidance.majorDecision,
+          'planningGuidance.majorDecision'
+        );
+        const resolvedMajorDecision = {
+          completedSubjectsThreshold: parsePositiveWholeNumber(
+            configuredMajorDecision.completedSubjectsThreshold,
+            'planningGuidance.majorDecision.completedSubjectsThreshold'
+          ),
+          minimumMajorSubjectsByEndOfSecondYear: parsePositiveWholeNumber(
+            configuredMajorDecision.minimumMajorSubjectsByEndOfSecondYear,
+            'planningGuidance.majorDecision.minimumMajorSubjectsByEndOfSecondYear'
+          ),
+          preferredMajorSubjectsByEndOfSecondYear: parsePositiveWholeNumber(
+            configuredMajorDecision.preferredMajorSubjectsByEndOfSecondYear,
+            'planningGuidance.majorDecision.preferredMajorSubjectsByEndOfSecondYear'
+          ),
+        };
+        if (
+          resolvedMajorDecision.preferredMajorSubjectsByEndOfSecondYear <
+          resolvedMajorDecision.minimumMajorSubjectsByEndOfSecondYear ||
+          resolvedMajorDecision.preferredMajorSubjectsByEndOfSecondYear >
+          resolvedProgramRequirements.major
+        ) {
+          throw new Error(
+            'planningGuidance.majorDecision preferred major subjects must be between the minimum and the program major requirement.'
+          );
+        }
+        const configuredEarlyCompletion = requireConfigObject(
+          configuredPlanningGuidance.earlyCompletion,
+          'planningGuidance.earlyCompletion'
+        );
+        const parseRemainingCountList = (values, path) => {
+          if (!Array.isArray(values) || !values.length) {
+            throw new Error(`${path} must be a non-empty array.`);
+          }
+          const resolved = [];
+          const seen = new Set();
+          values.forEach((value) => {
+            const count = parsePositiveWholeNumber(value, path);
+            if (seen.has(count)) throw new Error(`${path} contains duplicate value ${count}.`);
+            seen.add(count);
+            resolved.push(count);
+          });
+          return resolved;
+        };
+        const configuredMinimumGrade = requireConfigObject(
+          configuredEarlyCompletion.minimumGrade,
+          'planningGuidance.earlyCompletion.minimumGrade'
+        );
+        const gradeLabel = String(configuredMinimumGrade.label || '').trim().toUpperCase();
+        const gradeMinimumPercent = Number(configuredMinimumGrade.minimumPercent);
+        const gradeMaximumPercent = Number(configuredMinimumGrade.maximumPercent);
+        if (!gradeLabel || /[\r\n\t]/.test(gradeLabel)) {
+          throw new Error('planningGuidance.earlyCompletion.minimumGrade.label is required.');
+        }
+        if (
+          !Number.isInteger(gradeMinimumPercent) ||
+          !Number.isInteger(gradeMaximumPercent) ||
+          gradeMinimumPercent < 0 ||
+          gradeMaximumPercent > 100 ||
+          gradeMaximumPercent < gradeMinimumPercent
+        ) {
+          throw new Error(
+            'planningGuidance.earlyCompletion.minimumGrade percentages must be ordered whole numbers from 0 to 100.'
+          );
+        }
+        const resolvedEarlyCompletion = {
+          semesterOneRemainingCounts: parseRemainingCountList(
+            configuredEarlyCompletion.semesterOneRemainingCounts,
+            'planningGuidance.earlyCompletion.semesterOneRemainingCounts'
+          ),
+          semesterTwoRemainingCounts: parseRemainingCountList(
+            configuredEarlyCompletion.semesterTwoRemainingCounts,
+            'planningGuidance.earlyCompletion.semesterTwoRemainingCounts'
+          ),
+          noticeRemainingCounts: parseRemainingCountList(
+            configuredEarlyCompletion.noticeRemainingCounts,
+            'planningGuidance.earlyCompletion.noticeRemainingCounts'
+          ),
+          capstoneRestrictedNoticeCount: parsePositiveWholeNumber(
+            configuredEarlyCompletion.capstoneRestrictedNoticeCount,
+            'planningGuidance.earlyCompletion.capstoneRestrictedNoticeCount'
+          ),
+          standardSemesterLoad: parsePositiveWholeNumber(
+            configuredEarlyCompletion.standardSemesterLoad,
+            'planningGuidance.earlyCompletion.standardSemesterLoad'
+          ),
+          overloadSubjectCount: parsePositiveWholeNumber(
+            configuredEarlyCompletion.overloadSubjectCount,
+            'planningGuidance.earlyCompletion.overloadSubjectCount'
+          ),
+          minimumGrade: {
+            label: gradeLabel,
+            minimumPercent: gradeMinimumPercent,
+            maximumPercent: gradeMaximumPercent,
+          },
+        };
+        if (
+          !resolvedEarlyCompletion.noticeRemainingCounts.includes(
+            resolvedEarlyCompletion.capstoneRestrictedNoticeCount
+          )
+        ) {
+          throw new Error(
+            'planningGuidance.earlyCompletion.capstoneRestrictedNoticeCount must also appear in noticeRemainingCounts.'
+          );
+        }
+        const resolvedPlanningGuidance = {
+          firstSemesterRecommendations: resolvedFirstSemesterRecommendations,
+          majorDecision: resolvedMajorDecision,
+          earlyCompletion: resolvedEarlyCompletion,
+        };
+
+        const configuredAlternativeNames = requireConfigObject(
+          parsed?.courseMapAlternativeNames,
+          'courseMapAlternativeNames'
+        );
+        const configuredAlternativeStreams = requireConfigObject(
+          configuredAlternativeNames.streams,
+          'courseMapAlternativeNames.streams'
+        );
+        const resolvedCourseMapAlternativeStreams = {};
+        Object.entries(majorConfig).forEach(([majorKey, config]) => {
+          const streamName = String(configuredAlternativeStreams[config.code] || '').trim();
+          if (!streamName || /[\r\n\t]/.test(streamName)) {
+            throw new Error(
+              `courseMapAlternativeNames.streams.${config.code} must be a non-empty, single-line name.`
+            );
+          }
+          resolvedCourseMapAlternativeStreams[majorKey] = streamName;
+        });
+        const unsupportedAlternativeStreams = Object.keys(configuredAlternativeStreams)
+          .filter(
+            (key) =>
+              !key.startsWith('_') &&
+              !Object.values(majorConfig).some((config) => config.code === key)
+          );
+        if (unsupportedAlternativeStreams.length) {
+          throw new Error(
+            `courseMapAlternativeNames.streams contains unsupported stream${unsupportedAlternativeStreams.length === 1 ? '' : 's'}: ${unsupportedAlternativeStreams.join(', ')}.`
+          );
+        }
+        const configuredAlternativeSubjects = requireConfigObject(
+          configuredAlternativeNames.subjects,
+          'courseMapAlternativeNames.subjects'
+        );
+        const resolvedCourseMapAlternativeSubjects = {};
+        Object.entries(configuredAlternativeSubjects).forEach(([rawCode, definition]) => {
+          if (rawCode.startsWith('_')) return;
+          const code = String(rawCode || '').trim().toUpperCase();
+          if (
+            rawCode !== code ||
+            !Object.prototype.hasOwnProperty.call(resolvedSubjectNames, code)
+          ) {
+            throw new Error(
+              `courseMapAlternativeNames.subjects key "${rawCode}" must be a current uppercase subject code.`
+            );
+          }
+          requireConfigObject(definition, `courseMapAlternativeNames.subjects.${code}`);
+          const unsupportedKeys = Object.keys(definition)
+            .filter((key) => !key.startsWith('_') && !['code', 'name'].includes(key));
+          if (unsupportedKeys.length) {
+            throw new Error(
+              `courseMapAlternativeNames.subjects.${code} contains unsupported field${unsupportedKeys.length === 1 ? '' : 's'}: ${unsupportedKeys.join(', ')}.`
+            );
+          }
+          const alternativeCode = String(definition.code || '').trim().toUpperCase();
+          const alternativeName = String(definition.name || '').trim();
+          if (!/^BIT[A-Z0-9]{3}$/.test(alternativeCode)) {
+            throw new Error(
+              `courseMapAlternativeNames.subjects.${code}.code must use a value such as BIT2XX.`
+            );
+          }
+          if (!alternativeName || /[\r\n\t]/.test(alternativeName)) {
+            throw new Error(
+              `courseMapAlternativeNames.subjects.${code}.name must be a non-empty, single-line name.`
+            );
+          }
+          resolvedCourseMapAlternativeSubjects[code] = {
+            code: alternativeCode,
+            name: alternativeName,
+          };
+        });
+        if (!Object.keys(resolvedCourseMapAlternativeSubjects).length) {
+          throw new Error('courseMapAlternativeNames.subjects must contain at least one subject.');
+        }
         const configuredCourseMapLayout = parsed?.courseMapLayout;
         if (
           !configuredCourseMapLayout ||
@@ -16265,7 +16873,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             }
             const type = match[1].toLowerCase() === 'major' ? 'Major' : 'Elective';
             const slot = Number(match[2]);
-            const maximum = type === 'Major' ? programRequirements.major : programRequirements.elective;
+            const maximum = type === 'Major'
+              ? resolvedProgramRequirements.major
+              : resolvedProgramRequirements.elective;
             if (slot > maximum) {
               throw new Error(`courseMapLayout.majorPlaceholders contains unsupported label "${rawLabel}".`);
             }
@@ -16286,8 +16896,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           });
         });
         const requiredCourseMapPlaceholders = [
-          ...Array.from({ length: programRequirements.major }, (_, index) => `Major Subject ${index + 1}`),
-          ...Array.from({ length: programRequirements.elective }, (_, index) => `Elective Subject ${index + 1}`),
+          ...Array.from(
+            { length: resolvedProgramRequirements.major },
+            (_, index) => `Major Subject ${index + 1}`
+          ),
+          ...Array.from(
+            { length: resolvedProgramRequirements.elective },
+            (_, index) => `Elective Subject ${index + 1}`
+          ),
         ];
         const missingCourseMapPlaceholders = requiredCourseMapPlaceholders
           .filter((label) => !seenCourseMapPlaceholders.has(label));
@@ -16528,9 +17144,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             return entry;
           });
         });
-        if (mainGridPlaceholderCounts.MAJOR !== programRequirements.major) {
+        if (mainGridPlaceholderCounts.MAJOR !== resolvedProgramRequirements.major) {
           throw new Error(
-            `mainPage.mainGridLayout must contain exactly ${programRequirements.major} MAJOR placeholders.`
+            `mainPage.mainGridLayout must contain exactly ${resolvedProgramRequirements.major} MAJOR placeholders.`
           );
         }
         if (mainGridPlaceholderCounts.INFO !== 1 || resolvedMainGridLayout[0][4] !== 'INFO') {
@@ -16748,9 +17364,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             'subjects.BIT371.majorSubjectRequirement.minimumCompletedOrConcurrentMajorSubjects must be a whole number greater than or equal to minimumCompletedMajorSubjects.'
           );
         }
-        if (minimumCompletedOrConcurrentMajorSubjects > programRequirements.major) {
+        if (minimumCompletedOrConcurrentMajorSubjects > resolvedProgramRequirements.major) {
           throw new Error(
-            `subjects.BIT371.majorSubjectRequirement cannot require more than ${programRequirements.major} major subjects.`
+            `subjects.BIT371.majorSubjectRequirement cannot require more than ${resolvedProgramRequirements.major} major subjects.`
           );
         }
         const resolvedSpecialRequirements = {
@@ -16858,6 +17474,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         semesterConfig = parsed;
         semesterConfigDetails = details;
         currentSemesterKey = semester;
+        Object.assign(programRequirements, resolvedProgramRequirements);
+        Object.assign(
+          planningGuidance.firstSemesterRecommendations,
+          resolvedPlanningGuidance.firstSemesterRecommendations
+        );
+        Object.assign(
+          planningGuidance.majorDecision,
+          resolvedPlanningGuidance.majorDecision
+        );
+        Object.assign(
+          planningGuidance.earlyCompletion,
+          resolvedPlanningGuidance.earlyCompletion
+        );
+        fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
+        Object.assign(summerSchoolGuidance, resolvedSummerSchoolGuidance);
         timeSlots.Morning = `${amStart.value} - ${amEnd.value}`;
         timeSlots.Afternoon = `${pmStart.value} - ${pmEnd.value}`;
         Object.keys(timetable).forEach((code) => delete timetable[code]);
@@ -16868,6 +17499,40 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         resolvedSemester2OnlyIds.forEach((code) => semester2OnlyIds.add(code));
         Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
         Object.assign(subjectMeta, resolvedSubjectMeta);
+        legacySubjectPairs.splice(
+          0,
+          legacySubjectPairs.length,
+          ...resolvedOldCodePairs.map((pair) => [...pair])
+        );
+        legacySubjectMap.clear();
+        resolvedLegacySubjectMap.forEach((newCode, oldCode) => {
+          legacySubjectMap.set(oldCode, newCode);
+        });
+        Object.keys(previousCodeByNew).forEach((code) => delete previousCodeByNew[code]);
+        Object.assign(previousCodeByNew, resolvedPreviousCodeByNew);
+        priorityOldCodeRows.clear();
+        resolvedPriorityOldCodeRows.forEach((code) => priorityOldCodeRows.add(code));
+        Object.entries(resolvedCodeModalPresets).forEach(([presetKey, codes]) => {
+          codeModalPresets[presetKey].splice(
+            0,
+            codeModalPresets[presetKey].length,
+            ...codes
+          );
+        });
+        Object.assign(HEBSITAD_REQUIREMENTS, resolvedHebsitadRequirements);
+        summerSchoolLikelySubjectCodes.splice(
+          0,
+          summerSchoolLikelySubjectCodes.length,
+          ...resolvedSummerSchoolLikelySubjectCodes
+        );
+        Object.keys(courseMapAiNameOverlay.streams).forEach(
+          (majorKey) => delete courseMapAiNameOverlay.streams[majorKey]
+        );
+        Object.assign(courseMapAiNameOverlay.streams, resolvedCourseMapAlternativeStreams);
+        Object.keys(courseMapAiNameOverlay.subjects).forEach(
+          (code) => delete courseMapAiNameOverlay.subjects[code]
+        );
+        Object.assign(courseMapAiNameOverlay.subjects, resolvedCourseMapAlternativeSubjects);
         Object.entries(resolvedMajorCodes).forEach(([majorKey, codes]) => {
           majorConfig[majorKey].codes = [...codes];
           majorLayouts[majorKey] = [...resolvedMajorDisplayOrder[majorKey]];
@@ -17005,6 +17670,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     refreshValidSubjectCodes();
     renderSasFootnote();
     if (!semesterConfigError) {
+      syncConfiguredGuidance();
       getAllSubjectCodes().forEach((code) => {
         if (!subjectState.has(code)) subjectState.set(code, { completed: false, toggled: false });
       });
@@ -23039,7 +23705,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const rowsByOldCode = new Map();
     legacySubjectPairs.forEach(([oldCode]) => {
       const oldNormalized = normalizeSubjectCode(oldCode);
-      if (hiddenOldCodeRows.has(oldNormalized)) return;
       const newNormalized = resolveLegacyCode(oldNormalized).mapped;
       if (!oldNormalized || !newNormalized || oldNormalized === newNormalized) return;
       if (!rowsByOldCode.has(oldNormalized)) {
@@ -27727,6 +28392,56 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     data: new Map(),
     codes: new Map(),
   };
+  const alertInteractionPending = { error: false, warning: false };
+  const deferredAlertInteractionTypes = new Set();
+  const syncAlertInteractionBlocker = () => {
+    const blocked = alertInteractionPending.error || alertInteractionPending.warning;
+    const wasBlocked = document.body.classList.contains('alert-interaction-blocked');
+    document.body.classList.toggle('alert-interaction-blocked', blocked);
+    [dropSidebar, document.querySelector('.sidebar'), plannerContainer]
+      .filter(Boolean)
+      .forEach((element) => {
+        element.inert = blocked;
+      });
+    if (blocked && !wasBlocked) {
+      const targetButton = alertInteractionPending.error ? errorButton : warningButton;
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      requestAnimationFrame(() => targetButton?.focus());
+    }
+  };
+  const queueAlertInteractionBlocker = (type) => {
+    if (type !== 'error' && type !== 'warning') return;
+    if (completedMode) {
+      deferredAlertInteractionTypes.add(type);
+      return;
+    }
+    alertInteractionPending[type] = true;
+    syncAlertInteractionBlocker();
+  };
+  const activateDeferredAlertInteractionBlocker = () => {
+    deferredAlertInteractionTypes.forEach((type) => {
+      const hasUnread = Array.from(alertState[type]?.values() || [])
+        .some((entry) => !entry.seen);
+      if (hasUnread) alertInteractionPending[type] = true;
+    });
+    deferredAlertInteractionTypes.clear();
+    syncAlertInteractionBlocker();
+  };
+  const acknowledgeCautionInteractionBlocker = () => {
+    alertInteractionPending.warning = false;
+    syncAlertInteractionBlocker();
+  };
+  const acknowledgeAlertInteractionBlocker = () => {
+    alertInteractionPending.error = false;
+    alertInteractionPending.warning = false;
+    const state = alertState.error;
+    state.forEach((entry) => {
+      entry.seen = true;
+    });
+    rebuildAlertContent('error');
+    syncAlertInteractionBlocker();
+    renderAlertButton('error');
+  };
   const alertId = (msg) => `${msg?.title || ''}::${msg?.html || ''}`;
   const rebuildAlertContent = (type) => {
     const state = alertState[type];
@@ -27807,6 +28522,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     alertModal.classList.remove('alert-from-course-map');
     alertModal.setAttribute('aria-hidden', 'true');
     alertModal.removeAttribute('data-type');
+    if (type === 'error' && alertInteractionPending.error) renderAlertButton(type);
   };
 
   const renderAlertButton = (type) => {
@@ -27897,6 +28613,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showAlertModal = (type) => {
     if (!alertModal || !alertBody || !alertTitle) return;
+    if (type === 'warning') acknowledgeCautionInteractionBlocker();
     rebuildAlertContent(type);
     const payloads = alertContent[type] || [];
     const buttons = getAlertButtons(type);
@@ -27915,13 +28632,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
 
-    const combined = (alertContent[type] || [])
-      .map(
-        (p, idx) =>
-          `<div class="alert-item alert-${type} ${p.seen ? 'alert-read' : 'alert-unread'}"><div class="alert-headline"><span class="alert-number">(${idx + 1})</span><div class="alert-body">${p.html}</div></div></div>`
-      )
-      .join('');
+    const awaitingAlertAcknowledgement =
+      type === 'error' && alertInteractionPending.error;
+    const renderPayloads = (items, startIndex = 0) =>
+      items
+        .map(
+          (p, idx) =>
+            `<div class="alert-item alert-${type} ${p.seen ? 'alert-read' : 'alert-unread'}"><div class="alert-headline"><span class="alert-number">(${startIndex + idx + 1})</span><div class="alert-body">${p.html}</div></div></div>`
+        )
+        .join('');
+    const unreadPayloads = awaitingAlertAcknowledgement
+      ? payloads.filter((payload) => !payload.seen)
+      : payloads;
+    const readPayloads = awaitingAlertAcknowledgement
+      ? payloads.filter((payload) => payload.seen)
+      : [];
+    const acknowledgementText = readPayloads.length
+      ? 'The above unread alerts (and the read ones below) are understood and I am ready to proceed'
+      : 'I understand these alerts and am ready to proceed.';
+    const acknowledgementHtml = awaitingAlertAcknowledgement
+      ? `<div class="alert-acknowledgement-outer"><label class="alert-acknowledgement"><input id="acknowledge-unread-alerts" type="checkbox"><span>${acknowledgementText}</span></label></div>`
+      : '';
+    const combined =
+      renderPayloads(unreadPayloads) +
+      acknowledgementHtml +
+      renderPayloads(readPayloads, unreadPayloads.length);
     alertBody.innerHTML = combined;
+    const acknowledgementCheckbox = alertBody.querySelector('#acknowledge-unread-alerts');
+    acknowledgementCheckbox?.addEventListener('change', () => {
+      if (!acknowledgementCheckbox.checked) return;
+      acknowledgeAlertInteractionBlocker();
+      showAlertModal('error');
+    });
     const titleText =
       type === 'warning'
         ? 'Cautions'
@@ -27957,7 +28699,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       alertPrevCounts[type] = alertContent[type]?.length || 0;
     }
     const state = alertState[type];
-    if (state) {
+    if (state && !awaitingAlertAcknowledgement) {
       state.forEach((entry) => {
         entry.seen = true;
       });
@@ -27971,6 +28713,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!state) return;
     if (isActiveStudentGraduated()) messages = [];
     const incomingIds = new Set();
+    let createdNewMessage = false;
     messages.forEach((msg) => {
       const id = alertId(msg);
       incomingIds.add(id);
@@ -27978,12 +28721,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (existing) {
         state.set(id, { ...existing, payload: msg, timestamp: existing.timestamp || Date.now(), seen: existing.seen });
       } else {
+        createdNewMessage = true;
         state.set(id, { payload: msg, seen: false, timestamp: Date.now() });
       }
     });
     Array.from(state.keys()).forEach((id) => {
       if (!incomingIds.has(id)) state.delete(id);
     });
+    if (createdNewMessage) queueAlertInteractionBlocker(type);
+    if ((type === 'error' || type === 'warning') && state.size === 0) {
+      alertInteractionPending[type] = false;
+      deferredAlertInteractionTypes.delete(type);
+      syncAlertInteractionBlocker();
+    }
     rebuildAlertContent(type);
     renderAlertButton(type);
   }
