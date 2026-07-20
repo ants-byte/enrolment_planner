@@ -23,7 +23,7 @@ const VERIFICATION_DIR = path.join(SCRATCH_DIR, "verification");
 const INSPECT_PATH = path.join(SCRATCH_DIR, "inspect.ndjson");
 const MAX_RENDER_VERIFY_LOOPS = 3;
 
-const INK = "#101214";
+const INK = "#0B1220";
 const GRAPHITE = "#30363A";
 const MUTED = "#687076";
 const PAPER = "#F7F4ED";
@@ -35,7 +35,7 @@ const GOLD = "#D7A83D";
 const CORAL = "#E86F5B";
 const TRANSPARENT = "#00000000";
 
-const TITLE_FACE = "Caladea";
+const TITLE_FACE = "Poppins";
 const BODY_FACE = "Lato";
 const MONO_FACE = "Aptos Mono";
 
@@ -43,17 +43,15 @@ const FALLBACK_PLATE_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
 const SOURCES = {
-  primary: "Replace with source citation or URL.",
+  primary: "Concept supplied by the user.",
 };
 
 const SLIDES = [
   {
-    "kicker": "PRO JS DECK",
-    "title": "Replace with deck title",
-    "subtitle": "Replace with a concise audience-facing framing sentence.",
-    "expectedVisual": "Title slide with generated art plate, prominent editable title/subtitle, and one core idea callout.",
-    "moment": "Replace with the core idea",
-    "notes": "Replace with presenter guidance for the cover.",
+    "kicker": "THE EVOLUTION OF THE DEMO",
+    "title": "From manual effort to an AI-powered experience",
+    "subtitle": "Each stage builds on the last — reducing friction while increasing coordination, usability and impact.",
+    "notes": "Walk left to right. Emphasise that Excel remains a familiar operational backbone while the user experience becomes progressively more coordinated and polished.",
     "sources": [
       "primary"
     ]
@@ -444,38 +442,71 @@ async function slideCover(presentation) {
   const slideNo = 1;
   const data = SLIDES[0];
   const slide = presentation.slides.add();
-  await addPlate(slide, slideNo);
-  addShape(slide, "rect", 0, 0, W, H, "#FFFFFFCC", TRANSPARENT, 0, { slideNo, role: "cover contrast overlay" });
-  addShape(slide, "rect", 64, 86, 7, 455, ACCENT, TRANSPARENT, 0, { slideNo, role: "cover accent rule" });
-  addText(slide, slideNo, data.kicker, 86, 88, 520, 26, {
-    size: 13,
-    color: ACCENT_DARK,
+  slide.background.fill = "#07111F";
+  addShape(slide, "ellipse", 1000, -180, 430, 430, "#182B4A", TRANSPARENT, 0, { slideNo, role: "ambient glow" });
+  addShape(slide, "ellipse", -180, 560, 420, 260, "#173047", TRANSPARENT, 0, { slideNo, role: "ambient glow" });
+  addText(slide, slideNo, data.kicker, 64, 42, 520, 22, {
+    size: 12,
+    color: "#63D9C8",
     bold: true,
     face: MONO_FACE,
     role: "kicker",
   });
-  addText(slide, slideNo, data.title, 82, 130, 785, 184, {
-    size: 48,
-    color: INK,
+  addText(slide, slideNo, data.title, 62, 76, 1010, 64, {
+    size: 34,
+    color: WHITE,
     bold: true,
     face: TITLE_FACE,
     role: "cover title",
   });
-  addText(slide, slideNo, data.subtitle, 86, 326, 610, 86, {
-    size: 20,
-    color: GRAPHITE,
+  addText(slide, slideNo, data.subtitle, 64, 142, 940, 46, {
+    size: 16,
+    color: "#B9C8DC",
     face: BODY_FACE,
     role: "cover subtitle",
   });
-  addShape(slide, "roundRect", 86, 456, 390, 92, PAPER_96, INK, 1.2, { slideNo, role: "cover moment panel" });
-  addText(slide, slideNo, data.moment || "Replace with core idea", 112, 478, 336, 40, {
-    size: 23,
-    color: INK,
-    bold: true,
-    face: TITLE_FACE,
-    role: "cover moment",
+
+  const stages = [
+    {
+      x: 64, y: 326, h: 316, color: "#F06B62", pale: "#FFF0EE", n: "01", tag: "MANUAL",
+      title: "Manual process", body: "Disconnected steps\nRepetitive hand-offs\nHigh effort, low visibility",
+      face: "☹", reaction: "FRUSTRATED", icon: "↻",
+    },
+    {
+      x: 438, y: 270, h: 372, color: "#F2B84B", pale: "#FFF7E5", n: "02", tag: "LOW CODE",
+      title: "Excel + coordinated system", body: "Familiar Excel workflow\nShared structure and controls\nFaster, more consistent delivery",
+      face: "☺", reaction: "HAPPY", icon: "▦",
+    },
+    {
+      x: 812, y: 214, h: 428, color: "#35D2B4", pale: "#E9FCF8", n: "03", tag: "AI-POWERED",
+      title: "AI-constructed website", body: "Polished web experience\nExcel-powered backend\nRapid change without the friction",
+      face: "★", reaction: "HAPPIEST", icon: "✦",
+    },
+  ];
+
+  addShape(slide, "rightArrow", 360, 426, 108, 48, "#27415D", TRANSPARENT, 0, { slideNo, role: "progress arrow 1" });
+  addShape(slide, "rightArrow", 734, 370, 108, 48, "#2C5870", TRANSPARENT, 0, { slideNo, role: "progress arrow 2" });
+
+  for (const s of stages) {
+    addShape(slide, "roundRect", s.x, s.y, 340, s.h, "#102239", "#29435F", 1.2, { slideNo, role: `stage ${s.n} card` });
+    addShape(slide, "rect", s.x, s.y, 340, 8, s.color, TRANSPARENT, 0, { slideNo, role: `stage ${s.n} accent` });
+    addText(slide, slideNo, s.n, s.x + 22, s.y + 24, 44, 34, { size: 24, color: s.color, bold: true, face: TITLE_FACE, role: "stage number" });
+    addShape(slide, "roundRect", s.x + 72, s.y + 27, 112, 28, s.color, TRANSPARENT, 0, { slideNo, role: "stage tag" });
+    addText(slide, slideNo, s.tag, s.x + 82, s.y + 33, 92, 16, { size: 10, color: INK, bold: true, face: MONO_FACE, align: "center", checkFit: false, role: "stage tag text" });
+
+    addShape(slide, "ellipse", s.x + 258, s.y + 20, 58, 58, s.pale, s.color, 2, { slideNo, role: `${s.reaction} reaction badge` });
+    addText(slide, slideNo, s.face, s.x + 267, s.y + 28, 40, 32, { size: 27, color: s.color, bold: true, face: "Segoe UI Symbol", align: "center", checkFit: false, role: `${s.reaction} face` });
+    addText(slide, slideNo, s.reaction, s.x + 242, s.y + 82, 90, 16, { size: 9, color: s.color, bold: true, face: MONO_FACE, align: "center", checkFit: false, role: "reaction label" });
+
+    addShape(slide, "roundRect", s.x + 22, s.y + 86, 54, 54, "#071827", s.color, 1.5, { slideNo, role: "system icon tile" });
+    addText(slide, slideNo, s.icon, s.x + 32, s.y + 96, 34, 30, { size: 25, color: s.color, bold: true, face: "Segoe UI Symbol", align: "center", checkFit: false, role: "system icon" });
+    addText(slide, slideNo, s.title, s.x + 22, s.y + 154, 292, 58, { size: 21, color: WHITE, bold: true, face: TITLE_FACE, role: "stage title" });
+    addShape(slide, "rect", s.x + 22, s.y + 224, 54, 3, s.color, TRANSPARENT, 0, { slideNo, role: "stage divider" });
+    addText(slide, slideNo, s.body, s.x + 22, s.y + 244, 292, s.h - 258, { size: 14, color: "#C6D4E5", face: BODY_FACE, role: "stage benefits" });
+  }
+  addText(slide, slideNo, "MORE COORDINATED  •  MORE INTUITIVE  •  MORE IMPACTFUL", 812, 666, 404, 18, {
+    size: 10, color: "#63D9C8", bold: true, face: MONO_FACE, align: "right", checkFit: false, role: "progress footer",
   });
-  addReferenceCaption(slide, slideNo);
   addNotes(slide, data.notes, data.sources);
 }
 

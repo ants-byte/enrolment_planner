@@ -1,0 +1,49 @@
+{"kind":"deck","id":"demo-progression","slideCount":1,"slideSize":{"width":1280,"height":720}}
+{"kind":"slide","slide":1,"id":"w1r0ll"}
+{"kind":"shape","slide":1,"id":"2","role":"ambient glow","shapeType":"ellipse","bbox":[1000,-180,430,430]}
+{"kind":"shape","slide":1,"id":"3","role":"ambient glow","shapeType":"ellipse","bbox":[-180,560,420,260]}
+{"kind":"textbox","slide":1,"id":"4","role":"kicker","text":"THE EVOLUTION OF THE DEMO","textPreview":"THE EVOLUTION OF THE DEMO","textChars":25,"textLines":1,"bbox":[64,42,520,22]}
+{"kind":"textbox","slide":1,"id":"5","role":"cover title","text":"From manual effort to an AI-powered experience","textPreview":"From manual effort to an AI-powered experience","textChars":46,"textLines":1,"bbox":[62,76,1010,64]}
+{"kind":"textbox","slide":1,"id":"6","role":"cover subtitle","text":"Each stage builds on the last — reducing friction while increasing coordination, usability and impact.","textPreview":"Each stage builds on the last — reducing friction while increasing coordination, usability and impact.","textChars":102,"textLines":1,"bbox":[64,142,940,46]}
+{"kind":"shape","slide":1,"id":"7","role":"progress arrow 1","shapeType":"rightArrow","bbox":[360,426,108,48]}
+{"kind":"shape","slide":1,"id":"8","role":"progress arrow 2","shapeType":"rightArrow","bbox":[734,370,108,48]}
+{"kind":"shape","slide":1,"id":"9","role":"stage 01 card","shapeType":"roundRect","bbox":[64,326,340,316]}
+{"kind":"shape","slide":1,"id":"10","role":"stage 01 accent","shapeType":"rect","bbox":[64,326,340,8]}
+{"kind":"textbox","slide":1,"id":"11","role":"stage number","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86,350,44,34]}
+{"kind":"shape","slide":1,"id":"12","role":"stage tag","shapeType":"roundRect","bbox":[136,353,112,28]}
+{"kind":"textbox","slide":1,"id":"13","role":"stage tag text","text":"MANUAL","textPreview":"MANUAL","textChars":6,"textLines":1,"bbox":[146,359,92,16]}
+{"kind":"shape","slide":1,"id":"14","role":"FRUSTRATED reaction badge","shapeType":"ellipse","bbox":[322,346,58,58]}
+{"kind":"textbox","slide":1,"id":"15","role":"FRUSTRATED face","text":"☹","textPreview":"☹","textChars":1,"textLines":1,"bbox":[331,354,40,32]}
+{"kind":"textbox","slide":1,"id":"16","role":"reaction label","text":"FRUSTRATED","textPreview":"FRUSTRATED","textChars":10,"textLines":1,"bbox":[306,408,90,16]}
+{"kind":"shape","slide":1,"id":"17","role":"system icon tile","shapeType":"roundRect","bbox":[86,412,54,54]}
+{"kind":"textbox","slide":1,"id":"18","role":"system icon","text":"↻","textPreview":"↻","textChars":1,"textLines":1,"bbox":[96,422,34,30]}
+{"kind":"textbox","slide":1,"id":"19","role":"stage title","text":"Manual process","textPreview":"Manual process","textChars":14,"textLines":1,"bbox":[86,480,292,58]}
+{"kind":"shape","slide":1,"id":"20","role":"stage divider","shapeType":"rect","bbox":[86,550,54,3]}
+{"kind":"textbox","slide":1,"id":"21","role":"stage benefits","text":"Disconnected steps\nRepetitive hand-offs\nHigh effort, low visibility","textPreview":"Disconnected steps | Repetitive hand-offs | High effort, low visibility","textChars":67,"textLines":3,"bbox":[86,570,292,58]}
+{"kind":"shape","slide":1,"id":"22","role":"stage 02 card","shapeType":"roundRect","bbox":[438,270,340,372]}
+{"kind":"shape","slide":1,"id":"23","role":"stage 02 accent","shapeType":"rect","bbox":[438,270,340,8]}
+{"kind":"textbox","slide":1,"id":"24","role":"stage number","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[460,294,44,34]}
+{"kind":"shape","slide":1,"id":"25","role":"stage tag","shapeType":"roundRect","bbox":[510,297,112,28]}
+{"kind":"textbox","slide":1,"id":"26","role":"stage tag text","text":"LOW CODE","textPreview":"LOW CODE","textChars":8,"textLines":1,"bbox":[520,303,92,16]}
+{"kind":"shape","slide":1,"id":"27","role":"HAPPY reaction badge","shapeType":"ellipse","bbox":[696,290,58,58]}
+{"kind":"textbox","slide":1,"id":"28","role":"HAPPY face","text":"☺","textPreview":"☺","textChars":1,"textLines":1,"bbox":[705,298,40,32]}
+{"kind":"textbox","slide":1,"id":"29","role":"reaction label","text":"HAPPY","textPreview":"HAPPY","textChars":5,"textLines":1,"bbox":[680,352,90,16]}
+{"kind":"shape","slide":1,"id":"30","role":"system icon tile","shapeType":"roundRect","bbox":[460,356,54,54]}
+{"kind":"textbox","slide":1,"id":"31","role":"system icon","text":"▦","textPreview":"▦","textChars":1,"textLines":1,"bbox":[470,366,34,30]}
+{"kind":"textbox","slide":1,"id":"32","role":"stage title","text":"Excel + coordinated system","textPreview":"Excel + coordinated system","textChars":26,"textLines":1,"bbox":[460,424,292,58]}
+{"kind":"shape","slide":1,"id":"33","role":"stage divider","shapeType":"rect","bbox":[460,494,54,3]}
+{"kind":"textbox","slide":1,"id":"34","role":"stage benefits","text":"Familiar Excel workflow\nShared structure and controls\nFaster, more consistent delivery","textPreview":"Familiar Excel workflow | Shared structure and controls | Faster, more consistent delivery","textChars":86,"textLines":3,"bbox":[460,514,292,114]}
+{"kind":"shape","slide":1,"id":"35","role":"stage 03 card","shapeType":"roundRect","bbox":[812,214,340,428]}
+{"kind":"shape","slide":1,"id":"36","role":"stage 03 accent","shapeType":"rect","bbox":[812,214,340,8]}
+{"kind":"textbox","slide":1,"id":"37","role":"stage number","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[834,238,44,34]}
+{"kind":"shape","slide":1,"id":"38","role":"stage tag","shapeType":"roundRect","bbox":[884,241,112,28]}
+{"kind":"textbox","slide":1,"id":"39","role":"stage tag text","text":"AI-POWERED","textPreview":"AI-POWERED","textChars":10,"textLines":1,"bbox":[894,247,92,16]}
+{"kind":"shape","slide":1,"id":"40","role":"HAPPIEST reaction badge","shapeType":"ellipse","bbox":[1070,234,58,58]}
+{"kind":"textbox","slide":1,"id":"41","role":"HAPPIEST face","text":"★","textPreview":"★","textChars":1,"textLines":1,"bbox":[1079,242,40,32]}
+{"kind":"textbox","slide":1,"id":"42","role":"reaction label","text":"HAPPIEST","textPreview":"HAPPIEST","textChars":8,"textLines":1,"bbox":[1054,296,90,16]}
+{"kind":"shape","slide":1,"id":"43","role":"system icon tile","shapeType":"roundRect","bbox":[834,300,54,54]}
+{"kind":"textbox","slide":1,"id":"44","role":"system icon","text":"✦","textPreview":"✦","textChars":1,"textLines":1,"bbox":[844,310,34,30]}
+{"kind":"textbox","slide":1,"id":"45","role":"stage title","text":"AI-constructed website","textPreview":"AI-constructed website","textChars":22,"textLines":1,"bbox":[834,368,292,58]}
+{"kind":"shape","slide":1,"id":"46","role":"stage divider","shapeType":"rect","bbox":[834,438,54,3]}
+{"kind":"textbox","slide":1,"id":"47","role":"stage benefits","text":"Polished web experience\nExcel-powered backend\nRapid change without the friction","textPreview":"Polished web experience | Excel-powered backend | Rapid change without the friction","textChars":79,"textLines":3,"bbox":[834,458,292,170]}
+{"kind":"textbox","slide":1,"id":"48","role":"progress footer","text":"MORE COORDINATED  •  MORE INTUITIVE  •  MORE IMPACTFUL","textPreview":"MORE COORDINATED  •  MORE INTUITIVE  •  MORE IMPACTFUL","textChars":54,"textLines":1,"bbox":[812,666,404,18]}
