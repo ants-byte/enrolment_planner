@@ -4509,6 +4509,12 @@ input:checked+.slider:before {
   gap: 6px;
 }
 
+.colour-settings-defaults-row,
+.colour-settings-check,
+.colour-settings-font-inner {
+  padding-block: 4px;
+}
+
 .colour-settings-check {
   display: inline-flex;
   align-items: center;
