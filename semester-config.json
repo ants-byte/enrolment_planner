@@ -131,6 +131,16 @@
     "BIT371": { "name": "Capstone Experience 1", "core": true, "prerequisites": ["BIT242"], "majorSubjectRequirement": { "minimumCompletedMajorSubjects": 3, "minimumCompletedOrConcurrentMajorSubjects": 5 } },
     "BIT372": { "name": "Capstone Experience 2", "core": true, "prerequisites": ["BIT371"] }
   },
+  "capstone": {
+    "_instructions": [
+      "These facts are used by all Capstone alerts and explanations.",
+      "List the Capstone subjects in study order.",
+      "projectGroupOtherStudents counts the other students working with the current student."
+    ],
+    "subjects": ["BIT371", "BIT372"],
+    "durationSemesters": 2,
+    "projectGroupOtherStudents": { "minimum": 1, "maximum": 3 }
+  },
   "sasSpecialisations": {
     "_instructions": [
       "Every award requires all commonRequiredSubjects.",
@@ -241,6 +251,13 @@
       "melbournePolytechnicDiploma2027": ["BIT105", "BIT106", "BIT108", "BIT111", "BIT121", "BIT233", "BIT213", "USE101"],
       "melbournePolytechnicDiplomaPrevious": ["BIT106", "BIT111", "BIT121", "BIT230", "BIT233", "BIT242", "BIT245", "USE101"]
     },
+    "normallyNotAllowedCredit": {
+      "_instructions": [
+        "The site shows its normal credit-transfer restriction for every subject in these year levels and for the individually listed subjects."
+      ],
+      "yearLevels": [3],
+      "subjects": ["BIT241"]
+    },
     "hebsitadRequirements": { "total": 16, "core": 10, "major": 3, "elective": 3 }
   },
   "summerSchool": {
@@ -249,7 +266,7 @@
       "This does not promise that a subject will run; it controls only the Summer School planning message.",
       "The remaining values supply factual numbers and subject/stream lists used in the explanatory help text."
     ],
-    "likelySubjects": ["BIT241", "BIT352"],
+    "likelySubjects": ["BIT241", "BIT313"],
     "durationWeeks": 7,
     "maximumSubjects": 2,
     "typicalSubjectCount": { "minimum": 2, "maximum": 4 },

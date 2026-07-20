@@ -211,9 +211,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       <span class="sas-heading-line2">${awards.length} certificate${awards.length === 1 ? '' : 's'}, with a badge, ${awards.length === 1 ? 'is' : 'are'} available:</span>
       <ul class="sas-notes-list">${awardItems}</ul>`;
   };
-  const getBit371SpecialRequirement = () => specialRequirements.BIT371 || null;
-  const getBit371MajorRequirementText = ({ includeCompletedMinimum = false } = {}) => {
-    const requirement = getBit371SpecialRequirement();
+  const capstoneGuidance = {
+    subjects: [],
+    durationSemesters: 0,
+    projectGroupOtherStudents: { minimum: 0, maximum: 0 },
+  };
+  const getCapstoneStartCode = () => capstoneGuidance.subjects[0] || '';
+  const getCapstoneStartSpecialRequirement = () =>
+    specialRequirements[getCapstoneStartCode()] || null;
+  const getCapstoneMajorRequirementText = ({ includeCompletedMinimum = false } = {}) => {
+    const requirement = getCapstoneStartSpecialRequirement();
     if (!requirement) return '';
     const completedMinimum = requirement.minimumCompletedMajorSubjects;
     const totalMinimum = requirement.minimumCompletedOrConcurrentMajorSubjects;
@@ -227,11 +234,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const getPrerequisiteDisplayValue = (code, { includeCompletedMinimum = true } = {}) => {
     const prereqText = (prerequisites[code] || []).join(', ');
-    if (code !== 'BIT371') return prereqText || 'None';
-    const majorText = getBit371MajorRequirementText({ includeCompletedMinimum });
+    if (code !== getCapstoneStartCode()) return prereqText || 'None';
+    const majorText = getCapstoneMajorRequirementText({ includeCompletedMinimum });
     return [prereqText, majorText].filter(Boolean).join(' & ') || 'None';
   };
   const programRequirements = { total: 0, core: 0, major: 0, elective: 0 };
+  const creditTransferRestrictions = {
+    yearLevels: [],
+    subjects: [],
+  };
   const planningGuidance = {
     firstSemesterRecommendations: {
       networkSecurityOptionSubjects: [],
@@ -2954,7 +2965,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const parts = [];
     const prerequisiteDisplay = getPrerequisiteDisplayValue(code);
     if (prerequisiteDisplay !== 'None') {
-      const label = code === 'BIT371' || prereqList.length !== 1 ? 'Prerequisites' : 'Prerequisite';
+      const label =
+        code === getCapstoneStartCode() || prereqList.length !== 1
+          ? 'Prerequisites'
+          : 'Prerequisite';
       parts.push(`${label}: ${prerequisiteDisplay}`);
     }
     if (coreqList.length) {
@@ -6011,9 +6025,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'ba', shortLabel: 'BA', label: 'Business Analytics' },
     { key: 'sd', shortLabel: 'SD', label: 'Software Development' },
   ];
-  const creditWarningIds = new Set([
-    'BIT313', 'BIT314', 'BIT351', 'BIT352', 'BIT353', 'BIT355', 'BIT356', 'BIT357', 'BIT358', 'BIT362', 'BIT363', 'BIT364', 'BIT371', 'BIT372', 'BIT241'
-  ]);
+  const creditWarningIds = new Set();
+  const formatOrdinal = (value) => {
+    const number = Number(value);
+    const modulo100 = number % 100;
+    if (modulo100 >= 11 && modulo100 <= 13) return `${number}th`;
+    const suffix = number % 10 === 1 ? 'st' : number % 10 === 2 ? 'nd' : number % 10 === 3 ? 'rd' : 'th';
+    return `${number}${suffix}`;
+  };
+  const getCreditRestrictionText = () => {
+    const parts = [];
+    if (creditTransferRestrictions.yearLevels.length) {
+      const yearLabels = creditTransferRestrictions.yearLevels
+        .map((yearLevel) => formatOrdinal(yearLevel));
+      parts.push(`${joinWithFinalWord(yearLabels)} year subjects`);
+    }
+    if (creditTransferRestrictions.subjects.length) {
+      parts.push(joinWithFinalWord(creditTransferRestrictions.subjects));
+    }
+    return parts.length
+      ? `${joinWithFinalWord(parts)} can normally not be credited.`
+      : '';
+  };
+  const clearConfiguredCourseMessageFacts = () => {
+    capstoneGuidance.subjects = [];
+    capstoneGuidance.durationSemesters = 0;
+    capstoneGuidance.projectGroupOtherStudents.minimum = 0;
+    capstoneGuidance.projectGroupOtherStudents.maximum = 0;
+    creditTransferRestrictions.yearLevels = [];
+    creditTransferRestrictions.subjects = [];
+    creditWarningIds.clear();
+  };
 
   let completedMode = false;
   let withdrawCurrentEnrolmentMode = false;
@@ -6048,6 +6090,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let dateNoticeLines = [];
   let creditTransferWarning = null;
   let creditTransferWarningActive = false;
+  let passCurrentEnrolmentsError = null;
   let infoNotes = null;
   let countryHittingTroubles = null;
   let deferredInfo = null;
@@ -6265,7 +6308,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const majorKey = getMajorKeyFromUi();
     const majorCodes = majorConfig[majorKey]?.codes || [];
     if (!majorCodes.length) return 0;
-    const capstoneRequirement = getBit371SpecialRequirement();
+    const capstoneRequirement = getCapstoneStartSpecialRequirement();
     if (!capstoneRequirement) return Infinity;
     const requiredCompleted = capstoneRequirement.minimumCompletedMajorSubjects;
     const requiredTotal = capstoneRequirement.minimumCompletedOrConcurrentMajorSubjects;
@@ -6350,7 +6393,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, dist);
     }
-    if (id === 'BIT371') {
+    if (id === getCapstoneStartCode()) {
       const majorDistance = getMajorRequirementDistance({
         completedSet,
         plannedSet,
@@ -6416,7 +6459,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       maxDepth = Math.max(maxDepth, dist);
     }
-    if (id === 'BIT371') {
+    if (id === getCapstoneStartCode()) {
       const majorDistance = getMajorRequirementDistance({
         completedSet,
         plannedSet,
@@ -6905,22 +6948,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               ? `<p>Longest chain: <strong>${pathStrings[0]}</strong></p>`
               : ''
             : `<p>Longest chain:<br><strong>${pathStrings.join('<br>')}</strong></p>`;
+        const delayedGraduationPeriod = getSemesterIdentityAfterOffset(
+          planningSemesterOffset + longestChainSemesters
+        );
+        const delayedGraduationLabel =
+          delayedGraduationPeriod.semester === 'S1'
+            ? `Semester 1 ${delayedGraduationPeriod.year}`
+            : delayedGraduationPeriod.semester === 'S2'
+              ? `Semester 2 ${delayedGraduationPeriod.year}`
+              : `Summer Semester ${delayedGraduationPeriod.year}`;
         const chainTitle = chainOverrunsPlan
-          ? 'Prerequisite chain exceeds optimal timeline'
+          ? `Prerequisite chain exceeds optimal timeline. You are at risk of graduating late in ${delayedGraduationLabel}.`
           : 'Running tight on prerequisite chains';
         const remainingLabel = chainRemaining === 1 ? 'subject' : 'subjects';
         const optimalLabel = chainOptimalSemesters === 1 ? 'semester' : 'semesters';
         const chainLabel = longestChainSemesters === 1 ? 'semester' : 'semesters';
         const chainIntro = chainOverrunsPlan
-          ? `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. However there is a chain of subjects with prerequisites that runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so putting at risk your optimal graduation date:`
+          ? `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. However this prerequisite chain runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so putting at risk your optimal graduation date:`
           : `Normally, at full load you could expect to complete the remaining <strong>${chainRemaining}</strong> ${remainingLabel} in <strong>${chainOptimalSemesters}</strong> ${optimalLabel}. Your longest prerequisite chain also runs for <strong>${longestChainSemesters}</strong> ${chainLabel}, so it is right at the limit for your optimal graduation date:`;
         const majorKey = getMajorKeyFromUi();
         let alternatingNote = '';
         if (!chainOverrunsPlan && (majorKey === 'ba' || majorKey === 'sd')) {
-          const alternatingIds =
-            majorKey === 'ba'
-              ? ['BIT355', 'BIT356', 'BIT357', 'BIT363']
-              : ['BIT351', 'BIT358', 'BIT246', 'BIT364'];
+          const alternatingIds = (majorConfig[majorKey]?.codes || [])
+            .filter((id) => semester1OnlyIds.has(id) || semester2OnlyIds.has(id));
           const remainingAlt = alternatingIds.filter((id) => !subjectState.get(id)?.completed);
           if (remainingAlt.length) {
             const list = remainingAlt
@@ -6938,7 +6988,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         chainDelayError = {
           title: chainTitle,
           severity,
-          html: `<p><strong class="alert-inline-title ${chainOverrunsPlan ? 'alert-title-error' : 'alert-title-info'}">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro}</span></p>${body}${availabilityNote}${alternatingNote}`,
+          html: chainOverrunsPlan
+            ? `<p><strong class="alert-inline-title alert-title-error">${chainTitle}</strong></p><p><span class="alert-inline-text">${chainIntro}</span></p>${body}${availabilityNote}${alternatingNote}`
+            : `<p><strong class="alert-inline-title alert-title-info">${chainTitle}</strong> <span class="alert-inline-text">${chainIntro}</span></p>${body}${availabilityNote}${alternatingNote}`,
         };
       }
     } else {
@@ -6969,7 +7021,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const chainSemesters = warningMaxDist;
           finalSemWarning = {
             title: 'Tight prerequisite chain',
-            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester. That is, your course is due for completion in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}, and these subjects are at the end of a ${chainSemesters} semester chain: <strong>${formattedList}</strong>.${availabilityNote}</span></p>`,
+            html: `<p><strong class="alert-inline-title alert-title-warning">Tight prerequisite chain</strong> <span class="alert-inline-text">Take care with the subjects you choose lest your graduation is delayed by a semester.<br>These subjects are in a prerequisite chain that runs for <strong>${chainSemesters}</strong> semester${chainSemesters === 1 ? '' : 's'} and you are due to graduate in <strong>${completionSemesters}</strong> semester${completionSemesters === 1 ? '' : 's'}: <strong>${formattedList}</strong>.${availabilityNote}</span></p>`,
           };
         }
       }
@@ -6988,12 +7040,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return { prereqMetNow, prereqMetPlanned, coreqMetNow, coreqMetPlanned };
   };
 
-  const getBit371Requirement = ({ completedSet, plannedSet, usePlanned, completedMajorCount, plannedMajorCount }) => {
-    const requirement = getBit371SpecialRequirement();
+  const getCapstoneRequirement = ({ completedSet, plannedSet, usePlanned, completedMajorCount, plannedMajorCount }) => {
+    const requirement = getCapstoneStartSpecialRequirement();
     const minimumCompleted = requirement?.minimumCompletedMajorSubjects ?? Infinity;
     const minimumCompletedOrConcurrent =
       requirement?.minimumCompletedOrConcurrentMajorSubjects ?? Infinity;
-    const capstonePrerequisites = prerequisites.BIT371 || [];
+    const capstonePrerequisites = prerequisites[getCapstoneStartCode()] || [];
     const baseMetNow = capstonePrerequisites.every((code) => completedSet.has(code));
     const baseMetPlanned = capstonePrerequisites.every(
       (code) => completedSet.has(code) || (usePlanned && plannedSet.has(code))
@@ -7507,7 +7559,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         (entry) => entry?.id === 'BIT111' && getGradeStatus(entry.result) === 'pass'
       );
     if (!hasBit111Fail || !hasBit111Pass) return '';
-    return 'Students who fail BIT111 often have difficulty with the Software Development major. Student needs to be sure that programming is something that interests them';
+    return 'Does the previous failure in BIT111 indicate a lack of interest in Software Development? A student who has a failure grade in BIT111 often has difficulty with the programming subjects in the Software Development major.';
   };
 
   const getRepeatFailCounts = () => {
@@ -7543,7 +7595,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (count === 2) {
         warnings.push({
           title: `Fail Subject Twice: ${label}`,
-          html: `<p><strong class="alert-inline-title alert-title-warning">Fail Subject Twice: ${label}</strong> <span class="alert-inline-text">Subject ${label} has been failed 2 times and not yet passed. On 3rd fail student will be asked to attend APR meeting to discuss options for continuing course. On 4th fail student will be excluded from the course.</span></p>`,
+          html: `<p><strong class="alert-inline-title alert-title-warning">Fail Subject Twice: ${label}</strong> <span class="alert-inline-text">Subject ${label} has been failed 2 times and not yet passed. This doesn’t affect this semester’s enrolment, but note:</span></p><ul class="alert-inline-list"><li>Upon 3rd fail a student will attend an APR (Academic Progress Panel) meeting where a decision is made about conditions/limits to the student’s next semester enrolment.</li><li>Upon a 4th fail students are excluded from the course.</li></ul>`,
         });
         summary.push({ code, count, level: 'warning' });
         return;
@@ -7551,7 +7603,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (count === 3) {
         errors.push({
           title: `Fail Subject 3 times: ${label}`,
-          html: `<p><strong class="alert-inline-title alert-title-error">Fail Subject 3 times: ${label}</strong> <span class="alert-inline-text">Subject ${label} has been failed 3 times and not yet passed. On 3rd fail student is asked to attend APR meeting to discuss options for continuing course. On 4th fail student will be excluded from the course.</span></p>`,
+          html: `<p><strong class="alert-inline-title alert-title-error">Fail Subject 3 times: ${label}</strong> <span class="alert-inline-text">Subject ${label} has been failed 3 times and not yet passed.</span></p><ul class="alert-inline-list"><li>Upon 3rd fail a student will attend an APR (Academic Progress Panel) meeting where a decision is made about conditions/limits to the student’s next semester enrolment.</li><li><strong>Upon a 4th fail students are excluded from the course.</strong></li></ul>`,
         });
         summary.push({ code, count: 3, level: 'error' });
         return;
@@ -7576,8 +7628,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .join('<br>');
   };
 
+  const getCapstoneCodeText = () => joinWithFinalWord(capstoneGuidance.subjects);
+  const getCapstoneDurationText = () => {
+    const duration = capstoneGuidance.durationSemesters;
+    return `${duration} full semester${duration === 1 ? '' : 's'}`;
+  };
+  const getCapstoneProjectLengthText = () =>
+    capstoneGuidance.durationSemesters === 2
+      ? '1-year'
+      : `${capstoneGuidance.durationSemesters}-semester`;
+  const getCapstoneGroupText = () => {
+    const { minimum, maximum } = capstoneGuidance.projectGroupOtherStudents;
+    if (minimum === maximum) {
+      return `${minimum} other student${minimum === 1 ? '' : 's'}`;
+    }
+    return `${minimum} to ${maximum} other students`;
+  };
+  const isCapstoneUnavailableInSummer = () =>
+    capstoneGuidance.subjects.length > 0 &&
+    capstoneGuidance.subjects.every((code) =>
+      summerSchoolGuidance.notOfferedSubjects.includes(code)
+    );
   const areCapstonesBothRemaining = () =>
-    !subjectState.get('BIT371')?.completed && !subjectState.get('BIT372')?.completed;
+    capstoneGuidance.subjects.length > 0 &&
+    capstoneGuidance.subjects.every((code) => !subjectState.get(code)?.completed);
 
   const shouldShowRemainingNotice = (remainingCount) => {
     if (!remainingNoticeUnlocked) return false;
@@ -7632,15 +7706,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const currentCodes = getCurrentStudyCodes();
     const summerLikelyCodes = summerSchoolLikelySubjectCodes.filter((code) => currentCodes.has(code));
     const severity = summerLikelyCodes.length ? 'warning' : 'info';
-    const title = severity === 'warning' ? 'Summer school subject selected' : 'Summer school likely';
-    const selectedText = summerLikelyCodes.map((code) => `${code} ${getSubjectName(code)}`).join(', ');
-    const likelyCodesText = summerSchoolLikelySubjectCodes.join('/');
     const leadClass = severity === 'warning' ? 'alert-title-warning' : 'alert-title-info';
     const semesterLabel = getSemesterLabel(planningSemesterKey);
-    const body =
-      severity === 'warning'
-        ? `${escapeHtml(selectedText)} ${summerLikelyCodes.length === 1 ? 'is' : 'are'} selected for the current enrolment. Summer school will probably be available, and ${escapeHtml(likelyCodesText)} ${summerSchoolLikelySubjectCodes.length === 1 ? 'is the subject' : 'are the subjects'} most likely to run in summer school. Consider whether one of these should be kept for summer school if another suitable current-semester subject is available.`
-        : `Summer school will probably be available. This student has ${remainingBeforeCurrent} subjects remaining before the current ${semesterLabel.toLowerCase()} enrolment, so summer school may help keep the completion plan on track.`;
+    let title = 'Summer school likely';
+    let body = `Summer school will probably be available. This student has ${remainingBeforeCurrent} subjects remaining before the current ${semesterLabel.toLowerCase()} enrolment, so summer school may help keep the completion plan on track.`;
+    if (summerLikelyCodes.length === 1) {
+      const code = summerLikelyCodes[0];
+      const selectedSubject = `${code} ${getSubjectName(code)}`;
+      title = `${code} may be offered in Summer Semester.`;
+      body = `You have selected <i>${escapeHtml(selectedSubject)}</i> for this semester. Summer school will probably be available, and ${escapeHtml(code)} is one of ${summerSchoolLikelySubjectCodes.length} subjects most likely to run in summer school. Consider whether you should choose a different subject and keep ${escapeHtml(code)} for Summer Semester.`;
+    } else if (summerLikelyCodes.length > 1) {
+      const codeList = summerLikelyCodes.join(' and ');
+      const selectedSubjects = summerLikelyCodes
+        .map((code) => `<i>${escapeHtml(`${code} ${getSubjectName(code)}`)}</i>`)
+        .join(' and ');
+      title = `${codeList} may be offered in Summer Semester.`;
+      body = `You have selected both ${selectedSubjects} for this semester. Summer school will probably be available, and these are the ${summerSchoolLikelySubjectCodes.length} subjects most likely to run in summer school. Consider whether you should choose different subjects and keep one or both for Summer Semester.`;
+    }
 
     return {
       severity,
@@ -7660,13 +7742,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       (
         planningSemesterKey === 'S2' &&
         planningGuidance.earlyCompletion.semesterTwoRemainingCounts.includes(remainingBeforeCurrent)
-      );
+    );
     const fullLoadSelected = getPlannedCount() >= getLoadThreshold() && getLoadThreshold() > 0;
     if (!hasEarlyCompletionOption || !fullLoadSelected) return null;
-    if (subjectState.get('BIT371')?.completed || subjectState.get('BIT371')?.toggled) return null;
+    const capstoneStartCode = getCapstoneStartCode();
+    if (
+      !capstoneStartCode ||
+      subjectState.get(capstoneStartCode)?.completed ||
+      subjectState.get(capstoneStartCode)?.toggled
+    ) return null;
+    const anticipatedCompletionSemesters = Math.max(
+      1,
+      Math.ceil(remainingBeforeCurrent / Math.max(1, getLoadThreshold()))
+    );
+    const anticipatedGraduationSemester = formatLongSemesterIdentity(
+      getSemesterIdentityAfterOffset(
+        planningSemesterOffset + anticipatedCompletionSemesters - 1
+      )
+    );
     return {
-      title: 'Capstone may affect early completion',
-      html: `<p><strong class="alert-inline-title alert-title-warning">Capstone may affect early completion</strong> <span class="alert-inline-text">BIT371 is still required after the selected full load. Because Capstone runs as a sequence, completing BIT371 may prevent Summer School, or possibly a ${planningGuidance.earlyCompletion.overloadSubjectCount}-subject final semester, from allowing this student to complete a semester early.</span></p>`,
+      title: 'Early completion options are blocked by Capstone',
+      html: `<p><strong class="alert-inline-title alert-title-warning">Early completion options are blocked by Capstone.</strong> <span class="alert-inline-text">Given you have <strong>${remainingBeforeCurrent}</strong> subjects remaining, it may be anticipated that your graduation semester will be <strong>${escapeHtml(anticipatedGraduationSemester)}</strong>.</span></p><p class="alert-inline-text"><strong>However, ${escapeHtml(getCapstoneCodeText())} are still required</strong>, and together, they form a ${escapeHtml(getCapstoneProjectLengthText())} sequence. ${escapeHtml(getCapstoneCodeText())} are your Capstone project – a project that you work on for ${escapeHtml(getCapstoneDurationText())} with ${escapeHtml(getCapstoneGroupText())}.</p>${isCapstoneUnavailableInSummer() ? `<p class="alert-inline-text"><strong>Note:</strong> ${escapeHtml(getCapstoneCodeText())} never run in Summer Semester.</p>` : ''}`,
     };
   };
 
@@ -7702,8 +7798,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!validSubjectCodes.has(code)) return false;
     if (completedSet.has(code)) return false;
     if (!isRunningNextSemester(code)) return false;
-    if (code === 'BIT371') {
-      const bitReq = getBit371Requirement({
+    if (code === getCapstoneStartCode()) {
+      const bitReq = getCapstoneRequirement({
         completedSet,
         plannedSet: new Set(),
         usePlanned: false,
@@ -7760,10 +7856,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getFmpDiplomaHebsitadInfoAlert = () => {
     if (!isExactFmpDiplomaCreditArrival()) return null;
     const currentCodes = getCurrentStudyCodes();
-    if (currentCodes.size !== 4) return null;
+    const configuredFullLoad = planningGuidance.earlyCompletion.standardSemesterLoad;
+    if (currentCodes.size !== configuredFullLoad) return null;
 
     const baseCodes = new Set([...FMP_DIPLOMA_CREDIT_CODES, ...currentCodes]);
-    if (baseCodes.size !== 12) return null;
+    const expectedBaseCount = FMP_DIPLOMA_CREDIT_CODES.length + configuredFullLoad;
+    if (baseCodes.size !== expectedBaseCount) return null;
 
     const remainingNeeded = HEBSITAD_REQUIREMENTS.total - baseCodes.size;
     const allRemaining = Array.from(validSubjectCodes)
@@ -7781,11 +7879,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     if (!nextSemesterPossible) {
       const reason = !structurallyPossible
-        ? 'the 12 subjects already accounted for leave the student unable to reach the required 10 core, 3 major, and 3 elective structure within only 4 more subjects'
-        : 'the next-semester subject options and prerequisite chains do not appear to open enough valid choices to complete the required 10 core, 3 major, and 3 elective structure';
+        ? `the ${baseCodes.size} subjects already accounted for leave the student unable to reach the required ${HEBSITAD_REQUIREMENTS.core} core, ${HEBSITAD_REQUIREMENTS.major} major, and ${HEBSITAD_REQUIREMENTS.elective} elective structure within only ${remainingNeeded} more subjects`
+        : `the next-semester subject options and prerequisite chains do not appear to open enough valid choices to complete the required ${HEBSITAD_REQUIREMENTS.core} core, ${HEBSITAD_REQUIREMENTS.major} major, and ${HEBSITAD_REQUIREMENTS.elective} elective structure`;
       return {
+        severity: 'error',
         title: 'FMP Diploma: HEBSITAD timing risk',
-        html: `<p><strong class="alert-inline-title alert-title-info">FMP Diploma: HEBSITAD timing risk</strong> <span class="alert-inline-text">HEBSITAD may not be achievable within 1 year of joining Melbourne Polytechnic because ${reason}.</span></p><p class="alert-inline-text">Check whether the current 4-subject enrolment should be adjusted so that, next semester, the student can finish the Associate Degree requirement of <strong>16 subjects: 10 core, 3 from one major, and 3 electives</strong>.</p>`,
+        html: `<p><strong class="alert-inline-title alert-title-error">FMP Diploma: HEBSITAD timing risk</strong> <span class="alert-inline-text">HEBSITAD may not be achievable within 1 year of joining Melbourne Polytechnic because ${reason}.</span></p><p class="alert-inline-text">Check whether the current ${currentCodes.size}-subject enrolment should be adjusted so that, next semester, the student can finish the Associate Degree requirement of <strong>${HEBSITAD_REQUIREMENTS.total} subjects: ${HEBSITAD_REQUIREMENTS.core} core, ${HEBSITAD_REQUIREMENTS.major} from one major, and ${HEBSITAD_REQUIREMENTS.elective} electives</strong>.</p>`,
       };
     }
 
@@ -7800,7 +7899,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             : 'one major';
     return {
       title: 'FMP Diploma: HEBSITAD option',
-      html: `<p><strong class="alert-inline-title alert-title-info">FMP Diploma: HEBSITAD option</strong> <span class="alert-inline-text">HEBSITAD Associate Degree of Information Technology may be an exit option for this FMP Diploma student.</span></p><p class="alert-inline-text">If the student wants this exit award, check that by the end of next semester they can tick off <strong>16 subjects total</strong>: <strong>10 core subjects</strong>, <strong>3 subjects from ${majorLabel}</strong>, and <strong>3 electives</strong>.</p>`,
+      html: `<p><strong class="alert-inline-title alert-title-info">FMP Diploma: HEBSITAD option</strong> <span class="alert-inline-text">HEBSITAD Associate Degree of Information Technology may be an exit option for this FMP Diploma student.</span></p><p class="alert-inline-text">If the student wants this exit award, check that by the end of next semester they can tick off <strong>${HEBSITAD_REQUIREMENTS.total} subjects total</strong>: <strong>${HEBSITAD_REQUIREMENTS.core} core subjects</strong>, <strong>${HEBSITAD_REQUIREMENTS.major} subjects from ${majorLabel}</strong>, and <strong>${HEBSITAD_REQUIREMENTS.elective} electives</strong>.</p>`,
     };
   };
 
@@ -7810,7 +7909,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const studyingCount = getCurrentStudyCodes().size;
     const hasRealStudentRecord = !!record && Object.keys(record).length > 0;
     const skipVisaVariation = hasCurrentHistoryHoldOrUngradedSubject();
-    if (hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record) && !skipVisaVariation) {
+    if (staffFacing && hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record) && !skipVisaVariation) {
       if (studyingCount < loadThreshold) {
         infoMessages.push({
           title: 'Visa requirement variation',
@@ -7823,10 +7922,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
       }
     }
-    if (lateEnrolmentInfo) {
+    if (staffFacing && lateEnrolmentInfo) {
       infoMessages.push(lateEnrolmentInfo);
     }
-    if (strataPrereqInfo) {
+    if (staffFacing && strataPrereqInfo) {
       infoMessages.push(strataPrereqInfo);
     }
     const remainingCount = getRemainingSubjectsCount();
@@ -7844,7 +7943,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const summerSchoolAlert = getSummerSchoolOpportunityAlert();
     if (summerSchoolAlert?.severity === 'info') infoMessages.push(summerSchoolAlert);
     const fmpDiplomaHebsitadAlert = getFmpDiplomaHebsitadInfoAlert();
-    if (fmpDiplomaHebsitadAlert) infoMessages.push(fmpDiplomaHebsitadAlert);
+    if (fmpDiplomaHebsitadAlert && fmpDiplomaHebsitadAlert.severity !== 'error') {
+      infoMessages.push(fmpDiplomaHebsitadAlert);
+    }
     const majorKey = getMajorKeyFromUi();
     const hasCompleted = (code) => !!subjectState.get(code)?.completed;
     const sasAwards = getSasAwardEntries();
@@ -7859,7 +7960,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const completedAwardItems = completedSasAwards.map(([, award]) =>
         `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
           award.name
-        )}</a>: The student has completed the subject requirements for this award. Congratulations!</li>`
+        )}</a>: You have completed the subject requirements for this award. Congratulations!</li>`
       ).join('');
       infoMessages.push({
         title: 'SAS award requirements completed',
@@ -7880,11 +7981,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       incompleteSasAwards.length > 0 &&
       ['ns', 'ba', 'sd'].includes(majorKey);
     if (shouldShowSasNotice) {
-      const sasAwardItems = incompleteSasAwards.map(([, award]) =>
-        `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
+      const sasAwardItems = incompleteSasAwards.map(([, award]) => {
+        const commonSubjects = sasSpecialisations.commonRequiredSubjects;
+        const additionalSubjects = award.additionalSubjects || [];
+        const awardSubjects = [...new Set([...commonSubjects, ...additionalSubjects])];
+        const completedSubjects = awardSubjects.filter(hasCompleted);
+        const availableSubjects = awardSubjects.filter((code) => !hasCompleted(code));
+        const additionalCompleted = additionalSubjects.filter(hasCompleted).length;
+        const additionalStillNeeded = Math.max(0, award.minimumCompleted - additionalCompleted);
+        const availableNote =
+          additionalStillNeeded > 0 && availableSubjects.some((code) => additionalSubjects.includes(code))
+            ? ` Complete ${additionalStillNeeded} of the available certificate subject${availableSubjects.length === 1 ? '' : 's'}.`
+            : '';
+        return `<li><a href="${escapeHtml(award.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
           award.name
-        )}</a> for ${escapeHtml(getSasAwardRequirementText(award))}.</li>`
-      ).join('');
+        )}</a><div><strong>Subjects completed:</strong> ${escapeHtml(
+          joinWithFinalWord(completedSubjects) || 'None'
+        )}.</div><div><strong>Subjects that can still be completed for this certificate:</strong> ${escapeHtml(
+          joinWithFinalWord(availableSubjects, 'or') || 'None'
+        )}.${escapeHtml(availableNote)}</div></li>`;
+      }).join('');
       infoMessages.push({
         title: 'SAS certificates',
         html: `<div class="sas-alert-header"><p><strong class="alert-inline-title alert-title-info">Opportunity for a SAS badge and certificate.</strong></p>
@@ -7907,12 +8023,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
     }
     if (hasCompletedAnyChangedCodeSubject()) {
-      const changedRows = getChangedCodeRows()
-        .filter(({ newCode }) => !!subjectState.get(newCode)?.completed);
+      const changedRows = getChangedCodeRows();
       const changedRowsHtml = changedRows
         .map(
-          ({ newLabel, oldLabel }) =>
-            `<li>${escapeHtml(newLabel)} was <strong>${escapeHtml(oldLabel)}</strong></li>`
+          ({ newLabel, oldCode }) =>
+            `<li><strong>${escapeHtml(oldCode)}</strong> is in your study history.<div>This is now:</div><div><strong>${escapeHtml(
+              newLabel
+            )}</strong></div></li>`
         )
         .join('');
       infoMessages.push({
@@ -8899,8 +9016,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const coSelected = subjectState.get(co)?.toggled;
         if (courseSelected && coSelected) {
           warnings.push({
-            title: `Concurrent ${course} and ${co}`,
-            html: `<strong class="alert-inline-title alert-title-warning">Concurrent ${course} and ${co}</strong> <span class="alert-inline-text">Students who take ${course} and ${co} together often struggle because ${course} relies on ${co} knowledge. Concurrent study is not advised unless necessary.</span>`,
+            title: `${course} with ${co} – Challenging for students`,
+            html: `<strong class="alert-inline-title alert-title-warning">${course} with ${co} – Challenging for students</strong> <span class="alert-inline-text">Students who take ${course} and ${co} in the same semester often comment that it’s a difficult undertaking because ${course} relies on ${co} knowledge.<br>Concurrent study is not advised unless necessary. If taken together, students need to be aware that it is their own responsibility to fill knowledge gaps in ${co}.</span>`,
           });
         }
       });
@@ -8916,12 +9033,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const currentHoldCodes = getCurrentHoldEnrolmentCodes();
     if (currentHoldCodes.length) {
-      const subjectLabel = currentHoldCodes.length === 1 ? 'subject' : 'subjects';
       warnings.push({
         title: 'Current H enrolment',
         html: `<strong class="alert-inline-title alert-title-warning">Current H enrolment</strong> <span class="alert-inline-text">${escapeHtml(
           currentHoldCodes.join(', ')
-        )} ${currentHoldCodes.length === 1 ? 'has' : 'have'} an H/hold result and ${currentHoldCodes.length === 1 ? 'is' : 'are'} still being treated as current ${subjectLabel}. Check this before confirming enrolment choices.</span>`,
+        )} ${currentHoldCodes.length === 1 ? 'has an H/Hold result. It is being treated here as a current enrolment. Check for updates (has a Pass or Fail grade been entered into Strata?)' : 'have H/Hold results. They are being treated here as current enrolments. Check for updates (have Pass or Fail grades been entered into Strata?)'} before confirming enrolment choices.</span>`,
       });
     }
     const summerSchoolAlert = getSummerSchoolOpportunityAlert();
@@ -8939,15 +9055,41 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             const currentCount = counts[currentKey] || 0;
             const currentName = getMajorNameFromKey(currentKey);
             const bestName = getMajorNameFromKey(best.key);
+            const proposedMajorCodes = new Set(majorLayouts[best.key] || []);
+            const proposedElectiveCodes = Array.from(
+              new Set([
+                ...electivePlaceholderState.filter(Boolean).map((code) => code.toUpperCase()),
+                ...Array.from(subjectState.entries())
+                  .filter(
+                    ([code, state]) =>
+                      state?.completed &&
+                      !subjectMeta[code]?.classes?.includes('core') &&
+                      !proposedMajorCodes.has(code)
+                  )
+                  .map(([code]) => code),
+              ])
+            ).sort();
+            const proposedElectiveWarning =
+              proposedElectiveCodes.length > programRequirements.elective
+                ? `<br><span class="alert-inline-text alert-title-error"><strong>Choosing ${escapeHtml(
+                  bestName
+                )} gives you ${proposedElectiveCodes.length} electives – ${escapeHtml(
+                  proposedElectiveCodes.join(', ')
+                )}.</strong></span>`
+                : '';
             warnings.push({
               title: 'Major choice',
               html: `<strong class="alert-inline-title alert-title-warning">Major choice</strong> <span class="alert-inline-text">You have ${escapeHtml(
                 currentName
-              )} chosen as your major, but you have studied more ${escapeHtml(
+              )} as your major, but you have studied more ${escapeHtml(
                 bestName
-              )} subjects (${best.count}) than ${escapeHtml(
+              )} subjects.<br>You have completed ${currentCount} ${escapeHtml(
                 currentName
-              )} subjects (${currentCount}). Should the major dropdown be changed?</span>`,
+              )} subjects and ${best.count} ${escapeHtml(
+                bestName
+              )} subjects. Should you change the major dropdown to ${escapeHtml(
+                bestName
+              )}?</span>${proposedElectiveWarning}`,
             });
           }
         }
@@ -8978,7 +9120,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .join('');
       overLoadError = {
         title: 'Over full load',
-        html: `<p><strong class="alert-inline-title alert-title-error">Over full load</strong> <span class="alert-inline-text">There are ${combined.size} subjects selected or currently enrolled, which is above the full load of ${loadThreshold}.</span></p>${listItems ? `<ul class="alert-inline-list">${listItems}</ul>` : ''}`,
+        html: `<p><strong class="alert-inline-title alert-title-error">Over full load</strong> <span class="alert-inline-text">There are ${combined.size} subjects selected or currently enrolled, which is above the full load of ${loadThreshold} subjects.</span></p>${listItems ? `<ul class="alert-inline-list">${listItems}</ul>` : ''}`,
       };
     }
   };
@@ -9014,7 +9156,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const uniqueElectives = new Set([...useCodes, ...completedElectives]);
     if (uniqueElectives.size > programRequirements.elective) {
       reasons.push(
-        `<li><strong>More than 4 electives completed</strong> — ${uniqueElectives.size} electives counted: ${escapeHtml(
+        `<li><strong>More than ${programRequirements.elective} electives completed</strong> — ${uniqueElectives.size} electives counted: ${escapeHtml(
           formatCodeList(Array.from(uniqueElectives))
         )}</li>`
       );
@@ -9057,9 +9199,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     if (reasons.length) {
       const reasonList = reasons.join('');
+      const title = `More than ${programRequirements.total} subjects are required to graduate`;
       overCompletionError = {
-        title: 'More than 24 subjects required',
-        html: `<p><strong class="alert-inline-title alert-title-error">More than 24 subjects required</strong> <span class="alert-inline-text">This student appears to exceed the 24-subject program cap. Likely reason(s):</span></p><ul class="alert-inline-list">${reasonList}</ul>`,
+        title,
+        html: `<p><strong class="alert-inline-title alert-title-error">${title}</strong></p><p class="alert-inline-text">Likely reason(s):</p><ul class="alert-inline-list">${reasonList}</ul>`,
       };
     }
     refreshErrorAlerts();
@@ -9117,15 +9260,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const missingList = item.missing
           .map((code) => `${code} - ${getSubjectName(code)}`)
           .join(', ');
-        return `<li><strong>${item.code}</strong> - ${getSubjectName(item.code)}. Missing completion of prerequisites: ${escapeHtml(
+        const prerequisiteLabel = item.missing.length === 1 ? 'prerequisite' : 'prerequisites';
+        return `<li><strong>${item.code}</strong> - ${getSubjectName(item.code)}. Missing completion of ${prerequisiteLabel}: ${escapeHtml(
           missingList
         )}.</li>`;
       })
       .join('');
     const extraHtml = extraCount > 0 ? `<p class="alert-inline-text">Plus ${extraCount} more.</p>` : '';
+    const historyExplanation =
+      issues.length === 1
+        ? `While the study history has a pass in the following subject, the ${issues[0].missing.length === 1 ? 'prerequisite for that subject has' : 'prerequisites for that subject have'} not been completed.`
+        : 'While the study history has passes in the following subjects, the prerequisites for those subjects have not been completed.';
     creditTransferWarning = {
-      title: 'Possible missing credit transfers',
-      html: `<p><strong class="alert-inline-title alert-title-warning">Possible missing credit transfers</strong> <span class="alert-inline-text">Some passed subjects have no enrolment history for all prerequisites. This may indicate missing credit transfers.</span></p><ul class="alert-inline-list">${listHtml}</ul>${extraHtml}<p class="alert-inline-text">Please check for CRT forms that have not been entered into student record yet.</p>`,
+      title: 'Missing credit transfers in history?',
+      html: `<p><strong class="alert-inline-title alert-title-error">Missing credit transfers in history?</strong> <span class="alert-inline-text">${historyExplanation} This may indicate that Credit Transfers have not been entered into the student record.</span></p><ul class="alert-inline-list">${listHtml}</ul>${extraHtml}`,
     };
   };
 
@@ -9186,7 +9334,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         usePlanned,
       });
       const hasCoreq = (corequisites[id] || []).length > 0;
-      const evalPlanned = usePlanned || id === 'BIT371';
+      const evalPlanned = usePlanned || id === getCapstoneStartCode();
       const coreqSatisfiedEval = evalPlanned ? coreqMetPlanned : coreqMetNow;
       let metNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
       let met = evalPlanned ? (hasCoreq ? prereqMetPlanned && coreqSatisfiedEval : prereqMetPlanned) : metNow;
@@ -9200,8 +9348,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               : prereqMetNow;
       let capstoneMajorOkPlanned = false;
       let capstoneMajorOkNow = false;
-      if (id === 'BIT371') {
-        const bitReq = getBit371Requirement({
+      if (id === getCapstoneStartCode()) {
+        const bitReq = getCapstoneRequirement({
           completedSet: completed,
           plannedSet: planned,
           usePlanned: evalPlanned,
@@ -9224,8 +9372,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             ? prereqMetPlanned && coreqMetPlanned
             : prereqMetNow && coreqMetNow
           : prereqMetPlanned;
-        if (id === 'BIT371') {
-          const bitReq = getBit371Requirement({
+        if (id === getCapstoneStartCode()) {
+          const bitReq = getCapstoneRequirement({
             completedSet: completed,
             plannedSet: selectedSubjects,
             usePlanned: true,
@@ -9249,7 +9397,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       const isNotThisSem = !isRunningThisSemester(id);
       cell.classList.toggle('satisfied', met);
-      const canSelectNow = id === 'BIT371' ? met && !isNotThisSem : metNow && !isNotThisSem;
+      const canSelectNow =
+        id === getCapstoneStartCode() ? met && !isNotThisSem : metNow && !isNotThisSem;
       cell.classList.toggle('can-select-now', canSelectNow);
       cell.classList.toggle('locked', !met);
       if (areElectivesFull() && isElectivesGridCell(cell)) {
@@ -9261,7 +9410,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         cell.classList.remove('locked');
         cell.classList.add('coreq-selectable');
         // Only dim when relying on concurrent coreqs; keep bright if prereqs met from prior completion
-        if (id !== 'BIT371' && (!hasCoreq || !coreqMetNow)) cell.classList.remove('satisfied', 'can-select-now');
+        if (id !== getCapstoneStartCode() && (!hasCoreq || !coreqMetNow)) {
+          cell.classList.remove('satisfied', 'can-select-now');
+        }
       }
     });
     updateSemesterCounts(completed, planned);
@@ -9353,14 +9504,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return Math.max(0, total - completed - useCredits + excessElectives);
   };
 
-  const getChangedCodeRows = () =>
-    Object.entries(previousCodeByNew).map(([newCode, oldLabel]) => ({
-      newCode,
-      newLabel: `${newCode} ${getSubjectName(newCode)}`,
-      oldLabel,
-    }));
-  const hasCompletedAnyChangedCodeSubject = () =>
-    getChangedCodeRows().some(({ newCode }) => !!subjectState.get(newCode)?.completed);
+  const getChangedCodeRows = () => {
+    const configuredOldCodes = new Set(legacySubjectPairs.map(([oldCode]) => normalizeSubjectCode(oldCode)));
+    const rows = [];
+    manualEntryAliases.forEach((aliases, newCode) => {
+      Array.from(aliases)
+        .map((oldCode) => normalizeSubjectCode(oldCode))
+        .filter((oldCode) => configuredOldCodes.has(oldCode))
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((oldCode) => {
+          rows.push({
+            oldCode,
+            newCode,
+            newLabel: `${newCode} ${getSubjectName(newCode)}`,
+          });
+        });
+    });
+    return rows;
+  };
+  const hasCompletedAnyChangedCodeSubject = () => getChangedCodeRows().length > 0;
   const getCompletedChangedCodeSubjects = () =>
     getChangedCodeRows()
       .map(({ newCode }) => newCode)
@@ -9411,6 +9573,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       overCompletionError = null;
       overLoadError = null;
+      passCurrentEnrolmentsError = null;
       refreshErrorAlerts();
       setAlertMessages('data', []);
       renderAlertButton('data');
@@ -9556,18 +9719,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     {
       const { codes, info } = splitInfoMessages(buildInfoMessages(activeRecord, feeDetails));
       if (creditMismatchExplainedByPassCurrent) {
-        const subjectLabel = passCurrentCodes.length === 1 ? 'subject' : 'subjects';
-        const codeList = passCurrentCodes.join(', ');
-        const alreadyPassedCount = Math.max(0, completedTotal - passCurrentCodes.length);
-        info.push({
+        const formatCodeList = (codes, conjunction) => {
+          if (codes.length < 2) return codes[0] || '';
+          if (codes.length === 2) return `${codes[0]} ${conjunction} ${codes[1]}`;
+          return `${codes.slice(0, -1).join(', ')} ${conjunction} ${codes.at(-1)}`;
+        };
+        const singular = passCurrentCodes.length === 1;
+        const andList = formatCodeList(passCurrentCodes, 'and');
+        const orList = formatCodeList(passCurrentCodes, 'or');
+        const censusDate = getCalculatedCensusDate();
+        const censusDateText = censusDate ? formatDisplayDate(censusDate) : 'not configured';
+        passCurrentEnrolmentsError = {
           title: 'Current enrolments treated as passes',
-          html: `<p><strong class="alert-inline-title alert-title-warning">Current enrolments treated as passes:</strong> <span class="alert-inline-text">Take caution when selecting subjects. Your student record shows that you have passed only ${escapeHtml(
-            alreadyPassedCount
-          )} subjects. You have checked the "Pass the current enrolments" button, so you can select subjects on the assumption that you will achieve pass grades in these ${escapeHtml(
-            passCurrentCodes.length
-          )} ${subjectLabel}: ${escapeHtml(codeList)}.</span></p>`,
-        });
+          html: `<p><strong class="alert-inline-title alert-title-error">Current enrolments treated as passes:</strong> <span class="alert-inline-text">Take caution when selecting subjects. You have checked the “Pass the current enrolments” button, so your current ${singular ? 'enrolment' : 'enrolments'} in ${escapeHtml(andList)} can be treated as ${singular ? 'a pass' : 'passes'}. The result is that you can now select subjects that require ${singular ? 'a pass in that prerequisite subject' : 'passes in those prerequisite subjects'}.</span></p><p class="alert-inline-text">If you don’t pass ${escapeHtml(orList)}, your enrolment will be in error and must then be changed. This can delay your graduation because you cannot switch into a new subject after missing its first 3 classes, and because fees and grades are locked in at Census Date – ${escapeHtml(censusDateText)}.</p>`,
+        };
+      } else {
+        passCurrentEnrolmentsError = null;
       }
+      refreshErrorAlerts();
       setAlertMessages('info', info);
       setAlertMessages('codes', codes);
     }
@@ -9622,12 +9791,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const remainingNotPlanned = getRemainingSubjectsNotPlanned();
     const plannedCount = getPlannedCount();
     const loadThreshold = getLoadThreshold();
-    const bit371Remaining = !subjectState.get('BIT371')?.completed;
-    const bit372Remaining = !subjectState.get('BIT372')?.completed;
-    if (remainingNotPlanned > 0 && remainingNotPlanned < 4 && bit371Remaining && bit372Remaining) {
+    const capstonesRemaining = areCapstonesBothRemaining();
+    const expectedSemesters = Math.max(
+      1,
+      Math.ceil(remainingNotPlanned / Math.max(1, loadThreshold))
+    );
+    if (
+      remainingNotPlanned > 0 &&
+      expectedSemesters < capstoneGuidance.durationSemesters &&
+      capstonesRemaining
+    ) {
+      const expectedSemesterLabel = expectedSemesters === 1 ? 'semester' : 'semesters';
+      const title = `Capstone spans ${capstoneGuidance.durationSemesters} semesters`;
       capstoneYearError = {
-        title: 'Capstone sequence spans two semesters',
-        html: `<p><strong class="alert-inline-title alert-title-error">Capstone sequence spans two semesters</strong> <span class="alert-inline-text">Both BIT371 and BIT372 are still required. These capstone subjects run in sequence across two semesters, so they cannot be completed in a single semester even when fewer than 4 subjects remain.</span></p>`,
+        title,
+        html: `<p><strong class="alert-inline-title alert-title-error">${escapeHtml(title)}</strong> <span class="alert-inline-text">While you have ${remainingNotPlanned} subjects remaining, you cannot complete in ${expectedSemesters} ${expectedSemesterLabel}. This is because ${escapeHtml(getCapstoneCodeText())}, which together form your Capstone project, are still required. Capstone is a ${escapeHtml(getCapstoneProjectLengthText())} project and cannot be completed in ${expectedSemesters} ${expectedSemesterLabel}.</span></p>`,
       };
     }
 
@@ -9659,13 +9837,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     if (remaining > 4 && satisfiedCount < 4 && plannedCount >= loadThreshold) {
       satisfiedCells.forEach((cell) => cell.classList.add('next-sem-warning'));
-      const satisfiedSummary =
-        satisfiedCount === 0
-          ? 'No subjects currently have prerequisites satisfied'
-          : `Only ${satisfiedCount} subject${satisfiedCount === 1 ? '' : 's'} currently have prerequisites satisfied`;
       nextSemWarning = {
-        title: 'Limited availability next semester',
-        html: `<p><strong class="alert-inline-title alert-title-warning">Not enough subjects available next semester</strong> <span class="alert-inline-text">${satisfiedSummary}, but you still have ${remaining} subjects remaining.</span></p><p class="alert-inline-text">For <strong>international students</strong>: where possible subject selection should be arranged to allow for the selection of a full load in the following semester.</p>`,
+        title: 'Not enough subjects available next semester',
+        html: `<p><strong class="alert-inline-title alert-title-error">Not enough subjects available next semester</strong> <span class="alert-inline-text">Next semester you will find that you have ${remaining} subject${remaining === 1 ? '' : 's'} remaining, but only ${satisfiedCount} subject${satisfiedCount === 1 ? '' : 's'} will have prerequisites satisfied.</span></p>`,
       };
     }
     refreshErrorAlerts();
@@ -10146,7 +10320,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const creditNote = document.createElement('div');
         creditNote.className = 'credit-note';
         creditNote.dataset.creditOnly = 'true';
-        creditNote.innerHTML = '3rd year subjects and BIT241 can normally not be credited.';
+        creditNote.textContent = getCreditRestrictionText();
         creditNote.style.display = 'none';
         tooltip.appendChild(creditNote);
       }
@@ -10193,9 +10367,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           plannedSet,
           usePlanned: false,
         });
-        if (id === 'BIT371') {
+        if (id === getCapstoneStartCode()) {
           const { completedMajorCount, plannedMajorCount } = getMajorCounts();
-          return getBit371Requirement({
+          return getCapstoneRequirement({
             completedSet,
             plannedSet,
             usePlanned: true,
@@ -10590,9 +10764,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const allowEnrol = (activeRecord?.['Allow_Enrol?'] || '').toString().trim().toUpperCase();
     const suppsItems = formatSuppsAndHoldsItems(activeRecord?.SuppsAndHolds);
     if (suppsItems) {
-      warningList.push({
+      errorPayloads.push({
         title: 'Supps and/or Holds',
-        html: `<p><strong class="alert-inline-title alert-title-warning">Supps and/or Holds</strong> <span class="alert-inline-text">${suppsItems}</span></p>`,
+        html: `<p><strong class="alert-inline-title alert-title-error">Supps and/or Holds</strong> <span class="alert-inline-text">${suppsItems}</span></p>`,
       });
     }
     if (allowEnrol === 'N') {
@@ -10645,11 +10819,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         warningList.length = 0;
       }
     }
-    if (nextSemWarning) warningList.push(nextSemWarning);
+    if (nextSemWarning) errorPayloads.push(nextSemWarning);
     if (finalSemWarning) warningList.push(finalSemWarning);
-    if (censusWarning) warningList.push(censusWarning);
-    if (weekTwoWarning) warningList.push(weekTwoWarning);
-    if (creditTransferWarning) warningList.push(creditTransferWarning);
+    if (censusWarning) (staffFacing ? warningList : errorPayloads).push(censusWarning);
+    if (weekTwoWarning) (staffFacing ? warningList : errorPayloads).push(weekTwoWarning);
+    if (creditTransferWarning) errorPayloads.push(creditTransferWarning);
+    if (passCurrentEnrolmentsError) errorPayloads.push(passCurrentEnrolmentsError);
+    const fmpDiplomaHebsitadAlert = getFmpDiplomaHebsitadInfoAlert();
+    if (fmpDiplomaHebsitadAlert?.severity === 'error') errorPayloads.push(fmpDiplomaHebsitadAlert);
     const repeatFailNotices = buildRepeatFailNotices();
     repeatFailNotices.warnings.forEach((msg) => warningList.push(msg));
     repeatFailNotices.errors.forEach((msg) => errorPayloads.push(msg));
@@ -10677,9 +10854,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     plannedSet.forEach((id) => {
       const prereqsList = prerequisites[id] || [];
       const missing = prereqsList.filter((code) => !completedSet.has(code));
-      if (id === 'BIT371') {
+      if (id === getCapstoneStartCode()) {
         const { completedMajorCount, plannedMajorCount } = getMajorCounts();
-        const bitReqPlanned = getBit371Requirement({
+        const bitReqPlanned = getCapstoneRequirement({
           completedSet,
           plannedSet: new Set(),
           usePlanned: true,
@@ -10688,7 +10865,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         const fullLoadSelected = plannedCount >= loadThreshold;
         if (!bitReqPlanned.majorCompletedEnough || (fullLoadSelected && !bitReqPlanned.majorConcurrentOk)) {
-          missing.push(getBit371MajorRequirementText({ includeCompletedMinimum: true }));
+          missing.push(getCapstoneMajorRequirementText({ includeCompletedMinimum: true }));
         }
       }
       if (missing.length) {
@@ -14235,14 +14412,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (placeholder) return;
       const st = subjectState.get(id) || { completed: false, toggled: false };
       if (st.completed) return;
-      if (
-        (id === 'BIT371' && subjectState.get('BIT372')?.toggled) ||
-        (id === 'BIT372' && subjectState.get('BIT371')?.toggled)
-      ) {
-        const pair = id === 'BIT371' ? 'BIT372' : 'BIT371';
+      const selectedCapstonePair = capstoneGuidance.subjects.find(
+        (code) => code !== id && subjectState.get(code)?.toggled
+      );
+      if (capstoneGuidance.subjects.includes(id) && selectedCapstonePair) {
         capstonePairError = {
           title: 'Capstone selection',
-          html: `<p><strong class="alert-inline-title alert-title-error">Capstone selection</strong> <span class="alert-inline-text">${id} and ${pair} cannot be selected in the same semester. Please choose one.</span></p>`,
+          html: `<p><strong class="alert-inline-title alert-title-error">Capstone selection</strong> <span class="alert-inline-text">${escapeHtml(id)} and ${escapeHtml(selectedCapstonePair)} cannot be selected in the same semester.</span></p><p class="alert-inline-text">Capstone is a ${escapeHtml(getCapstoneProjectLengthText())} project. You will work with ${escapeHtml(getCapstoneGroupText())} on a single project that will take ${escapeHtml(getCapstoneDurationText())} to complete.</p>`,
         };
         refreshErrorAlerts();
         return;
@@ -14288,9 +14464,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const hasCoreq = (corequisites[id] || []).length > 0;
           if (!prereqMetNow) return;
           if (hasCoreq && !coreqMetPlanned) return;
-          if (id === 'BIT371') {
+          if (id === getCapstoneStartCode()) {
             const { completedMajorCount, plannedMajorCount } = getMajorCounts();
-            const bitReq = getBit371Requirement({
+            const bitReq = getCapstoneRequirement({
               completedSet: completed,
               plannedSet,
               usePlanned: true,
@@ -15107,7 +15283,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (id && !isRunningThisSemester(id)) {
       ensureNotThisSemUI(cell);
     }
-    if (id === 'BIT371' || id === 'BIT372') {
+    if (capstoneGuidance.subjects.includes(id)) {
       cell.classList.add('capstone');
     }
 
@@ -15274,22 +15450,30 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter(([, count]) => count > 1)
       .map(([key]) => key);
     if (showConflicts && conflictKeys.length) {
-      const conflictLabels = conflictKeys
+      const conflictGroupsHtml = conflictKeys
         .map((key) => {
           const [day, slotName] = key.split('|');
-          const timeRange = formatTimeRange(timeSlots[slotName] || '');
-          const timeLabel = slotName
-            ? `${getSlotAbbreviation(slotName)}${timeRange ? ` (${timeRange})` : ''}`
-            : slotName;
-          return `${day} ${timeLabel}`.trim();
+          const conflictingRows = toRender.filter(
+            (row) =>
+              !row.placeholder &&
+              `${row.dayShort || ''}|${row.data?.slot || ''}` === key
+          );
+          const dayFull = conflictingRows[0]?.dayFull || day;
+          const timeRange = formatTimeRange(timeSlots[slotName] || '')
+            .replace(' : ', ' to ');
+          const heading = `${dayFull} ${slotName}${timeRange ? ` (${timeRange})` : ''}`.trim();
+          const subjectLabels = conflictingRows.map(
+            ({ id }) => `${id} ${getSubjectName(id)}`.trim()
+          );
+          const subjectsHtml = subjectLabels
+            .map((label) => `<li>${escapeHtml(label)}</li>`)
+            .join('');
+          return `<div class="alert-inline-text">${escapeHtml(heading)}</div><ul class="alert-inline-list">${subjectsHtml}</ul>`;
         })
-        .filter(Boolean);
-      const listHtml = conflictLabels.length
-        ? `<ul class="alert-inline-list">${conflictLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join('')}</ul>`
-        : '';
+        .join('');
       timetableClashError = {
         title: 'Timetable clash',
-        html: `<p><strong class="alert-inline-title alert-title-error">Timetable clash</strong> <span class="alert-inline-text">Two or more subjects share the same day and time.</span></p>${listHtml}`,
+        html: `<p><strong class="alert-inline-title alert-title-error">Timetable clash</strong> <span class="alert-inline-text">Two or more subjects share the same day and time.</span></p>${conflictGroupsHtml}`,
       };
     } else {
       timetableClashError = null;
@@ -16521,6 +16705,122 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
           return number;
         };
+        const configuredCapstone = requireConfigObject(parsed?.capstone, 'capstone');
+        const supportedCapstoneKeys = new Set([
+          'subjects',
+          'durationSemesters',
+          'projectGroupOtherStudents',
+        ]);
+        const unsupportedCapstoneKeys = Object.keys(configuredCapstone)
+          .filter((key) => !key.startsWith('_') && !supportedCapstoneKeys.has(key));
+        if (unsupportedCapstoneKeys.length) {
+          throw new Error(
+            `capstone contains unsupported field${unsupportedCapstoneKeys.length === 1 ? '' : 's'}: ${unsupportedCapstoneKeys.join(', ')}.`
+          );
+        }
+        const resolvedCapstoneSubjects = parseSubjectCodeList(
+          configuredCapstone.subjects,
+          'capstone.subjects'
+        );
+        if (resolvedCapstoneSubjects.length !== 2) {
+          throw new Error('capstone.subjects must contain exactly two subjects in study order.');
+        }
+        const configuredCapstoneGroup = requireConfigObject(
+          configuredCapstone.projectGroupOtherStudents,
+          'capstone.projectGroupOtherStudents'
+        );
+        const unsupportedCapstoneGroupKeys = Object.keys(configuredCapstoneGroup)
+          .filter((key) => !key.startsWith('_') && !['minimum', 'maximum'].includes(key));
+        if (unsupportedCapstoneGroupKeys.length) {
+          throw new Error(
+            `capstone.projectGroupOtherStudents contains unsupported field${unsupportedCapstoneGroupKeys.length === 1 ? '' : 's'}: ${unsupportedCapstoneGroupKeys.join(', ')}.`
+          );
+        }
+        const capstoneGroupMinimum = parsePositiveWholeNumber(
+          configuredCapstoneGroup.minimum,
+          'capstone.projectGroupOtherStudents.minimum'
+        );
+        const capstoneGroupMaximum = parsePositiveWholeNumber(
+          configuredCapstoneGroup.maximum,
+          'capstone.projectGroupOtherStudents.maximum'
+        );
+        if (capstoneGroupMaximum < capstoneGroupMinimum) {
+          throw new Error(
+            'capstone.projectGroupOtherStudents.maximum must be at least minimum.'
+          );
+        }
+        const capstoneDurationSemesters = parsePositiveWholeNumber(
+          configuredCapstone.durationSemesters,
+          'capstone.durationSemesters'
+        );
+        if (capstoneDurationSemesters < resolvedCapstoneSubjects.length) {
+          throw new Error(
+            'capstone.durationSemesters cannot be less than the number of sequential Capstone subjects.'
+          );
+        }
+        const resolvedCapstoneGuidance = {
+          subjects: resolvedCapstoneSubjects,
+          durationSemesters: capstoneDurationSemesters,
+          projectGroupOtherStudents: {
+            minimum: capstoneGroupMinimum,
+            maximum: capstoneGroupMaximum,
+          },
+        };
+        const configuredCreditRestrictions = requireConfigObject(
+          configuredCreditAndArticulation.normallyNotAllowedCredit,
+          'creditAndArticulation.normallyNotAllowedCredit'
+        );
+        const unsupportedCreditRestrictionKeys = Object.keys(configuredCreditRestrictions)
+          .filter((key) => !key.startsWith('_') && !['yearLevels', 'subjects'].includes(key));
+        if (unsupportedCreditRestrictionKeys.length) {
+          throw new Error(
+            `creditAndArticulation.normallyNotAllowedCredit contains unsupported field${unsupportedCreditRestrictionKeys.length === 1 ? '' : 's'}: ${unsupportedCreditRestrictionKeys.join(', ')}.`
+          );
+        }
+        const configuredCreditRestrictionSubjects = parseSubjectCodeList(
+          configuredCreditRestrictions.subjects,
+          'creditAndArticulation.normallyNotAllowedCredit.subjects'
+        );
+        if (!Array.isArray(configuredCreditRestrictions.yearLevels)) {
+          throw new Error(
+            'creditAndArticulation.normallyNotAllowedCredit.yearLevels must be an array.'
+          );
+        }
+        const resolvedCreditRestrictionYearLevels = [];
+        const seenCreditRestrictionYearLevels = new Set();
+        configuredCreditRestrictions.yearLevels.forEach((rawYearLevel) => {
+          const yearLevel = parsePositiveWholeNumber(
+            rawYearLevel,
+            'creditAndArticulation.normallyNotAllowedCredit.yearLevels'
+          );
+          if (yearLevel > 9) {
+            throw new Error(
+              'creditAndArticulation.normallyNotAllowedCredit.yearLevels values must be from 1 to 9.'
+            );
+          }
+          if (seenCreditRestrictionYearLevels.has(yearLevel)) {
+            throw new Error(
+              `creditAndArticulation.normallyNotAllowedCredit.yearLevels contains duplicate value ${yearLevel}.`
+            );
+          }
+          seenCreditRestrictionYearLevels.add(yearLevel);
+          resolvedCreditRestrictionYearLevels.push(yearLevel);
+        });
+        if (
+          !resolvedCreditRestrictionYearLevels.length &&
+          !configuredCreditRestrictionSubjects.length
+        ) {
+          throw new Error(
+            'creditAndArticulation.normallyNotAllowedCredit must contain at least one year level or subject.'
+          );
+        }
+        const resolvedCreditWarningIds = new Set(configuredCreditRestrictionSubjects);
+        Object.keys(resolvedSubjectNames).forEach((code) => {
+          const yearLevel = Number(code.charAt(3));
+          if (resolvedCreditRestrictionYearLevels.includes(yearLevel)) {
+            resolvedCreditWarningIds.add(code);
+          }
+        });
         const resolvedSummerSchoolGuidance = {
           durationWeeks: parsePositiveWholeNumber(
             configuredSummerSchool.durationWeeks,
@@ -17316,44 +17616,54 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           prerequisiteVisitState.set(code, 2);
         };
         Object.keys(resolvedSubjectNames).forEach((code) => validatePrerequisitePath(code));
+        const capstoneStartCode = resolvedCapstoneGuidance.subjects[0];
+        const capstoneEndCode = resolvedCapstoneGuidance.subjects[1];
+        if (!(resolvedPrerequisites[capstoneEndCode] || []).includes(capstoneStartCode)) {
+          throw new Error(
+            `capstone subject ${capstoneEndCode} must list ${capstoneStartCode} as a prerequisite.`
+          );
+        }
         const unsupportedMajorSubjectRequirements = Object.entries(configuredSubjects)
           .filter(([code, definition]) =>
             !code.startsWith('_') &&
-            code !== 'BIT371' &&
+            code !== capstoneStartCode &&
             definition?.majorSubjectRequirement !== undefined
           )
           .map(([code]) => code);
         if (unsupportedMajorSubjectRequirements.length) {
           throw new Error(
-            `majorSubjectRequirement is currently supported only for BIT371; also configured for ${unsupportedMajorSubjectRequirements.join(', ')}.`
+            `majorSubjectRequirement is currently supported only for the first Capstone subject, ${capstoneStartCode}; also configured for ${unsupportedMajorSubjectRequirements.join(', ')}.`
           );
         }
-        const configuredBit371Requirement = configuredSubjects.BIT371?.majorSubjectRequirement;
+        const configuredCapstoneStartRequirement =
+          configuredSubjects[capstoneStartCode]?.majorSubjectRequirement;
         if (
-          !configuredBit371Requirement ||
-          typeof configuredBit371Requirement !== 'object' ||
-          Array.isArray(configuredBit371Requirement)
+          !configuredCapstoneStartRequirement ||
+          typeof configuredCapstoneStartRequirement !== 'object' ||
+          Array.isArray(configuredCapstoneStartRequirement)
         ) {
-          throw new Error('subjects.BIT371.majorSubjectRequirement must be an object.');
+          throw new Error(
+            `subjects.${capstoneStartCode}.majorSubjectRequirement must be an object.`
+          );
         }
         const supportedMajorSubjectRequirementKeys = new Set([
           'minimumCompletedMajorSubjects',
           'minimumCompletedOrConcurrentMajorSubjects',
         ]);
-        const unsupportedMajorSubjectRequirementKeys = Object.keys(configuredBit371Requirement)
+        const unsupportedMajorSubjectRequirementKeys = Object.keys(configuredCapstoneStartRequirement)
           .filter((key) => !key.startsWith('_') && !supportedMajorSubjectRequirementKeys.has(key));
         if (unsupportedMajorSubjectRequirementKeys.length) {
           throw new Error(
-            `subjects.BIT371.majorSubjectRequirement contains unsupported field${unsupportedMajorSubjectRequirementKeys.length === 1 ? '' : 's'}: ${unsupportedMajorSubjectRequirementKeys.join(', ')}.`
+            `subjects.${capstoneStartCode}.majorSubjectRequirement contains unsupported field${unsupportedMajorSubjectRequirementKeys.length === 1 ? '' : 's'}: ${unsupportedMajorSubjectRequirementKeys.join(', ')}.`
           );
         }
         const minimumCompletedMajorSubjects =
-          Number(configuredBit371Requirement.minimumCompletedMajorSubjects);
+          Number(configuredCapstoneStartRequirement.minimumCompletedMajorSubjects);
         const minimumCompletedOrConcurrentMajorSubjects =
-          Number(configuredBit371Requirement.minimumCompletedOrConcurrentMajorSubjects);
+          Number(configuredCapstoneStartRequirement.minimumCompletedOrConcurrentMajorSubjects);
         if (!Number.isInteger(minimumCompletedMajorSubjects) || minimumCompletedMajorSubjects < 1) {
           throw new Error(
-            'subjects.BIT371.majorSubjectRequirement.minimumCompletedMajorSubjects must be a positive whole number.'
+            `subjects.${capstoneStartCode}.majorSubjectRequirement.minimumCompletedMajorSubjects must be a positive whole number.`
           );
         }
         if (
@@ -17361,16 +17671,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           minimumCompletedOrConcurrentMajorSubjects < minimumCompletedMajorSubjects
         ) {
           throw new Error(
-            'subjects.BIT371.majorSubjectRequirement.minimumCompletedOrConcurrentMajorSubjects must be a whole number greater than or equal to minimumCompletedMajorSubjects.'
+            `subjects.${capstoneStartCode}.majorSubjectRequirement.minimumCompletedOrConcurrentMajorSubjects must be a whole number greater than or equal to minimumCompletedMajorSubjects.`
           );
         }
         if (minimumCompletedOrConcurrentMajorSubjects > resolvedProgramRequirements.major) {
           throw new Error(
-            `subjects.BIT371.majorSubjectRequirement cannot require more than ${resolvedProgramRequirements.major} major subjects.`
+            `subjects.${capstoneStartCode}.majorSubjectRequirement cannot require more than ${resolvedProgramRequirements.major} major subjects.`
           );
         }
         const resolvedSpecialRequirements = {
-          BIT371: {
+          [capstoneStartCode]: {
             minimumCompletedMajorSubjects,
             minimumCompletedOrConcurrentMajorSubjects,
           },
@@ -17487,6 +17797,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           planningGuidance.earlyCompletion,
           resolvedPlanningGuidance.earlyCompletion
         );
+        capstoneGuidance.subjects = [...resolvedCapstoneGuidance.subjects];
+        capstoneGuidance.durationSemesters = resolvedCapstoneGuidance.durationSemesters;
+        Object.assign(
+          capstoneGuidance.projectGroupOtherStudents,
+          resolvedCapstoneGuidance.projectGroupOtherStudents
+        );
+        creditTransferRestrictions.yearLevels = [
+          ...resolvedCreditRestrictionYearLevels,
+        ];
+        creditTransferRestrictions.subjects = [
+          ...configuredCreditRestrictionSubjects,
+        ];
+        creditWarningIds.clear();
+        resolvedCreditWarningIds.forEach((code) => creditWarningIds.add(code));
         fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
         Object.assign(summerSchoolGuidance, resolvedSummerSchoolGuidance);
         timeSlots.Morning = `${amStart.value} - ${amEnd.value}`;
@@ -17592,6 +17916,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         Object.keys(corequisites).forEach((code) => delete corequisites[code]);
         Object.keys(specialRequirements).forEach((code) => delete specialRequirements[code]);
         Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
+        clearConfiguredCourseMessageFacts();
         Object.keys(majorConfig).forEach((majorKey) => {
           majorConfig[majorKey].codes = [];
           majorLayouts[majorKey] = [];
@@ -17643,6 +17968,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         Object.keys(corequisites).forEach((code) => delete corequisites[code]);
         Object.keys(specialRequirements).forEach((code) => delete specialRequirements[code]);
         Object.keys(subjectMeta).forEach((code) => delete subjectMeta[code]);
+        clearConfiguredCourseMessageFacts();
         Object.keys(majorConfig).forEach((majorKey) => {
           majorConfig[majorKey].codes = [];
           majorLayouts[majorKey] = [];
@@ -17681,6 +18007,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         courseMapBuilt = false;
         if (courseMapModal?.classList.contains('show')) renderCourseMapModal();
       }
+    } else {
+      subjects.forEach((cell) => {
+        const title = cell.querySelector('.subject-title');
+        const requisiteNote = cell.querySelector('.prerequsites-note');
+        if (title) title.textContent = '';
+        if (requisiteNote) requisiteNote.textContent = '';
+      });
     }
     applySubjectStateToCells();
     syncSubjectRequisiteNotes();
@@ -17727,9 +18060,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (weekOneEnd && today > weekOneEnd && today <= endWeekTwo) {
         weekTwoWarning = {
           title: 'Week 2 attendance',
-          html: `<p><strong class="alert-inline-title alert-title-warning">Week 2 attendance</strong> <span class="alert-inline-text">We are after week 1 and before week 3 (End of Week 2: ${escapeHtml(
+          html: `<p><strong class="alert-inline-title ${staffFacing ? 'alert-title-warning' : 'alert-title-error'}">Week 2 attendance</strong> <span class="alert-inline-text">We are in week 2, so it is a risky situation. When students enrol before week 3 (End of Week 2: ${escapeHtml(
             formatDisplayDate(endWeekTwo)
-          )}). Students must attend class in weeks 1 or 2 to allow late enrolment. If they miss the week 3 class, they cannot enrol in that subject.</span></p>`,
+          )}) everything should be OK. If enrolment processing is delayed by the student or the MP enrolment process and the student does not attend the week 3 class, the student will not be allowed to enrol in that subject.</span></p><p class="alert-inline-text">That is, a student cannot miss 3 weeks of classes and still be allowed to enrol in that subject.</p>`,
         };
         dateNoticeLines.push(
           `Week 2 window: attend by ${formatShortDate(endWeekTwo)} to allow late enrolment.`
@@ -17750,7 +18083,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (today >= censusDate) {
         censusError = {
           title: 'Census date passed',
-          html: `<p><strong class="alert-inline-title alert-title-error">Census date passed</strong>: <span class="alert-inline-text">Student cannot be enrolled beyond Census Date</span></p>`,
+          html: `<p><strong class="alert-inline-title alert-title-error">Census date passed</strong>: <span class="alert-inline-text">Student cannot be enrolled beyond Census Date (${escapeHtml(formatDisplayDate(censusDate))}).</span></p>`,
         };
         dateNoticeLines.push(
           `Census passed (${formatShortDate(censusDate)}): student cannot be enrolled beyond Census Date.`
@@ -17758,7 +18091,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else if (censusWarningStart && today > censusWarningStart && today < censusDate) {
         censusWarning = {
           title: 'Census date approaching',
-          html: `<p><strong class="alert-inline-title alert-title-warning">Census date approaching</strong>: <span class="alert-inline-text">Must be enrolled by Friday. Enrolments after that date will normally not be processed.</span></p>`,
+          html: `<p><strong class="alert-inline-title ${staffFacing ? 'alert-title-warning' : 'alert-title-error'}">Census date approaching</strong>: <span class="alert-inline-text">Must be enrolled by Friday. Enrolments after that date will normally not be processed.</span></p>`,
         };
         dateNoticeLines.push(
           `Census date approaching (${formatShortDate(censusDate)}): must be enrolled by Friday.`
@@ -24038,7 +24371,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const coreqs = corequisites?.[code] || [];
       const prereqEl = document.createElement('div');
       prereqEl.className = 'course-map-prereqs';
-      if (code === 'BIT371') {
+      if (code === getCapstoneStartCode()) {
         prereqEl.textContent = `Pre: ${getPrerequisiteDisplayValue(code, { includeCompletedMinimum: false })}`;
         cell.appendChild(prereqEl);
       } else if (prereqs.length || coreqs.length) {
@@ -24814,8 +25147,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       const hasCoreq = (corequisites[code] || []).length > 0;
       let meetsNow = hasCoreq ? prereqMetNow && coreqMetPlanned : prereqMetNow;
-      if (code === 'BIT371') {
-        const bitReq = getBit371Requirement({
+      if (code === getCapstoneStartCode()) {
+        const bitReq = getCapstoneRequirement({
           completedSet,
           plannedSet,
           usePlanned: false,
@@ -28393,47 +28726,96 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     codes: new Map(),
   };
   const alertInteractionPending = { error: false, warning: false };
+  const lastBlockingAlertSignatures = { error: '', warning: '' };
   const deferredAlertInteractionTypes = new Set();
+  const getBlockingAlertSignature = (ids) => {
+    const studentContext =
+      normalizeStudentId(getActiveStudentRecord()?.Student_IDs_Unique || '') || 'no-student';
+    return `${studentContext}::${Array.from(ids).sort().join('\u001f')}`;
+  };
+  let automaticBlockingModalOpenScheduled = false;
+  const scheduleAutomaticBlockingModalOpen = () => {
+    if (automaticBlockingModalOpenScheduled) return;
+    automaticBlockingModalOpenScheduled = true;
+    requestAnimationFrame(() => {
+      automaticBlockingModalOpenScheduled = false;
+      if (!document.body.classList.contains('alert-interaction-blocked')) return;
+      if (alertModal?.classList.contains('show')) return;
+      if (
+        alertInteractionPending.warning &&
+        (alertContent.warning || []).some((payload) => !payload.seen)
+      ) {
+        showAlertModal('warning');
+        return;
+      }
+      if (
+        alertInteractionPending.error &&
+        (alertContent.error || []).some((payload) => !payload.seen)
+      ) {
+        showAlertModal('error');
+      }
+    });
+  };
   const syncAlertInteractionBlocker = () => {
-    const blocked = alertInteractionPending.error || alertInteractionPending.warning;
+    const fullLoadThreshold = getLoadThreshold();
+    const hasFullLoad =
+      fullLoadThreshold > 0 && getPlannedCount() >= fullLoadThreshold;
+    const blocked =
+      hasFullLoad && (alertInteractionPending.error || alertInteractionPending.warning);
     const wasBlocked = document.body.classList.contains('alert-interaction-blocked');
     document.body.classList.toggle('alert-interaction-blocked', blocked);
-    [dropSidebar, document.querySelector('.sidebar'), plannerContainer]
+    [dropSidebar, document.querySelector('.sidebar'), plannerContainer, timetableModal]
       .filter(Boolean)
       .forEach((element) => {
         element.inert = blocked;
-      });
+    });
     if (blocked && !wasBlocked) {
-      const targetButton = alertInteractionPending.error ? errorButton : warningButton;
+      const targetButton = alertInteractionPending.warning ? warningButton : errorButton;
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       requestAnimationFrame(() => targetButton?.focus());
+      scheduleAutomaticBlockingModalOpen();
     }
   };
-  const queueAlertInteractionBlocker = (type) => {
+  const queueAlertInteractionBlocker = (type, signature) => {
     if (type !== 'error' && type !== 'warning') return;
+    if (!signature || signature === lastBlockingAlertSignatures[type]) return;
     if (completedMode) {
       deferredAlertInteractionTypes.add(type);
       return;
     }
+    lastBlockingAlertSignatures[type] = signature;
     alertInteractionPending[type] = true;
     syncAlertInteractionBlocker();
+    scheduleAutomaticBlockingModalOpen();
   };
   const activateDeferredAlertInteractionBlocker = () => {
     deferredAlertInteractionTypes.forEach((type) => {
       const hasUnread = Array.from(alertState[type]?.values() || [])
         .some((entry) => !entry.seen);
-      if (hasUnread) alertInteractionPending[type] = true;
+      const signature = getBlockingAlertSignature(alertState[type]?.keys() || []);
+      if (hasUnread && signature !== lastBlockingAlertSignatures[type]) {
+        lastBlockingAlertSignatures[type] = signature;
+        alertInteractionPending[type] = true;
+      }
     });
     deferredAlertInteractionTypes.clear();
     syncAlertInteractionBlocker();
+    if (alertInteractionPending.error || alertInteractionPending.warning) {
+      scheduleAutomaticBlockingModalOpen();
+    }
   };
   const acknowledgeCautionInteractionBlocker = () => {
     alertInteractionPending.warning = false;
+    const state = alertState.warning;
+    state.forEach((entry) => {
+      entry.seen = true;
+    });
+    rebuildAlertContent('warning');
     syncAlertInteractionBlocker();
+    renderAlertButton('warning');
   };
   const acknowledgeAlertInteractionBlocker = () => {
     alertInteractionPending.error = false;
-    alertInteractionPending.warning = false;
     const state = alertState.error;
     state.forEach((entry) => {
       entry.seen = true;
@@ -28514,6 +28896,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const hideAlertModal = () => {
     if (!alertModal) return;
     const type = alertModal.dataset.type;
+    const wasBlockingCaution =
+      type === 'warning' && alertModal.dataset.blockingCautionSequence === 'true';
     getAlertButtons(type).forEach((btn) => {
       btn.setAttribute('aria-expanded', 'false');
       btn.classList.remove('alert-open');
@@ -28522,7 +28906,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     alertModal.classList.remove('alert-from-course-map');
     alertModal.setAttribute('aria-hidden', 'true');
     alertModal.removeAttribute('data-type');
+    alertModal.removeAttribute('data-blocking-alert-sequence');
+    alertModal.removeAttribute('data-blocking-caution-sequence');
+    if (wasBlockingCaution) acknowledgeCautionInteractionBlocker();
     if (type === 'error' && alertInteractionPending.error) renderAlertButton(type);
+    if (wasBlockingCaution && alertInteractionPending.error) {
+      scheduleAutomaticBlockingModalOpen();
+    }
   };
 
   const renderAlertButton = (type) => {
@@ -28613,7 +29003,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showAlertModal = (type) => {
     if (!alertModal || !alertBody || !alertTitle) return;
-    if (type === 'warning') acknowledgeCautionInteractionBlocker();
     rebuildAlertContent(type);
     const payloads = alertContent[type] || [];
     const buttons = getAlertButtons(type);
@@ -28634,6 +29023,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
     const awaitingAlertAcknowledgement =
       type === 'error' && alertInteractionPending.error;
+    const awaitingCautionClosure =
+      type === 'warning' && alertInteractionPending.warning;
+    if (awaitingAlertAcknowledgement) {
+      alertModal.dataset.blockingAlertSequence = 'true';
+    }
+    if (awaitingCautionClosure) {
+      alertModal.dataset.blockingCautionSequence = 'true';
+    }
     const renderPayloads = (items, startIndex = 0) =>
       items
         .map(
@@ -28662,7 +29059,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     acknowledgementCheckbox?.addEventListener('change', () => {
       if (!acknowledgementCheckbox.checked) return;
       acknowledgeAlertInteractionBlocker();
-      showAlertModal('error');
+      hideAlertModal();
     });
     const titleText =
       type === 'warning'
@@ -28699,7 +29096,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       alertPrevCounts[type] = alertContent[type]?.length || 0;
     }
     const state = alertState[type];
-    if (state && !awaitingAlertAcknowledgement) {
+    if (state && !awaitingAlertAcknowledgement && !awaitingCautionClosure) {
       state.forEach((entry) => {
         entry.seen = true;
       });
@@ -28713,7 +29110,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!state) return;
     if (isActiveStudentGraduated()) messages = [];
     const incomingIds = new Set();
-    let createdNewMessage = false;
     messages.forEach((msg) => {
       const id = alertId(msg);
       incomingIds.add(id);
@@ -28721,17 +29117,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (existing) {
         state.set(id, { ...existing, payload: msg, timestamp: existing.timestamp || Date.now(), seen: existing.seen });
       } else {
-        createdNewMessage = true;
         state.set(id, { payload: msg, seen: false, timestamp: Date.now() });
       }
     });
     Array.from(state.keys()).forEach((id) => {
       if (!incomingIds.has(id)) state.delete(id);
     });
-    if (createdNewMessage) queueAlertInteractionBlocker(type);
-    if ((type === 'error' || type === 'warning') && state.size === 0) {
-      alertInteractionPending[type] = false;
-      deferredAlertInteractionTypes.delete(type);
+    if ((type === 'error' || type === 'warning') && incomingIds.size) {
+      queueAlertInteractionBlocker(type, getBlockingAlertSignature(incomingIds));
+    }
+    if (type === 'error' || type === 'warning') {
+      if (state.size === 0) {
+        alertInteractionPending[type] = false;
+        deferredAlertInteractionTypes.delete(type);
+      }
       syncAlertInteractionBlocker();
     }
     rebuildAlertContent(type);
@@ -30215,8 +30614,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       .filter((cell) => {
         const id = cell.dataset.subject || '';
         if (!id || isPlaceholder(cell)) return false;
-        if (id === 'BIT371' && subjectState.get('BIT372')?.toggled) return false;
-        if (id === 'BIT372' && subjectState.get('BIT371')?.toggled) return false;
+        if (
+          capstoneGuidance.subjects.includes(id) &&
+          capstoneGuidance.subjects.some(
+            (code) => code !== id && subjectState.get(code)?.toggled
+          )
+        ) return false;
         if (completedSet.has(id)) return false;
         const st = subjectState.get(id);
         const isChosen = !!st?.toggled;
@@ -30231,8 +30634,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         const hasCoreq = (corequisites[id] || []).length > 0;
         let canSelectNow = hasCoreq ? prereqMetNow && coreqMetNow : prereqMetNow;
-        if (id === 'BIT371') {
-          const bitReq = getBit371Requirement({
+        if (id === getCapstoneStartCode()) {
+          const bitReq = getCapstoneRequirement({
             completedSet,
             plannedSet: emptyPlannedSet,
             usePlanned: false,
@@ -30338,11 +30741,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         });
         const hasCoreq = (corequisites[id] || []).length > 0;
         let meets = hasCoreq ? prereqMetPlanned && coreqMetPlanned : prereqMetPlanned;
-        if (id === 'BIT371') {
-          const baseMetNext = (prerequisites.BIT371 || [])
+        if (id === getCapstoneStartCode()) {
+          const baseMetNext = (prerequisites[getCapstoneStartCode()] || [])
             .every((code) => completedSet.has(code) || plannedSet.has(code));
           const minimumCompleted =
-            getBit371SpecialRequirement()?.minimumCompletedMajorSubjects ?? Infinity;
+            getCapstoneStartSpecialRequirement()?.minimumCompletedMajorSubjects ?? Infinity;
           const majorCompletedNext = completedMajorCount + plannedMajorCount >= minimumCompleted;
           meets = baseMetNext && majorCompletedNext;
         }
@@ -30501,9 +30904,65 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } else {
         li.classList.add('available-item-error');
         li.textContent = 'No subjects are available to select';
+        const completedSet = new Set(
+          Array.from(subjectState.entries())
+            .filter(([, state]) => state?.completed)
+            .map(([code]) => code)
+        );
+        const candidateCodes = Array.from(
+          new Set([
+            ...getRemainingRows().map(({ id }) => id),
+            ...getRemainingElectiveRows().map(({ id }) => id),
+          ])
+        ).filter((code) => !subjectState.get(code)?.completed);
+        const alternateSemesterCodes = candidateCodes
+          .filter((code) => !isRunningThisSemester(code));
+        const { completedMajorCount, plannedMajorCount } = getMajorCounts();
+        const unmetRequisiteCodes = candidateCodes.filter((code) => {
+          const { prereqMetNow, coreqMetNow } = getRequisiteStatus({
+            id: code,
+            completedSet,
+            plannedSet: new Set(),
+            usePlanned: false,
+          });
+          let requirementsMet =
+            (corequisites[code] || []).length > 0
+              ? prereqMetNow && coreqMetNow
+              : prereqMetNow;
+          if (code === getCapstoneStartCode()) {
+            requirementsMet = getCapstoneRequirement({
+              completedSet,
+              plannedSet: new Set(),
+              usePlanned: false,
+              completedMajorCount,
+              plannedMajorCount,
+            }).metNow;
+          }
+          return !requirementsMet;
+        });
+        const formatUnavailableSubjects = (codes) =>
+          codes
+            .map((code) => `${code} ${getSubjectName(code)}`.trim())
+            .sort((a, b) => a.localeCompare(b))
+            .map((label) => `<li>${escapeHtml(label)}</li>`)
+            .join('');
+        const reasonSections = [];
+        if (unmetRequisiteCodes.length) {
+          reasonSections.push(
+            `<p class="alert-inline-text"><strong>Prerequisites are not satisfied for:</strong></p><ul class="alert-inline-list">${formatUnavailableSubjects(unmetRequisiteCodes)}</ul>`
+          );
+        }
+        if (alternateSemesterCodes.length) {
+          reasonSections.push(
+            `<p class="alert-inline-text"><strong>These subjects are not running this semester and run in an alternate semester:</strong></p><ul class="alert-inline-list">${formatUnavailableSubjects(alternateSemesterCodes)}</ul>`
+          );
+        }
+        const reasonHtml = reasonSections.length
+          ? reasonSections.join('')
+          : '<p class="alert-inline-text">No remaining subject currently meets all selection requirements.</p>';
         availableNowError = {
           title: 'No subjects available',
-          html: `<p><strong class="alert-inline-title alert-title-error">No subjects available</strong> <span class="alert-inline-text">No subjects are available to select right now. Prerequisites or subjects running in alternate semesters may be preventing enrolment.</span></p>`,
+          html: `<p><strong class="alert-inline-title alert-title-error">No subjects available</strong> <span class="alert-inline-text">No subjects are available to select!</span></p>${reasonHtml}`,
         };
       }
       selectedListEl.appendChild(li);
@@ -30636,6 +31095,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     dateNoticeLines = [];
     creditTransferWarning = null;
     creditTransferWarningActive = false;
+    passCurrentEnrolmentsError = null;
     warningPayloads = [];
     nextSemWarning = null;
     finalSemWarning = null;
@@ -32390,7 +32850,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .map((d) => `<li><strong>${d.code}</strong> - ${d.name}</li>`)
         .join('');
       const alertCount = uniqueCodes.length;
-      const alertHtml = `<h4 class="inline-heading">Too many electives.</h4><span class="tight-lead"> You currently have ${alertCount} electives selected but only 4 are allowed.</span><ul>${detailList}</ul>${useNote}`;
+      const alertHtml = `<h4 class="inline-heading">Too many electives.</h4><span class="tight-lead"> You currently have ${alertCount} electives selected/enrolled, but our course has slots for only ${programRequirements.elective} Electives.</span><ul>${detailList}</ul>${useNote}`;
       electiveError = { title: 'Too many electives', html: alertHtml };
     } else {
       electiveError = null;

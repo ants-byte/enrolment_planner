@@ -5002,6 +5002,40 @@ body.alert-interaction-blocked #container .not-running-tooltip {
   display: none !important;
 }
 
+body.alert-interaction-blocked:has(#timetable-modal.show)::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 14040;
+  background: rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+body.alert-interaction-blocked #btn-error,
+body.alert-interaction-blocked #btn-warning {
+  z-index: 14045;
+}
+
+body.alert-interaction-blocked:has(#timetable-modal.show) #course-map-modal.show {
+  z-index: 14045;
+}
+
+body.alert-interaction-blocked:has(#timetable-modal.show) #course-map-modal.show::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+body.alert-interaction-blocked #course-map-btn-error,
+body.alert-interaction-blocked #course-map-btn-warning {
+  z-index: 100001;
+}
+
 
 body.graduate-highlight #container {
   background: #353535;
@@ -8152,6 +8186,10 @@ body.history-graduated #btn-codes {
   color: var(--alert-error);
 }
 
+#alert-modal .alert-error .alert-body {
+  color: #111;
+}
+
 .alert-warning {
   border-color: var(--alert-caution);
   color: #111;
@@ -8511,6 +8549,10 @@ body.completed-mode .completed:hover::after {
 
 .modal-overlay.show {
   display: flex;
+}
+
+#alert-modal {
+  z-index: 14050;
 }
 
 #alert-modal.alert-from-course-map {
