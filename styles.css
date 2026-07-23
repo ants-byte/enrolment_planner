@@ -1978,8 +1978,9 @@ body.next-semester-planning-mode #reset-section {
 
 body.next-semester-planning-mode #move-to-next-semester {
   display: flex;
+  justify-content: center;
   width: 100%;
-  margin: 4px 0 0;
+  margin: 12px 0 0;
 }
 
 body.next-semester-planning-mode .next-semester-planning-note {
@@ -1987,7 +1988,160 @@ body.next-semester-planning-mode .next-semester-planning-note {
   left: auto;
   right: auto;
   width: 100%;
-  margin: 4px 0 0;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+body.next-semester-planning-mode .graduation-celebration > .next-semester-planning-note {
+  position: absolute;
+  top: calc(100% + 26px);
+  left: calc((clamp(72px, 9vw, 165px) / 2) + 25px);
+  right: auto;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: clamp(520px, 42vw, 600px);
+  height: auto;
+  max-height: clamp(320px, calc(18vw + 100px), 360px);
+  margin: 0;
+  padding: 16px 32px;
+  box-shadow: 0 18px 28px rgba(0, 0, 0, 0.65);
+  z-index: 2147483647;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.next-semester-planning-note-content {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.next-semester-planning-note-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px -32px -16px;
+  padding: 10px 32px 12px;
+  border-top: 1px solid #aaa;
+  background: #f0f0f0;
+}
+
+.next-semester-planning-note-footer[hidden] {
+  display: none;
+}
+
+#next-semester-back-to-today {
+  margin-left: auto;
+}
+
+.next-semester-planning-copy-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.next-semester-planning-copy-actions[hidden] {
+  display: none;
+}
+
+.next-semester-planning-note-footer button {
+  width: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--btn-primary-border);
+  border-radius: 4px;
+  background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end));
+  color: #f7f9ff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.next-semester-planning-note-footer button:hover {
+  background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end));
+}
+
+body.next-semester-planning-mode .graduation-celebration > .next-semester-planning-note p {
+  margin: 0;
+}
+
+body.next-semester-planning-mode .graduation-celebration > .next-semester-planning-note p:first-child {
+  white-space: nowrap;
+}
+
+body.next-semester-planning-mode .graduation-celebration > .next-semester-planning-note.is-completion-mismatch p {
+  white-space: nowrap;
+}
+
+body.next-semester-planning-mode .graduation-celebration > .next-semester-planning-note p + p {
+  margin-top: 16px;
+}
+
+.next-semester-selection-history {
+  color: #000 !important;
+}
+
+.next-semester-selection-history-heading {
+  margin-top: 16px;
+  font-weight: 800;
+}
+
+.next-semester-selection-history ul {
+  margin: 6px 0 0;
+  padding-left: 22px;
+  list-style: none;
+  color: #000 !important;
+}
+
+.next-semester-selection-history li {
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+body.next-semester-planning-mode.history-graduated .main-grid > .graduation-celebration {
+  top: calc(50% - 60px);
+  z-index: 2147483647;
+}
+
+body.next-semester-planning-mode.history-graduated .main-grid > .graduation-celebration.is-card-anchored-graduation {
+  left: var(--graduation-left);
+  top: var(--graduation-top);
+  transform: none;
+}
+
+body.next-semester-planning-mode .graduation-celebration.is-card-anchored-graduation > .next-semester-planning-note {
+  top: calc(100% - 82px);
+  left: calc(var(--graduation-panel-left) - 32px);
+  translate: 0 0;
+}
+
+body.next-semester-planning-mode .graduation-celebration.is-card-anchored-graduation > .graduation-smiley {
+  left: -32px;
+}
+
+body.next-semester-planning-mode #clear-selections,
+body.next-semester-planning-mode #move-to-next-semester {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+body.next-semester-planning-mode #move-to-next-semester.full-semester-pulse {
+  animation: move-next-full-semester-pulse 0.5s ease-in-out 2;
+}
+
+@keyframes move-next-full-semester-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.9);
+  }
 }
 
 body.next-semester-planning-mode .major-dropdown {
@@ -5171,13 +5325,34 @@ body:has(#course-map-modal.show) .main-grid .graduation-speech {
 }
 
 .next-semester-planning-note.is-graduating {
-  border-color: #198754;
+  border: 1px solid #808080;
+}
+
+.next-semester-planning-note.is-graduating #next-semester-selection-period {
+  font-weight: 800;
+}
+
+.next-semester-planning-note.is-graduating .next-semester-selection-history-heading:first-child {
+  margin-top: 8px;
 }
 
 .next-semester-planning-note.is-completion-mismatch {
+  margin-top: 100px;
   border-color: #d32f2f;
   border-width: 4px;
   color: #d32f2f;
+  font-size: calc(1em + 0.1rem);
+  animation: completion-mismatch-pulse 1s ease-in-out;
+  transform-origin: center;
+}
+
+@keyframes completion-mismatch-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
 }
 
 .next-semester-planning-note[hidden] {
@@ -6889,6 +7064,11 @@ body.electives-full-active .subject-card.elective.not-this-sem .alternate-semest
   overflow: visible;
   margin-top: 16px;
   margin-bottom: 16px;
+}
+
+#timetable-modal .future-timetable-note {
+  margin: 0 0 12px;
+  text-align: center;
 }
 
 #timetable-modal #timetable-table {

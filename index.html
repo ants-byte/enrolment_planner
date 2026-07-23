@@ -222,8 +222,8 @@ Last Modified: 11/07/2026
               data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining
               subjects</button>
             <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
-              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Move to
-              next semester</button>
+              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Plan for
+              future semesters</button>
             <button id="open-course-map" class="clear-button secondary" type="button" data-tooltip-html="Open the course map.
             <br>It shows all the subjects in our course (that is, all the subjects you can see to the right), but organised differently.
             <br>It's not interactive.
@@ -242,8 +242,18 @@ Last Modified: 11/07/2026
       </div>
       <div id="next-semester-planning-note" class="next-semester-planning-note" hidden
         data-tooltip="Every time you press the &quot;Move to next semester&quot; button, this is recalculated.">
-        <div id="next-semester-selection-period"></div>
-        <div id="next-semester-graduation-period"></div>
+        <div class="next-semester-planning-note-content">
+          <div id="next-semester-selection-period"></div>
+          <div id="next-semester-graduation-period"></div>
+          <div id="next-semester-selection-history" class="next-semester-selection-history" hidden></div>
+        </div>
+        <div id="next-semester-planning-note-footer" class="next-semester-planning-note-footer" hidden>
+          <div id="next-semester-planning-copy-actions" class="next-semester-planning-copy-actions" hidden>
+            <button id="copy-next-semester-planning-note" type="button">Copy choices</button>
+            <button id="copy-all-next-semester-planning-note" type="button">Copy with history</button>
+          </div>
+          <button id="next-semester-back-to-today" type="button">Back to today</button>
+        </div>
       </div>
     </aside>
     <main id="main-content" role="main" class="main-content">
@@ -1778,6 +1788,7 @@ Last Modified: 11/07/2026
           </table>
         </div>
         <div id="timetable-fees" class="timetable-fees" hidden></div>
+        <p id="future-timetable-note" class="future-timetable-note" hidden>Class times, rooms, and teachers are decided in the month before semester begins.</p>
         <div class="timetable-actions subject-table-actions">
           <div class="modal-action-group">
             <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"

@@ -334,6 +334,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let currentSemesterKey = getCurrentSemesterKey();
   let planningSemesterOffset = 0;
   let finalPlanningExpectationIdentity = null;
+  let planningSemesterSelectionHistory = [];
+  let futurePlanningSnapshot = null;
+  let moveButtonFullLoadWasReady = false;
   const semesterSequence = ['S1', 'S2'];
   const getPlanningSemesterKey = (semester) => (semester === 'SS' ? 'S1' : semester);
   const getOppositeSemester = (semester) => (semester === 'S1' ? 'S2' : 'S1');
@@ -2563,6 +2566,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const timetableTitleEl = document.getElementById('timetable-title');
   const timetableTable = document.getElementById('timetable-table');
   const timetableFees = document.getElementById('timetable-fees');
+  const futureTimetableNote = document.getElementById('future-timetable-note');
   let timetablePreparedEl = null;
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
@@ -2674,6 +2678,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const nextSemesterPlanningNoteOriginalNextSibling = nextSemesterPlanningNote?.nextSibling || null;
   const nextSemesterSelectionPeriod = document.getElementById('next-semester-selection-period');
   const nextSemesterGraduationPeriod = document.getElementById('next-semester-graduation-period');
+  const nextSemesterSelectionHistory = document.getElementById('next-semester-selection-history');
+  const nextSemesterPlanningNoteFooter = document.getElementById('next-semester-planning-note-footer');
+  const nextSemesterPlanningCopyActions = document.getElementById('next-semester-planning-copy-actions');
+  const copyNextSemesterPlanningNoteButton = document.getElementById('copy-next-semester-planning-note');
+  const copyAllNextSemesterPlanningNoteButton = document.getElementById('copy-all-next-semester-planning-note');
+  const nextSemesterBackToTodayButton = document.getElementById('next-semester-back-to-today');
   const courseMapButton = document.getElementById('open-course-map');
   const nextSemesterButton = document.getElementById('open-next-semester');
   const oldCodesButton = document.getElementById('open-old-codes');
@@ -6079,6 +6089,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let overLoadError = null;
   let capstonePairError = null;
   let capstoneYearError = null;
+  let capstoneContinuityError = null;
   let intakeStartError = null;
   let availableNowError = null;
   let availableLoadError = null;
@@ -6983,7 +6994,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           }
         }
         const availabilityNote = hasAvailabilityDelay
-          ? '<p class="alert-inline-text"><strong>Note</strong>: This delay is caused by subjects that run only <strong>once per year</strong>. They haven\'t been named in the chain list above, but they can add an extra semester if not taken when available.</p>'
+          ? '<p class="alert-inline-text"><strong>Note</strong>: These subjects are only running one semester per year (not both). If you need them for your course completion, then you should study them when they first become available to you:</p>'
           : '';
         chainDelayError = {
           title: chainTitle,
@@ -9782,6 +9793,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     subjects.forEach((cell) => cell.classList.remove('next-sem-warning'));
     nextSemWarning = null;
     capstoneYearError = null;
+    capstoneContinuityError = null;
     if (completedMode) {
       refreshErrorAlerts();
       return;
@@ -9819,6 +9831,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .filter(([, st]) => st?.toggled)
         .map(([code]) => code)
     );
+    if (
+      completedSet.has('BIT371') &&
+      !completedSet.has('BIT372') &&
+      plannedCount >= loadThreshold &&
+      !plannedSet.has('BIT372')
+    ) {
+      capstoneContinuityError = {
+        title: 'Capstone error',
+        html: '<p><strong class="alert-inline-title alert-title-error">Capstone error:</strong> <span class="alert-inline-text">BIT371 and BIT372 must be studied in consecutive semesters. Your team must work on the project continuously across both semesters.</span></p>',
+      };
+    }
 
     const satisfiedCells = subjects.filter((cell) => {
       const id = cell.dataset.subject || '';
@@ -9847,6 +9870,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateResetState = () => {
     if (!clearButton) return;
+    clearButton.textContent = planningSemesterOffset > 0 ? 'Exit - back to today' : 'Reset';
     const selectedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
       .map(([code]) => code);
@@ -9854,6 +9878,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const threshold = getLoadThreshold();
     const hasSelected = selectedCount >= threshold && threshold > 0;
     if (moveToNextSemesterButton) {
+      const fullFutureSemesterReady = planningSemesterOffset > 0 && hasSelected;
+      if (fullFutureSemesterReady && !moveButtonFullLoadWasReady) {
+        moveToNextSemesterButton.classList.remove('full-semester-pulse');
+        void moveToNextSemesterButton.offsetWidth;
+        moveToNextSemesterButton.classList.add('full-semester-pulse');
+      } else if (!fullFutureSemesterReady) {
+        moveToNextSemesterButton.classList.remove('full-semester-pulse');
+      }
+      moveButtonFullLoadWasReady = fullFutureSemesterReady;
+      moveToNextSemesterButton.textContent = planningSemesterOffset > 0
+        ? 'Move to next semester'
+        : 'Plan for future semesters';
       const hasCurrentEnrolments = Array.from(currentEnrolmentStudentRecord.values()).some(
         (code) => !withdrawnCurrentEnrolments.has(code)
       );
@@ -9909,7 +9945,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (isOnlyAutoCurrentEnrolments) {
         mainGridFullLoadModalOpened = true;
         suppressNextFullLoadAutoModal = false;
-      } else if (!mainGridFullLoadModalOpened && !timetableModal?.classList.contains('show')) {
+      } else if (
+        planningSemesterOffset === 0 &&
+        !mainGridFullLoadModalOpened &&
+        !timetableModal?.classList.contains('show')
+      ) {
         mainGridFullLoadModalOpened = true;
         showAvailableModal();
       }
@@ -10797,6 +10837,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (acceptedOfferedError) errorPayloads.push(acceptedOfferedError);
     if (capstonePairError) errorPayloads.push(capstonePairError);
     if (capstoneYearError) errorPayloads.push(capstoneYearError);
+    if (capstoneContinuityError) errorPayloads.push(capstoneContinuityError);
     if (overLoadError) errorPayloads.push(overLoadError);
     if (intakeStartError) errorPayloads.push(intakeStartError);
     if (overCompletionError) errorPayloads.push(overCompletionError);
@@ -11697,8 +11738,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const resetStudentSelections = () => {
     timetableClashError = null;
+    if (planningSemesterOffset > 0 && futurePlanningSnapshot) {
+      const snapshot = futurePlanningSnapshot;
+      planningSemesterOffset = 0;
+      finalPlanningExpectationIdentity = null;
+      planningSemesterSelectionHistory = [];
+      futurePlanningSnapshot = null;
+      suppressNextFullLoadAutoModal = true;
+      document.body.classList.remove('next-semester-planning-mode');
+      subjects.forEach((cell) => attachTooltip(cell));
+      if (restoreStudentSnapshot(snapshot)) {
+        resetModeOptionsToDefault({ preservePassForEnrolments: true });
+        conditionalRecompute({ force: true, usePlanned: false });
+        updateResetState();
+        updateSelectedList();
+        updateWarnings();
+        updateBookmarkableSettingsUrl();
+        return;
+      }
+    }
     planningSemesterOffset = 0;
     finalPlanningExpectationIdentity = null;
+    planningSemesterSelectionHistory = [];
+    futurePlanningSnapshot = null;
     document.body.classList.remove('next-semester-planning-mode');
     subjects.forEach((cell) => attachTooltip(cell));
     if (staffWorkbookState.getStudentRecord() && loadedStudentSnapshot) {
@@ -11786,6 +11848,19 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (!advancingCodes.size) return;
 
+    if (planningSemesterOffset === 0) {
+      futurePlanningSnapshot = captureStudentSnapshot();
+    }
+
+    const selectedSemester = getSemesterIdentityAfterOffset(planningSemesterOffset);
+    planningSemesterSelectionHistory.push({
+      ...selectedSemester,
+      subjects: Array.from(advancingCodes)
+        .filter((code) => validSubjectCodes.has(code))
+        .sort()
+        .map((code) => ({ code, name: getSubjectName(code) })),
+    });
+
     if (!finalPlanningExpectationIdentity) {
       finalPlanningExpectationIdentity = getEstimatedGraduationSemesterIdentity();
     }
@@ -11830,6 +11905,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       resetStudentSelections();
     });
   }
+  nextSemesterBackToTodayButton?.addEventListener('click', resetStudentSelections);
   if (moveToNextSemesterButton) {
     moveToNextSemesterButton.addEventListener('click', moveToNextPlanningSemester);
   }
@@ -14499,6 +14575,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     setElectiveCredits(buildElectiveAssignments());
     updateWarnings();
     updateBookmarkableSettingsUrl();
+    if (
+      !completedMode &&
+      planningSemesterOffset > 0 &&
+      getPlannedCount() > 0 &&
+      getRemainingSubjectsCount() === 0
+    ) {
+      moveToNextPlanningSemester();
+      return;
+    }
     if (!completedMode) armTriageSaveReminderForCurrentStudent();
   };
 
@@ -15346,6 +15431,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const renderTimetableTable = (rowsOverride = null, highlightSelection = false) => {
     if (!timetableTable) return;
+    const isFutureTimetable = planningSemesterOffset > 0;
+    if (futureTimetableNote) futureTimetableNote.hidden = !isFutureTimetable;
     const tbody = timetableTable.querySelector('tbody');
     tbody.innerHTML = '';
     if (semesterConfigError) {
@@ -15387,10 +15474,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         row.appendChild(td);
       } else {
         const name = getSubjectName(id);
-        const day = dayShort || 'N/A';
-        const time = data.slot ? (formatTimeRange(timeSlots[data.slot] || '') || 'Time?  Not set') : 'N/A';
-        const room = data.room || 'N/A';
-        const teacher = data.teacher || 'N/A';
+        const day = isFutureTimetable ? '-' : (dayShort || 'N/A');
+        const time = isFutureTimetable
+          ? '-'
+          : (data.slot ? (formatTimeRange(timeSlots[data.slot] || '') || 'Time?  Not set') : 'N/A');
+        const room = isFutureTimetable ? '-' : (data.room || 'N/A');
+        const teacher = isFutureTimetable ? '-' : (data.teacher || 'N/A');
         const stream = buildStreamLabel(id);
         const conflictKey = dayShort && data?.slot ? `${dayShort}|${data.slot}` : '';
         const isConflict = showConflicts && conflictKey && conflictCounts.get(conflictKey) > 1;
@@ -18741,10 +18830,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     return { year, semester };
   };
-  const getEstimatedGraduationSemesterIdentity = () =>
-    getSemesterIdentityAfterOffset(
-      planningSemesterOffset + Math.max(0, getCourseMapRemainingSemesterEstimate() - 1)
+  const getEstimatedGraduationSemesterIdentity = () => {
+    const remainingSemesters = getCourseMapRemainingSemesterEstimate();
+    const remainingOffset = Math.max(
+      0,
+      remainingSemesters - (getPlannedCount() > 0 ? 0 : 1)
     );
+    return getSemesterIdentityAfterOffset(planningSemesterOffset + remainingOffset);
+  };
   const getEstimatedGraduationSemesterLabel = () => {
     const { year, semester } = getEstimatedGraduationSemesterIdentity();
     return `${String(year).slice(-2)} ${semester}`;
@@ -18772,6 +18865,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const updateNextSemesterPlanningNote = () => {
     if (!nextSemesterPlanningNote) return;
+    const graduationSmiley = document.querySelector('.main-grid .graduation-smiley');
+    const graduationSpeech = document.querySelector('.main-grid .graduation-speech');
+    const graduationCelebration = graduationSmiley?.closest('.graduation-celebration');
+    graduationCelebration?.classList.remove('is-card-anchored-graduation');
+    graduationCelebration?.style.removeProperty('--graduation-left');
+    graduationCelebration?.style.removeProperty('--graduation-top');
+    graduationCelebration?.style.removeProperty('--graduation-panel-left');
+    if (graduationSmiley) graduationSmiley.textContent = '🙂';
+    if (graduationSpeech) graduationSpeech.innerHTML = 'Congratulations!<br>Graduated!!';
     const isActive = planningSemesterOffset > 0;
     nextSemesterPlanningNote.hidden = !isActive;
     const restorePosition = (element, parent, nextSibling) => {
@@ -18780,6 +18882,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       else parent.appendChild(element);
     };
     if (!isActive) {
+      if (nextSemesterPlanningNoteFooter) nextSemesterPlanningNoteFooter.hidden = true;
+      if (nextSemesterPlanningCopyActions) nextSemesterPlanningCopyActions.hidden = true;
       restorePosition(
         moveToNextSemesterButton,
         moveToNextSemesterOriginalParent,
@@ -18800,6 +18904,34 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const selectionPeriod = getSemesterIdentityAfterOffset(planningSemesterOffset);
     const graduationPeriod = getEstimatedGraduationSemesterIdentity();
     const isComplete = getRemainingSubjectsCount() === 0;
+    if (nextSemesterPlanningNoteFooter) nextSemesterPlanningNoteFooter.hidden = !isComplete;
+    if (nextSemesterPlanningCopyActions) {
+      nextSemesterPlanningCopyActions.hidden = !staffFacing || !isComplete;
+    }
+    if (nextSemesterSelectionHistory) {
+      nextSemesterSelectionHistory.replaceChildren();
+      nextSemesterSelectionHistory.hidden = !isComplete || !planningSemesterSelectionHistory.length;
+      if (!nextSemesterSelectionHistory.hidden) {
+        planningSemesterSelectionHistory.forEach(({ year, semester, subjects: selectedSubjects }, index) => {
+          const heading = document.createElement('div');
+          heading.className = 'next-semester-selection-history-heading';
+          const semesterName = semester === 'S1' ? 'Semester 1' : semester === 'S2' ? 'Semester 2' : 'Summer Semester';
+          heading.textContent = index === 0
+            ? `Current Semester (${semesterName} ${year})`
+            : `${semesterName} ${year} selections:`;
+          const list = document.createElement('ul');
+          selectedSubjects.forEach(({ code, name }) => {
+            const item = document.createElement('li');
+            item.textContent = `${code} ${name}`.trim();
+            list.appendChild(item);
+          });
+          nextSemesterSelectionHistory.append(heading, list);
+        });
+      }
+    }
+    if (isComplete && graduationSmiley) {
+      graduationSmiley.insertAdjacentElement('afterend', nextSemesterPlanningNote);
+    }
     nextSemesterPlanningNote.classList.remove('is-graduating', 'is-completion-mismatch');
     if (isComplete) {
       const finalCompletionPeriod = getSemesterIdentityAfterOffset(Math.max(0, planningSemesterOffset - 1));
@@ -18809,10 +18941,38 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       nextSemesterPlanningNote.classList.add(
         completedAsExpected ? 'is-graduating' : 'is-completion-mismatch'
       );
+      const mainGrid = graduationCelebration?.closest('.main-grid');
+      const bit112Card = mainGrid?.querySelector(':scope > [data-subject="BIT112"]');
+      const bit233Card = mainGrid?.querySelector(':scope > [data-subject="BIT233"]');
+      const bit230Card = mainGrid?.querySelector(':scope > [data-subject="BIT230"]');
+      if (graduationCelebration && graduationSpeech && mainGrid && bit112Card && bit233Card && bit230Card) {
+        const gridRect = mainGrid.getBoundingClientRect();
+        const celebrationRect = graduationCelebration.getBoundingClientRect();
+        const speechRect = graduationSpeech.getBoundingClientRect();
+        const bit112Rect = bit112Card.getBoundingClientRect();
+        const bit233Rect = bit233Card.getBoundingClientRect();
+        const bit230Rect = bit230Card.getBoundingClientRect();
+        const celebrationLeft = bit112Rect.right - gridRect.left - 8;
+        const speechOffsetTop = speechRect.top - celebrationRect.top;
+        const celebrationTop = bit233Rect.top - gridRect.top + (bit233Rect.height / 2) - speechOffsetTop;
+        graduationCelebration.classList.add('is-card-anchored-graduation');
+        graduationCelebration.style.setProperty('--graduation-left', `${celebrationLeft}px`);
+        graduationCelebration.style.setProperty('--graduation-top', `${celebrationTop}px`);
+        graduationCelebration.style.setProperty(
+          '--graduation-panel-left',
+          `${bit230Rect.right - gridRect.left - 8 - celebrationLeft}px`
+        );
+      }
+      if (!completedAsExpected) {
+        if (graduationSmiley) graduationSmiley.textContent = '😐';
+        if (graduationSpeech) graduationSpeech.textContent = 'Graduated, but with delay';
+      }
       if (nextSemesterSelectionPeriod) {
-        nextSemesterSelectionPeriod.textContent = completedAsExpected
-          ? `Graduating in ${formatLongSemesterIdentity(finalCompletionPeriod)}.`
-          : `Expected to complete in ${formatLongSemesterIdentity(expectedPeriod)}. However final subject will be completed ${formatLongSemesterIdentity(finalCompletionPeriod)}.`;
+        if (completedAsExpected) {
+          nextSemesterSelectionPeriod.textContent = `Graduating in ${formatLongSemesterIdentity(finalCompletionPeriod)}`;
+        } else {
+          nextSemesterSelectionPeriod.innerHTML = `<p>Expected to complete in ${formatLongSemesterIdentity(expectedPeriod)}.</p><p>However final subject will be completed ${formatLongSemesterIdentity(finalCompletionPeriod)}.</p>`;
+        }
       }
       if (nextSemesterGraduationPeriod) nextSemesterGraduationPeriod.hidden = true;
     } else {
@@ -31061,8 +31221,73 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   document.addEventListener('click', (event) => {
     if (!document.body.classList.contains('history-graduated')) return;
+    if (document.body.classList.contains('next-semester-planning-mode')) return;
     if (!event.target?.closest?.('.graduation-celebration')) return;
     document.body.classList.add('graduation-dismissed');
+  });
+  copyNextSemesterPlanningNoteButton?.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    const selectionHistoryText = planningSemesterSelectionHistory.map(
+      ({ year, semester, subjects: selectedSubjects }) => {
+        const semesterName = semester === 'S1' ? 'Semester 1' : semester === 'S2' ? 'Semester 2' : 'Summer Semester';
+        const subjectLines = selectedSubjects.map(({ code, name }) => `${code} ${name}`.trim());
+        return [`${semesterName} ${year} selections:`, ...subjectLines].join('\n');
+      }
+    ).join('\n\n');
+    const text = [
+      nextSemesterSelectionPeriod?.innerText,
+      nextSemesterGraduationPeriod?.hidden ? '' : nextSemesterGraduationPeriod?.innerText,
+      nextSemesterSelectionHistory?.hidden ? '' : selectionHistoryText,
+    ].map((value) => String(value || '').trim()).filter(Boolean).join('\n\n');
+    const copied = await copyPlainText(text);
+    const originalLabel = 'Copy choices';
+    copyNextSemesterPlanningNoteButton.textContent = copied ? 'Copied' : 'Copy failed';
+    window.setTimeout(() => {
+      copyNextSemesterPlanningNoteButton.textContent = originalLabel;
+    }, 1200);
+  });
+  copyAllNextSemesterPlanningNoteButton?.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    const formatSemesterRecord = ({ year, semester, subjects: selectedSubjects }) => {
+      const semesterName = semester === 'S1' ? 'Semester 1' : semester === 'S2' ? 'Semester 2' : 'Summer Semester';
+      return [
+        `${semesterName} ${year} selections:`,
+        ...selectedSubjects.map(({ code, name }) => `${code} ${name}`.trim()),
+      ].join('\n');
+    };
+    const passedLines = futurePlanningSnapshot
+      ? Array.from(futurePlanningSnapshot.subjectState.entries())
+        .filter(([code, state]) => validSubjectCodes.has(code) && state?.completed)
+        .map(([code]) => code)
+        .sort()
+        .map((code) => `${code} ${getSubjectName(code)}`.trim())
+      : [];
+    const currentSemester = planningSemesterSelectionHistory[0] || null;
+    const plannedSemesters = planningSemesterSelectionHistory.slice(1);
+    const separator = '________________________________________\n';
+    const formatCurrentSemesterRecord = ({ year, semester, subjects: selectedSubjects }) => {
+      const semesterName = semester === 'S1' ? 'Semester 1' : semester === 'S2' ? 'Semester 2' : 'Summer Semester';
+      return [
+        `${semesterName} ${year} selections (Current Semester):`,
+        ...selectedSubjects.map(({ code, name }) => `${code} ${name}`.trim()),
+      ].join('\n');
+    };
+    const text = [
+      ['Passed subjects:', ...(passedLines.length ? passedLines : ['None'])].join('\n'),
+      separator,
+      currentSemester
+        ? formatCurrentSemesterRecord(currentSemester)
+        : 'Current Semester selections\nNone',
+      separator,
+      plannedSemesters.length
+        ? `Planned Semesters\n\n${plannedSemesters.map(formatSemesterRecord).join('\n\n')}`
+        : 'Planned Semesters\n\nNone',
+    ].join('\n');
+    const copied = await copyPlainText(text);
+    copyAllNextSemesterPlanningNoteButton.textContent = copied ? 'Copied' : 'Copy failed';
+    window.setTimeout(() => {
+      copyAllNextSemesterPlanningNoteButton.textContent = 'Copy with history';
+    }, 1200);
   });
   const restoreGraduationCelebration = () => {
     document.body.classList.remove('graduation-dismissed');
@@ -31082,6 +31307,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     overCompletionError = null;
     overLoadError = null;
     capstonePairError = null;
+    capstoneContinuityError = null;
     intakeStartError = null;
     availableNowError = null;
     availableLoadError = null;
@@ -32501,6 +32727,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const closeModalFromCloseButton = (button) => {
+    if (button?.id === 'close-course-map-key') {
+      hideCourseMapKeyModal();
+      return true;
+    }
     if (button?.id === 'close-code-modal') {
       hideCodeModal();
       return true;
