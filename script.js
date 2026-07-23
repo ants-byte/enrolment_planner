@@ -10305,14 +10305,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const buildTooltipCompletionSemestersHtml = (id, cell = null) => {
-    const countLabel = getTooltipCompletionSemesterCountLabel(id, cell);
-    if (!countLabel) return '';
-    if (countLabel === '1') {
-      return '<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Can be completed this semester</div>';
+    const state = subjectState.get(id);
+    const withdrawalPrefix = withdrawnCurrentEnrolments.has(id) ? 'Marked for withdrawal. ' : '';
+    if (currentEnrolmentStudentRecord.has(id) && !withdrawalPrefix) {
+      return '<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Currently enrolled in this subject for this semester</div>';
     }
-    const singular = countLabel === '1';
-    const completedSuffix = countLabel === '0' ? ' (already completed)' : '';
-    return `<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Can complete in ${countLabel} semester${singular ? '' : 's'}${completedSuffix}</div>`;
+    if (state?.toggled && !withdrawalPrefix) {
+      return '<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Selected now and completing this semester</div>';
+    }
+    if (state?.completed) {
+      return '<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Already completed</div>';
+    }
+    const countLabel = getTooltipCompletionSemesterCountLabel(id, cell);
+    if (!countLabel) {
+      return withdrawalPrefix
+        ? '<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">Marked for withdrawal.</div>'
+        : '';
+    }
+    if (countLabel === '1') {
+      return `<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">${withdrawalPrefix}Can be completed this semester</div>`;
+    }
+    return `<div class="tooltip-gap"></div><div class="tooltip-completion-semesters">${withdrawalPrefix}Can complete in ${countLabel} semesters</div>`;
   };
   const attachTooltip = (cell) => {
     if (!cell) return;
