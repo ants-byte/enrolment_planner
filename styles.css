@@ -2107,6 +2107,15 @@ body.next-semester-planning-mode.history-graduated .main-grid > .graduation-cele
   z-index: 2147483647;
 }
 
+body.next-semester-planning-mode.history-graduated .main-content #container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: auto;
+}
+
 body.next-semester-planning-mode.history-graduated .main-grid > .graduation-celebration.is-card-anchored-graduation {
   left: var(--graduation-left);
   top: var(--graduation-top);
