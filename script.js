@@ -9758,7 +9758,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const getLoadThreshold = () => {
     const base = Math.max(1, fullLoadCap || 4);
     const remaining = getRemainingSubjectsNotPlanned();
-    if (remaining > 0 && remaining < 4) return remaining;
+    if (remaining > 0 && remaining < base) return remaining;
     return base;
   };
 
@@ -10223,9 +10223,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const effectiveType = domesticLoad ? type : 'international';
     const canOfferFive = confirmRemaining || remaining <= 9;
     if (effectiveType === 'international' && !exceptional) {
-      const opts = [4];
-      if (canOfferFive) opts.push(5);
-      return opts;
+      return [4];
     }
     const opts = [1, 2, 3, 4];
     if (canOfferFive) opts.push(5);
@@ -31225,6 +31223,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!event.target?.closest?.('.graduation-celebration')) return;
     document.body.classList.add('graduation-dismissed');
   });
+  const copyGraduationPanelContent = async (plainText, htmlText) => {
+    if (window.ClipboardItem && navigator.clipboard?.write && window.isSecureContext) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': new Blob([plainText], { type: 'text/plain' }),
+            'text/html': new Blob([htmlText], { type: 'text/html' }),
+          }),
+        ]);
+        return true;
+      } catch {
+        // Fall back to plain text when rich clipboard content is unavailable.
+      }
+    }
+    return copyPlainText(plainText);
+  };
   copyNextSemesterPlanningNoteButton?.addEventListener('click', async (event) => {
     event.stopPropagation();
     const selectionHistoryText = planningSemesterSelectionHistory.map(
@@ -31239,7 +31253,22 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       nextSemesterGraduationPeriod?.hidden ? '' : nextSemesterGraduationPeriod?.innerText,
       nextSemesterSelectionHistory?.hidden ? '' : selectionHistoryText,
     ].map((value) => String(value || '').trim()).filter(Boolean).join('\n\n');
-    const copied = await copyPlainText(text);
+    const selectionHistoryHtml = planningSemesterSelectionHistory.map(
+      ({ year, semester, subjects: selectedSubjects }) => {
+        const semesterName = semester === 'S1' ? 'Semester 1' : semester === 'S2' ? 'Semester 2' : 'Summer Semester';
+        const subjectHtml = selectedSubjects
+          .map(({ code, name }) => `<div>${escapeHtml(`${code} ${name}`.trim())}</div>`)
+          .join('');
+        return `<div style="margin-top:12px"><strong>${escapeHtml(`${semesterName} ${year} selections:`)}</strong>${subjectHtml}</div>`;
+      }
+    ).join('');
+    const summaryHtml = [
+      nextSemesterSelectionPeriod?.innerText,
+      nextSemesterGraduationPeriod?.hidden ? '' : nextSemesterGraduationPeriod?.innerText,
+    ].map((value) => String(value || '').trim()).filter(Boolean)
+      .map((value) => `<div><strong>${escapeHtml(value).replace(/\n/g, '<br>')}</strong></div>`)
+      .join('');
+    const copied = await copyGraduationPanelContent(text, `${summaryHtml}${selectionHistoryHtml}`);
     const originalLabel = 'Copy choices';
     copyNextSemesterPlanningNoteButton.textContent = copied ? 'Copied' : 'Copy failed';
     window.setTimeout(() => {
@@ -31283,7 +31312,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         ? `Planned Semesters\n\n${plannedSemesters.map(formatSemesterRecord).join('\n\n')}`
         : 'Planned Semesters\n\nNone',
     ].join('\n');
-    const copied = await copyPlainText(text);
+    const subjectLinesHtml = (subjects) => subjects.length
+      ? subjects.map(({ code, name }) => `<div>${escapeHtml(`${code} ${name}`.trim())}</div>`).join('')
+      : '<div>None</div>';
+    const passedHtml = passedLines.length
+      ? passedLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')
+      : '<div>None</div>';
+    const currentHtml = currentSemester
+      ? `<strong>${escapeHtml(formatCurrentSemesterRecord(currentSemester).split('\n')[0])}</strong>${subjectLinesHtml(currentSemester.subjects)}`
+      : '<strong>Current Semester selections</strong><div>None</div>';
+    const plannedHtml = plannedSemesters.length
+      ? plannedSemesters.map((record) => {
+        const heading = formatSemesterRecord(record).split('\n')[0];
+        return `<div style="margin-top:12px"><strong>${escapeHtml(heading)}</strong>${subjectLinesHtml(record.subjects)}</div>`;
+      }).join('')
+      : '<div>None</div>';
+    const html = [
+      `<div><strong>Passed subjects:</strong>${passedHtml}</div>`,
+      '<hr>',
+      `<div>${currentHtml}</div>`,
+      '<hr>',
+      `<div><strong>Planned Semesters</strong>${plannedHtml}</div>`,
+    ].join('');
+    const copied = await copyGraduationPanelContent(text, html);
     copyAllNextSemesterPlanningNoteButton.textContent = copied ? 'Copied' : 'Copy failed';
     window.setTimeout(() => {
       copyAllNextSemesterPlanningNoteButton.textContent = 'Copy with history';
@@ -33270,27 +33321,45 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   if (closeLoadModal) closeLoadModal.addEventListener('click', hideLoadModal);
   if (cancelLoadModal) cancelLoadModal.addEventListener('click', hideLoadModal);
+  const getPendingLoadChoice = () => {
+    const choice = parseInt(loadValueInput?.value || String(fullLoadCap), 10);
+    return Number.isFinite(choice) ? choice : planningGuidance.earlyCompletion.standardSemesterLoad;
+  };
   if (loadTypeDomestic)
     loadTypeDomestic.addEventListener('change', () => {
       if (!loadTypeDomestic.checked) return;
+      const pendingChoice = getPendingLoadChoice();
       studentType = 'domestic';
-      exceptionalLoadApproved = false;
+      if (exceptionalLoadApproved && pendingChoice < 4) fullLoadCap = pendingChoice;
       syncLoadFormState();
     });
   if (loadTypeInternational)
     loadTypeInternational.addEventListener('change', () => {
       if (!loadTypeInternational.checked) return;
+      const pendingChoice = getPendingLoadChoice();
       studentType = 'international';
+      fullLoadCap = exceptionalLoadApproved && pendingChoice < 4
+        ? pendingChoice
+        : planningGuidance.earlyCompletion.standardSemesterLoad;
       syncLoadFormState();
     });
   if (loadExceptional)
     loadExceptional.addEventListener('change', () => {
       exceptionalLoadApproved = !!loadExceptional.checked;
+      if (!exceptionalLoadApproved) {
+        fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
+      }
       syncLoadFormState();
     });
   if (loadRemainingConfirm)
     loadRemainingConfirm.addEventListener('change', () => {
+      const pendingChoice = getPendingLoadChoice();
       remainingConfirmed = loadRemainingConfirm.checked;
+      if (exceptionalLoadApproved && pendingChoice < 4) {
+        fullLoadCap = pendingChoice;
+      } else if (!remainingConfirmed) {
+        fullLoadCap = planningGuidance.earlyCompletion.standardSemesterLoad;
+      }
       syncLoadFormState();
     });
   if (applyLoadModal) applyLoadModal.addEventListener('click', applyLoadSettings);
