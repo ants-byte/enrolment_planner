@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Author: Antony Di Serio
 Created: December 30, 2025
@@ -316,6 +316,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     Afternoon: '',
   };
 
+  const getDisplayTimeRange = (slot = '') =>
+    getConfiguredSemesterIdentity()?.semester === 'SS' ? '9am - 4pm' : (timeSlots[slot] || '');
+
   const timetable = {};
 
   const semester1OnlyIds = new Set();
@@ -323,7 +326,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let semesterConfig = null;
   let semesterConfigDetails = null;
   let semesterConfigError = '';
-  let configuredTriageFileName = '';
+  const ENROLMENT_WORKBOOK_NAME = 'Enrolment Data and Tracking - Updated.xlsx';
+  const LEGACY_ENROLMENT_WORKBOOK_NAME = 'Enrolment Data and Tracking.xlsx';
+  let configuredEnrolmentFileName = ENROLMENT_WORKBOOK_NAME;
   let semesterConfigReady = Promise.resolve();
   const getCurrentSemesterKey = (date = new Date()) => {
     const month = date instanceof Date && !Number.isNaN(date.getTime()) ? date.getMonth() : 0;
@@ -333,6 +338,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   let currentSemesterKey = getCurrentSemesterKey();
   let planningSemesterOffset = 0;
+  const isOptionalSummerSemester = () => currentSemesterKey === 'SS' && planningSemesterOffset === 0;
   let finalPlanningExpectationIdentity = null;
   let planningSemesterSelectionHistory = [];
   let futurePlanningSnapshot = null;
@@ -352,6 +358,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const isSemesterRestricted = (id) => getSemesterAvailability(id) !== 'Any';
   const isRunningThisSemester = (id) => {
+    if (currentSemesterKey === 'SS' && planningSemesterOffset === 0) {
+      return Object.prototype.hasOwnProperty.call(timetable, id);
+    }
     const availability = getSemesterAvailability(id);
     return availability === 'Any' || availability === getSemesterKeyForOffset(0);
   };
@@ -367,7 +376,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
   const getNotRunningIds = () =>
     new Set(
-      [...semester1OnlyIds, ...semester2OnlyIds].filter((id) => !isRunningThisSemester(id))
+      (currentSemesterKey === 'SS' && planningSemesterOffset === 0
+        ? Object.keys(subjectMeta)
+        : [...semester1OnlyIds, ...semester2OnlyIds]).filter((id) => !isRunningThisSemester(id))
     );
   const getSemesterLabel = (semesterKey) =>
     semesterKey === 'S1' ? 'Semester 1' : semesterKey === 'S2' ? 'Semester 2' : 'Summer Semester';
@@ -2052,7 +2063,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const dropZoneTextEl = dropZone?.querySelector('.drop-zone-text');
   const dropZoneDefaultText =
     dropZoneTextEl?.textContent ||
-    "(Or for lesser functionality, drag-and-drop the configured Triage workbook, 'Source.xlsx', and 'Email Scripts.htm'. here. Double-clicking here also gives the lesser functionality.).";
+    "(Or for reduced functionality, drag-and-drop 'Enrolment Data and Tracking.xlsx' and 'Email Scripts.htm' here. Double-clicking here also gives reduced functionality.)";
   const dropZoneSpinner = dropZone
     ? (() => {
       const spinner = document.createElement('div');
@@ -2077,12 +2088,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let courseMapStudentNoteReturnFocusToSearch = false;
   let courseMapStudentNoteReturnFocusElement = null;
   const triageSharePointDebugLastLoggedAt = new Map();
-  const TRIAGE_ROW_LIMIT = 350;
-  const TRIAGE_MAX_COL_SCAN = 120;
+    const TRIAGE_MAX_COL_SCAN = 120;
   const TRIAGE_MAX_PREVIEW_COLS = 12;
-  const TRIAGE_READ_MAX_ROWS = 800;
-  const SOURCE_READ_MAX_ROWS = 4000;
-  const SOURCE_SHEET_NAMES = ['Students', 'STUDENTS', 'students'];
+  // Zero means no row truncation: the whole Triage roster must be read.
+const TRIAGE_READ_MAX_ROWS = 0;
+  const SOURCE_READ_MAX_ROWS = 0;
+  const SOURCE_SHEET_NAMES = ['Results', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students', 'Info', 'INFO', 'info', 'Email Lists', 'EMAIL LISTS', 'email lists', 'Student notes', 'Student notes ts', 'StudentFlags', 'Student Flags', 'Student_Flags'];
   const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
   const WORKBOOK_PARSE_TIMEOUT_MS = 300000;
   const WORKER_PARSE_TIMEOUT_MS = 300000;
@@ -2093,16 +2104,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const WORKER_BUFFER_COPY_MAX_BYTES = 5_000_000;
   const SOURCE_WORKER_URL = (() => {
     try {
-      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20260712-1';
+      return new URL('workbook-parser-worker.js', window.location.href).toString() + '?v=source-20261031-2';
     } catch {
-      return 'workbook-parser-worker.js?v=source-20260712-1';
+      return 'workbook-parser-worker.js?v=source-20261031-2';
     }
   })();
   const TRIAGE_WORKER_URL = (() => {
     try {
-      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20260714-22';
+      return new URL('triage-parser-worker.js', window.location.href).toString() + '?v=triage-20261018-23';
     } catch {
-      return 'triage-parser-worker.js?v=triage-20260714-22';
+      return 'triage-parser-worker.js?v=triage-20261018-23';
     }
   })();
   let skipTriageParseOnLoad = false;
@@ -2248,6 +2259,55 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const studentSearchEmpty = document.getElementById('student-search-empty');
   const studentDataPreview = document.getElementById('student-data-preview');
   const clearStudentButton = document.getElementById('clear-student');
+  const recentStudentsButton = document.getElementById('recent-students-button');
+  const recentStudentsMenu = document.getElementById('recent-students-menu');
+  let recentStudents = [];
+
+  const renderRecentStudents = () => {
+    if (!recentStudentsMenu || !recentStudentsButton) return;
+    recentStudentsMenu.replaceChildren();
+    const previous = recentStudents.filter((entry) => entry.id !== activeStudentId);
+    recentStudentsButton.disabled = previous.length === 0;
+    previous.forEach((entry) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('role', 'menuitem');
+      button.textContent = entry.label;
+      button.addEventListener('click', () => {
+        recentStudentsMenu.hidden = true;
+        recentStudentsButton.setAttribute('aria-expanded', 'false');
+        const record = findStudentRecordById(entry.id);
+        if (record) applyStudentSearchSelection(record);
+      });
+      recentStudentsMenu.appendChild(button);
+    });
+  };
+
+  const rememberDisplayedStudent = (record) => {
+    const id = getStudentRecordId(record);
+    if (!id) return;
+    const label = [id, record.Given_Name, record.Family_Name].filter(Boolean).join(' ');
+    recentStudents = [{ id, label }, ...recentStudents.filter((entry) => entry.id !== id)].slice(0, 15);
+    renderRecentStudents();
+  };
+
+  recentStudentsButton?.addEventListener('click', () => {
+    renderRecentStudents();
+    recentStudentsMenu.hidden = !recentStudentsMenu.hidden;
+    recentStudentsButton.setAttribute('aria-expanded', String(!recentStudentsMenu.hidden));
+  });
+  document.addEventListener('click', (event) => {
+    if (!recentStudentsMenu || event.target.closest('#recent-students-button, #recent-students-menu')) return;
+    recentStudentsMenu.hidden = true;
+    recentStudentsButton?.setAttribute('aria-expanded', 'false');
+  });
+  recentStudentsMenu?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      recentStudentsMenu.hidden = true;
+      recentStudentsButton.focus();
+      recentStudentsButton.setAttribute('aria-expanded', 'false');
+    }
+  });
   const STUDENT_COLUMNS = [
     'Student_IDs_Unique',
     'In_AllResults',
@@ -3729,7 +3789,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         courseMapLoadFilesButton.setAttribute('title', 'Files are loaded.');
       } else {
         courseMapLoadFilesButton.setAttribute('aria-label', 'Load files');
-        courseMapLoadFilesButton.setAttribute('title', 'Load Source and Triage files.');
+        courseMapLoadFilesButton.setAttribute('title', 'Load Enrolment Data and Tracking.xlsx.');
       }
     }
     setCourseMapSearchReadyState();
@@ -4163,7 +4223,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       !notInSource && showPastYearMedian ? `<div><strong>Median grade past year:</strong><span>${escapeHtml(getMedianGradeLabelPastYear(manualEntryResults))}</span></div>` : '',
       '</div>',
       notInSource
-        ? '<div class="course-map-triage-temp-note">Student is not in Source. A new student or mistake in Student ID? If international, student must obtain student ID from our international office (along with their CoE) before can enrol. If domestic, student should complete online enrolment first. Then teacher should update Triage workbook.</div>'
+        ? '<div class="course-map-triage-temp-note">Student is not in the workbook’s Students sheet. A new student or mistake in Student ID? If international, student must obtain student ID from our international office (along with their CoE) before can enrol. If domestic, student should complete online enrolment first. Then teacher should update Enrolment Data and Tracking workbook.</div>'
         : '',
       '<div class="course-map-triage-edit-grid">',
       '<label class="course-map-triage-inline-field"><span>Given Name:</span>',
@@ -6074,6 +6134,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let livePrereqEnabled = false;
   let passForEnrolmentsEnabled = false;
   let fullLoadCap = 4;
+  let summerLoadCap = 2;
   let studentType = 'international';
   let feeStatus = '';
   let domesticLoad = true;
@@ -6739,7 +6800,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     finalSemWarning = null;
     const remaining = getRemainingSubjectsCount();
-    const applyDelayHighlight = !completedMode;
+    const applyDelayHighlight = !completedMode && !isOptionalSummerSemester();
     const optimalSemesters = Math.max(1, Math.ceil(remaining / Math.max(1, loadThreshold)));
     chainDelayError = null;
     if (applyDelayHighlight && !initialLoad) {
@@ -7007,7 +7068,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } else {
       chainDelayError = null;
     }
-    if (remaining > 8 && distanceData.length) {
+    if (!isOptionalSummerSemester() && remaining > 8 && distanceData.length) {
       const maxDist = distanceData.reduce((max, d) => Math.max(max, d.dist), 0);
       const warningMaxDist = maxDist;
       if (maxDist > 0 && Number.isFinite(maxDist)) {
@@ -7080,7 +7141,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateVaryLoadLabel = () => {
     const loadLabel = document.getElementById('load-label');
-    const loadCount = fullLoadCap || 4;
+    const loadCount = isOptionalSummerSemester() ? summerLoadCap : (fullLoadCap || 4);
     const loadRow = varyLoadButton?.closest?.('.load-row') || loadLabel?.closest?.('.load-row') || null;
     if (loadRow) loadRow.classList.toggle('load-row-nonstandard', loadCount !== 4);
     if (loadLabel) {
@@ -7261,6 +7322,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const refreshCurrentEnrolmentStudentRecord = () => {
+    const hadCurrentEnrolments = currentEnrolmentStudentRecord.size > 0;
     currentEnrolmentStudentRecord.clear();
     withdrawnCurrentEnrolments.clear();
     const sources = currentEnrolmentOverrideCodes
@@ -7269,6 +7331,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     sources.forEach((code) => {
       if (validSubjectCodes.has(code)) currentEnrolmentStudentRecord.add(code);
     });
+    if (!hadCurrentEnrolments && currentEnrolmentStudentRecord.size > 0) {
+      passForEnrolmentsEnabled = isOptionalSummerSemester();
+    }
     updatePassForEnrolmentsAvailability();
     updateWithdrawCurrentEnrolmentUI();
   };
@@ -8544,6 +8609,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     strongEl.className = 'timetable-title-strong';
     strongEl.textContent = headingText;
     timetableTitleEl.appendChild(strongEl);
+    if (mode === 'available' && !studentId && !name) return;
     const preparedLine = document.createElement('span');
     preparedLine.className = 'timetable-prepared-line';
     if (mode === 'available') {
@@ -9112,7 +9178,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const updateLoadOverageError = () => {
     overLoadError = null;
-    if (completedMode) return;
+    if (completedMode || isOptionalSummerSemester()) return;
     const loadThreshold = getLoadThreshold();
     const plannedCodes = Array.from(subjectState.entries())
       .filter(([, st]) => st?.toggled)
@@ -9729,7 +9795,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const feeDetails = activeRecord ? getFeeStatusDetails(activeRecord) : {};
     {
       const { codes, info } = splitInfoMessages(buildInfoMessages(activeRecord, feeDetails));
-      if (creditMismatchExplainedByPassCurrent) {
+      if (creditMismatchExplainedByPassCurrent && !isOptionalSummerSemester()) {
         const formatCodeList = (codes, conjunction) => {
           if (codes.length < 2) return codes[0] || '';
           if (codes.length === 2) return `${codes[0]} ${conjunction} ${codes[1]}`;
@@ -9756,7 +9822,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getLoadThreshold = () => {
-    const base = Math.max(1, fullLoadCap || 4);
+    const base = isOptionalSummerSemester() ? summerLoadCap : Math.max(1, fullLoadCap || 4);
     const remaining = getRemainingSubjectsNotPlanned();
     if (remaining > 0 && remaining < base) return remaining;
     return base;
@@ -9794,7 +9860,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     nextSemWarning = null;
     capstoneYearError = null;
     capstoneContinuityError = null;
-    if (completedMode) {
+    if (completedMode || isOptionalSummerSemester()) {
       refreshErrorAlerts();
       return;
     }
@@ -10139,9 +10205,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasHistory =
       getHistoryRows().length > 0 || manualEntryCurrent.size > 0 || manualEntryUnknown.length > 0;
     const hasCurrent = currentEnrolmentStudentRecord.size > 0;
-    const enabled = hasHistory && hasCurrent;
+    const summer = isOptionalSummerSemester();
+    const enabled = summer || (hasHistory && hasCurrent);
     if (courseMapPassForEnrolmentsToggleRow) {
-      const showCourseMapToggle = hasCurrent && !getCourseMapIsStaffMode();
+      const showCourseMapToggle = (summer || hasCurrent) && !getCourseMapIsStaffMode();
       courseMapPassForEnrolmentsToggleRow.hidden = !showCourseMapToggle;
     }
     const toggles = [passForEnrolmentsToggle, courseMapPassForEnrolmentsToggle].filter(Boolean);
@@ -10159,6 +10226,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       applyPassForEnrolmentsState();
       return;
     }
+    if (summer && !passForEnrolmentsEnabled) {
+      applyPassForEnrolmentsState();
+      return;
+    }
     const active = passForEnrolmentsEnabled && enabled;
     toggles.forEach((toggle) => {
       toggle.checked = active;
@@ -10166,6 +10237,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const applyPassForEnrolmentsState = () => {
+    if (isOptionalSummerSemester()) passForEnrolmentsEnabled = true;
     // Roll back any previous overrides first.
     passForEnrolmentsOverrides.forEach((code) => {
       const st = subjectState.get(code);
@@ -10522,7 +10594,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!isPlaceholderCell()) {
         const currentId = cell.dataset.subject || id;
         const currentData = getPlanningTimetableData(currentId);
-        const currentRange = formatTimeRange(timeSlots[currentData.slot] || '');
+        const currentRange = formatTimeRange(getDisplayTimeRange(currentData.slot));
         const currentTime = currentData.slot === 'Time?'
           ? 'Time?'
           : currentRange || 'Time?  Not set';
@@ -10825,7 +10897,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         title: 'Suspension is blocking enrolment',
         html: `<p><strong class="alert-inline-title alert-title-error">Suspension is blocking enrolment:</strong>
         <span class="alert-inline-text"> Strata was showing that this student has a suspension and cannot be enrolled.  
-        <br>This information comes from a manual copy-and-paste from a Strata export to Source.xlsx and might be 
+        <br>This information comes from a manual copy-and-paste from a Strata export to Enrolment Data and Tracking.xlsx and might be 
         out of date.
         <br><br>Double-check in Strata to see if the flag has been removed:<br>
         <span class="alert-indent">Open the student's record via Strata's '<strong>Student</strong>' tile.
@@ -10837,8 +10909,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const comparison = getCurrentEnrolmentComparisonForRecord(activeRecord);
       if (comparison.hasBoth && comparison.mismatch) {
         errorPayloads.push({
-          title: 'Current enrolment mismatch (Source vs Triage)',
-          html: `<p><strong class="alert-inline-title alert-title-error">Current enrolment mismatch</strong> <span class="alert-inline-text">Source.xlsx and Triage.xlsx both contain current enrolment data for this student, but the subject lists do not match.</span></p><p class="alert-inline-text"><strong>Source.xlsx:</strong> ${escapeHtml(comparison.sourceCurrentCodes.join(', '))}</p><p class="alert-inline-text"><strong>Triage.xlsx (In Strata):</strong> ${escapeHtml(comparison.triageCurrentCodes.join(', '))}</p>`,
+          title: 'Current enrolment mismatch (Students vs Triage sheets)',
+          html: `<p><strong class="alert-inline-title alert-title-error">Current enrolment mismatch</strong> <span class="alert-inline-text">The Students and Triage sheets in Enrolment Data and Tracking.xlsx list different current subjects for this student.</span></p><p class="alert-inline-text"><strong>Students sheet:</strong> ${escapeHtml(comparison.sourceCurrentCodes.join(', '))}</p><p class="alert-inline-text"><strong>Triage sheet (In Strata):</strong> ${escapeHtml(comparison.triageCurrentCodes.join(', '))}</p>`,
         });
       }
     }
@@ -10985,6 +11057,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const syncLoadFormState = () => {
     if (!loadModal) return;
+    const summer = isOptionalSummerSemester();
+    document.getElementById('load-summer-explanation').hidden = !summer;
+    loadModal.querySelectorAll('.load-explanations, .modal-body > .toggle-row, #load-error').forEach((element) => {
+      element.style.display = summer ? 'none' : '';
+    });
+    if (applyLoadModal) applyLoadModal.hidden = false;
+    if (cancelLoadModal) cancelLoadModal.textContent = 'Cancel';
+    if (summer) {
+      loadValueInput.closest('.toggle-row').style.display = '';
+      populateLoadSelect([1, 2], summerLoadCap);
+      if (loadLockMsg) loadLockMsg.style.display = 'none';
+      setLoadError('');
+      return;
+    }
     if (!domesticLoad) {
       studentType = 'international';
     }
@@ -11029,6 +11115,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const applyLoadSettings = () => {
     if (!loadModal) return;
+    if (isOptionalSummerSemester()) {
+      summerLoadCap = loadValueInput?.value === '1' ? 1 : 2;
+      hideLoadModal();
+      conditionalRecompute({ force: true, usePlanned: false });
+      updateResetState();
+      updateSelectedList();
+      updateVaryLoadLabel();
+      return;
+    }
     const type = !domesticLoad
       ? 'international'
       : loadTypeInternational && loadTypeInternational.checked
@@ -11731,7 +11826,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     courseMapStudentSemCountsOn = false;
     refreshCurrentEnrolmentStudentRecord();
     if (!preservePassForEnrolments) {
-      passForEnrolmentsEnabled = currentEnrolmentStudentRecord.size > 0;
+      passForEnrolmentsEnabled = isOptionalSummerSemester();
     }
     exceptionalLoadApproved = false;
     remainingConfirmed = false;
@@ -12173,6 +12268,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const showEmailScriptsAccessModal = () => {
     if (!emailScriptsAccessModal) return;
+    syncEmailScriptsSeasonalLabel();
     updateStudDecAndEmailActionButtons();
     emailScriptsAccessModal.classList.add('show');
     emailScriptsAccessModal.setAttribute('aria-hidden', 'false');
@@ -12343,11 +12439,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const EMAIL_SCRIPTS_EXTRA_ROWS = [
-    { key: 'student-declaration', label: 'Student Declaration for ongoing students' },
-    { key: 'student-dec-returned', label: 'Student Dec returned' },
+    { key: 'declaration-thanks-late', label: 'Declaration follow up – Thanks, Late enrolment' },
+    { key: 'declaration-missing-reply', label: 'Declaration follow up – Yellow text and Reply missing' },
     { key: 'not-using-timetableplanner-instructions-and-zoom-offer', label: 'Not using TimetablePlanner – instructions and Zoom offer' },
     { key: 'not-using-timetableplanner-not-sure-about-what-to-do', label: 'Not using TimetablePlanner – not sure about what to do', dividerAfter: true },
     { key: 'eform-strata-welcome-email-sent', label: 'eForm (Strata Welcome) email sent' },
+    {key: "eform-study-level", label: "eForm complete. Study level?"},
+    {key: "eform-study-credits", label: "eForm Complete.. Study level? Credit Transfers?"},
+    {key: "eform-first-year", label: "eForm Complete. No credits, choose first year subjects"},
+    {key: "eform-international-missing", label: "eForm Internationals – missing info after Student Declaration"},
     { key: 'link-to-start-application', label: 'Link to Start Application' },
     { key: 'applying-from-os', label: 'Applying from os' },
     { key: 'in-australia-now-completed-eform-but-no-usi', label: 'In Australia now – completed eForm but no USI' },
@@ -12356,18 +12456,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     { key: 'usi-incorrect-details-entered', label: 'USI – incorrect details entered' },
     { key: 'not-in-oe-dashboard-enrolment-applications-image-free', label: 'Not in OE Dashboard but in Enrolment Applications – Welcome!' },
     { key: 'online-progression-classes-entered', label: 'Online progression – classes entered' },
-    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress – selections look good. classes entered' },
+    { key: 'online-progress-selections-look-good-classes-entered', label: 'Online progress – selections look good. classes entered', dividerAfter: true },
     { key: 'credit-transfer-sign-return', label: 'Credit Transfer – Please sign and return' },
-    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned', dividerAfter: true },
-    { key: 'electives-use-credits-explained', label: 'Electives (USE credits) explained' },
+    { key: 'credit-transfers-returned', label: 'Credit Transfers Returned' },
     { key: '6-credits', label: '6 credits' },
-    { key: '12-credits-post-bachelor-visa-concern', label: '12 credits. Post–bachelor visa concern' },
+    { key: '12-credits-post-bachelor-visa-concern', label: 'Credits. 12 = post-bachelor visa concern' },
+    {key: "credits-11-or-12", label: "Credit Transfer – Could be 11 or 12 dependant on major"},
+    {key: "credits-subject-outlines", label: "Credit Transfers - Please provide Subject Outlines"},
+    {key: "credits-use-what", label: "Credits – USE – what is it?"},
+    {key: "credits-use-major", label: "Credits – USE and major explained"},
     { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
     { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to' },
+    {key: "withdrawal-confirmation", label: "Withdrawal – Change to enrolment confirmation"},
+    {key: "withdrawal-confirmation-late", label: "Withdrawal – Change to enrolment confirmation. Late Enrolment."},
     { key: 'fee-payment-suspension-blocking-enrolment', label: 'Fee Non-Payment Suspension is blocking enrolment' },
     { key: 'completing-the-course-early', label: 'Completing the course early' },
     { key: 'summer-school-explained', label: 'Summer Semester Explained' },
-    { key: 'summer-semester-only-a-possibility', label: 'Summer Semester is only a possibility', dividerAfter: true },
+    { key: 'summer-semester-only-a-possibility', label: 'Summer Semester is only a possibility' },
+    {key: "summer-payment-first", label: "Payments for Summer Semester – must pay first"},
     { key: 'enrolling-late-bit111', label: 'BIT111 – Enrolling late' },
     { key: 'bit111-and-bit106', label: 'BIT111 & BIT106' },
     { key: 'bit105', label: 'BIT105' },
@@ -12436,15 +12542,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const EMAIL_SCRIPTS_SECTION_HEADINGS = {
+    "declaration-thanks-late": ["Declaration follow up – Thanks, Late enrolment"],
+    "declaration-missing-reply": ["Declaration follow up – Yellow text and Reply missing"],
+    "eform-study-level": ["eForm complete. Study level?"],
+    "eform-study-credits": ["eForm Complete.. Study level? Credit Transfers?"],
+    "eform-first-year": ["eForm Complete. No credits, choose first year subjects"],
+    "eform-international-missing": ["eForm Internationals – missing info after Student Declaration"],
+    "credits-11-or-12": ["Credit Transfer – Could be 11 or 12 dependant on major"],
+    "credits-subject-outlines": ["Credit Transfers - Please provide Subject Outlines"],
+    "credits-use-what": ["Credits – USE – what is it?"],
+    "credits-use-major": ["Credits – USE and major explained"],
+    "withdrawal-confirmation": ["Withdrawal – Change to enrolment confirmation"],
+    "withdrawal-confirmation-late": ["Withdrawal – Change to enrolment confirmation. Late Enrolment."],
+    "summer-payment-first": ["Payments for Summer Semester – must pay first"],
+
     'student-declaration': [
       'Student Declaration for ongoing students',
       'Student Declaration',
     ],
-    'student-dec-returned': [
-      'Student Declaration returned',
-      'Student Dec returned',
-      'Student Dec Returned',
-    ],
+    'student-dec-returned': ['Declaration follow up - Thanks'],
     'eform-strata-welcome-email-sent': ['eForm (Strata Welcome) email sent'],
     'link-to-start-application': [
       'Link to Start Application',
@@ -12536,7 +12652,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     'enrolling-late-bit111': ['BIT111 - Enrolling late', 'Enrolling late - BIT111', 'Enrolling late – BIT111'],
     '12-subjects-remaining': ['12 subjects remaining'],
     '6-credits': ['6 credits'],
-    '12-credits-post-bachelor-visa-concern': ['12 credits. Post-bachelor visa concern'],
+    '12-credits-post-bachelor-visa-concern': ['Credits. 12 = post-bachelor visa concern'],
     'enrolment-cutoff-dates': ['Enrolment cutoff dates'],
     'fee-payment-suspension-blocking-enrolment': ['Fees/Suspension blocking enrolment'],
     'capstone-explained': ['Capstone Explained'],
@@ -12777,6 +12893,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     else emailScriptsAccessResizeObserver.observe(emailScriptsAccessList);
   };
 
+  const getEnrolmentCutoffHeading = () =>
+    getConfiguredSemesterIdentity()?.semester === 'SS'
+      ? 'Enrolment cutoff dates – summer school'
+      : 'Enrolment cutoff dates';
+
+  const syncEmailScriptsSeasonalLabel = () => {
+    const heading = getEnrolmentCutoffHeading();
+    const button = emailScriptsExtraRowsHost?.querySelector('[data-section-key="enrolment-cutoff-dates"]');
+    const row = button?.closest('.email-scripts-access-row');
+    if (!row) return;
+    row.querySelector('.email-scripts-access-text').textContent = heading;
+    row.querySelectorAll('[data-section-key]').forEach((action) => {
+      action.dataset.sectionLabel = heading;
+      action.dataset.emailSubject = heading;
+      action.setAttribute('aria-label', `${action.classList.contains('email-scripts-section-copy') ? 'Copy' : 'Email'} ${heading}`);
+    });
+  };
+
   const renderEmailScriptsExtraRows = () => {
     if (!emailScriptsExtraRowsHost) return;
     emailScriptsExtraRowsHost.innerHTML = '';
@@ -12827,7 +12961,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getSlotHeading = (slot = '') => {
     const abbrev = getSlotAbbreviation(slot);
-    const range = formatTimeRange(timeSlots[slot] || '');
+    const range = formatTimeRange(getDisplayTimeRange(slot));
     return range ? `${abbrev}. ${range}` : `${abbrev}. Time?  Not set`;
   };
 
@@ -12842,7 +12976,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return range
       .split('-')
       .map((part) => formatTimeValue(part.trim()))
-      .join(' : ');
+      .join(isOptionalSummerSemester() ? ' - ' : ' : ');
   };
 
   const getSemesterNote = (date = new Date()) => {
@@ -12851,13 +12985,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const getSlotHeadingWithTime = (slot = '') => {
     const abbrev = getSlotAbbreviation(slot);
-    const range = formatTimeRange(timeSlots[slot] || '');
+    const range = formatTimeRange(getDisplayTimeRange(slot));
     if (!range) return `${abbrev}. Time?  Not set`;
     return `${abbrev}. ${range}`;
   };
 
   const getSlotStartEnd = (slot = '') => {
-    const range = timeSlots[slot] || '';
+    const range = getDisplayTimeRange(slot);
     if (!range) return { start: 'TBA', end: 'TBA' };
     const [startRaw, endRaw] = range.split('-');
     return {
@@ -13024,7 +13158,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           heading.appendChild(dayLabel);
           heading.appendChild(document.createTextNode(' '));
           heading.appendChild(slotLabel);
-          const timeRange = formatTimeRange(timeSlots[slot] || '');
+          const timeRange = formatTimeRange(getDisplayTimeRange(slot));
           if (timeRange) {
             const timeLabel = document.createElement('span');
             timeLabel.className = 'semester-timetable-time-range';
@@ -13508,7 +13642,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     dayNames.forEach((day) => {
       slotNames.forEach((slot) => {
         const entries = grid.get(day)?.get(slot) || [];
-        const timeRange = formatTimeRange(timeSlots[slot] || '');
+        const timeRange = formatTimeRange(getDisplayTimeRange(slot));
         const heading = `${day} ${getSlotAbbreviation(slot)}${timeRange ? ` ${timeRange}` : ''}`;
         sections.push({ heading, entries });
         textRows.push(heading);
@@ -15488,7 +15622,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const day = isFutureTimetable ? '-' : (dayShort || 'N/A');
         const time = isFutureTimetable
           ? '-'
-          : (data.slot ? (formatTimeRange(timeSlots[data.slot] || '') || 'Time?  Not set') : 'N/A');
+          : (data.slot ? (formatTimeRange(getDisplayTimeRange(data.slot)) || 'Time?  Not set') : 'N/A');
         const room = isFutureTimetable ? '-' : (data.room || 'N/A');
         const teacher = isFutureTimetable ? '-' : (data.teacher || 'N/A');
         const stream = buildStreamLabel(id);
@@ -15559,7 +15693,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               `${row.dayShort || ''}|${row.data?.slot || ''}` === key
           );
           const dayFull = conflictingRows[0]?.dayFull || day;
-          const timeRange = formatTimeRange(timeSlots[slotName] || '')
+          const timeRange = formatTimeRange(getDisplayTimeRange(slotName))
             .replace(' : ', ' to ');
           const heading = `${dayFull} ${slotName}${timeRange ? ` (${timeRange})` : ''}`.trim();
           const subjectLabels = conflictingRows.map(
@@ -16389,7 +16523,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const details = parsed?.semesterDetails || {};
         const year = String(details.year || '').trim();
         const semester = String(details.semester_S1_S2_SS || '').trim().toUpperCase();
-        const pattern = String(parsed?.fileNaming?.triageFilePattern || '').trim();
+        const workbookFileName = String(parsed?.fileNaming?.workbookFileName || ENROLMENT_WORKBOOK_NAME).trim();
         if (!/^\d{4}$/.test(year)) throw new Error('semesterDetails.year must be a four-digit year.');
         if (!['S1', 'S2', 'SS'].includes(semester)) {
           throw new Error('semesterDetails.semester_S1_S2_SS must be S1, S2, or SS.');
@@ -17871,15 +18005,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             throw new Error(`timetable includes subject${unexpectedCodes.length === 1 ? '' : 's'} not running in ${semester}: ${unexpectedCodes.join(', ')}.`);
           }
         }
-        if (
-          !pattern ||
-          !pattern.includes('{YYYY}') ||
-          !pattern.includes('{SEMESTER}') ||
-          !/\.xlsx$/i.test(pattern) ||
-          /[\\/]/.test(pattern) ||
-          /\{(?!YYYY\}|SEMESTER\})[^}]*\}/.test(pattern)
-        ) {
-          throw new Error('fileNaming.triageFilePattern must contain {YYYY}, {SEMESTER}, and an .xlsx extension.');
+        if (![ENROLMENT_WORKBOOK_NAME, LEGACY_ENROLMENT_WORKBOOK_NAME].includes(workbookFileName)) {
+          throw new Error(`fileNaming.workbookFileName must be ${ENROLMENT_WORKBOOK_NAME}.`);
         }
         semesterConfig = parsed;
         semesterConfigDetails = details;
@@ -17999,14 +18126,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         Object.assign(specialRequirements, resolvedSpecialRequirements);
         rebuildDependents();
         courseMapTooltipHtmlCache.clear();
-        configuredTriageFileName = pattern
-          .replace(/\{YYYY\}/g, year)
-          .replace(/\{SEMESTER\}/g, semester);
+        configuredEnrolmentFileName = workbookFileName;
         semesterConfigError = '';
       } catch (error) {
         semesterConfig = null;
         semesterConfigDetails = null;
-        configuredTriageFileName = '';
+        configuredEnrolmentFileName = '';
         timeSlots.Morning = '';
         timeSlots.Afternoon = '';
         Object.keys(timetable).forEach((code) => delete timetable[code]);
@@ -18058,7 +18183,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       } catch {
         semesterConfig = null;
         semesterConfigDetails = null;
-        configuredTriageFileName = '';
+        configuredEnrolmentFileName = '';
         timeSlots.Morning = '';
         timeSlots.Afternoon = '';
         Object.keys(timetable).forEach((code) => delete timetable[code]);
@@ -18088,7 +18213,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (dropZoneTextEl && !lastDroppedFileInfo) {
       dropZoneTextEl.textContent = semesterConfigError ||
-        `(Or for lesser functionality, drag-and-drop '${configuredTriageFileName}', 'Source.xlsx', and 'Email Scripts.htm'. Double-clicking here also gives the reduced functionality.)`;
+        `(Or for reduced functionality, drag-and-drop '${ENROLMENT_WORKBOOK_NAME}' and 'Email Scripts.htm' here. Double-clicking here also gives reduced functionality.)`;
     }
     settingsPwaSaveSetupButton?.addEventListener('click', saveInstalledPwaSetup);
     settingsPwaClearSetupButton?.addEventListener('click', clearInstalledPwaSetup);
@@ -18436,7 +18561,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const effectiveHref = href || resolvedTooltipHref || recoveredTooltipHref;
           const tooltipText = tooltipAddress
             ? `SharePoint address: ${tooltipAddress}`
-            : 'SharePoint address not resolved from Triage workbook.';
+            : 'SharePoint address not resolved from Enrolment Data and Tracking workbook.';
           const tooltipAttr = escapeHtml(tooltipText);
           const tooltipHtml = effectiveHref
             ? `<strong>SharePoint folder:</strong> <a href="${escapeHtml(
@@ -19243,13 +19368,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return fallback.join(' | ');
       };
 
-      const maxRow = Math.min(range.e.r, headerRowIndex + TRIAGE_ROW_LIMIT);
+      const maxRow = range.e.r;
       for (let r = headerRowIndex + 1; r <= maxRow; r += 1) {
         if (previewRows.length < 10) {
           const preview = buildPreviewRow(r);
           if (preview) previewRows.push(preview);
         }
-        const rawId = getCellText(r, idIdx);
+        // New rows may not have a calculated helper cache until Excel opens.
+    // Only accept an ID-shaped visible fallback, never dates/day separators.
+    const helperId = getCellText(r, idIdx);
+    const visibleIdIdx = getIdx('Student ID');
+    const visibleId = visibleIdIdx === undefined ? '' : getCellText(r, visibleIdIdx);
+    const rawId = helperId || (/^S?\d{6,7}$/i.test(visibleId.trim()) ? visibleId : '');
         const normalizedId = normalizeStudentId(rawId);
         if (!normalizedId) continue;
         const result = {};
@@ -19512,7 +19642,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!file?.size) return false;
       triageWorkbookFileObject = file;
       triageWorkbookBuffer = await file.arrayBuffer();
-      triageWorkbookFileName = file.name || triageWorkbookFileName || 'Triage.xlsx';
+      triageWorkbookFileName = file.name || triageWorkbookFileName || 'Enrolment Data and Tracking.xlsx';
       triageFileInfo = {
         ...(triageFileInfo || {}),
         fileName: triageWorkbookFileName,
@@ -19522,7 +19652,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       scheduleTriageParse(triageWorkbookBuffer);
       return true;
     } catch (error) {
-      console.warn('[Triage save] could not reload Triage workbook after save', error);
+      console.warn('[Triage save] could not reload Enrolment Data and Tracking workbook after save', error);
       return false;
     }
   };
@@ -19652,6 +19782,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const sniffHtmlCharset = (buffer) => {
     if (!buffer) return '';
+    const bytes = new Uint8Array(buffer);
+    if (bytes[0] === 0xff && bytes[1] === 0xfe) return 'utf-16le';
+    if (bytes[0] === 0xfe && bytes[1] === 0xff) return 'utf-16be';
     const sample = decodeBufferWithCharset(buffer, 'latin1').slice(0, 2048);
     const metaMatch = sample.match(/charset\s*=\s*["']?([\w-]+)/i);
     return metaMatch ? metaMatch[1].toLowerCase() : '';
@@ -19804,7 +19937,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       if (node.matches('p,ul,ol,table,div')) {
         if (node.querySelector && node.querySelector('h1,h2,h3,h4,h5,h6')) {
-          break;
+          // Word can wrap several sections in one div; descend to its paragraphs.
+          node = walker.nextNode();
+          continue;
         }
         if (!hasCollectedAncestor(node)) {
           htmlParts.push(inlineClassStyles(node.cloneNode(true)).outerHTML);
@@ -20153,10 +20288,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     workbookCurrent.clear();
     resultsCurrent.forEach((meta, mapped) => workbookCurrent.set(mapped, meta));
     refreshCurrentEnrolmentStudentRecord();
-    if (workbookCurrent.size > 0 && currentEnrolmentStudentRecord.size > 0 && !passForEnrolmentsEnabled) {
-      passForEnrolmentsEnabled = true;
-      updatePassForEnrolmentsAvailability();
-    }
     resultsParsed.unknownEntries.forEach((entry) => addUnknownEntry(entry));
     manualEntryResults = resultsParsed.resultEntries ? [...resultsParsed.resultEntries] : [];
     resultsParsed.metaEntries.forEach((meta, mapped) => {
@@ -20431,6 +20562,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const hasPreview = !!String(studentDataPreview?.textContent || '').trim();
     const hasState = !!(activeStudentId || extractedStudentId);
     clearStudentButton.hidden = !(hasInput || hasPreview || hasState);
+    renderRecentStudents();
   };
 
   const renderStudentSearchDropdown = (records, includeEmail = false) => {
@@ -20580,6 +20712,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (studentIdInput) studentIdInput.classList.add('student-match-found');
     try {
       renderStudentPreviewHtml(formatStudentSummary(record));
+      rememberDisplayedStudent(record);
     } catch (error) {
       console.error('[Student preview] summary render failed', error);
       const fallbackName = [
@@ -20825,12 +20958,43 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return cell ? (cell.w ?? cell.v ?? '') : '';
   }
 
-  function buildStudentRecordsFromWorkbook(workbook) {
+  function buildRawResultsHistory(workbook) {
+  const sheet = workbook.Sheets?.Results;
+  const histories = new Map();
+  if (!sheet) return histories;
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+  const start = rows.findIndex(row => row.some(v => normalizeHeader(v) === 'studentid') && row.some(v => normalizeHeader(v) === 'enrolmentunit'));
+  if (start < 0) return histories;
+  const headers = rows[start].map(normalizeHeader);
+  const idCol = headers.indexOf('studentid'), codeCol = headers.indexOf('enrolmentunit');
+  const gradeCol = headers.indexOf('resultid'), dateCol = headers.indexOf('resultdate');
+  for (const row of rows.slice(start + 1)) {
+    const id = normalizeStudentId(row[idCol]), code = String(row[codeCol] || '').trim().toUpperCase();
+    if (!id || !code) continue;
+    const grade = String(row[gradeCol] ?? '').trim();
+    const rawDate = row[dateCol];
+    let date = '';
+    if (typeof rawDate === 'number' && rawDate > 0) {
+      const parsed = XLSX.SSF.parse_date_code(rawDate);
+      if (parsed) date = `${parsed.y} ${String(parsed.m).padStart(2, '0')} ${String(parsed.d).padStart(2, '0')}`;
+    } else if (rawDate) {
+      const parsed = new Date(rawDate);
+      if (!Number.isNaN(parsed.getTime())) date = `${parsed.getFullYear()} ${String(parsed.getMonth()+1).padStart(2,'0')} ${String(parsed.getDate()).padStart(2,'0')}`;
+    }
+    const entries = histories.get(id) || [];
+    entries.push([code, grade, date].filter(Boolean).join(' '));
+    histories.set(id, entries);
+  }
+  return new Map([...histories].map(([id, entries]) => [id, entries.join(', ')]));
+}
+
+function buildStudentRecordsFromWorkbook(workbook) {
     if (!workbook) return [];
-    const sheetName = 'Students';
+    const sheetName = workbook.Sheets?.StudentsWebWorkings ? 'StudentsWebWorkings' : 'Students';
     const sheet = workbook.Sheets?.[sheetName];
     if (!sheet) return [];
     const names = workbook.Workbook?.Names || [];
+    const rawResultHistories = buildRawResultsHistory(workbook);
     let columnMap = {};
     names.forEach((nameEntry) => {
       if (!nameEntry?.Name || !nameEntry.Ref) return;
@@ -20992,13 +21156,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const records = [];
     const studentFlagsById = new Map();
     const studentFlagsSheetName = Object.keys(workbook.Sheets || {}).find(
-      (name) => normalizeHeader(name) === 'studentflags'
+      (name) => ['studentflags', 'studentnotests'].includes(normalizeHeader(name))
     );
     const studentFlagsSheet = studentFlagsSheetName ? workbook.Sheets[studentFlagsSheetName] : null;
     if (studentFlagsSheet) {
       const flagRows = XLSX.utils.sheet_to_json(studentFlagsSheet, { header: 1, defval: '' });
-      const idHeaders = new Set(['studentnumber', 'studentid', 'studentidsunique']);
-      const flagHeaders = new Set(['notes', 'studentflag', 'studentflags']);
+      const idHeaders = new Set(['studentnumber', 'studentid', 'studentidasstring', 'studentidsunique']);
+      const flagHeaders = new Set(['note', 'notes', 'studentflag', 'studentflags']);
       const headerIndex = flagRows.findIndex((row) =>
         row.some((cell) => idHeaders.has(normalizeHeader(cell))) &&
         row.some((cell) => flagHeaders.has(normalizeHeader(cell)))
@@ -21029,6 +21193,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const studentId = normalizeStudentId(record.Student_IDs_Unique);
       if (!studentId || !hasValue) continue;
       record.Student_IDs_Unique = studentId;
+    if (!String(record.Results_List || '').trim() && rawResultHistories.has(studentId)) record.Results_List = rawResultHistories.get(studentId);
       if (studentFlagsById.has(studentId)) {
         record.Student_Flags = studentFlagsById.get(studentId);
       }
@@ -21098,7 +21263,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     sourceWorkbookFileObject = file;
     if (!lastDroppedFileInfo || !lastDroppedFileInfo.fileName) {
       lastDroppedFileInfo = {
-        fileName: String(file.name || 'Source.xlsx'),
+        fileName: String(file.name || 'Enrolment Data and Tracking.xlsx'),
         modifiedMs: Number.isFinite(file.lastModified) ? file.lastModified : null,
         path: '',
       };
@@ -21118,7 +21283,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const timeoutMs = WORKBOOK_PARSE_TIMEOUT_MS;
         const parsePromise = parseWorkbookDataAsync(event.target.result);
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Workbook parse timed out. Try dropping Source.xlsx directly.')), timeoutMs)
+          setTimeout(() => reject(new Error('Workbook parse timed out. Try dropping Enrolment Data and Tracking.xlsx directly.')), timeoutMs)
         );
         const parsed = await Promise.race([parsePromise, timeoutPromise]);
         if (!parsed) throw new Error('Workbook read failed.');
@@ -22851,12 +23016,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const emailMatches = [];
     locations.forEach((loc) => {
       const name = getPathBasename(loc).toLowerCase();
-      if (!source && /^source.*\.xlsx$/i.test(name)) {
-        source = loc;
-        return;
-      }
-      if (!triage && isTriageWorkbookName(name)) {
-        triage = loc;
+      if (isEnrolmentWorkbookName(name)) {
+        source = source || loc;
+        triage = source;
         return;
       }
       if (/^email scripts\.(docx|html|htm)$/i.test(name)) {
@@ -23019,7 +23181,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getPreferredTriageNames = () => {
-    return configuredTriageFileName ? [configuredTriageFileName] : [];
+    if (!configuredEnrolmentFileName) return [];
+    return [configuredEnrolmentFileName];
   };
 
   const isCopyVariantName = (name = '') => {
@@ -23027,15 +23190,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return /\bcopy\b/.test(lower) || /~\$/.test(lower);
   };
 
-  const isTriageWorkbookName = (name = '') => {
-    const clean = String(name || '').trim();
-    if (configuredTriageFileName && clean.toLowerCase() === configuredTriageFileName.toLowerCase()) return true;
-    if (!/^triage(?:$|[\s_-]).*\.xlsx$/i.test(clean)) return false;
-    if (/^triage\s*updates?\.xlsx$/i.test(clean)) return false;
-    if (/^triage[_\s-]*updates?\.xlsx$/i.test(clean)) return false;
-    const base = clean.replace(/\.xlsx$/i, '').trim();
-    return /^triage(?:[\s_-]+)(20\d{2})(?:[\s_-]+)(?:s(?:em(?:ester)?)?[\s_-]*(?:1|2|s))$/i.test(base);
+  const isEnrolmentWorkbookName = (name = '') => {
+    let clean = String(name || '').trim();
+    try { clean = decodeURIComponent(clean); } catch { /* A literal percent is allowed in unrelated filenames. */ }
+    return [ENROLMENT_WORKBOOK_NAME, LEGACY_ENROLMENT_WORKBOOK_NAME]
+      .some((name) => clean.toLowerCase() === name.toLowerCase());
   };
+  // Triage remains a sheet/feature, not a separate workbook.
+  const isTriageWorkbookName = isEnrolmentWorkbookName;
 
   const pickPreferredTriageName = (names = []) => {
     const preferred = getPreferredTriageNames();
@@ -23081,17 +23243,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const fileEntries = preferredFileEntries.length
       ? preferredFileEntries
       : await findFilesInHandle(staffFolderHandle, 4);
-    const sourceExact = (name) => String(name || '').toLowerCase() === 'source.xlsx';
-    const sourceStarts = (name) => /^source.*\.xlsx$/i.test(name || '');
-    const triageStarts = (name) => isTriageWorkbookName(name);
     const emailExact = (name) =>
       /^email scripts\.(docx|html|htm)$/i.test(String(name || ''));
     const bestSource = pickBestFileByDepth(
       fileEntries,
-      (name) => sourceExact(name) || sourceStarts(name),
-      (name) => sourceExact(name)
+      isEnrolmentWorkbookName,
+      isEnrolmentWorkbookName
     );
-    const bestTriage = pickBestTriageEntryByPreference(fileEntries);
+    const bestTriage = bestSource;
     const bestEmail = pickBestFileByDepth(fileEntries, (name) => emailExact(name), (name) =>
       /\.(html|htm)$/i.test(String(name || ''))
     );
@@ -23274,11 +23433,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const best = await getBestStaffFiles();
     if (!best) return false;
     const { bestSource, bestEmail, bestTriage } = best;
-    const handles = [bestSource, bestEmail, bestTriage].filter(Boolean).map((entry) => entry.handle);
+    const handles = [bestSource, bestEmail].filter(Boolean).map((entry) => entry.handle);
     const files = await Promise.all(handles.map((h) => h.getFile()));
     if (sourceOnly) {
-      const sourceOnlyFiles = files.filter((file) => /^source.*\.xlsx$/i.test(file?.name || ''));
-      handleSourceFilesSelection(sourceOnlyFiles);
+      const sourceOnlyFiles = files.filter((file) => isEnrolmentWorkbookName(file?.name || ''));
+      await handleSourceFilesSelection(sourceOnlyFiles);
+      if (bestSource) {
+        triageWorkbookFileHandle = bestSource.handle;
+        triageWorkbookDirectoryHandle = bestSource.directoryHandle || dirHandle;
+      }
       // Preserve folder context for shortcut resolution when loading source-only via double-click.
       if (bestSource && lastDroppedFileInfo) {
         lastDroppedFileInfo.path = formatHandlePath(bestSource.path || '');
@@ -23293,7 +23456,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         .catch(() => { });
       return true;
     }
-    handleSourceFilesSelection(files);
+    await handleSourceFilesSelection(files);
     if (bestSource && lastDroppedFileInfo) {
       lastDroppedFileInfo.path = formatHandlePath(bestSource.path || '');
     }
@@ -23625,7 +23788,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     Math.max(0, triageOpenCooldownUntil - Date.now());
   const getTriageOpenCooldownTooltip = () => {
     const seconds = Math.ceil(getTriageOpenCooldownRemainingMs() / 1000);
-    return `Triage was just saved. Waiting ${seconds || 1}s for OneDrive/SharePoint to finish syncing before opening in Excel.`;
+    return `Enrolment Data and Tracking.xlsx was just saved. Waiting ${seconds || 1}s for OneDrive/SharePoint to finish syncing before opening in Excel.`;
   };
   const refreshTriageOpenCooldownUi = () => {
     renderDropZoneStatus(buildDropZoneStatusLines());
@@ -23726,7 +23889,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       window.alert('Could not open Email Scripts.docx in Word. Check Office protocol handling in your browser/Windows and try again.');
       return;
     }
-    const label = type === 'source' ? 'Source.xlsx' : 'Triage.xlsx';
+    const label = ENROLMENT_WORKBOOK_NAME;
     window.alert(`Could not open ${label} in Excel. Check Office protocol handling in your browser/Windows and try again.`);
   };
 
@@ -23755,7 +23918,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         if (!isBachelorOperationsFolderName(staffFolderHandle.name)) {
           window.alert(
             'For full functionality, select the "General - Bachelor of Information Technology Operations" folder.\n\n' +
-            'If you select a narrower folder, Source/Triage/Email Scripts may still load, but credit-transfer folder detection and some folder shortcuts may not be fully accurate.'
+            'If you select a narrower folder, Enrolment Data and Tracking/Email Scripts may still load, but credit-transfer folder detection and some folder shortcuts may not be fully accurate.'
           );
         }
         await staffHandleStore.setHandle(STAFF_HANDLE_KEY, staffFolderHandle);
@@ -23774,19 +23937,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     logFilePathDebug('loadFilesFromLocations cache', fileLocationsCache);
 
     if (!source && !triage && !email && !root) {
-      renderDropZoneStatus(['No Source/Triage/Email Scripts locations found in settings.txt.']);
+      renderDropZoneStatus(['No Enrolment Data and Tracking/Email Scripts locations found in settings.txt.']);
       return false;
     }
     if (isFileProtocol) {
       renderDropZoneStatus([
         'settings read OK, but browser blocks loading local files by path.',
-        'Drop Source.xlsx, Email Scripts (docx/html), and Triage*.xlsx directly onto the drop zone.',
+        'Drop Enrolment Data and Tracking.xlsx and Email Scripts (docx/html) directly onto the drop zone.',
       ]);
       return false;
     }
 
+    let sourceBlob = null;
     if (source) {
-      const sourceBlob = await fetchFileBlob(source);
+      sourceBlob = await fetchFileBlob(source);
       if (sourceBlob?.blob) {
         const file = new File([sourceBlob.blob], sourceBlob.name, {
           type: sourceBlob.blob.type,
@@ -23803,9 +23967,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
 
-    if (sourceOnly) return true;
-
-    if (email) {
+    if (email && !sourceOnly) {
       const emailBlob = await fetchFileBlob(email);
       if (emailBlob?.blob) {
         const file = new File([emailBlob.blob], emailBlob.name, {
@@ -23821,14 +23983,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
 
     if (triage) {
-      const triageBlob = await fetchFileBlob(triage);
+      const triageBlob = sourceBlob;
+      triageWorkbookFileHandle = null; // Path/URL fetches cannot grant writable access.
+      triageWorkbookDirectoryHandle = null;
       if (triageBlob?.blob) {
-        triageWorkbookFileObject = new File([triageBlob.blob], triageBlob.name, {
-          type: triageBlob.blob.type,
-          lastModified: triageBlob.modifiedMs || Date.now(),
-        });
+        triageWorkbookFileObject = sourceWorkbookFileObject;
         triageWorkbookBuffer = await triageBlob.blob.arrayBuffer();
-        triageWorkbookFileName = triageBlob.name || 'Triage.xlsx';
+        triageWorkbookFileName = triageBlob.name || 'Enrolment Data and Tracking.xlsx';
         triageFileInfo = {
           fileName: triageWorkbookFileName,
           modifiedMs: triageBlob.modifiedMs || null,
@@ -23960,13 +24121,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     const list = Array.from(files || []);
     if (!list.length) return;
-    const sourceWorkbook = list.find((f) => /^source.*\.xlsx$/i.test(f.name || ''));
-    const triageCandidates = list.filter((f) => isTriageWorkbookName(f.name || ''));
-    const triagePreferredName = pickPreferredTriageName(triageCandidates.map((f) => String(f?.name || '')));
-    const triageWorkbook =
-      triageCandidates.find((f) => String(f?.name || '').toLowerCase() === triagePreferredName.toLowerCase()) ||
-      triageCandidates[0];
-    const workbookFile = sourceWorkbook || list.find((f) => /\.xlsx$/i.test(f.name));
+    const workbookFile = list.find((f) => isEnrolmentWorkbookName(f.name || ''));
+    const triageWorkbook = workbookFile;
+    if (!workbookFile && list.some((f) => /\.xlsx$/i.test(f.name || ''))) {
+      renderDropZoneStatus([`Select ${ENROLMENT_WORKBOOK_NAME}. Separate Source/Triage files are no longer used.`]);
+      return;
+    }
     const scriptsCandidates = list.filter(
       (f) =>
         /\.(docx|html|htm)$/i.test(f.name || '') &&
@@ -24077,7 +24237,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           pickedTriageHandle = entry;
         }
       }
-      handleSourceFilesSelection(files);
+      await handleSourceFilesSelection(files);
       if (pickedTriageHandle && triageFileInfo) {
         triageWorkbookFileHandle = pickedTriageHandle;
         triageWorkbookDirectoryHandle = dir;
@@ -27808,11 +27968,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       });
       timeoutId = setTimeout(() => finish({
         ok: false,
-        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Enrolment Data and Tracking workbook.',
       }), TRIAGE_UPDATE_TIMEOUT_MS);
       worker.onmessage = (event) => {
         const payload = event?.data || {};
         if (payload.type !== 'triageCommentPrepended') return;
+        payload.baseBuffer = buffer;
         console.info('[Triage save] worker finished', {
           ok: !!payload.ok,
           outputBytes: payload.output?.byteLength || null,
@@ -27860,11 +28021,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       timeoutId = setTimeout(() => finish({
         ok: false,
-        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Enrolment Data and Tracking workbook.',
       }), TRIAGE_UPDATE_TIMEOUT_MS);
       worker.onmessage = (event) => {
         const payload = event?.data || {};
         if (payload.type !== 'triageFieldsUpdated') return;
+        payload.baseBuffer = buffer;
         finish(payload);
       };
       worker.onerror = () => finish({ ok: false, error: 'Triage update worker failed.' });
@@ -27904,11 +28066,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
       timeoutId = setTimeout(() => finish({
         ok: false,
-        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Triage workbook.',
+        error: 'Triage update timed out while editing the workbook package. Try again, or use a smaller Enrolment Data and Tracking workbook.',
       }), TRIAGE_UPDATE_TIMEOUT_MS);
       worker.onmessage = (event) => {
         const payload = event?.data || {};
         if (payload.type !== 'triageRowAdded') return;
+        payload.baseBuffer = buffer;
         finish(payload);
       };
       worker.onerror = () => finish({ ok: false, error: 'Triage update worker failed.' });
@@ -28052,22 +28215,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
   const writeUpdatedTriageWorkbook = async (result) => {
     if (!result?.ok || !result.output) {
-      window.alert(`Could not save to Triage workbook. ${result?.error || 'The workbook update failed.'}`);
+      window.alert(`Could not save to Enrolment Data and Tracking workbook. ${result?.error || 'The workbook update failed.'}`);
       return false;
     }
     if (Number(result.sheetCount || 0) <= 1) {
-      window.alert('Could not save to Triage workbook. Safety stop: the update output did not preserve all sheets.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Safety stop: the update output did not preserve all sheets.');
       return false;
     }
     try {
+      // Recheck the exact base package: never replace newer Excel/OneDrive edits.
+      const latestFile = await triageWorkbookFileHandle.getFile();
+      const latest = new Uint8Array(await latestFile.arrayBuffer());
+      const base = new Uint8Array(result.baseBuffer || triageWorkbookBuffer);
+      if (latest.length !== base.length || latest.some((value, index) => value !== base[index])) {
+        window.alert('Enrolment Data and Tracking.xlsx changed while preparing this edit. Nothing was saved. Reload the workbook and review your change before retrying.');
+        return false;
+      }
       const writable = await triageWorkbookFileHandle.createWritable();
       await writable.write(result.output);
       await writable.close();
       triageWorkbookBuffer = result.output;
+      sourceWorkbookFileObject = triageWorkbookFileObject = await triageWorkbookFileHandle.getFile();
+      if (lastDroppedFileInfo) lastDroppedFileInfo.modifiedMs = sourceWorkbookFileObject.lastModified;
+      if (triageFileInfo) triageFileInfo.modifiedMs = sourceWorkbookFileObject.lastModified;
       startTriageOpenCooldown();
       return true;
     } catch {
-      window.alert('Could not save to Triage workbook. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try again.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. The browser cannot safely join Excel\'s live editing session, so close Enrolment Data and Tracking.xlsx in Excel, wait for OneDrive sync to finish, then try again.');
       return false;
     }
   };
@@ -28080,7 +28254,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const lockHandle = await triageWorkbookDirectoryHandle.getFileHandle(lockName);
         const lockFile = await lockHandle.getFile().catch(() => null);
         if (!lockFile || lockFile.size >= 0) {
-          window.alert('Triage appears to be open in Excel. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try saving again.');
+          window.alert('Enrolment Data and Tracking.xlsx appears to be open in Excel. The browser cannot safely join Excel\'s live editing session, so close Enrolment Data and Tracking.xlsx in Excel, wait for OneDrive sync to finish, then try saving again.');
           return false;
         }
       } catch {
@@ -28090,9 +28264,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     try {
       const writable = await triageWorkbookFileHandle.createWritable({ keepExistingData: true });
       await writable.close();
+      // Prepare every edit from the latest whole workbook, not a stale browser copy.
+      const file = await triageWorkbookFileHandle.getFile();
+      triageWorkbookBuffer = await file.arrayBuffer();
+      triageWorkbookFileObject = sourceWorkbookFileObject = file;
       return true;
     } catch {
-      window.alert('Triage appears to be open or locked by Excel/OneDrive. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for sync to finish, then try saving again.');
+      window.alert('Enrolment Data and Tracking.xlsx appears to be open or locked by Excel/OneDrive. The browser cannot safely join Excel\'s live editing session, so close Enrolment Data and Tracking.xlsx in Excel, wait for sync to finish, then try saving again.');
       return false;
     }
   };
@@ -28248,40 +28426,37 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     if (!studentId || !cleanComment) return false;
     if (!triageWorkbookBuffer || !triageWorkbookFileHandle) {
-      window.alert('Could not save to Triage workbook. Load Triage from a writable folder picker, then try again.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Load Enrolment Data and Tracking.xlsx from a writable folder picker, then try again.');
       return false;
     }
     const allowed = await ensureFileHandleReadWritePermission(triageWorkbookFileHandle);
     console.info('[Triage save] permission result', allowed);
     if (!allowed) {
-      window.alert('Could not save to Triage workbook. Write permission was not granted.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Write permission was not granted.');
       return false;
     }
     if (!(await ensureTriageWorkbookClosedForWrite())) return false;
     const result = await prependTriageCommentInWorker(triageWorkbookBuffer, studentId, cleanComment);
     if (!result?.ok || !result.output) {
       console.warn('[Triage save] worker returned failure', result);
-      window.alert(`Could not save to Triage workbook. ${result?.error || 'The workbook update failed.'}`);
+      window.alert(`Could not save to Enrolment Data and Tracking workbook. ${result?.error || 'The workbook update failed.'}`);
       return false;
     }
     if (Number(result.sheetCount || 0) <= 1) {
-      window.alert('Could not save to Triage workbook. Safety stop: the update output did not preserve all sheets. Reload the original Triage workbook and try again after this is fixed.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Safety stop: the update output did not preserve all sheets. Reload the original Enrolment Data and Tracking workbook and try again after this is fixed.');
       return false;
     }
     if (typeof triageWorkbookFileHandle.createWritable !== 'function') {
-      window.alert('Could not save to Triage workbook. This browser did not provide writable access to the loaded file.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. This browser did not provide writable access to the loaded file.');
       return false;
     }
     try {
       console.info('[Triage save] writing file', { outputBytes: result.output?.byteLength || null });
-      const writable = await triageWorkbookFileHandle.createWritable();
-      await writable.write(result.output);
-      await writable.close();
-      startTriageOpenCooldown();
+      if (!(await writeUpdatedTriageWorkbook(result))) return false;
       const savedFile = await triageWorkbookFileHandle.getFile();
       console.info('[Triage save] write complete', { savedBytes: savedFile?.size || null });
       if (!savedFile?.size) {
-        window.alert('Could not save to Triage workbook. The browser did not confirm a saved file.');
+        window.alert('Could not save to Enrolment Data and Tracking workbook. The browser did not confirm a saved file.');
         return false;
       }
       const backupSaved = await appendTriageUpdateBackup(result, {
@@ -28289,10 +28464,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         studentId,
         values: { comments: cleanComment },
       });
-      if (!backupSaved) window.alert('Triage was saved, but Triage Updates.xlsx could not be written to your teacher temp folder.');
+      if (!backupSaved) window.alert('Enrolment Data and Tracking.xlsx was saved, but Triage Updates.xlsx could not be written to your teacher temp folder.');
     } catch {
       console.error('[Triage save] file write failed');
-      window.alert('Could not save to Triage workbook. The browser cannot safely join Excel\'s live editing session, so close Triage in Excel, wait for OneDrive sync to finish, then try again.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. The browser cannot safely join Excel\'s live editing session, so close Enrolment Data and Tracking.xlsx in Excel, wait for OneDrive sync to finish, then try again.');
       return false;
     }
     triageWorkbookBuffer = result.output;
@@ -28313,12 +28488,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       (isNewTriageRow ? formValues.studentId : '') || form.dataset.studentId || activeStudentId || studentIdInput?.value || ''
     );
     if (!studentId || !triageWorkbookBuffer || !triageWorkbookFileHandle) {
-      window.alert('Could not save to Triage workbook. Load Triage from a writable folder picker, then try again.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Load Enrolment Data and Tracking.xlsx from a writable folder picker, then try again.');
       return false;
     }
     const allowed = await ensureFileHandleReadWritePermission(triageWorkbookFileHandle);
     if (!allowed) {
-      window.alert('Could not save to Triage workbook. Write permission was not granted.');
+      window.alert('Could not save to Enrolment Data and Tracking workbook. Write permission was not granted.');
       return false;
     }
     if (!(await ensureTriageWorkbookClosedForWrite())) return false;
@@ -28350,7 +28525,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       studentId,
       values: isNewTriageRow ? savedValues : changedValues,
     });
-    if (!backupSaved) window.alert('Triage was saved, but Triage Updates.xlsx could not be written to your teacher temp folder.');
+    if (!backupSaved) window.alert('Enrolment Data and Tracking.xlsx was saved, but Triage Updates.xlsx could not be written to your teacher temp folder.');
     const triage = triageRecords.get(studentId) || {};
     triageRecords.set(studentId, { ...triage, ...savedValues });
     triageSaveReminder = { studentId, armed: false, dismissed: true };
@@ -29785,6 +29960,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   };
 
   const getEmailScriptsSectionHeadings = (sectionKey) =>
+    sectionKey === 'enrolment-cutoff-dates' ? [getEnrolmentCutoffHeading()] :
     Array.isArray(EMAIL_SCRIPTS_SECTION_HEADINGS[sectionKey])
       ? EMAIL_SCRIPTS_SECTION_HEADINGS[sectionKey]
       : [];
@@ -30501,6 +30677,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (!currentEnrolmentsSection || !currentEnrolmentsTable) return;
     const tbody = currentEnrolmentsTable.querySelector('tbody');
     if (!tbody) return;
+    const predicted = passForEnrolmentsEnabled;
+    const columns = predicted
+      ? ['code', 'name', 'predicted', 'stream']
+      : ['code', 'name', 'result', 'date', 'stream'];
+    currentEnrolmentsTable.querySelector('thead tr').innerHTML = predicted
+      ? '<th>Code</th><th>Name</th><th>Predicted Outcome</th><th>Core/Stream</th>'
+      : '<th>Code</th><th>Name</th><th>Result</th><th>Date</th><th>Core/Stream</th>';
     tbody.innerHTML = '';
     const rows = [
       ...Array.from(workbookCurrent.entries()),
@@ -30510,7 +30693,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       return acc;
     }, new Map());
     const listRows = Array.from(rows.entries())
-      .filter(([id]) => validSubjectCodes.has(id) && !subjectState.get(id)?.completed)
+      .filter(([id]) => validSubjectCodes.has(id) && (!subjectState.get(id)?.completed || passForEnrolmentsOverrides.has(id)))
       .map(([id, meta]) => ({ id, result: formatHistoryResult(meta?.result || ''), date: meta?.date || '' }))
       .sort((a, b) => a.id.localeCompare(b.id));
     if (!listRows.length) {
@@ -30529,9 +30712,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         name,
         result,
         date,
+        predicted: 'Assumed pass',
         stream,
       };
-      ['code', 'name', 'result', 'date', 'stream'].forEach((col) => {
+      columns.forEach((col) => {
         const td = document.createElement('td');
         td.textContent = valueMap[col] ?? '';
         row.appendChild(td);
@@ -30553,8 +30737,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const currentHeaderCells = currentEnrolmentsTable.querySelectorAll('thead tr:last-child th');
     const currentRows = currentEnrolmentsTable.querySelectorAll('tbody tr');
     if (!headerCells.length) return;
-    headerCells.forEach((cell, idx) => {
-      const width = Math.ceil(cell.getBoundingClientRect().width);
+    const columnGroups = currentHeaderCells.length === 4 ? [[0], [1], [2, 3], [4]] : [[0], [1], [2], [3], [4]];
+    columnGroups.forEach((indices, idx) => {
+      const width = Math.ceil(indices.reduce((sum, index) => sum + (headerCells[index]?.getBoundingClientRect().width || 0), 0));
       if (!width) return;
       const currentHeader = currentHeaderCells[idx];
       if (currentHeader) {
@@ -30579,11 +30764,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildModifiedLine = (name, modifiedMs) => {
     if (!name) return null;
     if (!Number.isFinite(modifiedMs)) {
-      return `${name}\nLast saved: Unknown`;
+      return `${name}\nLast modified: Unknown`;
     }
     const daysAgo = Math.max(0, Math.floor((Date.now() - modifiedMs) / (1000 * 60 * 60 * 24)));
     const label = `${daysAgo} day${daysAgo === 1 ? '' : 's'} ago`;
-    return `${name}\nLast saved: ${label}`;
+    return `${name}\nLast modified: ${new Date(modifiedMs).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}`;
   };
   const getBestKnownActionPath = (type, fallbackPath = '') => {
     const fromLocations =
@@ -30615,7 +30800,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const buildDropZoneStatusLines = () => {
     if (!lastDroppedFileInfo || !lastDroppedFileInfo.fileName) {
       return [
-        { text: 'Source.xlsx not loaded.' },
+        { text: 'Enrolment Data and Tracking.xlsx not loaded.' },
         { text: 'Student data not available', bold: true },
       ];
     }
@@ -30631,16 +30816,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       : '';
     if (sourceLine) {
       lines.push({
-        text: studentPool
-          ? `${lastDroppedFileInfo.fileName}. Pool of ${studentPool}`
-          : sourceRowsText
-            ? `${lastDroppedFileInfo.fileName} - ${sourceRowsText}`
-            : String(lastDroppedFileInfo.fileName || ''),
+        text: sourceLine,
         tooltip: sourceLine,
         actions: [
           {
             key: 'source',
-            label: 's',
+            label: 'Excel',
             fileName: lastDroppedFileInfo.fileName,
             path: getBestKnownActionPath('source', lastDroppedFileInfo.path),
             disabled: getTriageOpenCooldownRemainingMs() > 0,
@@ -30688,19 +30869,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (triageLine) {
         lines.push({
           text: triageRowsText
-            ? `${String(triageFileInfo.fileName || '')} - ${triageRowsText}`
-            : String(triageFileInfo.fileName || ''),
+            ? `Triage sheet - ${triageRowsText}`
+            : 'Triage sheet',
           tooltip: triageLine,
-          actions: [
-            {
-              key: 'triage',
-              label: 't',
-              fileName: triageFileInfo.fileName,
-              path: getBestKnownActionPath('triage', triageFileInfo.path),
-              disabled: getTriageOpenCooldownRemainingMs() > 0,
-              tooltip: getTriageOpenCooldownRemainingMs() > 0 ? getTriageOpenCooldownTooltip() : '',
-            },
-          ],
         });
       }
     }
@@ -30744,7 +30915,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!response) throw new Error('Workbook not found');
       const lastModified = response.headers.get('last-modified');
       const buffer = await response.arrayBuffer();
-      sourceWorkbookFileObject = new File([buffer], usedUrl.split('?')[0].split('/').pop() || 'Source.xlsx', {
+      sourceWorkbookFileObject = new File([buffer], usedUrl.split('?')[0].split('/').pop() || 'Enrolment Data and Tracking.xlsx', {
         type: response.headers.get('content-type') || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         lastModified: Date.now(),
       });
@@ -30759,10 +30930,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       clearStudentSearchDropdown();
       const modifiedMs = lastModified ? Date.parse(lastModified) : null;
       lastDroppedFileInfo = {
-        fileName: usedUrl.split('?')[0].split('/').pop() || 'Source.xlsx',
+        fileName: usedUrl.split('?')[0].split('/').pop() || 'Enrolment Data and Tracking.xlsx',
         modifiedMs: Number.isFinite(modifiedMs) ? modifiedMs : null,
         path: getPathDirname(usedUrl),
       };
+      triageWorkbookFileObject = sourceWorkbookFileObject;
+      triageWorkbookFileName = sourceWorkbookFileObject.name;
+      triageWorkbookFileHandle = null; // URL loading is read-only.
+      triageWorkbookDirectoryHandle = null;
+      triageWorkbookBuffer = buffer;
+      triageFileInfo = { ...lastDroppedFileInfo };
+      skipTriageParseOnLoad = false;
+      scheduleTriageParse(buffer);
       lastStudentCountLine = `${records.length} students listed`;
       renderDropZoneStatus(buildDropZoneStatusLines());
       updateStudentPreview();
@@ -31020,6 +31199,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     renderAllAlertButtons();
     const hasInsufficientLoad =
+      !isOptionalSummerSemester() &&
       available.length > 0 &&
       (remainingCount <= 5
         ? available.length < remainingCount
@@ -31073,7 +31253,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         li.textContent = 'Graduating this semester when current enrolments complete';
         availableNowError = null;
       } else {
-        li.classList.add('available-item-error');
+        if (!isOptionalSummerSemester()) li.classList.add('available-item-error');
         li.textContent = 'No subjects are available to select';
         const completedSet = new Set(
           Array.from(subjectState.entries())
@@ -31131,7 +31311,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const reasonHtml = reasonSections.length
           ? reasonSections.join('')
           : '<p class="alert-inline-text">No remaining subject currently meets all selection requirements.</p>';
-        availableNowError = {
+        availableNowError = isOptionalSummerSemester() ? null : {
           title: 'No subjects available',
           html: `<p><strong class="alert-inline-title alert-title-error">No subjects available</strong> <span class="alert-inline-text">No subjects are available to select!</span></p>${reasonHtml}`,
         };
@@ -31151,7 +31331,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const timeLabel = getSlotAbbreviation(item.slot || 'N/A');
         const dayAndTimeLabel = planningSemesterOffset > 0
           ? unplannedDayAndTimeText
-          : `${dayLabel} ${timeLabel}`;
+          : isOptionalSummerSemester() ? dayLabel : `${dayLabel} ${timeLabel}`;
         li.innerHTML = `<span class="avail-main"><span class="avail-code">${escapeHtml(
           item.id
         )}</span><span class="avail-name">${escapeHtml(subjectNameDisplay)}</span></span><span class="avail-slot">${escapeHtml(
@@ -31191,7 +31371,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           const data = item.data || timetable[item.id] || {};
           const fullDay = item.dayFull || data.day || 'N/A';
           const timeRange = formatTimeRange(
-            timeSlots[item.slot] || timeSlots[data.slot] || item.slot || data.slot || ''
+            getDisplayTimeRange(item.slot || data.slot) || item.slot || data.slot || ''
           );
           const timeText = timeRange ? timeRange.replace(' - ', ' to ') : 'N/A';
           const dayAndTimeText = planningSemesterOffset > 0

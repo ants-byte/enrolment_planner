@@ -72,10 +72,10 @@ Last Modified: 11/07/2026
       </div>
       <div id="drop-zone" class="drop-zone">
         <button id="load-from-folder" class="clear-button secondary load-from-folder-button" type="button"
-          data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Source, Triage, and Email Scripts.">Load
+          data-tooltip-html="For full functionality, select the &quot;General - Bachelor of Information Technology Operations&quot; folder. The app will first look in the current semester's &quot;Enrolment System&quot; folder for Enrolment Data and Tracking and Email Scripts.">Load
           from folder</button>
-        <div class="drop-zone-text">(Or for lesser functionality, drag-and-drop the configured Triage workbook,
-          'Source.xlsx', and 'Email Scripts.htm'. here.<br>Double-clicking here also gives the reduced functionality).</div>
+        <div class="drop-zone-text">(Or for reduced functionality, drag-and-drop 'Enrolment Data and Tracking.xlsx'
+          and 'Email Scripts.htm' here.<br>Double-clicking here also gives reduced functionality.)</div>
       </div>
       <div class="student-id-section hidden-initial" id="student-id-section">
         <label for="student-id-input">Student ID, email, or name</label>
@@ -83,6 +83,10 @@ Last Modified: 11/07/2026
           <input id="student-id-input" type="text" placeholder="Enter student ID or paste text" autocomplete="off"
             aria-keyshortcuts="Control+Alt+S"
             data-tooltip-html="<div>Search by student ID, email, or name.</div><div class=&quot;tooltip-line-gap&quot;>Press Ctrl+Alt+S to move focus here.</div>" />
+          <button id="recent-students-button" class="clear-button secondary student-search-recent" type="button"
+            aria-label="Previously displayed students" aria-haspopup="menu" aria-expanded="false"
+            aria-controls="recent-students-menu" title="Previously displayed students" disabled>▼</button>
+          <div id="recent-students-menu" class="recent-students-menu" role="menu" hidden></div>
           <button id="clear-student" class="clear-button secondary student-search-clear" type="button" hidden
             data-tooltip="Clear the student search and remove loaded student history.">Clear</button>
         </div>
@@ -356,11 +360,11 @@ Last Modified: 11/07/2026
                       <span>Triage Writing Controls</span>
                       <button id="settings-triage-writing-explanation" class="title-settings-mini-action" type="button"
                         aria-haspopup="dialog" aria-controls="triage-writing-explanation-modal"
-                        data-tooltip-html="<div>Click to read long form explanation of how to use this site to write to Triage.xlsx.</div><div class=&quot;tooltip-line-gap&quot;>Or just hover over options for explanations.</div>">Explanation</button>
+                        data-tooltip-html="<div>Click to read long form explanation of how to use this site to write to Enrolment Data and Tracking.xlsx.</div><div class=&quot;tooltip-line-gap&quot;>Or just hover over options for explanations.</div>">Explanation</button>
                     </div>
                     <div class="title-settings-triage-controls">
                       <label class="title-settings-check title-settings-triage-writer-check"
-                        data-tooltip-html="<div>Tick to enable writing to the Triage workbook from this site.</div><div class=&quot;tooltip-line-gap&quot;>Disable to hide all Triage write buttons and reminders from this site.</div><div class=&quot;tooltip-line-gap&quot;>This does not affect reading of Triage.xlsx. All student information from the workbook will still be displayed as normal.</div>">
+                        data-tooltip-html="<div>Tick to enable writing to the Enrolment Data and Tracking workbook from this site.</div><div class=&quot;tooltip-line-gap&quot;>Disable to hide all Triage write buttons and reminders from this site.</div><div class=&quot;tooltip-line-gap&quot;>This does not affect reading of Enrolment Data and Tracking.xlsx. All student information from the workbook will still be displayed as normal.</div>">
                         <input id="settings-use-triage-writer" type="checkbox" checked />
                         <span id="settings-use-triage-writer-label">Enable/Disable Triage writing (is enabled)</span>
                       </label>
@@ -371,13 +375,13 @@ Last Modified: 11/07/2026
                         <span>Going solo</span>
                       </label>
                       <label class="title-settings-radio-row title-settings-triage-one-using-row"
-                        data-tooltip-html="<div>Use this when there are two people working on enrolments today, but only one of you is using the Triage buttons on this site to write to Triage, and the other is editing the Excel workbook directly.</div><div class=&quot;tooltip-line-gap&quot;>Use it also if you are using the Triage buttons on this site and the other may have the Triage workbook open.</div><div class=&quot;tooltip-line-gap&quot;>What this does is write a new row after leaving a gap. The one editing directly can be instructed to fill gaps. SharePoint should update every few minutes (if the internet is on), so this should prevent overwriting each other’s entries.</div>">
+                        data-tooltip-html="<div>Use this when there are two people working on enrolments today, but only one of you is using the Triage buttons on this site to write to Triage, and the other is editing the Excel workbook directly.</div><div class=&quot;tooltip-line-gap&quot;>Use it also if you are using the Triage buttons on this site and the other may have the Enrolment Data and Tracking workbook open.</div><div class=&quot;tooltip-line-gap&quot;>What this does is write a new row after leaving a gap. The one editing directly can be instructed to fill gaps. SharePoint should update every few minutes (if the internet is on), so this should prevent overwriting each other’s entries.</div>">
                         <input id="settings-triage-lanes-two-one-using" name="settings-triage-lanes" type="radio"
                           value="2one" />
                         <span>Two workers, but 1 editing directly in Excel</span>
                       </label>
                       <label class="title-settings-radio-row"
-                        data-tooltip-html="<div>Use this when only 2 workers are working (e.g. David &amp; someone, or Antony and someone, or Antony and David), and both are using this site to write to Triage. Ensure that no one manually adds new students to the Triage.xlsx directly.</div><div class=&quot;tooltip-line-gap&quot;>By assigning odd- and even-numbered rows to different staff members, we greatly reduce the chance of overwriting each other’s entries. Changes will typically take about 3 to 6 minutes to upload to SharePoint and download to other computers. So don't work too fast :)</div><div class=&quot;tooltip-line-gap&quot;>If you are not David or Antony, decide whose place you will take by choosing “odd” or “even”.</div>">
+                        data-tooltip-html="<div>Use this when only 2 workers are working (e.g. David &amp; someone, or Antony and someone, or Antony and David), and both are using this site to write to Triage. Ensure that no one manually adds new students to the Enrolment Data and Tracking.xlsx directly.</div><div class=&quot;tooltip-line-gap&quot;>By assigning odd- and even-numbered rows to different staff members, we greatly reduce the chance of overwriting each other’s entries. Changes will typically take about 3 to 6 minutes to upload to SharePoint and download to other computers. So don't work too fast :)</div><div class=&quot;tooltip-line-gap&quot;>If you are not David or Antony, decide whose place you will take by choosing “odd” or “even”.</div>">
                         <input id="settings-triage-lanes-two" name="settings-triage-lanes" type="radio" value="2" />
                         <span>Two workers</span>
                       </label>
@@ -508,7 +512,7 @@ Last Modified: 11/07/2026
             <div class="subject-card core clickable" data-subject="BIT241" data-slot="r3c3">
               <span class="subject-code">BIT241</span>
               <span class="subject-note subject-title">Professional IT Practice and Ethics</span>
-              <span class="prerequsites-note">Prerequisites: BIT121, BIT106</span>
+              <span class="prerequsites-note">Prerequisites: BIT105, BIT106</span>
             </div>
             <div class="subject-card network clickable" data-subject="BIT313" data-slot="r3c4">
               <span class="subject-code">BIT313</span>
@@ -1049,8 +1053,8 @@ Last Modified: 11/07/2026
         </button>
         <button id="semester-timetable-celcat-copy"
           class="clear-button secondary semester-timetable-copy semester-timetable-copy-icon" type="button"
-          aria-label="Copy for pasting into Celcat sheet"
-          data-tooltip="Copy for pasting into Celcat sheet in the Source workbook (so that can copy and paste from the Source 'AllClasses_Store' sheet to other workbooks)">
+          aria-label="Copy timetable data"
+          data-tooltip="Copy timetable data to the clipboard for use in your separate planning workbook. Timetable sheets are no longer kept in Enrolment Data and Tracking.xlsx.">
           <span class="clipboard-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="img" focusable="false">
               <path
@@ -1517,11 +1521,11 @@ Last Modified: 11/07/2026
           data-tooltip-html="Open email and clipboard tools for the loaded Email Scripts file.">Email</button>
         <button id="course-map-open-folder-shortcuts" class="clear-button secondary course-map-folder-shortcuts"
           type="button"
-          data-tooltip-html="Open shortcuts and actions for the loaded Source, Triage, Email Scripts, and related folders.">Folders
+          data-tooltip-html="Open shortcuts and actions for the loaded Enrolment Data and Tracking, Email Scripts, and related folders.">Folders
           &amp; Files</button>
         <button id="course-map-stud-forms" class="clear-button secondary course-map-stud-forms hidden-initial"
           type="button" hidden
-          data-tooltip-html="Create/open this student's folder inside today's Student Forms folder, then copy the Student Dec returned text and folder path.">Std
+          data-tooltip-html="Create/open this student's folder inside today's Student Forms folder, then copy the Declaration follow up - Thanks text and folder path.">Std
           Frms</button>
         <button id="course-map-ct-temp" class="clear-button secondary course-map-ct-temp hidden-initial" type="button"
           hidden data-tooltip-html="Find or prepare this student's credit transfer working folder in temp.">CT -&gt;
@@ -1603,13 +1607,13 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-course-map-triage-sync-help" aria-label="Close syncing help">X</button>
       </div>
       <div class="modal-body">
-        <p>After writing from this website to Triage.xlsx, don’t try to open Triage straight away.</p>
+        <p>After writing from this website to Enrolment Data and Tracking.xlsx, don’t try to open the workbook straight away.</p>
         <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that
           it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
         <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’.
           If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
-        <p>If what you entered is lost, don't worry because a record of what you tried to write to Triage.xlsx will be
-          stored in ‘Triage Update.xlsx’ which will be created in your Temp folder.</p>
+        <p>If what you entered is lost, don't worry because a record of what you tried to write to Enrolment Data and Tracking.xlsx will be
+          stored in ‘Triage Updates.xlsx’ in your teacher temp folder.</p>
       </div>
       <div class="modal-actions">
         <button id="close-course-map-triage-sync-help-cta" class="clear-button secondary" type="button">Close</button>
@@ -1644,7 +1648,9 @@ Last Modified: 11/07/2026
       </div>
       <div class="modal-body">
         <p>These options help prevent two teachers from writing over each other’s entries in
-          <strong>Triage.xlsx</strong>.</p>
+          <strong>Enrolment Data and Tracking.xlsx</strong>.</p>
+        <p>Triage is a sheet in that workbook, not a separate file. Close the whole workbook in Excel before
+          saving from this website. Row-assignment options do not enable simultaneous editing in Excel.</p>
 
         <h3>Choosing the correct settings</h3>
         <p>Change these options whenever different staff members are working in Triage on a particular day.</p>
@@ -1656,11 +1662,11 @@ Last Modified: 11/07/2026
           <li>Who handles any remaining records</li>
         </ul>
 
-        <h3>After writing to Triage.xlsx</h3>
-        <p>Do not open <strong>Triage.xlsx</strong> immediately after writing to it from this website.</p>
+        <h3>After writing to Enrolment Data and Tracking.xlsx</h3>
+        <p>Do not open <strong>Enrolment Data and Tracking.xlsx</strong> immediately after writing to it from this website.</p>
         <p>Instead:</p>
         <ol>
-          <li>Open the folder containing <strong>Triage.xlsx</strong> in Windows Explorer.</li>
+          <li>Open the folder containing <strong>Enrolment Data and Tracking.xlsx</strong> in Windows Explorer.</li>
           <li>Wait until a green tick appears beside the file. This indicates that it has finished uploading to
             SharePoint.</li>
           <li>Wait another 1 to 2 minutes before opening the workbook.</li>
@@ -1671,9 +1677,9 @@ Last Modified: 11/07/2026
           finish before continuing.</p>
 
         <h3>If your entry is lost</h3>
-        <p>Do not worry if the information you entered does not appear in <strong>Triage.xlsx</strong>.</p>
-        <p>A record of what the website attempted to write will be saved in <strong>Triage Update.xlsx</strong>, which
-          will be created in your Temp folder.</p>
+        <p>Do not worry if the information you entered does not appear in <strong>Enrolment Data and Tracking.xlsx</strong>.</p>
+        <p>A record of what the website attempted to write will be saved in <strong>Triage Updates.xlsx</strong>
+          in your teacher temp folder. This is a recovery log, not a second enrolment workbook.</p>
       </div>
       <div class="modal-actions">
         <button id="close-triage-writing-explanation-cta" class="clear-button secondary" type="button">Close</button>
@@ -1935,10 +1941,10 @@ Last Modified: 11/07/2026
             </button>
           </div>
           <div class="email-scripts-access-row" role="listitem">
-            <div class="email-scripts-access-text">Student Dec returned</div>
+            <div class="email-scripts-access-text">Declaration follow up - Thanks</div>
             <button class="clear-button secondary email-scripts-access-icon email-scripts-section-copy" type="button"
-              data-section-key="student-dec-returned" data-section-label="Student Dec returned"
-              aria-label="Copy Student Dec returned text to clipboard">
+              data-section-key="student-dec-returned" data-section-label="Declaration follow up - Thanks"
+              aria-label="Copy Declaration follow up - Thanks text to clipboard">
               <span class="clipboard-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
                   <path
@@ -1948,8 +1954,8 @@ Last Modified: 11/07/2026
               </span>
             </button>
             <button class="clear-button secondary email-scripts-access-icon email-scripts-section-email" type="button"
-              data-section-key="student-dec-returned" data-section-label="Student Dec returned"
-              aria-label="Email Student Dec returned text">
+              data-section-key="student-dec-returned" data-section-label="Declaration follow up - Thanks"
+              aria-label="Email Declaration follow up - Thanks text">
               <span class="email-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="img" focusable="false">
                   <path
@@ -1974,6 +1980,7 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-load-modal" aria-label="Close load modal">X</button>
       </div>
       <div class="modal-body">
+        <p id="load-summer-explanation" hidden>Summer School is optional. You can choose to study zero, 1 or 2 subjects, but no more than 2. It is a 7-week intensive covering a full semester's work, so 2 subjects is a full study load.</p>
         <div class="load-explanations">
           <div class="load-explanations-title">Explanations:</div>
           <p><strong>Domestic students</strong> can study full-time or part-time, up to the standard load of <span id="load-standard-count-domestic"></span> subjects each
@@ -2032,7 +2039,7 @@ Last Modified: 11/07/2026
   </div>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20260718-64"></script>
+  <script src="script.js?v=20261027-summer-1"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div>Last Modified: 11/07/2026</div>

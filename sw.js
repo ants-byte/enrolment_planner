@@ -1,4 +1,4 @@
-const CACHE_NAME = "subject-planner-v79";
+const CACHE_NAME = "subject-planner-v90";
 const STUDENT_VERSION_URL = "https://timetableplanner.adiserio.workers.dev/";
 const IS_LOCAL_INSTALLATION = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const ASSETS = [
@@ -94,7 +94,7 @@ const getUnavailableInstructions = () => new Response(`<!doctype html>
     <h1>${IS_LOCAL_INSTALLATION ? 'The local planner could not be reached' : 'Timetable Planner is offline'}</h1>
     <p>${IS_LOCAL_INSTALLATION
       ? 'The local web server may have stopped, or this device may currently be offline.'
-      : 'The student version could not connect. Check this device’s internet connection and try again.'}</p>
+      : 'The student version could not connect. Check this deviceâ€™s internet connection and try again.'}</p>
     <section class="instructions">
       ${IS_LOCAL_INSTALLATION
         ? `<h2>Start the local staff version</h2>

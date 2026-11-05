@@ -139,7 +139,7 @@ Do not attempt to demonstrate every feature. The aim is to establish the scale o
 
 > Enrolment decisions are only part of the work. Staff must communicate decisions, prepare forms, locate documents and contact the correct students.
 >
-> The platform combines Source and Triage information, notes, communication history and operational status. It produces copyable histories, timetables and progression summaries, assists with email scripts, and opens supporting folders and forms. It also helps reconcile student groups and contact details previously rebuilt from overlapping spreadsheets.
+> The platform reads student data and Triage progress from Enrolment Data and Tracking.xlsx, including notes, communication history and operational status. It produces copyable histories, timetables and progression summaries, assists with email scripts, and opens supporting folders and forms. It also helps reconcile student groups and contact details previously rebuilt from overlapping spreadsheets.
 >
 > This reduces repetitive searching and writing, but more importantly, it makes the process more consistent and easier for another staff member to understand and continue.
 

@@ -1,24 +1,22 @@
 {
   "semesterDetails": {
     "year": "2026",
-    "semester_S1_S2_SS": "S2",
-    "semester_Start_Date": "20/07/2026",
-    "end_of_2nd_week_Date": "31/07/2026",
-    "census_Date": "14/08/2026",
+    "semester_S1_S2_SS": "SS",
+    "semester_Start_Date": "23/11/2026",
+    "end_of_2nd_week_Date": "04/12/2026",
+    "census_Date": "11/12/2026",
+    "enrolment_Open_Date": "13/11/2026",
+    "semester_End_Date": "22/01/2027",
     "price_per_Unit": "$2,360.00",
     "price_per_CSP_Unit": "$1,192.00"
   },
   "fileNaming": {
     "_instructions": [
-      "'Source.xlsx' should be named exactly that, and 'Email Scripts.html' exactly that.",
-      "For the Triage workbook, stick with this naming convention so that there will be ",
-      "nothing for you to change here...",
-      "When naming your Triage workbook, use S1, S2, or SS for the semester, and ",
-      "use 4-digits for the year.  An example: for Summer 2027, do",
-      "name your Triage file 'Triage 2027 SS.xlsx'.",
-      "DO NOT change the 'triageFilePattern' line below here."
+      "Use one workbook named 'Enrolment Data and Tracking.xlsx' for student data and Triage.",
+      "Keep the workbook in the appropriate intake's Enrolment System folder.",
+      "Email Scripts.html remains a separate file."
     ],
-    "triageFilePattern": "Triage {YYYY} {SEMESTER}.xlsx"
+    "workbookFileName": "Enrolment Data and Tracking.xlsx"
   },
   "staff": {
     "AD": { "displayName": "Antony Di Serio" },
@@ -37,45 +35,18 @@
     "YW": { "displayName": "Ye Wei (Silva)" }
   },
   "timetable": {
-    "BIT121": { "day": "Monday", "time": "AM", "room": "PA113", "staffId": "RA" },
-    "BIT372": { "day": "Monday", "time": "AM", "room": "PE110", "staffId": "CT" },
-    "BIT112": { "day": "Monday", "time": "PM", "room": "PA113", "staffId": "DM" },
-    "BIT371": { "day": "Monday", "time": "PM", "room": "PE110", "staffId": "CT" },
-
-    "BIT105": { "day": "Tuesday", "time": "AM", "room": "PE227", "staffId": "SN" },
-    "BIT313": { "day": "Tuesday", "time": "AM", "room": "PE226", "staffId": "AO" },
-    "BIT230": { "day": "Tuesday", "time": "AM", "room": "TBA", "staffId": "SH" },
-    "BIT106": { "day": "Tuesday", "time": "PM", "room": "PA113", "staffId": "SH" },
-    "BIT241": { "day": "Tuesday", "time": "PM", "room": "PA114", "staffId": "DM" },
-    "BIT353": { "day": "Tuesday", "time": "PM", "room": "PE227", "staffId": "AO" },
-
-    "BIT214": { "day": "Wednesday", "time": "AM", "room": "PE226", "staffId": "RA" },
-    "BIT245": { "day": "Wednesday", "time": "AM", "room": "PA114", "staffId": "PE" },
-    "BIT111": { "day": "Wednesday", "time": "PM", "room": "PA113", "staffId": "PE" },
-    "BIT213": { "day": "Wednesday", "time": "PM", "room": "PE226", "staffId": "XW" },
-    "BIT235": { "day": "Wednesday", "time": "PM", "room": "PA110", "staffId": "MK" },
-
-    "BIT108": { "day": "Thursday", "time": "AM", "room": "PA113", "staffId": "SN" },
-    "BIT231": { "day": "Thursday", "time": "AM", "room": "PE227", "staffId": "NQ" },
-    "BIT233": { "day": "Thursday", "time": "AM", "room": "PE226", "staffId": "NW" },
-    "BIT356": { "day": "Thursday", "time": "AM", "room": "PA114", "staffId": "YW" },
-    "BIT246": { "day": "Thursday", "time": "AM", "room": "TBA", "staffId": "MK" },
-    "BIT242": { "day": "Thursday", "time": "PM", "room": "PE227", "staffId": "DR" },
-    "BIT362": { "day": "Thursday", "time": "PM", "room": "PA114", "staffId": "NW" },
-    "BIT363": { "day": "Thursday", "time": "PM", "room": "PA113", "staffId": "YW" },
-    "BIT364": { "day": "Thursday", "time": "PM", "room": "PE226", "staffId": "NQ" },
-
-    "BIT314": { "day": "Friday", "time": "AM", "room": "PA113", "staffId": "DR" },
-    "BIT236": { "day": "Friday", "time": "PM", "room": "PE226", "staffId": "YW" },
-    "BIT352": { "day": "Friday", "time": "PM", "room": "PA114", "staffId": "DR" }
+    "BIT314": { "day": "Tuesday", "time": "AM", "room": "TBA", "staffId": "PE" },
+    "BIT108": { "day": "Wednesday", "time": "AM", "room": "TBA", "staffId": "SN" },
+    "BIT352": { "day": "Thursday", "time": "AM", "room": "TBA", "staffId": "PE" },
+    "BIT355": { "day": "Friday", "time": "AM", "room": "TBA", "staffId": "YW" }
   },
   "subjectsRunning": {
     "semester1Only": ["BIT351", "BIT355", "BIT357", "BIT358"],
     "semester2Only": ["BIT246", "BIT363", "BIT356", "BIT364"]
   },
   "timeSlots": {
-    "AM": { "start": "8:30 am", "end": "12:30 pm" },
-    "PM": { "start": "1:00 pm", "end": "5:00 pm" }
+    "AM": { "start": "9:00 am", "end": "12:00 pm" },
+    "PM": { "start": "1:00 pm", "end": "4:00 pm" }
   },
   "programRequirements": {
     "_instructions": [
@@ -266,7 +237,7 @@
       "This does not promise that a subject will run; it controls only the Summer School planning message.",
       "The remaining values supply factual numbers and subject/stream lists used in the explanatory help text."
     ],
-    "likelySubjects": ["BIT241", "BIT313"],
+    "likelySubjects": ["BIT314", "BIT108", "BIT352", "BIT355"],
     "durationWeeks": 7,
     "maximumSubjects": 2,
     "typicalSubjectCount": { "minimum": 2, "maximum": 4 },

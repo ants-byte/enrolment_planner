@@ -7,7 +7,7 @@ that file directly instead of using this .md file, however you may find using th
 Complete or amend this Markdown file, then ask Codex/Grok/Gemini or any other genAI coding extensioin 
 to transfer the confirmed changes into the JSON and validate the site.
 
-The values below reflect the configuration as at 18 July 2026.
+The semester details and timetable below reflect Summer 2026, updated 27 October 2026.
 
 ## Recommended workflow
 
@@ -48,22 +48,24 @@ Known uncertainties or conflicting information:
 | Setting | Current value | New value | Notes or source |
 |---|---|---|---|
 | Year | 2026 | | Four digits |
-| Semester | S2 | | S1, S2 or SS |
-| Semester start date | 20/07/2026 | | DD/MM/YYYY |
-| End of second week | 31/07/2026 | | DD/MM/YYYY |
-| Census date | 14/08/2026 | | DD/MM/YYYY |
+| Semester | SS | | S1, S2 or SS |
+| Semester start date | 23/11/2026 | | DD/MM/YYYY |
+| End of second week | 04/12/2026 | | Calculated from the start date |
+| Census date | 07/12/2026 | | Calculated using the requested Summer start + two weeks rule |
+| Enrolment opens | 13/11/2026 | | Reference information; not displayed by the current site |
+| Semester ends | 22/01/2027 | | Reference information; not displayed by the current site |
 | International price per unit | $2,360.00 | | Include currency |
 | CSP price per unit | $1,192.00 | | Include currency |
 
 ## 2. File naming
 
-The Triage workbook pattern is:
+Use one workbook for student data and the Triage sheet:
 
 ```text
-Triage {YYYY} {SEMESTER}.xlsx
+Enrolment Data and Tracking.xlsx
 ```
 
-The site replaces `{YYYY}` and `{SEMESTER}` automatically. Do not change this pattern unless the naming convention itself changes.
+`fileNaming.workbookFileName` contains this fixed filename. Keep the workbook in the appropriate intake's Enrolment System folder. The filename has no year/semester suffix. Email Scripts remains a separate file.
 
 Required change:
 
@@ -95,8 +97,8 @@ Add new rows for new staff. Write `REMOVE` in Notes only when an ID should no lo
 
 | Slot | Current start | Current end | New start | New end | Notes |
 |---|---|---|---|---|---|
-| AM | 8:30 am | 12:30 pm | | | |
-| PM | 1:00 pm | 5:00 pm | | | |
+| AM | 9:00 am | 12:00 pm | | | |
+| PM | 1:00 pm | 4:00 pm | | | |
 
 Use lowercase `am` and `pm` when attached to a time.
 
@@ -104,35 +106,14 @@ Use lowercase `am` and `pm` when attached to a time.
 
 The timetable must contain exactly the subjects running in the configured semester. Delete rows for subjects not running and add rows for newly running subjects. Each staff ID must exist in the Staff table.
 
+All four Summer classes actually run 9 am–12 pm and 1–4 pm. They are recorded as AM only, as requested, because the current site supports AM/PM slots rather than all-day classes. Rooms were not supplied and are TBA. During Summer, only subjects listed in this timetable are offered; the normal Semester 1/2 restrictions remain available for future planning.
+
 | Subject | Day | Slot | Room | Staff ID | Requested change or notes |
 |---|---|---|---|---|---|
-| BIT121 | Monday | AM | PA113 | RA | |
-| BIT372 | Monday | AM | PE110 | CT | |
-| BIT112 | Monday | PM | PA113 | DM | |
-| BIT371 | Monday | PM | PE110 | CT | |
-| BIT105 | Tuesday | AM | PE227 | SN | |
-| BIT313 | Tuesday | AM | PE226 | AO | |
-| BIT230 | Tuesday | AM | TBA | SH | |
-| BIT106 | Tuesday | PM | PA113 | SH | |
-| BIT241 | Tuesday | PM | PA114 | DM | |
-| BIT353 | Tuesday | PM | PE227 | AO | |
-| BIT214 | Wednesday | AM | PE226 | RA | |
-| BIT245 | Wednesday | AM | PA114 | PE | |
-| BIT111 | Wednesday | PM | PA113 | PE | |
-| BIT213 | Wednesday | PM | PE226 | XW | |
-| BIT235 | Wednesday | PM | PA110 | MK | |
-| BIT108 | Thursday | AM | PA113 | SN | |
-| BIT231 | Thursday | AM | PE227 | NQ | |
-| BIT233 | Thursday | AM | PE226 | NW | |
-| BIT356 | Thursday | AM | PA114 | YW | |
-| BIT246 | Thursday | AM | TBA | MK | |
-| BIT242 | Thursday | PM | PE227 | DR | |
-| BIT362 | Thursday | PM | PA114 | NW | |
-| BIT363 | Thursday | PM | PA113 | YW | |
-| BIT364 | Thursday | PM | PE226 | NQ | |
-| BIT314 | Friday | AM | PA113 | DR | |
-| BIT236 | Friday | PM | PE226 | YW | |
-| BIT352 | Friday | PM | PA114 | DR | |
+| BIT314 | Tuesday | AM | TBA | PE | Promise; all-day class represented as AM |
+| BIT108 | Wednesday | AM | TBA | SN | Shzaa; all-day class represented as AM |
+| BIT352 | Thursday | AM | TBA | PE | Promise; all-day class represented as AM |
+| BIT355 | Friday | AM | TBA | YW | Silva; all-day class represented as AM |
 | | | | | | New running subject |
 
 ## 6. Subjects restricted to one semester
@@ -523,7 +504,7 @@ After completing this form, send Codex:
 - [ ] JSON loads without a configuration error.
 - [ ] Correct year and semester appear throughout the site.
 - [ ] Dates and fees are correct.
-- [ ] The preferred Triage filename is correct.
+- [ ] The combined workbook filename is Enrolment Data and Tracking.xlsx.
 - [ ] Every timetable staff ID resolves to the correct name.
 - [ ] Every running subject has a day, time, room and lecturer.
 - [ ] Subjects not running this semester are clearly identified.

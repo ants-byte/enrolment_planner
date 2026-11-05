@@ -62,16 +62,18 @@ const COURSE_INFO_RANGES = [
   'StudentPool',
   'Student_Pool',
 ];
-const TRIAGE_ROW_LIMIT = 350;
 const TRIAGE_MAX_COL_SCAN = 120;
 const TRIAGE_MAX_PREVIEW_COLS = 12;
-const TRIAGE_READ_MAX_ROWS = 800;
-const SOURCE_READ_MAX_ROWS = 4000;
+// Zero means no row truncation: the whole Triage roster must be read.
+const TRIAGE_READ_MAX_ROWS = 0;
+const SOURCE_READ_MAX_ROWS = 0;
 const SOURCE_SHEET_NAMES = [
-  'Students', 'STUDENTS', 'students',
+  'Results', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students',
+  'Info', 'INFO', 'info', 'Email Lists', 'EMAIL LISTS', 'email lists',
   'StudentFlags', 'STUDENTFLAGS', 'studentflags',
   'Student Flags', 'STUDENT FLAGS', 'student flags',
   'Student_Flags', 'STUDENT_FLAGS', 'student_flags',
+  'Student notes', 'Student notes ts',
 ];
 const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
 
@@ -403,12 +405,43 @@ function getNamedSingleCellValue(sheet, rangeRef) {
   return cell ? (cell.w ?? cell.v ?? '') : '';
 }
 
+function buildRawResultsHistory(workbook) {
+  const sheet = workbook.Sheets?.Results;
+  const histories = new Map();
+  if (!sheet) return histories;
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+  const start = rows.findIndex(row => row.some(v => normalizeHeader(v) === 'studentid') && row.some(v => normalizeHeader(v) === 'enrolmentunit'));
+  if (start < 0) return histories;
+  const headers = rows[start].map(normalizeHeader);
+  const idCol = headers.indexOf('studentid'), codeCol = headers.indexOf('enrolmentunit');
+  const gradeCol = headers.indexOf('resultid'), dateCol = headers.indexOf('resultdate');
+  for (const row of rows.slice(start + 1)) {
+    const id = normalizeStudentId(row[idCol]), code = String(row[codeCol] || '').trim().toUpperCase();
+    if (!id || !code) continue;
+    const grade = String(row[gradeCol] ?? '').trim();
+    const rawDate = row[dateCol];
+    let date = '';
+    if (typeof rawDate === 'number' && rawDate > 0) {
+      const parsed = XLSX.SSF.parse_date_code(rawDate);
+      if (parsed) date = `${parsed.y} ${String(parsed.m).padStart(2, '0')} ${String(parsed.d).padStart(2, '0')}`;
+    } else if (rawDate) {
+      const parsed = new Date(rawDate);
+      if (!Number.isNaN(parsed.getTime())) date = `${parsed.getFullYear()} ${String(parsed.getMonth()+1).padStart(2,'0')} ${String(parsed.getDate()).padStart(2,'0')}`;
+    }
+    const entries = histories.get(id) || [];
+    entries.push([code, grade, date].filter(Boolean).join(' '));
+    histories.set(id, entries);
+  }
+  return new Map([...histories].map(([id, entries]) => [id, entries.join(', ')]));
+}
+
 function buildStudentRecordsFromWorkbook(workbook) {
   if (!workbook) return [];
-  const sheetName = 'Students';
+  const sheetName = workbook.Sheets?.StudentsWebWorkings ? 'StudentsWebWorkings' : 'Students';
   const sheet = workbook.Sheets?.[sheetName];
   if (!sheet) return [];
   const names = workbook.Workbook?.Names || [];
+  const rawResultHistories = buildRawResultsHistory(workbook);
   let columnMap = {};
   names.forEach((nameEntry) => {
     if (!nameEntry?.Name || !nameEntry.Ref) return;
@@ -559,13 +592,14 @@ function buildStudentRecordsFromWorkbook(workbook) {
   const records = [];
   const studentFlagsById = new Map();
   const studentFlagsSheetName = Object.keys(workbook.Sheets || {}).find(
-    (name) => normalizeHeader(name) === 'studentflags'
+    (name) => ['studentflags', 'studentnotests'].includes(normalizeHeader(name))
   );
   const studentFlagsSheet = studentFlagsSheetName ? workbook.Sheets[studentFlagsSheetName] : null;
   if (studentFlagsSheet) {
     const flagRows = XLSX.utils.sheet_to_json(studentFlagsSheet, { header: 1, defval: '' });
-    const idHeaders = new Set(['studentnumber', 'studentid', 'studentidsunique']);
-    const flagHeaders = new Set(['notes', 'studentflag', 'studentflags']);
+    // Read the merged NotesOnStudents table; retain support for legacy flags.
+    const idHeaders = new Set(['studentnumber', 'studentid', 'studentidasstring', 'studentidsunique']);
+    const flagHeaders = new Set(['note', 'notes', 'studentflag', 'studentflags']);
     const headerIndex = flagRows.findIndex((row) =>
       row.some((cell) => idHeaders.has(normalizeHeader(cell))) &&
       row.some((cell) => flagHeaders.has(normalizeHeader(cell)))
@@ -595,6 +629,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const studentId = normalizeStudentId(record.Student_IDs_Unique);
     if (!studentId || !hasValue) continue;
     record.Student_IDs_Unique = studentId;
+    if (!String(record.Results_List || '').trim() && rawResultHistories.has(studentId)) record.Results_List = rawResultHistories.get(studentId);
     if (studentFlagsById.has(studentId)) {
       record.Student_Flags = studentFlagsById.get(studentId);
     }
@@ -851,13 +886,18 @@ const parseTriageWorkbookFromSheet = (sheet, ref, mode, workbook = null) => {
     return fallback.join(' | ');
   };
 
-  const maxRow = Math.min(range.e.r, headerRowIndex + TRIAGE_ROW_LIMIT);
+  const maxRow = range.e.r;
   for (let r = headerRowIndex + 1; r <= maxRow; r += 1) {
     if (previewRows.length < 10) {
       const preview = buildPreviewRow(r);
       if (preview) previewRows.push(preview);
     }
-    const rawId = getCellText(r, idIdx);
+    // New rows may not have a calculated helper cache until Excel opens.
+    // Only accept an ID-shaped visible fallback, never dates/day separators.
+    const helperId = getCellText(r, idIdx);
+    const visibleIdIdx = getIdx('Student ID');
+    const visibleId = visibleIdIdx === undefined ? '' : getCellText(r, visibleIdIdx);
+    const rawId = helperId || (/^S?\d{6,7}$/i.test(visibleId.trim()) ? visibleId : '');
     const normalizedId = normalizeStudentId(rawId);
     if (!normalizedId) continue;
     const result = {};

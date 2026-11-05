@@ -8,13 +8,17 @@ PROFILE=addve
 # Change INTAKE each semester to the semester folder name under the BIT Operations SharePoint General folder.
 # (If you ever create this folder, note that spaces are OK)
 # Do not add quote marks or slashes.
-INTAKE=Enrol 26_S2
+# INTAKE selects the data folder; teaching dates and semester rules are in semester-config.json.
+INTAKE=Enrol 26_SS
 
 # Usually do not change this path structure.
 # Keep {PROFILE} and {INTAKE}; the site replaces them with the values above.
 # Change only if the Enrolment System folder is stored somewhere different.
 # If the folder path does not work, the site will still run in limited mode.
+# Keep Enrolment Data and Tracking.xlsx in this folder. It supplies both student data and the Triage sheet.
+# Keep Email Scripts.html (or .htm/.docx) alongside it. No separate Source or Triage workbook is used.
 # Student/Triage details may be unavailable until Load from folder is used.
+# For website saves, use Load from folder to grant writable access and close the workbook in Excel first.
 THIS_SEMESTERS_FOLDER_PATH=C:\Users\{PROFILE}\OneDrive - Melbourne Polytechnic\General - Bachelor of Information Technology Operations\{INTAKE}\Enrolment System\
 
 # Teacher-specific email/sign-off settings for the PROFILE above.
