@@ -3720,6 +3720,10 @@ input:checked+.slider:before {
   color: #ffd54f;
 }
 
+.switch-label.pass-enrolments-summer {
+  font-weight: 700;
+}
+
 .ui-tooltip {
   position: fixed;
   max-width: 280px;
@@ -6089,7 +6093,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 }
 
 .electives-label {
-  margin: 20px 0 8px;
+  margin: 24px 0 8px;
   font-size: 1rem;
 }
 
@@ -13300,7 +13304,7 @@ body.completed-mode #clear-selections {
 }
 
 .load-row.load-row-nonstandard #load-label {
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .load-row .load-button {

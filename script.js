@@ -10198,7 +10198,10 @@ const TRIAGE_READ_MAX_ROWS = 0;
       passForEnrolmentsToggle?.closest('.toggle-row')?.querySelector('.switch-label'),
       courseMapPassForEnrolmentsLabel,
     ].filter(Boolean);
-    labels.forEach((label) => label.classList.toggle('pass-enrolments-highlight', highlight));
+    labels.forEach((label) => {
+      label.classList.toggle('pass-enrolments-highlight', highlight);
+      label.classList.toggle('pass-enrolments-summer', isOptionalSummerSemester());
+    });
   };
 
   const updatePassForEnrolmentsAvailability = () => {
@@ -18011,6 +18014,11 @@ const TRIAGE_READ_MAX_ROWS = 0;
         semesterConfig = parsed;
         semesterConfigDetails = details;
         currentSemesterKey = semester;
+        if (mainTitleHeading) {
+          mainTitleHeading.textContent = semester === 'SS'
+            ? `Summer '${year.slice(-2)} Planner`
+            : `Semester ${semester === 'S1' ? '1' : '2'} Planner`;
+        }
         Object.assign(programRequirements, resolvedProgramRequirements);
         Object.assign(
           planningGuidance.firstSemesterRecommendations,
@@ -18222,6 +18230,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     renderSasFootnote();
     if (!semesterConfigError) {
       syncConfiguredGuidance();
+      updateVaryLoadLabel();
+      updatePassForEnrolmentsIndicator();
       getAllSubjectCodes().forEach((code) => {
         if (!subjectState.has(code)) subjectState.set(code, { completed: false, toggled: false });
       });
@@ -33121,7 +33131,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const streamText = streams
       .map((s) => `<span class="stream-label-mid ${s.className}">${s.label}</span>`)
       .join(' or ');
-    el.innerHTML = `Fill the 4 Elective boxes above (<span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span>) with subjects from the ${streamText} streams.`;
+    el.innerHTML = `Fill the 4 Elective boxes above (<span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span>) with subjects from these ${streamText} streams:`;
   };
   const updateMajor = () => {
     const sheet = document.querySelector('.sheet');
