@@ -1,0 +1,17 @@
+*
+!index.html
+!styles.css
+!script.js
+!semester-config.json
+!manifest.webmanifest
+!sw.js
+!favicon.svg
+!redirect.html
+!triage-parser-worker.js
+!workbook-parser-worker.js
+!icons/
+!icons/**
+!images/
+!images/**
+!vendor/
+!vendor/**
