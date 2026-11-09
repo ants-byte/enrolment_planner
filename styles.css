@@ -13804,7 +13804,13 @@ body.completed-mode #clear-selections {
 }
 
 #planner-chat::backdrop { background: #0009; }
-#planner-chat .modal-body { padding: 16px; }
+#planner-chat .modal-header { position: relative; padding: 12px 42px 0 16px; margin-bottom: 0; }
+#planner-chat .modal-title { margin: 0; }
+#planner-chat .modal-close { position: absolute; top: 8px; right: 8px; }
+#planner-chat .modal-body { padding: 8px 16px 16px; }
+#planner-chat .modal-body > p:first-child { margin-top: 0; }
+#planner-chat .modal-actions { justify-content: center; padding: 12px 30px 16px; }
+#planner-chat .modal-actions .clear-button { width: auto; min-width: 0; flex: 0 1 130px; }
 #planner-chat label { display: block; margin: 12px 0 6px; font-weight: 700; }
 #planner-chat select, #planner-chat textarea {
   box-sizing: border-box;
@@ -13812,7 +13818,7 @@ body.completed-mode #clear-selections {
   padding: 8px;
   font: inherit;
 }
-#planner-chat textarea { resize: vertical; }
+#planner-chat textarea { resize: both; max-width: 100%; min-width: 120px; }
 #planner-chat-messages { max-height: 320px; overflow-y: auto; }
 #planner-chat-messages p { white-space: pre-wrap; overflow-wrap: anywhere; border-top: 1px solid #888; padding-top: 12px; }
 #planner-chat button:disabled { opacity: 0.55; cursor: not-allowed; }

@@ -2,6 +2,7 @@
   "name": "timetableplanner",
   "main": "mcp-worker.mjs",
   "compatibility_date": "2026-11-06",
+  "build": { "command": "node tools/update-modified.mjs" },
   "ai": { "binding": "AI" },
   "ratelimits": [{ "name": "CHAT_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "assets": {

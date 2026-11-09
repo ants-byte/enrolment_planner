@@ -54,8 +54,25 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       plannerChatBusy = false; chatSend.disabled = false; chatReset.disabled = false;
     }
   });
-  document.getElementById('open-planner-chat')?.addEventListener('click', () => plannerChat.showModal());
+  const plannerChatHash = '#ask-course-planner';
+  const syncPlannerChatHash = () => {
+    if (window.location.hash === plannerChatHash) {
+      if (!plannerChat.open) plannerChat.showModal();
+    } else if (plannerChat.open) plannerChat.close();
+  };
+  document.getElementById('open-planner-chat')?.addEventListener('click', () => {
+    if (window.location.hash !== plannerChatHash) window.location.hash = plannerChatHash;
+    syncPlannerChatHash();
+  });
+  window.addEventListener('hashchange', syncPlannerChatHash);
+  plannerChat.addEventListener('close', () => {
+    if (window.location.hash === plannerChatHash) {
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+    }
+  });
+  syncPlannerChatHash();
   document.getElementById('close-planner-chat')?.addEventListener('click', () => plannerChat.close());
+  document.getElementById('exit-planner-chat')?.addEventListener('click', () => plannerChat.close());
   document.getElementById('reset-planner-chat')?.addEventListener('click', () => {
     plannerChatMessages = []; plannerChatHistory = ''; renderPlannerChat();
     chatStatus.textContent = 'Chat cleared. Enter your history and question.';
