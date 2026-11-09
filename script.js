@@ -63,6 +63,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return bubble;
   };
   const friendlyError = document.getElementById('friendly-chat-error');
+  const friendlyUnlock = document.getElementById('friendly-chat-unlock');
+  friendlyUnlock.addEventListener('submit', async event => {
+    event.preventDefault();
+    const submit = friendlyUnlock.querySelector('button');
+    const name = document.getElementById('friendly-chat-unlock-name');
+    const key = document.getElementById('friendly-chat-unlock-key');
+    submit.disabled = true;
+    try {
+      const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unlock', name: name.value.trim(), key: key.value }), signal: AbortSignal.timeout(15000) });
+      const result = await response.json();
+      if (response.ok && result.unlocked) {
+        friendlyUnlock.hidden = true; friendlyError.hidden = true; friendlyUnlock.reset();
+        showFriendlyNotice(result.userMessage); friendlyInput.focus();
+      } else {
+        friendlyError.textContent = result.userMessage || 'Extra usage could not be granted. Please check your name and access key.';
+        friendlyError.hidden = false;
+        if (result.code === 'USAGE-BLOCKED') friendlyUnlock.hidden = true;
+      }
+    } catch {
+      friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.hidden = false;
+    } finally { key.value = ''; submit.disabled = false; }
+  });
   const friendlySend = document.getElementById('send-friendly-chat');
   const friendlyReset = document.getElementById('reset-friendly-chat');
   const friendlyTheme = document.getElementById('theme-friendly-chat');
@@ -197,6 +220,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   window.addEventListener('load', () => { if (friendlyChat.open) seedFriendlyChatFromPlanner(); });
   document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
   friendlyReset.addEventListener('click', () => {
+    friendlyUnlock.hidden = true; friendlyUnlock.reset();
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
     friendlyPendingState = null;
@@ -204,9 +228,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   friendlySend.addEventListener('click', async () => {
     if (friendlyBusy || !friendlyInput.value.trim()) return;
-    if (friendlyMessages.length >= 14) { showFriendlyNotice('Please select New chat to start fresh and continue.'); return; }
+    if (friendlyMessages.length >= 10) { showFriendlyNotice('Please select New chat to start fresh and continue. Your usage allowance does not reset.'); return; }
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
     const draft = friendlyInput.value;
+    friendlyUnlock.hidden = true;
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages.push({ role: 'user', content: friendlyMessages.length ? draft.trim() : `${friendlyMainSummary && friendlyMainContext ? `Main planner context (student-entered):\n${friendlyMainContext}\n\n` : ''}${draft.trim()}` });
     renderFriendlyChat(); friendlyInput.value = '';
@@ -230,6 +255,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!response.ok || typeof result.answer !== 'string') {
         const failure = new Error(result.error || 'Chat is unavailable.');
         failure.userMessage = result.userMessage;
+        failure.unlockRequired = result.unlockRequired;
         throw failure;
       }
       if (result.plannerState) {
@@ -248,6 +274,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const summary = document.createElement('summary'); summary.textContent = 'Technical details';
       const detailText = document.createElement('p'); detailText.textContent = error.message;
       details.append(summary, detailText); friendlyError.replaceChildren(notice, details); friendlyError.hidden = false;
+      friendlyUnlock.hidden = !error.unlockRequired;
     } finally {
       friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
       window.clearInterval(workingTimer);

@@ -2054,12 +2054,21 @@ Last Modified: 11/07/2026
     <div id="friendly-chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
     <div class="friendly-chat-compose">
       <label for="friendly-chat-input" class="friendly-chat-input-label">Message the Subject Planner</label>
+      <p class="friendly-prompt-notice">Prompts may be emailed to Antony Di Serio at antonydiserio@melbournepolytechnic.edu.au for review of this pilot. Please leave out personal or sensitive information.</p>
       <div id="friendly-chat-error" role="alert" hidden></div>
+      <form id="friendly-chat-unlock" hidden>
+        <p>To request extra usage, provide your name and access key. Your name is stored for up to 90 days for usage records, not used to verify identity. These details are not sent to the AI.</p>
+        <label for="friendly-chat-unlock-name">Your name</label>
+        <input id="friendly-chat-unlock-name" type="text" maxlength="120" autocomplete="off" required>
+        <label for="friendly-chat-unlock-key">Access key</label>
+        <input id="friendly-chat-unlock-key" type="password" maxlength="200" autocomplete="off" required>
+        <button type="submit">Request extra usage</button>
+      </form>
       <div class="friendly-chat-input-shell">
         <textarea id="friendly-chat-input" rows="2" placeholder="Ask about your course or paste subject results as text. No file uploads."></textarea>
         <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 4 21 20H3z"/></svg></button>
       </div>
-      <small>AI can make mistakes. Check with Enrolments. Messages are processed through Cloudflare and sent to OpenAI; leave out personal details. Chat stays in this tab.</small>
+      <small>AI can make mistakes. Check with Enrolments. Messages are processed through Cloudflare and sent to OpenAI; leave out personal details. Chat stays in this tab. Browser and network token usage is retained for up to 90 days to manage allowances.</small>
     </div>
   </dialog>
   <script src="vendor/xlsx.full.min.js"></script>

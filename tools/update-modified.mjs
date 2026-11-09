@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const files = ['index.html', 'styles.css', 'script.js', 'semester-config.json',
-  'mcp-worker.mjs', 'mcp-information.mjs', 'planner-chat.mjs', 'wrangler.jsonc',
+  'mcp-worker.mjs', 'mcp-information.mjs', 'planner-chat.mjs', 'chat-usage.mjs', 'wrangler.jsonc',
   'tools/update-modified.mjs'];
 const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 const committed = git(['log', '-1', '--format=%cI', '--', ...files]);

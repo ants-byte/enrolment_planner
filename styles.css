@@ -13861,11 +13861,16 @@ body.completed-mode #clear-selections {
 #friendly-chat-error p { margin: 0; }
 #friendly-chat-error details { margin-top: 8px; font-size: 12px; }
 #friendly-chat-error summary { cursor: pointer; }
+#friendly-chat-unlock { padding: 12px; margin-bottom: 12px; border: 1px solid #888; border-radius: 12px; background: var(--chat-panel); color: var(--chat-text); }
+#friendly-chat-unlock p { font-size: 12px; margin-top: 0; }
+#friendly-chat-unlock label { display: block; margin: 8px 0 4px; }
+#friendly-chat-unlock input { box-sizing: border-box; display: block; width: 100%; padding: 8px; margin-bottom: 8px; font: inherit; }
 #friendly-chat-error details p { margin-top: 6px; }
 #friendly-chat-input { flex: 0 1 auto; min-width: 120px; resize: both; max-height: 40dvh; background: transparent; color: inherit; border: 0; padding: 8px; border-radius: 0; }
 #friendly-chat #send-friendly-chat { flex: 0 0 36px; width: 36px; height: 36px; padding: 8px; border-radius: 50%; background: #202123; border: 0; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
 #friendly-chat-status { margin: 8px 0; font-size: 12px; }
 .friendly-chat-compose small { display: block; text-align: center; opacity: .75; font-size: 11px; }
+.friendly-prompt-notice { margin: 0 0 8px; font-size: 12px; line-height: 1.4; }
 :root[data-appearance="dark"] .friendly-chat-input-shell { background: #223344; }
 #friendly-chat[data-chat-theme] { background: var(--chat-bg); color: var(--chat-text); color-scheme: light; }
 #friendly-chat[data-chat-theme="light"] { --chat-bg: #fff; --chat-text: #202123; --chat-panel: #f5f5f5; --chat-user: #eaeaea; --chat-muted: #777; }

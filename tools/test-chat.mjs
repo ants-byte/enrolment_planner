@@ -1,5 +1,21 @@
 import assert from 'node:assert/strict';
 import actualWorker from '../mcp-worker.mjs';
+import { ChatUsage } from '../chat-usage.mjs';
+const usageObjects = new Map();
+const usageNamespace = {
+  idFromName: name => name,
+  get: id => {
+    if (!usageObjects.has(id)) {
+      const values = new Map();
+      const state = { blockConcurrencyWhile: fn => fn(), storage: {
+        get: async key => structuredClone(values.get(key)), put: async (key, value) => values.set(key, structuredClone(value)),
+        deleteAll: async () => values.clear(), setAlarm: async () => {},
+      } };
+      usageObjects.set(id, new ChatUsage(state, { CHAT_EXPERIMENT_END: '2099-01-01T00:00:00Z', CHAT_TOTAL_TOKEN_CAP: '6000000' }));
+    }
+    return { fetch: (url, options) => usageObjects.get(id).fetch(new Request(url, options)) };
+  },
+};
 const worker = { fetch: async (request, env) => {
   if (!Object.hasOwn(request, 'cf')) Object.defineProperty(request, 'cf', { value: { country: 'AU' } });
   const originalFetch = globalThis.fetch;
@@ -8,7 +24,7 @@ const worker = { fetch: async (request, env) => {
     assert.equal(options.headers.Authorization, 'Bearer test-key');
     const body = JSON.parse(options.body);
     assert.equal(body.store, false);
-    assert.equal(body.reasoning.effort, body.input[0]?.content.startsWith('COURSE_SCOPE_CHECK:') ? 'low' : 'medium');
+    assert.equal(body.reasoning.effort, 'low');
     assert(!('temperature' in body));
     if (env.providerError) return Response.json({ error: { code: env.providerError, message: 'private details' } }, { status: 429 });
     const messages = body.input.map(item => item.type === 'function_call_output' ? { role: 'tool', content: item.output } : item);
@@ -17,7 +33,7 @@ const worker = { fetch: async (request, env) => {
     const output = result.tool_calls?.length
       ? result.tool_calls.map((call, index) => ({ type: 'function_call', call_id: `call_${index}`, name: call.name, arguments: JSON.stringify(call.arguments) }))
       : [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: result.response }] }];
-    return Response.json({ status: 'completed', output });
+    return Response.json({ status: 'completed', output, usage: { input_tokens: 100, output_tokens: 20 } });
   };
   try { return await actualWorker.fetch(request, env); }
   finally { globalThis.fetch = originalFetch; }
@@ -25,6 +41,7 @@ const worker = { fetch: async (request, env) => {
 let calls = 0;
 const env = {
   OPENAI_API_KEY: 'test-key',
+  CHAT_USAGE: usageNamespace,
   CHAT_LIMITER: { limit: async () => ({ success: true }) },
   CHAT_WORK_LIMITER: { limit: async () => ({ success: true }) },
   CHAT_TOTAL_WORK_LIMITER: { limit: async () => ({ success: true }) },

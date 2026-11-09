@@ -7,7 +7,7 @@ No API key, database or student-history storage is required.
 ## Deploy
 
 The website chat uses `/chat` with the OpenAI Responses API and `gpt-6.1-sol`
-(medium reasoning for answers, low for scope checks). Set `OPENAI_API_KEY`
+(low reasoning for both answers and scope checks). Set `OPENAI_API_KEY`
 as a Worker Secret in Settings > Variables and Secrets. Its value is never put
 in Wrangler, Git or browser code. Worker secrets are managed separately from
 Wrangler resource bindings, so no Secrets Store ID is needed. Existing Secrets
@@ -17,7 +17,7 @@ OpenAI API billing is separate from a ChatGPT Plus subscription. The API key's
 project must have active credits/billing and access to the configured model.
 `CHAT_LIMITER` allows six questions per minute per browser per Cloudflare location;
 this is an abuse throttle, not an account-wide spending cap. Each question has
-one scope check and up to five answer rounds, with four tool calls per round.
+one scope check and up to four answer rounds, with four tool calls per round.
 Conversations stay in tab memory and pass through Cloudflare to OpenAI; requests
 set `store: false`. No staff-only source is loaded. Diagnostics distinguish API
 billing, rate limiting and connection problems without logging prompts or keys.
@@ -132,10 +132,50 @@ rounds: `CHAT_WORK_LIMITER` permits 18 per minute per browser and
 `CHAT_TOTAL_WORK_LIMITER` permits 120 per minute using a shared site key.
 Cloudflare rate-limit bindings are approximate and local to each Cloudflare
 location, not exact worldwide or daily budgets. Shared campus networks do not share a browser allowance. A first-party
-HttpOnly, Secure, SameSite cookie identifies a browser for 30 days. Browser
-fingerprints and IPs are not collected by these application controls. Clearing
+HttpOnly, Secure, SameSite cookie identifies a browser for 90 days, refreshed on requests. Browser fingerprints
+are not collected. Salted, hashed IP identifiers track shared-network usage;
+raw IPs are not stored by this application. Clearing
 cookies, blocking cookies or changing browsers can bypass the browser allowance;
 it is an abuse throttle, not authenticated identity. The shared site work limit
 remains in place. Browser identifiers are not added to diagnostic logs. Deploy all three bindings with
 the code; missing bindings fail closed. Existing message/output size and round
 limits continue to bound the work performed by one question.
+
+## One-semester AI pilot
+
+`wrangler.jsonc` configures a 125,000-token normal browser allowance per 90 days.
+An exhausted browser/network may request one extra 50% allowance using the
+owner-specified access key and a non-empty name. The name is stored, not used to
+validate identity, and never sent with the key to OpenAI. After the extra is
+exhausted, the browser/network is blocked for 90 days. Prior token/name records
+are erased when the final block starts; only its expiry marker is retained.
+Unused records expire after 90 days. Five failed unlock attempts in an hour
+pause further attempts for that hour. The shared-network threshold is 200 times
+the browser allowance to accommodate campus Wi-Fi. The browser cookie remains
+resettable, so neither it nor the shared key authenticates a student.
+
+A SQLite-backed Durable Object binding `CHAT_USAGE` stores these records and
+separate permanent site-wide aggregate input/output counters (including reasoning
+within output tokens; it is not counted twice). Deploy the `chat-usage-v1`
+migration with the Worker. No chat text is stored in the usage ledger. The
+namespace is private to the Worker, not exposed through the public MCP.
+
+The site-wide pilot cap is 6,000,000 combined input/output tokens. AI calls reserve
+a conservative input bound plus maximum output before dispatch. Responses settle
+the reservation against provider usage; failed connections without usage records
+are counted conservatively. Expired reservations remain chargeable rather than
+being refunded. The cap may stop new calls slightly early when the remaining
+balance cannot safely cover a full call. It is a token cap, not a currency cap,
+and excludes Cloudflare charges and any API usage outside this application.
+
+The pilot ends at 00:00 Melbourne time on 12 December 2026, after the configured
+Summer census day (11 December). Each new AI call checks the deadline. Already
+in-flight, reserved calls may finish. The first deadline/cap refusal stores a
+permanent stop marker. It is not cleared by expiry, cookies, unlock keys,
+redeployment or raising configuration limits. Re-enabling would require an
+explicit administrative change to the persistent state. Global counters/stop
+markers contain no name or IP data and intentionally do not expire after 90 days.
+Do not delete/recreate the namespace or change its fixed `site-budget` identity
+if the experiment's permanent stop must be preserved.
+
+Focused checks: `node tools/test-usage.mjs` and `node tools/test-chat.mjs`.

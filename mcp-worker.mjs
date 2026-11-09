@@ -1,4 +1,5 @@
 import config from './semester-config.json' with { type: 'json' };
+export { ChatUsage } from './chat-usage.mjs';
 import { handleChat } from './planner-chat.mjs';
 import { informationTools, describeSubject, getCourseInformation, searchEmailScripts, searchEnrolmentRules, studentSemesterDetails } from './mcp-information.mjs';
 
@@ -123,11 +124,11 @@ const json = (value, status = 200) => Response.json(value, { status, headers: { 
 const error = (id, code, message, status = 200) => json({ jsonrpc: '2.0', id, error: { code, message } }, status);
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, context) {
     if (new URL(request.url).pathname === '/chat') return handleChat(request, env, [tool, ...informationTools], {
       plan_subjects: planSubjects, get_course_information: getCourseInformation,
       search_enrolment_rules: searchEnrolmentRules, search_email_scripts: searchEmailScripts,
-    });
+    }, context);
     if (new URL(request.url).pathname !== '/mcp') return env.ASSETS.fetch(request);
     // Stateless Streamable HTTP: no server-initiated event stream or sessions.
     if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
