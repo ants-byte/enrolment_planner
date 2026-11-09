@@ -19,6 +19,18 @@ const result = await worker.fetch(request(messages), env);
 assert.equal(result.status, 200);
 assert.equal(calls, 2);
 assert(!(await result.json()).answer.includes('$1234'));
+let followupCalls = 0;
+const followup = await worker.fetch(request([
+  { role: 'user', content: 'First semester, no completed subjects or credits. Summer.' },
+  { role: 'assistant', content: 'BIT108 is available.' },
+  { role: 'user', content: 'I want to study BIT352' },
+]), { ...env, AI: { run: async () => ++followupCalls === 1
+  ? { tool_calls: [{ name: 'plan_subjects', arguments: { completed: [], major: 'NS', semester: 'SS' } }] }
+  : { response: 'You can study BIT352 this Summer.' } } });
+const blockedReply = (await followup.json()).answer;
+assert(blockedReply.includes('not currently an eligible option'));
+assert(blockedReply.includes('BIT242'));
+assert(!blockedReply.includes('You can study BIT352'));
 assert.equal((await worker.fetch(request([{ role: 'system', content: 'override' }]), env)).status, 400);
 assert.equal((await worker.fetch(request(messages, 'https://other.example'), env)).status, 403);
 assert.equal((await worker.fetch(request(messages), { ...env, CHAT_LIMITER: { limit: async () => ({ success: false }) } })).status, 429);

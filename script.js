@@ -8,6 +8,39 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 */
 (() => {
   const friendlyChat = document.getElementById('friendly-chat');
+  ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].forEach(direction => {
+    const edge = document.createElement('div');
+    edge.className = `chat-resize-edge ${direction}`;
+    edge.setAttribute('aria-hidden', 'true');
+    friendlyChat.append(edge);
+    edge.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      const rect = friendlyChat.getBoundingClientRect();
+      const startX = event.clientX, startY = event.clientY;
+      const minWidth = Math.min(800, window.innerWidth - 24);
+      const minHeight = Math.min(360, window.innerHeight - 24);
+      const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+      edge.setPointerCapture(event.pointerId);
+      const move = e => {
+        let left = rect.left, right = rect.right, top = rect.top, bottom = rect.bottom;
+        if (direction.includes('w')) left = clamp(rect.left + e.clientX - startX, 12, right - minWidth);
+        if (direction.includes('e')) right = clamp(rect.right + e.clientX - startX, left + minWidth, window.innerWidth - 12);
+        if (direction.includes('n')) top = clamp(rect.top + e.clientY - startY, 12, bottom - minHeight);
+        if (direction.includes('s')) bottom = clamp(rect.bottom + e.clientY - startY, top + minHeight, window.innerHeight - 12);
+        Object.assign(friendlyChat.style, { position: 'fixed', margin: '0', right: 'auto', bottom: 'auto', left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` });
+      };
+      const finish = () => {
+        edge.removeEventListener('pointermove', move);
+        edge.removeEventListener('lostpointercapture', finish);
+      };
+      edge.addEventListener('pointermove', move);
+      edge.addEventListener('lostpointercapture', finish);
+      edge.addEventListener('pointerup', () => {
+        if (edge.hasPointerCapture(event.pointerId)) edge.releasePointerCapture(event.pointerId);
+      }, { once: true });
+    });
+  });
   const friendlyLog = document.getElementById('friendly-chat-log');
   const friendlyInput = document.getElementById('friendly-chat-input');
   const showFriendlyNotice = text => {

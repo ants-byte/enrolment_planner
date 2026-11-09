@@ -1,6 +1,7 @@
 import config from './semester-config.json' with { type: 'json' };
 const model = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const instructions = `You are the student Bachelor of IT course planning assistant. Answer only course questions, concisely in plain text.
+On every availability or subject-selection follow-up, rerun plan_subjects using the student's previously stated completed/approved-credit history and target semester. A desire to study a subject is NOT completion, credit, prerequisite satisfaction or an override. Never add a prerequisite to completed merely because the student wants its dependent subject. Do not infer a major from a tool call made to compare majors. If a requested subject is blocked, explicitly explain the missing prerequisite by code and name and suggest only eligible alternatives.
 For this website chat, default to the configured current semester ${config.semesterDetails.semester_S1_S2_SS}, ${config.semesterDetails.year}, unless the student explicitly asks for another semester. Pass that semester explicitly to plan_subjects. This overrides the tool's next-semester default and the general default guidance below.
 For suggested timetables use a Markdown table with columns Code | Name | Day | Time | Room | Teacher | Stream, ordered Monday to Friday then time. Use only eligibleOptions returned by plan_subjects for the target semester; remainingCore/remainingMajor are degree requirements, NOT available options. Never fill a requested load with non-running subjects. If fewer subjects are available than requested, state the actual number and explain why. For Summer explain the limited offerings and maximum load; always display Summer times as 9 am–4 pm, never Morning/Afternoon or half-day times. Do not ask first-semester students to choose a major just to suggest core subjects. If only BIT108 is eligible and running, offer only BIT108, not four introductory subjects. A hypothetical later semester must be clearly separate and only included if requested.
 When mentioning a subject, pair its code with its current configured name on first mention in each answer where reasonable (for example, BIT111 — Programming Concepts). Use tools to obtain names; never guess them. Later mentions in the same answer may use the code alone. Include both code and name in subject lists and tables.
@@ -46,12 +47,35 @@ export async function handleChat(request, env, definitions, handlers) {
   const messages = [{ role: 'system', content: instructions }, ...history.map(({ role, content }) => ({ role, content }))];
   const tools = definitions.map(({ name, description, inputSchema }) => ({ name, description, parameters: inputSchema }));
   let stage = 'AI-ROUND-1';
+  const requestedCodes = [...new Set(history.at(-1).content.toUpperCase().match(/\bBIT\d{3}\b/g) || [])];
+  const needsPlan = requestedCodes.length || /timetable|can i (?:take|study)|want to study|choose|suggest|available/i.test(history.at(-1).content);
+  const checkedPlans = [];
   try {
     for (let round = 0; round < 5; round++) {
       stage = `AI-ROUND-${round + 1}`;
       const result = await env.AI.run(model, { messages, ...(round < 4 ? { tools } : {}), max_tokens: 1600, temperature: 0.1 });
       if (!result.tool_calls?.length) {
         if (!result.response?.trim()) throw new Error('Empty answer');
+        if (needsPlan && !checkedPlans.length) {
+          if (round < 4) {
+            messages.push({ role: 'system', content: 'Before answering, call plan_subjects now with only explicitly reported passed/approved credits from the conversation. Wanting a subject does not satisfy its prerequisites. If no completed history is known, check introductory options with completed=[] and clearly state that assumption.' });
+            continue;
+          }
+          return reply({ answer: 'I couldn’t verify your eligibility for that selection. Please confirm which subjects you have passed or received approved credit for, and the semester you want to study. I won’t recommend a subject until its course requirements have been checked.' });
+        }
+        const blockedRequests = requestedCodes.filter(code => checkedPlans.length && checkedPlans.every(plan => plan.blockedOptions.some(subject => subject.code === code)));
+        if (blockedRequests.length) {
+          const label = code => `${code} — ${config.subjects[code]?.name || 'unknown subject'}`;
+          const explanations = blockedRequests.map(code => {
+            const subject = checkedPlans[0].blockedOptions.find(item => item.code === code);
+            const reasons = [];
+            if (subject.missingPrerequisites.length) reasons.push(`first complete ${subject.missingPrerequisites.map(label).join(', ')}`);
+            if (!subject.offered) reasons.push('it is not confirmed as running in the target semester');
+            if (!reasons.length) reasons.push('its concurrent-study or major-subject requirements are not satisfied');
+            return `${label(code)} is not currently an eligible option: ${reasons.join('; ')}.`;
+          });
+          return reply({ answer: `${explanations.join('\n\n')}\n\nAsking to study a subject does not waive its requirements. Tell me if you have additional approved credits or completed subjects that should be included in the check.` });
+        }
         return reply({ answer: redact(result.response) });
       }
       if (result.tool_calls.length > 4) break;
@@ -64,6 +88,7 @@ export async function handleChat(request, env, definitions, handlers) {
           if (name === 'plan_subjects' && parsedArgs.semester === undefined) parsedArgs.semester = config.semesterDetails.semester_S1_S2_SS;
           let value = handlers[name](parsedArgs);
           if (name === 'plan_subjects') {
+            checkedPlans.push(value);
             // Full subject records repeat across remaining, eligible and blocked lists.
             // Keep actual eligible slots and compact requirement summaries.
             const { remainingCore, remainingMajor, electiveOptions, blockedOptions, ...rest } = value;
