@@ -13832,6 +13832,29 @@ body.completed-mode #clear-selections {
 :root[data-appearance="dark"] .friendly-chat-header { background: #223c53; }
 :root[data-appearance="dark"] .friendly-bubble { background: #223344; border-color: #52677a; }
 :root[data-appearance="dark"] .friendly-bubble.user { background: #244c70; }
+#friendly-chat { height: min(760px, calc(100dvh - 24px)); background: #fff; color: #202123; }
+#friendly-chat[open] { display: flex; flex-direction: column; }
+.friendly-chat-header { flex: 0 0 auto; align-items: center; padding: 16px 20px; background: transparent; border-bottom: 1px solid #8883; }
+.friendly-chat-header h2 { flex: 1; margin: 0; font-size: 18px; }
+.friendly-chat-header h2 span { font-size: 11px; border: 1px solid #8886; padding: 3px 5px; border-radius: 5px; vertical-align: middle; }
+#friendly-chat #reset-friendly-chat { font-size: 12px; padding: 6px 10px; background: transparent; color: inherit; }
+#friendly-chat-log { flex: 1; min-height: 0; max-height: none; padding: 16px 24px; }
+.friendly-bubble { margin: 12px 0 24px; padding: 16px 18px; background: #f5f5f5; border: 0; border-radius: 18px; }
+.friendly-bubble.user { background: #eaeaea; border-radius: 18px; max-width: 78%; }
+.friendly-chat-compose { flex: 0 0 auto; padding: 8px 20px 16px; }
+.friendly-chat-input-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.friendly-chat-input-shell { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid #8885; border-radius: 24px; background: #f5f5f5; }
+#friendly-chat-input { flex: 0 1 auto; min-width: 120px; resize: both; max-height: 40dvh; background: transparent; color: inherit; border: 0; padding: 8px; border-radius: 0; }
+#friendly-chat #send-friendly-chat { flex: 0 0 36px; width: 36px; height: 36px; padding: 8px; border-radius: 50%; background: #202123; border: 0; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+#friendly-chat-status { margin: 8px 0; font-size: 12px; }
+.friendly-chat-compose small { display: block; text-align: center; opacity: .75; font-size: 11px; }
+:root[data-appearance="dark"] .friendly-chat-input-shell { background: #223344; }
+#planner-chat, #friendly-chat {
+  resize: horizontal;
+  overflow: auto;
+  min-width: min(360px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
 #planner-chat .modal-header { position: relative; padding: 12px 42px 0 16px; margin-bottom: 0; }
 #planner-chat .modal-title { margin: 0; }
 #planner-chat .modal-close { position: absolute; top: 8px; right: 8px; }

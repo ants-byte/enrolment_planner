@@ -19,7 +19,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyLog.replaceChildren();
     const greeting = document.createElement('p');
     greeting.className = 'friendly-bubble assistant';
-    greeting.textContent = 'Hi! Let’s work out what comes next. Tell me your major and what you’ve passed or received credit for. You can paste your Student Portal results, then ask me a question.';
+    greeting.textContent = 'Hi! 👋 What would you like to know about your course?\n\nI can help you find subjects, understand prerequisites or plan your next semester. Ask a question, or paste your results to get started.';
     friendlyLog.append(greeting);
     friendlyMessages.forEach(message => {
       const bubble = document.createElement('p');
@@ -65,6 +65,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); friendlySend.click(); }
   });
   renderFriendlyChat();
+  const updateFriendlySend = () => { friendlySend.disabled = friendlyBusy || !friendlyInput.value.trim(); };
+  friendlyInput.addEventListener('input', updateFriendlySend);
+  new MutationObserver(updateFriendlySend).observe(friendlyStatus, { childList: true, attributes: true, attributeFilter: ['class'] });
+  updateFriendlySend();
   const plannerChat = document.getElementById('planner-chat');
   let plannerChatMessages = [];
   let plannerChatHistory = '';
