@@ -9,7 +9,7 @@ No API key, database or student-history storage is required.
 The website chat uses `/chat` and the Workers AI binding `AI`, configured in
 `wrangler.jsonc`, with the Llama 3.3 70B fast model. Deploy the updated Worker and
 assets together to enable the dialog. No external provider key is required.
-`CHAT_LIMITER` allows ten requests per minute per IP per Cloudflare location;
+`CHAT_LIMITER` allows six questions per minute per browser per Cloudflare location;
 this is an abuse throttle, not an account-wide spending cap. Each question is
 limited to four AI rounds and four tool calls per round. Conversations stay in
 tab memory and are sent to Cloudflare AI, not saved to a student database.
@@ -119,3 +119,16 @@ pathways, delivery and assessments. Public Capstone descriptions now follow
 Email Scripts: BIT371 then BIT372, rather than concurrent study. Entry criteria
 and future intake claims carry specific confirmation caveats. Configured subject
 classifications and prerequisites remain authoritative over the copied web table.
+
+Chat abuse controls also count every model call, including scope checks and tool
+rounds: `CHAT_WORK_LIMITER` permits 18 per minute per browser and
+`CHAT_TOTAL_WORK_LIMITER` permits 120 per minute using a shared site key.
+Cloudflare rate-limit bindings are approximate and local to each Cloudflare
+location, not exact worldwide or daily budgets. Shared campus networks do not share a browser allowance. A first-party
+HttpOnly, Secure, SameSite cookie identifies a browser for 30 days. Browser
+fingerprints and IPs are not collected by these application controls. Clearing
+cookies, blocking cookies or changing browsers can bypass the browser allowance;
+it is an abuse throttle, not authenticated identity. The shared site work limit
+remains in place. Browser identifiers are not added to diagnostic logs. Deploy all three bindings with
+the code; missing bindings fail closed. Existing message/output size and round
+limits continue to bound the work performed by one question.

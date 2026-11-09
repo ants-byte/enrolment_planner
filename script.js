@@ -104,6 +104,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let friendlyBusy = false;
   let friendlyMainContext = '';
   let friendlyMainSummary = '';
+  let friendlyHistoryBreakdown = '';
   let friendlyPendingState = null;
   const renderFriendlyChat = () => {
     friendlyLog.replaceChildren();
@@ -114,6 +115,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (friendlyMainSummary) {
       const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
       summary.textContent = `${friendlyMainSummary}\n\nWould you like to change anything or ask any questions about this? Changes to your history and any offered timetable will carry back to the main planner when you close this chat.`;
+      const summaryText = summary.textContent;
+      summary.replaceChildren();
+      summaryText.split('\n').forEach((line, index) => {
+        if (index) summary.append(document.createTextNode('\n'));
+        let lineTarget = summary;
+        if (/^(Major|Passed\/Credits|Currently studying|Selected subjects):/.test(line)) {
+          lineTarget = document.createElement('span');
+          lineTarget.className = 'friendly-summary-line';
+          summary.append(lineTarget);
+        }
+        if (line.startsWith('Passed/Credits:')) {
+          const trigger = document.createElement('span');
+          trigger.className = 'friendly-history-breakdown'; trigger.tabIndex = 0;
+          trigger.append(document.createTextNode(line));
+          const popup = document.createElement('span');
+          popup.className = 'friendly-history-popup'; popup.role = 'tooltip';
+          popup.textContent = friendlyHistoryBreakdown;
+          trigger.append(popup); lineTarget.append(trigger);
+        } else if (line.startsWith('Selected subjects:')) {
+          const parts = line.split(/(BIT\d{3})/g);
+          parts.forEach(part => {
+            if (/^BIT\d{3}$/.test(part)) {
+              const strong = document.createElement('strong'); strong.textContent = part; lineTarget.append(strong);
+            } else lineTarget.append(document.createTextNode(part));
+          });
+        } else lineTarget.append(document.createTextNode(line));
+      });
       friendlyLog.append(summary);
     }
     friendlyMessages.forEach(message => {
@@ -215,7 +243,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const notice = document.createElement('p');
       notice.textContent = error.userMessage || (error.name === 'TimeoutError'
         ? 'The reply is taking too long. Your message is ready below — please try sending it again.'
-        : 'We couldn’t connect to the course assistant just now. Your message is ready below, please try again shortly.');
+        : 'We couldn’t connect to the Subject Planner just now. Your message is ready below, please try again shortly.');
       const details = document.createElement('details');
       const summary = document.createElement('summary'); summary.textContent = 'Technical details';
       const detailText = document.createElement('p'); detailText.textContent = error.message;
@@ -9188,7 +9216,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const getSubjectName = (code) => {
     const metaName = subjectMeta[code]?.name;
-    return metaName || code;
+    const cardName = subjects.find(cell => cell.dataset.subject === code)?.querySelector('.subject-title')?.textContent?.trim();
+    return metaName || cardName || code;
   };
 
   const getPresetSubjectName = (code) => {
@@ -14615,21 +14644,28 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   function seedFriendlyChatFromPlanner() {
-    const completed = Array.from(subjectState.entries()).filter(([, state]) => state.completed).map(([code]) => code);
+    const completed = Array.from(subjectState.entries()).filter(([code, state]) => state.completed && !currentEnrolmentStudentRecord.has(code)).map(([code]) => code);
     const credited = completed.filter(code => /CRT|RPL/.test(manualEntryMeta.get(code)?.result || ''));
     const passed = completed.filter(code => !credited.includes(code));
     const failed = manualEntryResults.filter(entry => getGradeStatus(entry.result) === 'fail').map(entry => entry.id);
     const current = Array.from(currentEnrolmentStudentRecord);
     const selected = Array.from(subjectState.entries()).filter(([, state]) => state.toggled).map(([code]) => code);
-    const history = { passed, credited, current, failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
+    const history = { passed, credited, repeatFailureCounts: Object.fromEntries(getRepeatFailCounts().map(item => [item.code, item.count])), current, currentTreatedAsPassed: current.filter(code => passForEnrolmentsOverrides.has(code)), failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
     const context = JSON.stringify(history);
     if (context === friendlyMainContext) return;
     friendlyMainContext = context;
     friendlyPendingState = null;
     friendlyMessages = [];
-    const names = codes => codes.map(code => `${code} ${getSubjectName(code)}`).join(', ') || 'None';
+    const names = codes => codes.map(code => {
+      const name = getSubjectName(code);
+      return name && name !== code ? `${code} ${name}` : code;
+    }).join(', ') || 'None';
+    const unnamedCodes = electivePlaceholderState.filter(Boolean);
+    const completedCodes = [...new Set([...passed, ...credited, ...unnamedCodes])];
+    friendlyHistoryBreakdown = `Passed: ${names(passed)}\nApproved credits: ${names(credited)}\nUnnamed elective credits: ${unnamedCodes.join(', ') || 'None'}`;
+    const currentSummary = current.map(code => `${code} (${passForEnrolmentsOverrides.has(code) ? 'treated as already passed for planning' : 'not treated as already passed'})`).join(', ') || 'None';
     friendlyMainSummary = completed.length || current.length || selected.length || failed.length || history.unspecifiedElectiveCredits || history.major !== 'undecided'
-      ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed: ${names(passed)}\nApproved credits: ${names(credited)}\nUnnamed elective credits: ${history.unspecifiedElectiveCredits}\nCurrently studying: ${names(current)}\nFailed attempts: ${names(failed)}\nSelected subjects: ${names(selected)}` : '';
+      ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed/Credits: ${completedCodes.join(', ') || 'None'}\nCurrently studying: ${currentSummary}\nSelected subjects: ${names(selected)}` : '';
     renderFriendlyChat();
   }
 
@@ -14994,6 +15030,10 @@ const TRIAGE_READ_MAX_ROWS = 0;
       if (active) {
         cell.classList.remove('satisfied');
         cell.classList.remove('can-select-now');
+        const repeatedFailure = getRepeatFailCounts().find(item => item.code === id);
+        if (repeatedFailure) {
+          showOneOffAlertModal('Repeated subject failures', `<p>You have selected <strong>${escapeHtml(id)} ${escapeHtml(getSubjectName(id))}</strong>, which you have failed ${repeatedFailure.count} times. Please discuss support and your study plan with course staff before enrolling.</p>`);
+        }
       }
     }
     // Sync BIT slot state after any toggle on elective grid cells
