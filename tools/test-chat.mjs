@@ -24,4 +24,10 @@ assert.equal((await worker.fetch(request(messages, 'https://other.example'), env
 assert.equal((await worker.fetch(request(messages), { ...env, CHAT_LIMITER: { limit: async () => ({ success: false }) } })).status, 429);
 assert.equal((await worker.fetch(request(messages), {})).status, 503);
 assert.equal((await worker.fetch(request(messages), { ...env, AI: { run: async () => { throw Error('private error'); } } })).status, 502);
+const failure = await worker.fetch(request(messages), { ...env, AI: { run: async () => { throw Error('3036: private student data'); } } });
+const diagnostic = await failure.json();
+assert.equal(diagnostic.code, 'CF-3036');
+assert(diagnostic.error.includes('usage allowance'));
+assert(!JSON.stringify(diagnostic).includes('private student data'));
+assert.match(diagnostic.reference, /^[a-f0-9-]{36}$/);
 console.log('Passed chat routing, planner tool execution, amount redaction, role/origin validation, rate limiting and service errors.');
