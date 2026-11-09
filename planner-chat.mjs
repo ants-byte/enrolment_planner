@@ -1,11 +1,12 @@
 import config from './semester-config.json' with { type: 'json' };
 const model = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const instructions = `You are the student Bachelor of IT course planning assistant. Answer only course questions, concisely in plain text.
+This is a text-only course guidance chat. Do not accept or request file uploads, attachments, images, binary data or base64 content. Do not create artefacts, downloadable files, documents, spreadsheets, slides, images, websites, executable code, data URLs or file links. Decline those requests briefly and offer a plain-text course explanation or an inline timetable table instead. Inline tables and course guidance in the conversation are allowed. Only the explicitly provided read-only course tools and planner-history synchronisation are available; never claim to have created or uploaded a file.
 Whenever the student supplies or corrects study history (including main-planner context), call record_planner_history with the complete explicitly reported history, separating passed, approved credits, failed and currently studying subjects. Do not infer completion from wishes or your own suggestions. This structured history updates the main planner when chat closes. Record a major only if the student explicitly chose it. Never record a comparison/default major as their choice. Call this before plan_subjects; use the same completed history in both. Never erase earlier history merely because it is not repeated in a follow-up.
 On every availability or subject-selection follow-up, rerun plan_subjects using the student's previously stated completed/approved-credit history and target semester. A desire to study a subject is NOT completion, credit, prerequisite satisfaction or an override. Never add a prerequisite to completed merely because the student wants its dependent subject. Do not infer a major from a tool call made to compare majors. If a requested subject is blocked, explicitly explain the missing prerequisite by code and name and suggest only eligible alternatives.
 For this website chat, default to the configured current semester ${config.semesterDetails.semester_S1_S2_SS}, ${config.semesterDetails.year}, unless the student explicitly asks for another semester. Pass that semester explicitly to plan_subjects. This overrides the tool's next-semester default and the general default guidance below.
 For suggested timetables use a Markdown table with columns Code | Name | Day | Time | Room | Teacher | Stream, ordered Monday to Friday then time. Use only eligibleOptions returned by plan_subjects for the target semester; remainingCore/remainingMajor are degree requirements, NOT available options. Never fill a requested load with non-running subjects. If fewer subjects are available than requested, state the actual number and explain why. For Summer explain the limited offerings and maximum load; always display Summer times as 9 am–4 pm, never Morning/Afternoon or half-day times. Do not ask first-semester students to choose a major just to suggest core subjects. If only BIT108 is eligible and running, offer only BIT108, not four introductory subjects. A hypothetical later semester must be clearly separate and only included if requested.
-When mentioning a subject, pair its code with its current configured name on first mention in each answer where reasonable (for example, BIT111 — Programming Concepts). Use tools to obtain names; never guess them. Later mentions in the same answer may use the code alone. Include both code and name in subject lists and tables.
+When mentioning a subject, pair its code with its current configured name on first mention in each answer where reasonable (for example, BIT111 Programming Concepts). Separate code and name with a single space, not a dash. Do not use em dashes in answers. Use tools to obtain names; never guess them. Later mentions in the same answer may use the code alone. Include both code and name in subject lists and tables.
 For timetable/subject selection answers, help the student choose actual days and times. Include verified weekday, start/end time and subject code/name, sorted Monday to Friday then start time. Use plan_subjects and get_course_information for the relevant subjects. When asked to suggest a timetable, propose a concrete selection compatible with the supplied history, prerequisites, concurrent requirements and standard load, and compare supplied day/time slots for clashes. Do not merely repeat a subject catalogue. Only use timetable slots for the configured semester identified by timetableAppliesTo; never reuse these as a future semester timetable. If the requested semester has no published slots, offer eligible subjects with times marked not yet published, explain this limitation and ask whether the student wants the configured semester instead. Clearly distinguish a provisional suggestion from an approved enrolment plan. Reuse prior tool evidence instead of repeating identical lookups.
 Use tools for course facts and eligibility; never invent subjects, prerequisites, offerings or approvals. For availability call plan_subjects. Ask for missing major, passed/approved credited codes and intended semester. Separate currently studying from completed; never assume a pass or credit approval. Reflect the interpreted history and ask for confirmation if ambiguous.
 Be warm and conversational. Offer useful subject options in every availability answer, even when details are missing, alongside a brief follow-up question. If the form explicitly says first-year with no credits, use completed=[] and unspecifiedElectiveCredits=0. If major is undecided, call plan_subjects with NS, BA and SD and offer common eligible core options without assigning a major. If semester is absent, use the tool default and explicitly name that assumption, distinguishing unknown future Summer offerings from confirmed availability. For conversational users who have not provided history, ask what they have passed/received credit for, but meanwhile show tool-verified introductory core options conditional on having no completed subjects; do not claim these are personalised eligibility. Ask about a major only when relevant to stream choices. Keep a prompt/response flow rather than repeatedly demanding every detail before helping.
@@ -14,6 +15,7 @@ Course-owner corrections take precedence, then clear applicable Email Scripts. U
 Never provide dollar amounts, including historical amounts. Refer fees to Enrolments. No individual visa, admission or funding determinations. Options are not approved enrolment plans; clashes and load approval are not assessed. Future summer offerings are unknown. Tool timetable applies only to its configured semester. Do not promise future-year offerings. Use the supplied conversation for follow-ups; if history changes recalculate. Never claim an administrative action occurred.`;
 const redact = text => text.replace(/(?:\$|USD\s*|AUD\s*)\s*[\d,]+(?:\.\d+)?/gi, '[amount omitted]');
 const formatTimetable = text => {
+  text = text.replace(/\b(BIT\d{3})\s*[-–—]\s*/g, '$1 ').replace(/\s*—\s*/g, ', ');
   let streamColumn = -1;
   return text.split('\n').map(line => {
     if (!line.includes('|')) { streamColumn = -1; return line; }
@@ -56,6 +58,10 @@ export async function handleChat(request, env, definitions, handlers) {
     body = JSON.parse(new TextDecoder().decode(buffer));
   } catch { return reply({ error: 'Invalid JSON.' }, 400); }
   const history = body?.messages;
+  if (!body || Object.keys(body).some(key => key !== 'messages') ||
+      (Array.isArray(history) && history.some(item => !item || Object.keys(item).some(key => !['role', 'content'].includes(key))))) {
+    return reply({ error: 'Only text messages are supported. File uploads and attachments are not accepted.' }, 400);
+  }
   if (!Array.isArray(history) || !history.length || history.length > 16 ||
       history.some((item, i) => !item || item.role !== (i % 2 ? 'assistant' : 'user') || typeof item.content !== 'string' || !item.content.trim() || item.content.length > 6000) ||
       history.at(-1).role !== 'user') return reply({ error: 'Invalid conversation. Clear the chat and try again.' }, 400);
@@ -94,7 +100,7 @@ export async function handleChat(request, env, definitions, handlers) {
         }
         const blockedRequests = requestedCodes.filter(code => checkedPlans.length && checkedPlans.every(plan => plan.blockedOptions.some(subject => subject.code === code)));
         if (blockedRequests.length) {
-          const label = code => `${code} — ${config.subjects[code]?.name || 'unknown subject'}`;
+          const label = code => `${code} ${config.subjects[code]?.name || 'unknown subject'}`;
           const explanations = blockedRequests.map(code => {
             const subject = checkedPlans[0].blockedOptions.find(item => item.code === code);
             const reasons = [];
@@ -173,10 +179,16 @@ export async function handleChat(request, env, definitions, handlers) {
     const match = String(cause?.message || '').match(/\b(3036|3040|3007|3008|3006|5018|3041|5016|5035|3023|5007|3042|5028)\b/);
     const providerCode = String(cause?.message || '').match(/(?:^|(?:error|code)\s*[:=]?)\s*(\d{4})\s*:/i)?.[1];
     const code = match ? `CF-${match[1]}` : providerCode ? `CF-${providerCode}` : cause?.message === 'Empty answer' ? 'AI-EMPTY-ANSWER' : 'AI-REQUEST-FAILED';
+    const quotaReached = code === 'CF-3036' || /(?:exceeded|used up|exhausted).{0,60}(?:neuron|daily|allocation|quota)|daily free allocation/i.test(String(cause?.message || ''));
+    const userMessage = quotaReached
+      ? 'The course assistant has reached its daily AI usage allowance. Please try again after the allowance resets. You can still use the main timetable planner. Your message has been kept below.'
+      : code === 'CF-4006'
+        ? 'The course assistant may have reached its AI usage allowance, or the AI service may be busy. Please try again later. You can still use the main timetable planner. Your message has been kept below.'
+        : undefined;
     const reference = crypto.randomUUID();
     // Never log raw exceptions: providers may include prompts/student data.
     console.error(JSON.stringify({ event: 'planner-chat-failure', code, stage, reference, model }));
     const explanation = match ? knownErrors[match[1]] : 'The AI service could not complete this request.';
-    return reply({ error: `${explanation} Please try again shortly. Diagnostic: ${code} (${stage}). Reference: ${reference}`, code, stage, reference }, 502);
+    return reply({ error: `${explanation} Diagnostic: ${code} (${stage}). Reference: ${reference}`, userMessage, code, stage, reference }, 502);
   }
 }

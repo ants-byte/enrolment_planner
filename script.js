@@ -43,6 +43,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   const friendlyLog = document.getElementById('friendly-chat-log');
   const friendlyInput = document.getElementById('friendly-chat-input');
+  const blockChatFiles = event => {
+    const transfer = event.dataTransfer || event.clipboardData;
+    if (!transfer || !(transfer.files?.length || Array.from(transfer.items || []).some(item => item.kind === 'file'))) return;
+    event.preventDefault(); event.stopPropagation();
+    showFriendlyNotice('File uploads aren’t supported. Paste only the relevant subject names, codes and results as text, without personal details.');
+  };
+  friendlyChat.addEventListener('dragover', event => {
+    if (Array.from(event.dataTransfer?.types || []).includes('Files')) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'none'; }
+  });
+  friendlyChat.addEventListener('drop', blockChatFiles);
+  friendlyChat.addEventListener('paste', blockChatFiles);
   const showFriendlyNotice = text => {
     const bubble = document.createElement('p');
     bubble.className = 'friendly-bubble assistant';
@@ -108,7 +119,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyMessages.forEach(message => {
       const bubble = document.createElement('p');
       bubble.className = `friendly-bubble ${message.role}`;
-      bubble.textContent = message.content;
+      bubble.textContent = message.role === 'user'
+        ? message.content.replace(/^Main planner context \(student-entered\):\n[^\n]*\n\n/, '')
+        : message.content;
       if (message.role === 'assistant') {
         const lines = message.content.split('\n');
         const cells = line => line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
@@ -167,7 +180,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
     const draft = friendlyInput.value;
     friendlyError.hidden = true; friendlyError.replaceChildren();
-    friendlyMessages.push({ role: 'user', content: friendlyMessages.length ? draft.trim() : `${friendlyMainContext ? `Main planner context (student-entered):\n${friendlyMainContext}\n\n` : ''}${draft.trim()}` });
+    friendlyMessages.push({ role: 'user', content: friendlyMessages.length ? draft.trim() : `${friendlyMainSummary && friendlyMainContext ? `Main planner context (student-entered):\n${friendlyMainContext}\n\n` : ''}${draft.trim()}` });
     renderFriendlyChat(); friendlyInput.value = '';
     friendlyBusy = true; friendlySend.disabled = true; friendlyReset.disabled = true; friendlyInput.disabled = true;
     const workingStarted = Date.now();
@@ -186,7 +199,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         renderFriendlyChat();
         return;
       }
-      if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
+      if (!response.ok || typeof result.answer !== 'string') {
+        const failure = new Error(result.error || 'Chat is unavailable.');
+        failure.userMessage = result.userMessage;
+        throw failure;
+      }
       if (result.plannerState) {
         friendlyPendingState = { ...friendlyPendingState, ...result.plannerState, history: result.plannerState.history || friendlyPendingState?.history || null };
       }
@@ -196,9 +213,9 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
       const notice = document.createElement('p');
-      notice.textContent = error.name === 'TimeoutError'
+      notice.textContent = error.userMessage || (error.name === 'TimeoutError'
         ? 'The reply is taking too long. Your message is ready below — please try sending it again.'
-        : 'We couldn’t connect to the course assistant just now. Your message is ready below — please try again shortly.';
+        : 'We couldn’t connect to the course assistant just now. Your message is ready below, please try again shortly.');
       const details = document.createElement('details');
       const summary = document.createElement('summary'); summary.textContent = 'Technical details';
       const detailText = document.createElement('p'); detailText.textContent = error.message;
@@ -14610,7 +14627,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     friendlyMainContext = context;
     friendlyPendingState = null;
     friendlyMessages = [];
-    const names = codes => codes.map(code => `${code} — ${getSubjectName(code)}`).join(', ') || 'None';
+    const names = codes => codes.map(code => `${code} ${getSubjectName(code)}`).join(', ') || 'None';
     friendlyMainSummary = completed.length || current.length || selected.length || failed.length || history.unspecifiedElectiveCredits || history.major !== 'undecided'
       ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed: ${names(passed)}\nApproved credits: ${names(credited)}\nUnnamed elective credits: ${history.unspecifiedElectiveCredits}\nCurrently studying: ${names(current)}\nFailed attempts: ${names(failed)}\nSelected subjects: ${names(selected)}` : '';
     renderFriendlyChat();
