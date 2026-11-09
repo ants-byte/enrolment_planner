@@ -13866,6 +13866,7 @@ body.completed-mode #clear-selections {
 #friendly-chat-unlock { padding: 12px; margin-bottom: 12px; border: 1px solid #888; border-radius: 12px; background: var(--chat-panel); color: var(--chat-text); }
 #friendly-chat-unlock p { font-size: 12px; margin-top: 0; }
 #friendly-chat-error #friendly-chat-unlock { border: 0; padding: 8px 0 0; margin: 0; background: transparent; color: inherit; }
+#friendly-token-counter { flex: 0 0 auto; align-self: center; font-size: 11px; white-space: nowrap; color: var(--chat-text); opacity: .75; }
 #friendly-chat-unlock label { display: block; margin: 8px 0 4px; }
 #friendly-chat-unlock input { box-sizing: border-box; display: block; width: 100%; padding: 8px; margin-bottom: 8px; font: inherit; }
 #friendly-chat-error details p { margin-top: 6px; }

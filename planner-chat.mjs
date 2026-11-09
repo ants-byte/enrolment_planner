@@ -49,6 +49,12 @@ export async function handleChat(request, env, definitions, handlers, context) {
   let response;
   try { response = await handleBrowserChat(request, env, definitions, handlers, browserId, networkId, context); }
   catch { response = reply({ error: 'Usage tracking unavailable.', userMessage: 'The Subject Planner’s usage controls are temporarily unavailable. Please try again later.' }, 503); }
+  try {
+    const usage = await usageRequest(env, browserId, 'status');
+    const data = await response.json();
+    data.tokenUsage = { owner: !!usage.owner, remaining: Math.max(0, usage.allowance - usage.total) };
+    response = Response.json(data, { status: response.status, headers: response.headers });
+  } catch {}
   response.headers.append('Set-Cookie', `subject_planner_browser=${browserId}; Path=/chat; Max-Age=7776000; HttpOnly; Secure; SameSite=Strict`);
   return response;
 }
@@ -151,11 +157,12 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
   } catch { return reply({ error: 'Invalid JSON.' }, 400); }
   if (body?.action === 'unlock') {
     if (Object.keys(body).some(key => !['action', 'name', 'key'].includes(key)) || typeof body.name !== 'string' || typeof body.key !== 'string' || body.name.length > 120 || body.key.length > 200) return reply({ error: 'Enter your name and access key.' }, 400);
+    if (body.key !== 'antonysaccount' && (typeof env.CHAT_OWNER_KEY !== 'string' || env.CHAT_OWNER_KEY.length < 32)) return reply({ error: 'Owner key configuration invalid.', code: 'OWNER-KEY-CONFIG', unlockRequired: true, userMessage: 'Owner access is not configured correctly in this running deployment. CHAT_OWNER_KEY must be a Production runtime Secret containing at least 32 characters. Save the updated secret and try again.' }, 403);
     const networkStatus = await usageRequest(env, networkId, 'ipstatus');
     const ownerKey = typeof env.CHAT_OWNER_KEY === 'string' && env.CHAT_OWNER_KEY.length >= 32 && body.key === env.CHAT_OWNER_KEY;
     const scope = !ownerKey && (networkStatus.restricted || networkStatus.blockedUntil) ? networkId : browserId;
     const result = await usageRequest(env, scope, scope === networkId ? 'ipunlock' : 'unlock', { name: body.name, key: body.key });
-    if (!result.allowed) return reply({ ...restrictionMessage(result), userMessage: result.invalid ? 'The access key was not accepted. Enter your name and the correct key.' : result.attemptsLimited ? 'Too many access-key attempts. Please wait an hour.' : restrictionMessage(result).userMessage, unlockRequired: true, error: 'Extra usage not granted.' }, 403);
+    if (!result.allowed) return reply({ ...restrictionMessage(result), userMessage: result.invalid || (!ownerKey && result.blockedUntil) ? 'The access key was not accepted. Enter the secret value, not the name CHAT_OWNER_KEY. Student extra usage cannot bypass a 90-day block.' : result.attemptsLimited ? 'Too many access-key attempts. Please wait an hour.' : restrictionMessage(result).userMessage, unlockRequired: true, error: 'Extra usage not granted.' }, 403);
     return reply({ unlocked: true, extraPercent: result.extraPercent, userMessage: result.owner ? 'Owner access enabled for this browser across networks for up to 90 days. Browser and network token allowances do not apply. The site budget, pilot end date and short-term rate limits still apply. Please send your question again.' : `Extra usage granted: ${result.extraPercent}% of the normal token allowance. This is your one and only extra allowance. Reaching this limit will block AI access for 90 days. The pilot end date and site-wide token cap still apply. Please send your question again.` });
   }
   const history = body?.messages;
@@ -198,8 +205,12 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
       ], max_tokens: 12, temperature: 0,
     });
     const classification = scope.response?.trim().toUpperCase();
+    const scopeStatus = ['ALLOW', 'MIXED', 'BLOCK'].includes(classification)
+      ? await usageRequest(env, browserId, 'scope', { classification }) : null;
     if (!['ALLOW', 'MIXED'].includes(classification)) {
-      return reply({ answer: 'I can help with Bachelor of IT subjects, timetables, enrolment, credits and course progression. I can’t help with unrelated personal tasks or complete coursework. What would you like to know about your course?' });
+      return reply({ answer: scopeStatus?.offTopicCount >= 2
+        ? 'AI access for this browser is now blocked for 90 days because you asked two unrelated questions in a row. You can still use the main timetable planner.'
+        : 'I can help with Bachelor of IT subjects, timetables, enrolment, credits and course progression. Please keep questions related to your course. Two unrelated questions in a row will block AI access in this browser for 90 days.' });
     }
     if (classification === 'MIXED') messages.push({ role: 'system', content: 'The request mixes course guidance with an unrelated task. Answer only the in-scope enrolment/course question. Briefly decline the unrelated part; do not perform it.' });
     for (let round = 0; round < 4; round++) {

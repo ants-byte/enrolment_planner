@@ -22,7 +22,7 @@ export class ChatUsage {
         } else record.browserCountCapped = true;
       }
       const allowance = () => Math.floor(normalLimit(this.env) * (record.isIp ? 200 : 1) * (record.grants >= 1 ? 1.5 : 1));
-      const status = () => ({ owner: !!record.owner, total: record.total, allowance: allowance(), grants: record.grants,
+      const status = () => ({ owner: !!record.owner, blockReason: record.blockReason, total: record.total, allowance: allowance(), grants: record.grants,
         restricted: record.total >= allowance(), blockedUntil: record.blockedUntil, scope: record.isIp ? 'network' : 'browser',
         ...(record.isIp ? {
           browserCount: Object.keys(record.browsers || {}).length,
@@ -32,8 +32,17 @@ export class ChatUsage {
           browserCountCapped: !!record.browserCountCapped,
         } : {}) });
       let result;
-      if (action === '/start') {
-        if (!record.owner && record.blockedUntil > now) result = { allowed: false, ...status() };
+      if (action === '/scope') {
+        if (data.classification === 'BLOCK') record.offTopicCount = (record.offTopicCount || 0) + 1;
+        else if (['ALLOW', 'MIXED'].includes(data.classification)) record.offTopicCount = 0;
+        if (record.offTopicCount >= 2) {
+          record.blockedUntil = now + RETENTION; record.expiresAt = record.blockedUntil;
+          record.blockReason = 'off-topic';
+        }
+        result = { ...status(), offTopicCount: record.offTopicCount || 0 };
+      } else if (action === '/start') {
+        if (record.blockReason === 'off-topic' && record.blockedUntil > now) result = { allowed: false, ...status() };
+        else if (!record.owner && record.blockedUntil > now) result = { allowed: false, ...status() };
         else if (!record.owner && record.total >= allowance()) result = { allowed: false, ...status() };
         else if (record.leaseUntil > now) result = { allowed: false, busy: true };
         else { record.lease = crypto.randomUUID(); record.leaseUntil = now + 120000; result = { allowed: true, lease: record.lease }; }
@@ -50,7 +59,7 @@ export class ChatUsage {
         result = status();
       } else if (action === '/unlock' || action === '/ipunlock') {
         if (!record.isIp && typeof this.env.CHAT_OWNER_KEY === 'string' && this.env.CHAT_OWNER_KEY.length >= 32 && data.key === this.env.CHAT_OWNER_KEY) {
-          record.owner = true; record.blockedUntil = 0;
+          record.owner = true; record.blockedUntil = 0; delete record.blockReason; record.offTopicCount = 0;
           result = { allowed: true, owner: true };
         }
         else if (record.blockedUntil > now) result = { allowed: false, ...status() };
@@ -147,6 +156,7 @@ export async function usageRequest(env, browserId, action, data = {}) {
 
 export function restrictionMessage(status) {
   const who = status.scope === 'network' ? 'This network' : 'This browser';
+  if (status.blockReason === 'off-topic') return { userMessage: 'AI access for this browser is blocked for 90 days after two consecutive unrelated questions. You can still use the main timetable planner. Site owners can enter their owner access key below.', code: 'USAGE-BLOCKED', unlockRequired: true, ownerOnly: true };
   if (status.busy) return { userMessage: 'Another question is already running in this browser. Please wait for it to finish.', code: 'USAGE-BUSY' };
   if (status.blockedUntil) return { userMessage: `${who} has used its normal allowance and its one extra allowance. Student AI access is blocked for 90 days. Site owners can enter their name and owner access key below. You can still use the main timetable planner.`, code: 'USAGE-BLOCKED', unlockRequired: true, ownerOnly: true, blockedUntil: status.blockedUntil };
   return { userMessage: `${who} has reached its AI token allowance. To request extra usage, enter your name and the access key below. Your name is stored for usage records, not checked as proof of identity.`, code: 'USAGE-RESTRICTED', unlockRequired: true };

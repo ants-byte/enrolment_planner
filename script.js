@@ -63,6 +63,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     return bubble;
   };
   const friendlyError = document.getElementById('friendly-chat-error');
+  const updateTokenCounter = result => {
+    if (!result.tokenUsage) return;
+    const counter = document.getElementById('friendly-token-counter');
+    counter.textContent = result.tokenUsage.owner ? 'Owner access' : `${result.tokenUsage.remaining.toLocaleString()} tokens left`;
+  };
   const friendlyUnlock = document.getElementById('friendly-chat-unlock');
   friendlyUnlock.addEventListener('submit', async event => {
     event.preventDefault();
@@ -74,17 +79,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'unlock', name: name.value.trim(), key: key.value }), signal: AbortSignal.timeout(15000) });
       const result = await response.json();
+      updateTokenCounter(result);
       if (response.ok && result.unlocked) {
         friendlyUnlock.hidden = true; friendlyError.hidden = true; friendlyUnlock.reset();
         showFriendlyNotice(result.userMessage); friendlyInput.focus();
       } else {
-        friendlyError.textContent = result.userMessage || 'Extra usage could not be granted. Please check your name and access key.';
+        friendlyError.textContent = result.userMessage || result.error || 'Extra usage could not be granted. Please check your name and access key.';
         friendlyError.append(friendlyUnlock);
         friendlyError.hidden = false;
-        friendlyUnlock.hidden = !result.unlockRequired;
+        friendlyUnlock.hidden = false;
       }
     } catch {
-      friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.append(friendlyUnlock); friendlyError.hidden = false;
+      friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.append(friendlyUnlock); friendlyUnlock.hidden = false; friendlyError.hidden = false;
     } finally { key.value = ''; submit.disabled = false; }
   });
   const friendlySend = document.getElementById('send-friendly-chat');
@@ -269,6 +275,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     try {
       const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages }), signal: AbortSignal.timeout(90000) });
       const result = await response.json();
+      updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
         friendlyMessages.push({ role: 'assistant', content: 'Let’s work this out together. Which semester would you like a timetable for? You can also tell me your major and any subjects you’ve passed or received credit for. If you’re just starting, say “first year, no credits”.' });
         renderFriendlyChat();
