@@ -83,6 +83,7 @@ export function describeSubject(code) {
   const slot = config.timetable[code];
   return {
     code, name: meta.name, core: !!meta.core, majorStreams: meta.majorStreams || [],
+    stream: meta.core ? 'Core' : (meta.majorStreams || []).join(' / '),
     prerequisites: meta.prerequisites || [], corequisites: meta.corequisites || [],
     majorSubjectRequirement: meta.majorSubjectRequirement || null,
     regularOffering: config.subjectsRunning.semester1Only.includes(code) ? 'S1' : config.subjectsRunning.semester2Only.includes(code) ? 'S2' : 'S1 and S2',

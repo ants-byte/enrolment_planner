@@ -69,6 +69,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     applyFriendlyTheme(theme);
     try { localStorage.setItem('plannerChatTheme', theme); } catch {}
   });
+  [
+    { id: 'density-friendly-chat', key: 'chatDensity', storage: 'plannerChatDensity', on: 'compact', off: 'expanded', onLabel: 'Expanded', offLabel: 'Compact', onAction: 'Use expanded chat layout', offAction: 'Use compact chat layout' },
+    { id: 'contrast-friendly-chat', key: 'chatContrast', storage: 'plannerChatContrast', on: 'high', off: 'normal', onLabel: 'Normal contrast', offLabel: 'Contrast', onAction: 'Use normal contrast', offAction: 'Use high contrast' },
+  ].forEach(option => {
+    const button = document.getElementById(option.id);
+    const apply = value => {
+      const active = value === option.on;
+      friendlyChat.dataset[option.key] = active ? option.on : option.off;
+      button.textContent = active ? option.onLabel : option.offLabel;
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', active ? option.onAction : option.offAction);
+    };
+    let saved;
+    try { saved = localStorage.getItem(option.storage); } catch {}
+    apply(saved);
+    button.addEventListener('click', () => {
+      apply(friendlyChat.dataset[option.key] === option.on ? option.off : option.on);
+      try { localStorage.setItem(option.storage, friendlyChat.dataset[option.key]); } catch {}
+    });
+  });
   let friendlyMessages = [];
   let friendlyBusy = false;
   const renderFriendlyChat = () => {
@@ -86,7 +106,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const cells = line => line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
         bubble.replaceChildren();
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i].includes('|') && i + 1 < lines.length && /^\|?\s*:?-{3,}/.test(lines[i + 1].trim())) {
+          if (lines[i].includes('|') && i + 1 < lines.length && cells(lines[i + 1]).length > 1 && cells(lines[i + 1]).every(cell => /^:?-+:?$/.test(cell))) {
             const scroll = document.createElement('span'); scroll.className = 'friendly-table-scroll';
             const table = document.createElement('table');
             const head = table.createTHead().insertRow();
