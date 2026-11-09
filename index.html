@@ -2086,7 +2086,10 @@ Last Modified: 11/07/2026
       </div>
       <div class="planner-chat-field-heading"><label for="planner-chat-question">Your question</label><button type="button" data-chat-clear="planner-chat-question">Clear</button></div>
       <textarea id="planner-chat-question" rows="3" placeholder="What can I study next semester? Include your intended semester and year."></textarea>
-      <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
+      <div class="planner-feedback-frame">
+        <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
+        <svg class="planner-feedback-border" aria-hidden="true"><rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="6" pathLength="100"/></svg>
+      </div>
       <div id="planner-chat-messages" hidden></div>
       <p>Answers may contain mistakes. Options are planning guidance and still need enrolment approval.</p>
     </div>

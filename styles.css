@@ -13850,9 +13850,10 @@ body.completed-mode #clear-selections {
 .friendly-chat-compose small { display: block; text-align: center; opacity: .75; font-size: 11px; }
 :root[data-appearance="dark"] .friendly-chat-input-shell { background: #223344; }
 #planner-chat, #friendly-chat {
+  width: min(800px, calc(100vw - 24px));
   resize: horizontal;
   overflow: auto;
-  min-width: min(360px, calc(100vw - 24px));
+  min-width: min(800px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
 }
 #planner-chat .modal-header { position: relative; padding: 12px 42px 0 16px; margin-bottom: 0; }
@@ -13893,6 +13894,15 @@ body.completed-mode #clear-selections {
   font: inherit;
 }
 #planner-chat textarea { resize: both; max-width: 100%; min-width: 120px; }
+#planner-chat #planner-chat-major { width: auto; max-width: 100%; }
+.planner-feedback-frame { position: relative; }
+.planner-feedback-frame #planner-chat-status { margin: 12px 0; }
+.planner-feedback-border { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.planner-feedback-border rect { fill: none; stroke: #397bb5; stroke-width: 2px; stroke-dasharray: 85 1 1 2 1 2 1 2 1 2 1 1; animation: planner-border-travel 4s linear infinite; }
+#planner-chat-status.feedback-loading { background-image: none; animation: none; }
+#planner-chat-status.feedback-loading + .planner-feedback-border { display: block; }
+@keyframes planner-border-travel { to { stroke-dashoffset: -100; } }
+@media (prefers-reduced-motion: reduce) { .planner-feedback-border rect { animation: none; } }
 #planner-chat-messages { max-height: 320px; overflow-y: auto; }
 #planner-chat-messages p { white-space: pre-wrap; overflow-wrap: anywhere; border-top: 1px solid #888; padding-top: 12px; }
 #planner-chat button:disabled { opacity: 0.55; cursor: not-allowed; }
