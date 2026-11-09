@@ -14662,7 +14662,11 @@ const TRIAGE_READ_MAX_ROWS = 0;
     }).join(', ') || 'None';
     const unnamedCodes = electivePlaceholderState.filter(Boolean);
     const completedCodes = [...new Set([...passed, ...credited, ...unnamedCodes])];
-    friendlyHistoryBreakdown = `Passed: ${names(passed)}\n\nApproved credits: ${names(credited)}\n\nUnnamed elective credits: ${unnamedCodes.join(', ') || 'None'}`;
+    friendlyHistoryBreakdown = [
+      passed.length ? `Passed: ${names(passed)}` : '',
+      credited.length ? `Approved credits: ${names(credited)}` : '',
+      unnamedCodes.length ? `Unnamed elective credits: ${unnamedCodes.join(', ')}` : '',
+    ].filter(Boolean).join('\n\n');
     const currentSummary = current.map(code => `${code} (${passForEnrolmentsOverrides.has(code) ? 'treated as already passed for planning' : 'not treated as already passed'})`).join(', ') || 'None';
     friendlyMainSummary = completed.length || current.length || selected.length || failed.length || history.unspecifiedElectiveCredits || history.major !== 'undecided'
       ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed/Credits: ${completedCodes.join(', ') || 'None'}\nCurrently studying: ${currentSummary}\nSelected subjects: ${names(selected)}` : '';

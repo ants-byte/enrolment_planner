@@ -3,7 +3,6 @@
   "main": "mcp-worker.mjs",
   "compatibility_date": "2026-11-06",
   "build": { "command": "node tools/update-modified.mjs" },
-  "ai": { "binding": "AI" },
   "ratelimits": [
     { "name": "CHAT_LIMITER", "namespace_id": "1004", "simple": { "limit": 6, "period": 60 } },
     { "name": "CHAT_WORK_LIMITER", "namespace_id": "1005", "simple": { "limit": 18, "period": 60 } },

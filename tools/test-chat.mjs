@@ -1,17 +1,36 @@
 import assert from 'node:assert/strict';
 import actualWorker from '../mcp-worker.mjs';
-const worker = { fetch: (request, env) => actualWorker.fetch(request, env.AI ? {
-  ...env, AI: { run: (model, input) => input.messages[0]?.content.startsWith('COURSE_SCOPE_CHECK:')
-    ? Promise.resolve({ response: env.scopeDecision || 'ALLOW' }) : env.AI.run(model, input) },
-} : env) };
+const worker = { fetch: async (request, env) => {
+  if (!Object.hasOwn(request, 'cf')) Object.defineProperty(request, 'cf', { value: { country: 'AU' } });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, 'https://api.openai.com/v1/responses');
+    assert.equal(options.headers.Authorization, 'Bearer test-key');
+    const body = JSON.parse(options.body);
+    assert.equal(body.store, false);
+    assert.equal(body.reasoning.effort, body.input[0]?.content.startsWith('COURSE_SCOPE_CHECK:') ? 'low' : 'medium');
+    assert(!('temperature' in body));
+    if (env.providerError) return Response.json({ error: { code: env.providerError, message: 'private details' } }, { status: 429 });
+    const messages = body.input.map(item => item.type === 'function_call_output' ? { role: 'tool', content: item.output } : item);
+    const result = messages[0]?.content.startsWith('COURSE_SCOPE_CHECK:')
+      ? { response: env.scopeDecision || 'ALLOW' } : await env.AI.run(body.model, { messages, tools: body.tools });
+    const output = result.tool_calls?.length
+      ? result.tool_calls.map((call, index) => ({ type: 'function_call', call_id: `call_${index}`, name: call.name, arguments: JSON.stringify(call.arguments) }))
+      : [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: result.response }] }];
+    return Response.json({ status: 'completed', output });
+  };
+  try { return await actualWorker.fetch(request, env); }
+  finally { globalThis.fetch = originalFetch; }
+} };
 let calls = 0;
 const env = {
+  OPENAI_API_KEY: 'test-key',
   CHAT_LIMITER: { limit: async () => ({ success: true }) },
   CHAT_WORK_LIMITER: { limit: async () => ({ success: true }) },
   CHAT_TOTAL_WORK_LIMITER: { limit: async () => ({ success: true }) },
   AI: { run: async (model, input) => {
     calls++;
-    assert(model.includes('llama-3.3'));
+    assert.equal(model, 'gpt-6.1-sol');
     if (calls === 1) return { tool_calls: [{ name: 'plan_subjects', arguments: { completed: ['BIT242'], major: 'NS', semester: 'SS' } }] };
     assert(input.messages.at(-1).content.includes('BIT352'));
     return { response: 'BIT352 is an option. Historical fee $1234.' };
@@ -21,6 +40,14 @@ const request = (messages, origin = 'https://example.com') => new Request('https
   method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ messages }),
 });
 const messages = [{ role: 'user', content: 'NS major, passed BIT242. What can I take in Summer?' }];
+for (const country of ['US', undefined]) {
+  const overseas = request(messages);
+  Object.defineProperty(overseas, 'cf', { value: country ? { country } : {} });
+  overseas.headers.set('CF-IPCountry', 'AU');
+  const denied = await worker.fetch(overseas, {});
+  assert.equal(denied.status, 403);
+  assert.equal((await denied.json()).code, 'AU-ONLY');
+}
 const result = await worker.fetch(request(messages), env);
 assert.equal(result.status, 200);
 assert.equal(calls, 2);
@@ -76,11 +103,15 @@ for (const binding of ['CHAT_WORK_LIMITER', 'CHAT_TOTAL_WORK_LIMITER']) {
 }
 assert.equal((await worker.fetch(request(messages), {})).status, 503);
 assert.equal((await worker.fetch(request(messages), { ...env, AI: { run: async () => { throw Error('private error'); } } })).status, 502);
-const failure = await worker.fetch(request(messages), { ...env, AI: { run: async () => { throw Error('3036: private student data'); } } });
+const failure = await worker.fetch(request(messages), { ...env, providerError: 'insufficient_quota' });
 const diagnostic = await failure.json();
-assert.equal(diagnostic.code, 'CF-3036');
-assert(diagnostic.userMessage.includes('daily AI usage allowance'));
-assert(diagnostic.error.includes('usage allowance'));
+assert.equal(diagnostic.code, 'insufficient_quota');
+assert(diagnostic.userMessage.includes('OpenAI API allowance'));
+assert(diagnostic.error.includes('OpenAI diagnostic'));
 assert(!JSON.stringify(diagnostic).includes('private student data'));
 assert.match(diagnostic.reference, /^[a-f0-9-]{36}$/);
+const quota = await worker.fetch(request(messages), { ...env, providerError: 'insufficient_quota' });
+const quotaBody = await quota.json();
+assert(quotaBody.userMessage.includes('OpenAI API allowance'));
+assert(!JSON.stringify(quotaBody).includes('private details'));
 console.log('Passed chat routing, planner tool execution, amount redaction, role/origin validation, rate limiting and service errors.');

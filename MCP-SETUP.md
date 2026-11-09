@@ -6,14 +6,21 @@ No API key, database or student-history storage is required.
 
 ## Deploy
 
-The website chat uses `/chat` and the Workers AI binding `AI`, configured in
-`wrangler.jsonc`, with the Llama 3.3 70B fast model. Deploy the updated Worker and
-assets together to enable the dialog. No external provider key is required.
+The website chat uses `/chat` with the OpenAI Responses API and `gpt-6.1-sol`
+(medium reasoning for answers, low for scope checks). Set `OPENAI_API_KEY`
+as a Worker Secret in Settings > Variables and Secrets. Its value is never put
+in Wrangler, Git or browser code. Worker secrets are managed separately from
+Wrangler resource bindings, so no Secrets Store ID is needed. Existing Secrets
+Store bindings with that name must be removed before adding the Worker secret.
+Deploy the Worker and assets together. Workers AI/Llama is no longer called.
+OpenAI API billing is separate from a ChatGPT Plus subscription. The API key's
+project must have active credits/billing and access to the configured model.
 `CHAT_LIMITER` allows six questions per minute per browser per Cloudflare location;
-this is an abuse throttle, not an account-wide spending cap. Each question is
-limited to four AI rounds and four tool calls per round. Conversations stay in
-tab memory and are sent to Cloudflare AI, not saved to a student database.
-Editing the history starts a fresh conversation. No staff-only source is loaded.
+this is an abuse throttle, not an account-wide spending cap. Each question has
+one scope check and up to five answer rounds, with four tool calls per round.
+Conversations stay in tab memory and pass through Cloudflare to OpenAI; requests
+set `store: false`. No staff-only source is loaded. Diagnostics distinguish API
+billing, rate limiting and connection problems without logging prompts or keys.
 Check with `node tools/test-chat.mjs`, then test real answers after deployment.
 
 In the existing **Cloudflare Workers** project's Git build settings, use this
