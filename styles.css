@@ -13843,6 +13843,10 @@ body.completed-mode #clear-selections {
 #friendly-chat-log { flex: 1; min-height: 0; max-height: none; padding: 16px 24px; }
 .friendly-bubble { margin: 12px 0 24px; padding: 16px 18px; background: #f5f5f5; border: 0; border-radius: 18px; }
 .friendly-bubble.user { background: #eaeaea; border-radius: 18px; max-width: 78%; }
+.friendly-table-scroll { display: block; overflow-x: auto; margin: 12px 0; white-space: normal; }
+.friendly-table-scroll table { border-collapse: collapse; width: 100%; font-size: 13px; color: inherit; }
+.friendly-table-scroll th, .friendly-table-scroll td { padding: 8px; border: 1px solid #8886; text-align: left; background: transparent; color: inherit; }
+.friendly-table-scroll th { background: #397bb533; font-weight: 700; }
 .friendly-bubble.friendly-working { color: #777; background: transparent; border: 0; padding-left: 0; }
 :root[data-appearance="dark"] .friendly-bubble.friendly-working { color: #aaa; background: transparent; }
 @media (prefers-reduced-motion: reduce) { .friendly-working { animation: none; } }
@@ -13859,6 +13863,15 @@ body.completed-mode #clear-selections {
 #friendly-chat-status { margin: 8px 0; font-size: 12px; }
 .friendly-chat-compose small { display: block; text-align: center; opacity: .75; font-size: 11px; }
 :root[data-appearance="dark"] .friendly-chat-input-shell { background: #223344; }
+#friendly-chat[data-chat-theme] { background: var(--chat-bg); color: var(--chat-text); color-scheme: light; }
+#friendly-chat[data-chat-theme="light"] { --chat-bg: #fff; --chat-text: #202123; --chat-panel: #f5f5f5; --chat-user: #eaeaea; --chat-muted: #777; }
+#friendly-chat[data-chat-theme="dark"] { --chat-bg: #171717; --chat-text: #eee; --chat-panel: #262626; --chat-user: #333; --chat-muted: #aaa; color-scheme: dark; }
+#friendly-chat[data-chat-theme] .friendly-chat-header { background: var(--chat-bg); }
+#friendly-chat[data-chat-theme] .friendly-bubble, #friendly-chat[data-chat-theme] .friendly-chat-input-shell { background: var(--chat-panel); color: var(--chat-text); }
+#friendly-chat[data-chat-theme] .friendly-bubble.user { background: var(--chat-user); }
+#friendly-chat[data-chat-theme] .friendly-bubble.friendly-working { background: transparent; color: var(--chat-muted); }
+#friendly-chat[data-chat-theme] #close-friendly-chat, #friendly-chat[data-chat-theme] #theme-friendly-chat { background: transparent; color: var(--chat-text); }
+#friendly-chat #theme-friendly-chat { font-size: 12px; padding: 6px 10px; }
 #planner-chat, #friendly-chat {
   width: min(800px, calc(100vw - 24px));
   resize: horizontal;

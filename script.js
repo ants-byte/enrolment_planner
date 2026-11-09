@@ -21,6 +21,21 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyError = document.getElementById('friendly-chat-error');
   const friendlySend = document.getElementById('send-friendly-chat');
   const friendlyReset = document.getElementById('reset-friendly-chat');
+  const friendlyTheme = document.getElementById('theme-friendly-chat');
+  const applyFriendlyTheme = theme => {
+    friendlyChat.dataset.chatTheme = theme;
+    friendlyTheme.textContent = theme === 'dark' ? 'Light' : 'Dark';
+    friendlyTheme.setAttribute('aria-label', `Use ${theme === 'dark' ? 'light' : 'dark'} chat theme`);
+    friendlyTheme.setAttribute('aria-pressed', String(theme === 'dark'));
+  };
+  let savedChatTheme;
+  try { savedChatTheme = localStorage.getItem('plannerChatTheme'); } catch {}
+  applyFriendlyTheme(savedChatTheme === 'dark' || savedChatTheme === 'light' ? savedChatTheme : document.documentElement.dataset.appearance === 'dark' ? 'dark' : 'light');
+  friendlyTheme.addEventListener('click', () => {
+    const theme = friendlyChat.dataset.chatTheme === 'dark' ? 'light' : 'dark';
+    applyFriendlyTheme(theme);
+    try { localStorage.setItem('plannerChatTheme', theme); } catch {}
+  });
   let friendlyMessages = [];
   let friendlyBusy = false;
   const renderFriendlyChat = () => {
@@ -33,6 +48,24 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const bubble = document.createElement('p');
       bubble.className = `friendly-bubble ${message.role}`;
       bubble.textContent = message.content;
+      if (message.role === 'assistant') {
+        const lines = message.content.split('\n');
+        const cells = line => line.trim().replace(/^\||\|$/g, '').split('|').map(cell => cell.trim());
+        bubble.replaceChildren();
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('|') && i + 1 < lines.length && /^\|?\s*:?-{3,}/.test(lines[i + 1].trim())) {
+            const scroll = document.createElement('span'); scroll.className = 'friendly-table-scroll';
+            const table = document.createElement('table');
+            const head = table.createTHead().insertRow();
+            cells(lines[i]).forEach(value => { const th = document.createElement('th'); th.textContent = value; head.append(th); });
+            const body = table.createTBody(); i += 2;
+            while (i < lines.length && lines[i].includes('|')) {
+              const row = body.insertRow(); cells(lines[i]).forEach(value => { row.insertCell().textContent = value; }); i++;
+            }
+            i--; scroll.append(table); bubble.append(scroll);
+          } else bubble.append(document.createTextNode(lines[i] + '\n'));
+        }
+      }
       friendlyLog.append(bubble);
     });
     friendlyLog.scrollTop = friendlyLog.scrollHeight;

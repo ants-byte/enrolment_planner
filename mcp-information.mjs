@@ -86,7 +86,7 @@ export function describeSubject(code) {
     prerequisites: meta.prerequisites || [], corequisites: meta.corequisites || [],
     majorSubjectRequirement: meta.majorSubjectRequirement || null,
     regularOffering: config.subjectsRunning.semester1Only.includes(code) ? 'S1' : config.subjectsRunning.semester2Only.includes(code) ? 'S2' : 'S1 and S2',
-    configuredSemesterTimetable: slot ? { ...slot, hours: config.timeSlots[slot.time] || null, staffName: config.staff[slot.staffId]?.displayName || null } : null,
+    configuredSemesterTimetable: slot ? { ...slot, hours: config.semesterDetails.semester_S1_S2_SS === 'SS' ? { start: '9 am', end: '4 pm' } : config.timeSlots[slot.time] || null, staffName: config.staff[slot.staffId]?.displayName || null } : null,
     timetableAppliesTo: { year: config.semesterDetails.year, semester: config.semesterDetails.semester_S1_S2_SS },
     descriptionReference: rules.sections.filter(section => section.heading.startsWith(`${code} — `))
       .map(publicSection)
