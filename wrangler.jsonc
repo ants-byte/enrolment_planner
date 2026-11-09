@@ -2,9 +2,11 @@
   "name": "timetableplanner",
   "main": "mcp-worker.mjs",
   "compatibility_date": "2026-11-06",
+  "ai": { "binding": "AI" },
+  "ratelimits": [{ "name": "CHAT_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": ["/mcp"]
+    "run_worker_first": ["/mcp", "/chat"]
   }
 }

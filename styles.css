@@ -13813,6 +13813,8 @@ body.completed-mode #clear-selections {
   font: inherit;
 }
 #planner-chat textarea { resize: vertical; }
+#planner-chat-messages { max-height: 320px; overflow-y: auto; }
+#planner-chat-messages p { white-space: pre-wrap; overflow-wrap: anywhere; border-top: 1px solid #888; padding-top: 12px; }
 #planner-chat button:disabled { opacity: 0.55; cursor: not-allowed; }
 :root[data-appearance="dark"] #planner-chat { background: #101316; color: #fff; }
 

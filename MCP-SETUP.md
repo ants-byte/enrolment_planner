@@ -6,6 +6,16 @@ No API key, database or student-history storage is required.
 
 ## Deploy
 
+The website chat uses `/chat` and the Workers AI binding `AI`, configured in
+`wrangler.jsonc`, with the Llama 3.3 70B fast model. Deploy the updated Worker and
+assets together to enable the dialog. No external provider key is required.
+`CHAT_LIMITER` allows ten requests per minute per IP per Cloudflare location;
+this is an abuse throttle, not an account-wide spending cap. Each question is
+limited to four AI rounds and four tool calls per round. Conversations stay in
+tab memory and are sent to Cloudflare AI, not saved to a student database.
+Editing the history starts a fresh conversation. No staff-only source is loaded.
+Check with `node tools/test-chat.mjs`, then test real answers after deployment.
+
 In the existing **Cloudflare Workers** project's Git build settings, use this
 repository's root directory and deploy command `npx wrangler deploy`.
 The Worker name in `wrangler.jsonc` must match your existing Worker name

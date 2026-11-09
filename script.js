@@ -8,9 +8,57 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 */
 (() => {
   const plannerChat = document.getElementById('planner-chat');
+  let plannerChatMessages = [];
+  let plannerChatHistory = '';
+  let plannerChatBusy = false;
+  const chatStatus = document.getElementById('planner-chat-status');
+  const chatLog = document.getElementById('planner-chat-messages');
+  const chatSend = document.getElementById('send-planner-chat');
+  const chatReset = document.getElementById('reset-planner-chat');
+  const renderPlannerChat = () => {
+    chatLog.replaceChildren();
+    plannerChatMessages.forEach(message => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = `${message.role === 'user' ? 'You' : 'Planner'}: ${message.content}`;
+      chatLog.append(paragraph);
+    });
+    chatLog.scrollTop = chatLog.scrollHeight;
+  };
+  chatSend?.addEventListener('click', async () => {
+    if (plannerChatBusy) return;
+    const question = document.getElementById('planner-chat-question');
+    if (!question.value.trim()) { question.focus(); return; }
+    const history = `Major: ${document.getElementById('planner-chat-major').value || 'undecided'}\nStudy history: ${document.getElementById('planner-chat-history').value}`;
+    if (history !== plannerChatHistory) { plannerChatMessages = []; plannerChatHistory = history; }
+    if (plannerChatMessages.length >= 14) {
+      chatStatus.textContent = 'Conversation limit reached. Clear the chat to start again.'; return;
+    }
+    const content = plannerChatMessages.length ? question.value.trim() : `${history}\nQuestion: ${question.value.trim()}`;
+    if (content.length > 6000) { chatStatus.textContent = 'Please shorten your history and question.'; return; }
+    const messages = [...plannerChatMessages, { role: 'user', content }];
+    plannerChatBusy = true; chatSend.disabled = true; chatReset.disabled = true;
+    chatStatus.textContent = 'Checking course information…';
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }), signal: AbortSignal.timeout(90000),
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
+      plannerChatMessages = [...messages, { role: 'assistant', content: result.answer }];
+      renderPlannerChat(); question.value = '';
+      chatStatus.textContent = 'You can ask a follow-up question.';
+    } catch (error) {
+      chatStatus.textContent = error.name === 'TimeoutError' ? 'The request timed out. Please try again.' : error.message;
+    } finally {
+      plannerChatBusy = false; chatSend.disabled = false; chatReset.disabled = false;
+    }
+  });
   document.getElementById('open-planner-chat')?.addEventListener('click', () => plannerChat.showModal());
   document.getElementById('close-planner-chat')?.addEventListener('click', () => plannerChat.close());
   document.getElementById('reset-planner-chat')?.addEventListener('click', () => {
+    plannerChatMessages = []; plannerChatHistory = ''; renderPlannerChat();
+    chatStatus.textContent = 'Chat cleared. Enter your history and question.';
     ['planner-chat-major', 'planner-chat-history', 'planner-chat-question'].forEach(id => {
       document.getElementById(id).value = '';
     });

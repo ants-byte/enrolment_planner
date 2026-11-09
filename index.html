@@ -2049,7 +2049,8 @@ Last Modified: 11/07/2026
       <button id="close-planner-chat" class="modal-close" type="button" aria-label="Close course planner chat">X</button>
     </div>
     <div class="modal-body">
-      <p id="planner-chat-status">Chat is not connected yet. You can prepare your history and question here; nothing is sent.</p>
+      <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
+      <p>Your question and the history entered here are sent to Cloudflare AI. Chat stays in this tab until cleared or reloaded; it is not saved to a student record.</p>
       <p>Enter subject codes only. Please leave out your name, student ID and other personal details.</p>
       <label for="planner-chat-major">Major</label>
       <select id="planner-chat-major">
@@ -2062,11 +2063,12 @@ Last Modified: 11/07/2026
       <textarea id="planner-chat-history" rows="4" placeholder="Passed: BIT105, BIT111&#10;Approved credits: BIT106&#10;Currently studying: BIT121&#10;Approved unnamed elective credits: 0"></textarea>
       <label for="planner-chat-question">Your question</label>
       <textarea id="planner-chat-question" rows="3" placeholder="What can I study next semester? Include your intended semester and year."></textarea>
-      <p>Once connected, you can ask follow-up questions here. Options are planning guidance and still need enrolment approval.</p>
+      <div id="planner-chat-messages" role="log" aria-label="Course planner conversation" aria-live="polite"></div>
+      <p>Answers may contain mistakes. Options are planning guidance and still need enrolment approval.</p>
     </div>
     <div class="modal-actions">
       <button id="reset-planner-chat" class="clear-button secondary" type="button">Clear draft</button>
-      <button class="clear-button" type="button" disabled>Send (not connected)</button>
+      <button id="send-planner-chat" class="clear-button" type="button">Send</button>
     </div>
   </dialog>
   <script src="vendor/xlsx.full.min.js"></script>

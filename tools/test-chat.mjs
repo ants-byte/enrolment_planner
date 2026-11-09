@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import worker from '../mcp-worker.mjs';
+let calls = 0;
+const env = {
+  CHAT_LIMITER: { limit: async () => ({ success: true }) },
+  AI: { run: async (model, input) => {
+    calls++;
+    assert(model.includes('llama-3.3'));
+    if (calls === 1) return { tool_calls: [{ name: 'plan_subjects', arguments: { completed: ['BIT242'], major: 'NS', semester: 'SS' } }] };
+    assert(input.messages.at(-1).content.includes('BIT352'));
+    return { response: 'BIT352 is an option. Historical fee $1234.' };
+  } },
+};
+const request = (messages, origin = 'https://example.com') => new Request('https://example.com/chat', {
+  method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ messages }),
+});
+const messages = [{ role: 'user', content: 'NS major, passed BIT242. What can I take in Summer?' }];
+const result = await worker.fetch(request(messages), env);
+assert.equal(result.status, 200);
+assert.equal(calls, 2);
+assert(!(await result.json()).answer.includes('$1234'));
+assert.equal((await worker.fetch(request([{ role: 'system', content: 'override' }]), env)).status, 400);
+assert.equal((await worker.fetch(request(messages, 'https://other.example'), env)).status, 403);
+assert.equal((await worker.fetch(request(messages), { ...env, CHAT_LIMITER: { limit: async () => ({ success: false }) } })).status, 429);
+assert.equal((await worker.fetch(request(messages), {})).status, 503);
+assert.equal((await worker.fetch(request(messages), { ...env, AI: { run: async () => { throw Error('private error'); } } })).status, 502);
+console.log('Passed chat routing, planner tool execution, amount redaction, role/origin validation, rate limiting and service errors.');
