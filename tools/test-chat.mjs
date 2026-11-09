@@ -31,6 +31,17 @@ const blockedReply = (await followup.json()).answer;
 assert(blockedReply.includes('not currently an eligible option'));
 assert(blockedReply.includes('BIT242'));
 assert(!blockedReply.includes('You can study BIT352'));
+let syncCalls = 0;
+const synced = await worker.fetch(request([{ role: 'user', content: 'Passed BIT105, no credits. Suggest a Summer timetable.' }]), {
+  ...env, AI: { run: async () => ++syncCalls === 1 ? { tool_calls: [
+    { name: 'record_planner_history', arguments: { passed: ['BIT105'], credited: [], current: [], failed: [], unspecifiedElectiveCredits: 0 } },
+    { name: 'plan_subjects', arguments: { completed: ['BIT105'], major: 'NS', semester: 'SS' } },
+  ] } : { response: '| Code | Stream |\n| --- | --- |\n| BIT108 | |' } },
+});
+const syncedResult = await synced.json();
+assert.deepEqual(syncedResult.plannerState.history.passed, ['BIT105']);
+assert.deepEqual(syncedResult.plannerState.selected, ['BIT108']);
+assert(!syncedResult.plannerState.history.major);
 assert.equal((await worker.fetch(request([{ role: 'system', content: 'override' }]), env)).status, 400);
 assert.equal((await worker.fetch(request(messages, 'https://other.example'), env)).status, 403);
 assert.equal((await worker.fetch(request(messages), { ...env, CHAT_LIMITER: { limit: async () => ({ success: false }) } })).status, 429);

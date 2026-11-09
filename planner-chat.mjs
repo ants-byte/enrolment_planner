@@ -1,6 +1,7 @@
 import config from './semester-config.json' with { type: 'json' };
 const model = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const instructions = `You are the student Bachelor of IT course planning assistant. Answer only course questions, concisely in plain text.
+Whenever the student supplies or corrects study history (including main-planner context), call record_planner_history with the complete explicitly reported history, separating passed, approved credits, failed and currently studying subjects. Do not infer completion from wishes or your own suggestions. This structured history updates the main planner when chat closes. Record a major only if the student explicitly chose it. Never record a comparison/default major as their choice. Call this before plan_subjects; use the same completed history in both. Never erase earlier history merely because it is not repeated in a follow-up.
 On every availability or subject-selection follow-up, rerun plan_subjects using the student's previously stated completed/approved-credit history and target semester. A desire to study a subject is NOT completion, credit, prerequisite satisfaction or an override. Never add a prerequisite to completed merely because the student wants its dependent subject. Do not infer a major from a tool call made to compare majors. If a requested subject is blocked, explicitly explain the missing prerequisite by code and name and suggest only eligible alternatives.
 For this website chat, default to the configured current semester ${config.semesterDetails.semester_S1_S2_SS}, ${config.semesterDetails.year}, unless the student explicitly asks for another semester. Pass that semester explicitly to plan_subjects. This overrides the tool's next-semester default and the general default guidance below.
 For suggested timetables use a Markdown table with columns Code | Name | Day | Time | Room | Teacher | Stream, ordered Monday to Friday then time. Use only eligibleOptions returned by plan_subjects for the target semester; remainingCore/remainingMajor are degree requirements, NOT available options. Never fill a requested load with non-running subjects. If fewer subjects are available than requested, state the actual number and explain why. For Summer explain the limited offerings and maximum load; always display Summer times as 9 am–4 pm, never Morning/Afternoon or half-day times. Do not ask first-semester students to choose a major just to suggest core subjects. If only BIT108 is eligible and running, offer only BIT108, not four introductory subjects. A hypothetical later semester must be clearly separate and only included if requested.
@@ -60,6 +61,20 @@ export async function handleChat(request, env, definitions, handlers) {
       history.at(-1).role !== 'user') return reply({ error: 'Invalid conversation. Clear the chat and try again.' }, 400);
   const messages = [{ role: 'system', content: instructions }, ...history.map(({ role, content }) => ({ role, content }))];
   const tools = definitions.map(({ name, description, inputSchema }) => ({ name, description, parameters: inputSchema }));
+  tools.push({ name: 'record_planner_history', description: 'Record the complete student-reported study history for synchronising the main planner. Exclude unconfirmed results and desired subjects.', parameters: {
+    type: 'object', additionalProperties: false, required: ['passed', 'credited', 'current', 'failed', 'unspecifiedElectiveCredits'], properties: {
+      ...Object.fromEntries(['passed', 'credited', 'current', 'failed'].map(key => [key, { type: 'array', items: { type: 'string' }, maxItems: 40 }])),
+      unspecifiedElectiveCredits: { type: 'integer', minimum: 0, maximum: 4 }, major: { type: 'string', enum: ['NS', 'BA', 'SD'] },
+    },
+  } });
+  let recordedHistory = null;
+  const syncState = answer => {
+    const plan = checkedPlans.at(-1);
+    const tableCodes = [...new Set(answer.split('\n').filter(line => line.includes('|')).flatMap(line => line.match(/\bBIT\d{3}\b/g) || []))];
+    const selected = plan && plan.semester === config.semesterDetails.semester_S1_S2_SS
+      ? tableCodes.filter(code => plan.eligibleOptions.some(subject => subject.code === code)) : [];
+    return { history: recordedHistory, ...(selected.length ? { selected, semester: plan.semester, year: config.semesterDetails.year } : {}) };
+  };
   let stage = 'AI-ROUND-1';
   const requestedCodes = [...new Set(history.at(-1).content.toUpperCase().match(/\bBIT\d{3}\b/g) || [])];
   const needsPlan = requestedCodes.length || /timetable|can i (?:take|study)|want to study|choose|suggest|available/i.test(history.at(-1).content);
@@ -88,17 +103,31 @@ export async function handleChat(request, env, definitions, handlers) {
             if (!reasons.length) reasons.push('its concurrent-study or major-subject requirements are not satisfied');
             return `${label(code)} is not currently an eligible option: ${reasons.join('; ')}.`;
           });
-          return reply({ answer: `${explanations.join('\n\n')}\n\nAsking to study a subject does not waive its requirements. Tell me if you have additional approved credits or completed subjects that should be included in the check.` });
+          return reply({ answer: `${explanations.join('\n\n')}\n\nAsking to study a subject does not waive its requirements. Tell me if you have additional approved credits or completed subjects that should be included in the check.`, plannerState: syncState('') });
         }
-        return reply({ answer: redact(formatTimetable(result.response)) });
+        const answer = redact(formatTimetable(result.response));
+        return reply({ answer, plannerState: syncState(answer) });
       }
       if (result.tool_calls.length > 4) break;
       const outputs = result.tool_calls.map(call => {
         const name = call.name || call.function?.name;
         try {
-          if (!Object.hasOwn(handlers, name)) throw new Error('Unknown tool');
           const args = call.arguments ?? call.function?.arguments;
           const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args || {};
+          if (name === 'record_planner_history') {
+            const seen = new Set();
+            for (const key of ['passed', 'credited', 'current', 'failed']) {
+              if (!Array.isArray(parsedArgs[key]) || parsedArgs[key].length > 40) throw new Error('Invalid history');
+              for (const code of parsedArgs[key]) {
+                if (!/^BIT\d{3}$/.test(code) || !config.subjects[code] || seen.has(code)) throw new Error('Invalid history');
+                seen.add(code);
+              }
+            }
+            if (!Number.isInteger(parsedArgs.unspecifiedElectiveCredits) || parsedArgs.unspecifiedElectiveCredits < 0 || parsedArgs.unspecifiedElectiveCredits > 4 || (parsedArgs.major && !['NS', 'BA', 'SD'].includes(parsedArgs.major))) throw new Error('Invalid history');
+            recordedHistory = Object.fromEntries(['passed', 'credited', 'current', 'failed', 'unspecifiedElectiveCredits', 'major'].filter(key => parsedArgs[key] !== undefined).map(key => [key, parsedArgs[key]]));
+            return { tool: name, result: 'History recorded for the main planner. Check eligibility with plan_subjects before suggesting subjects.' };
+          }
+          if (!Object.hasOwn(handlers, name)) throw new Error('Unknown tool');
           if (name === 'plan_subjects' && parsedArgs.semester === undefined) parsedArgs.semester = config.semesterDetails.semester_S1_S2_SS;
           let value = handlers[name](parsedArgs);
           if (name === 'plan_subjects') {

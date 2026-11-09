@@ -13874,6 +13874,7 @@ body.completed-mode #clear-selections {
 #friendly-chat #theme-friendly-chat { font-size: 12px; padding: 6px 10px; }
 #friendly-chat #density-friendly-chat, #friendly-chat #contrast-friendly-chat { font-size: 12px; padding: 6px 10px; background: transparent; color: inherit; }
 #friendly-chat .friendly-chat-header { flex-wrap: wrap; gap: 8px; }
+#friendly-chat #reset-friendly-chat { margin-right: 8px; }
 #friendly-chat[data-chat-density="compact"] .friendly-chat-header { padding: 10px 16px; }
 #friendly-chat[data-chat-density="compact"] #friendly-chat-log { padding: 8px 16px; }
 #friendly-chat[data-chat-density="compact"] .friendly-bubble { padding: 8px 12px; margin: 6px 0 12px; line-height: 1.3; }

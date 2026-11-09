@@ -91,12 +91,20 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   let friendlyMessages = [];
   let friendlyBusy = false;
+  let friendlyMainContext = '';
+  let friendlyMainSummary = '';
+  let friendlyPendingState = null;
   const renderFriendlyChat = () => {
     friendlyLog.replaceChildren();
     const greeting = document.createElement('p');
     greeting.className = 'friendly-bubble assistant';
     greeting.textContent = 'Hi! 👋 What would you like to know about your course?\n\nI can help you find subjects, understand prerequisites or plan your next semester. Ask a question, or paste your results to get started.';
     friendlyLog.append(greeting);
+    if (friendlyMainSummary) {
+      const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
+      summary.textContent = `${friendlyMainSummary}\n\nWould you like to change anything or ask any questions about this? Changes to your history and any offered timetable will carry back to the main planner when you close this chat.`;
+      friendlyLog.append(summary);
+    }
     friendlyMessages.forEach(message => {
       const bubble = document.createElement('p');
       bubble.className = `friendly-bubble ${message.role}`;
@@ -124,6 +132,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyLog.scrollTop = friendlyLog.scrollHeight;
   };
   document.getElementById('open-friendly-chat').addEventListener('click', () => {
+    seedFriendlyChatFromPlanner();
     if (window.location.hash !== '#ask-course-planner') window.location.hash = '#ask-course-planner';
     if (!friendlyChat.open) friendlyChat.showModal();
     friendlyInput.focus();
@@ -133,17 +142,23 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!friendlyChat.open) friendlyChat.showModal();
     } else if (friendlyChat.open) friendlyChat.close();
   };
-  window.addEventListener('hashchange', syncFriendlyChatHash);
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#ask-course-planner') seedFriendlyChatFromPlanner();
+    syncFriendlyChatHash();
+  });
   friendlyChat.addEventListener('close', () => {
+    applyFriendlyChatToPlanner();
     if (window.location.hash === '#ask-course-planner') {
       window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
     }
   });
   syncFriendlyChatHash();
+  window.addEventListener('load', () => { if (friendlyChat.open) seedFriendlyChatFromPlanner(); });
   document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
   friendlyReset.addEventListener('click', () => {
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
+    friendlyPendingState = null;
     friendlyInput.focus(); updateFriendlySend();
   });
   friendlySend.addEventListener('click', async () => {
@@ -152,7 +167,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
     const draft = friendlyInput.value;
     friendlyError.hidden = true; friendlyError.replaceChildren();
-    friendlyMessages.push({ role: 'user', content: draft.trim() });
+    friendlyMessages.push({ role: 'user', content: friendlyMessages.length ? draft.trim() : `${friendlyMainContext ? `Main planner context (student-entered):\n${friendlyMainContext}\n\n` : ''}${draft.trim()}` });
     renderFriendlyChat(); friendlyInput.value = '';
     friendlyBusy = true; friendlySend.disabled = true; friendlyReset.disabled = true; friendlyInput.disabled = true;
     const workingStarted = Date.now();
@@ -172,7 +187,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         return;
       }
       if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
+      if (result.plannerState) {
+        friendlyPendingState = { ...friendlyPendingState, ...result.plannerState, history: result.plannerState.history || friendlyPendingState?.history || null };
+      }
       friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
+      if (!friendlyChat.open) applyFriendlyChatToPlanner();
     } catch (error) {
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
@@ -14577,6 +14596,60 @@ const TRIAGE_READ_MAX_ROWS = 0;
     updateSelectedList();
     updateBookmarkableSettingsUrl();
   };
+
+  function seedFriendlyChatFromPlanner() {
+    const completed = Array.from(subjectState.entries()).filter(([, state]) => state.completed).map(([code]) => code);
+    const credited = completed.filter(code => /CRT|RPL/.test(manualEntryMeta.get(code)?.result || ''));
+    const passed = completed.filter(code => !credited.includes(code));
+    const failed = manualEntryResults.filter(entry => getGradeStatus(entry.result) === 'fail').map(entry => entry.id);
+    const current = Array.from(currentEnrolmentStudentRecord);
+    const selected = Array.from(subjectState.entries()).filter(([, state]) => state.toggled).map(([code]) => code);
+    const history = { passed, credited, current, failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
+    const context = JSON.stringify(history);
+    if (context === friendlyMainContext) return;
+    friendlyMainContext = context;
+    friendlyPendingState = null;
+    friendlyMessages = [];
+    const names = codes => codes.map(code => `${code} — ${getSubjectName(code)}`).join(', ') || 'None';
+    friendlyMainSummary = completed.length || current.length || selected.length || failed.length || history.unspecifiedElectiveCredits || history.major !== 'undecided'
+      ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed: ${names(passed)}\nApproved credits: ${names(credited)}\nUnnamed elective credits: ${history.unspecifiedElectiveCredits}\nCurrently studying: ${names(current)}\nFailed attempts: ${names(failed)}\nSelected subjects: ${names(selected)}` : '';
+    renderFriendlyChat();
+  }
+
+  function applyFriendlyChatToPlanner() {
+    const state = friendlyPendingState;
+    if (!state) return;
+    friendlyPendingState = null;
+    const history = state.history;
+    if (history) {
+      const rows = [];
+      [['passed', 'PA'], ['credited', 'CRT'], ['failed', 'N'], ['current', 'H']].forEach(([key, result]) => {
+        (history[key] || []).filter(code => validSubjectCodes.has(code)).forEach(code => {
+          manualEntryResults = manualEntryResults.filter(entry => entry.id !== code);
+          manualEntryMeta.delete(code);
+          subjectState.set(code, { completed: false, toggled: false });
+          rows.push(`${code} ${result}`);
+        });
+      });
+      const count = Math.max(0, Math.min(4, history.unspecifiedElectiveCredits || 0));
+      electivePlaceholderState = Array.from(validUseCodes).slice(0, count);
+      while (electivePlaceholderState.length < 4) electivePlaceholderState.push('');
+      if (history.major) setMajorDropdownSelection({ NS: 'network', BA: 'ba', SD: 'sd' }[history.major] || 'undecided');
+      if (codeInput) { codeInput.value = rows.join('\n'); applyCodes(); }
+    }
+    if (Array.isArray(state.selected) && state.semester === currentSemesterKey) {
+      subjectState.forEach((value, code) => { if (value.toggled) subjectState.set(code, { ...value, toggled: false }); });
+      applySubjectStateToCells();
+      conditionalRecompute({ force: true, usePlanned: false });
+      state.selected.forEach(code => {
+        const cell = subjects.find(item => item.dataset.subject === code);
+        if (cell && !subjectState.get(code)?.completed && !currentEnrolmentStudentRecord.has(code) && isRunningThisSemester(code)) handleToggle(cell);
+      });
+    }
+    applySubjectStateToCells();
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateSelectedList(); updateResetState(); updateBookmarkableSettingsUrl();
+  }
 
   const parseSemesterSelectionCodesFromText = (raw) => {
     const text = String(raw || '').toUpperCase();
