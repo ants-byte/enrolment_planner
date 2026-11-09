@@ -11,6 +11,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyLog = document.getElementById('friendly-chat-log');
   const friendlyInput = document.getElementById('friendly-chat-input');
   const friendlyStatus = document.getElementById('friendly-chat-status');
+  const friendlyError = document.getElementById('friendly-chat-error');
   const friendlySend = document.getElementById('send-friendly-chat');
   const friendlyReset = document.getElementById('reset-friendly-chat');
   let friendlyMessages = [];
@@ -34,6 +35,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
   friendlyReset.addEventListener('click', () => {
+    friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
     friendlyStatus.textContent = 'A fresh start. What would you like to know?'; friendlyInput.focus();
   });
@@ -42,6 +44,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (friendlyMessages.length >= 14) { friendlyStatus.textContent = 'Please start fresh to continue.'; return; }
     if (friendlyInput.value.length > 6000) { friendlyStatus.textContent = 'Please shorten your message.'; return; }
     const draft = friendlyInput.value;
+    friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages.push({ role: 'user', content: draft.trim() });
     renderFriendlyChat(); friendlyInput.value = '';
     friendlyBusy = true; friendlySend.disabled = true; friendlyReset.disabled = true; friendlyInput.disabled = true;
@@ -49,17 +52,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     try {
       const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages }), signal: AbortSignal.timeout(90000) });
       const result = await response.json();
+      if (response.status === 422 && typeof result.error === 'string') {
+        friendlyMessages.push({ role: 'assistant', content: 'Let’s work this out together. Which semester would you like a timetable for? You can also tell me your major and any subjects you’ve passed or received credit for. If you’re just starting, say “first year, no credits”.' });
+        renderFriendlyChat(); friendlyStatus.textContent = 'Reply below to continue.';
+        return;
+      }
       if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
       friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
       friendlyStatus.textContent = 'Keep going — you can ask a follow-up question.';
     } catch (error) {
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
-      friendlyStatus.textContent = error.name === 'TimeoutError' ? 'That took too long. Please try again.' : error.message;
-      const failureBubble = document.createElement('p');
-      failureBubble.className = 'friendly-bubble assistant';
-      failureBubble.textContent = `${friendlyStatus.textContent}\n\nYour message is back in the box below so you can retry.`;
-      friendlyLog.append(failureBubble); friendlyLog.scrollTop = friendlyLog.scrollHeight;
+      const notice = document.createElement('p');
+      notice.textContent = error.name === 'TimeoutError'
+        ? 'The reply is taking too long. Your message is ready below — please try sending it again.'
+        : 'We couldn’t connect to the course assistant just now. Your message is ready below — please try again shortly.';
+      const details = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Technical details';
+      const detailText = document.createElement('p'); detailText.textContent = error.message;
+      details.append(summary, detailText); friendlyError.replaceChildren(notice, details); friendlyError.hidden = false;
+      friendlyStatus.textContent = 'Your message has been kept for retrying.';
     } finally {
       friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
       friendlyStatus.classList.remove('is-loading');

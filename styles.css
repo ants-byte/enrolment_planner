@@ -13844,6 +13844,11 @@ body.completed-mode #clear-selections {
 .friendly-chat-compose { flex: 0 0 auto; padding: 8px 20px 16px; }
 .friendly-chat-input-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .friendly-chat-input-shell { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid #8885; border-radius: 24px; background: #f5f5f5; }
+#friendly-chat-error { background: #263342; color: #f5f8fc; border: 1px solid #6c8199; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+#friendly-chat-error p { margin: 0; }
+#friendly-chat-error details { margin-top: 8px; font-size: 12px; }
+#friendly-chat-error summary { cursor: pointer; }
+#friendly-chat-error details p { margin-top: 6px; }
 #friendly-chat-input { flex: 0 1 auto; min-width: 120px; resize: both; max-height: 40dvh; background: transparent; color: inherit; border: 0; padding: 8px; border-radius: 0; }
 #friendly-chat #send-friendly-chat { flex: 0 0 36px; width: 36px; height: 36px; padding: 8px; border-radius: 50%; background: #202123; border: 0; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
 #friendly-chat-status { margin: 8px 0; font-size: 12px; }
