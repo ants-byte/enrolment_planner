@@ -13793,3 +13793,26 @@ body.completed-mode #clear-selections {
   cursor: pointer;
 }
 .recent-students-menu button:hover, .recent-students-menu button:focus-visible { background: #3b5060; }
+#planner-chat {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+}
+
+#planner-chat::backdrop { background: #0009; }
+#planner-chat .modal-body { padding: 16px; }
+#planner-chat label { display: block; margin: 12px 0 6px; font-weight: 700; }
+#planner-chat select, #planner-chat textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  font: inherit;
+}
+#planner-chat textarea { resize: vertical; }
+#planner-chat button:disabled { opacity: 0.55; cursor: not-allowed; }
+:root[data-appearance="dark"] #planner-chat { background: #101316; color: #fff; }
+

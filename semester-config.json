@@ -268,7 +268,7 @@
       "capstoneRestrictedNoticeCount": 5,
       "standardSemesterLoad": 4,
       "overloadSubjectCount": 5,
-      "minimumGrade": { "label": "CR", "minimumPercent": 60, "maximumPercent": 69 }
+      "minimumGrade": { "label": "CR", "minimumPercent": 70, "maximumPercent": 79 }
     }
   },
   "courseMapAlternativeNames": {

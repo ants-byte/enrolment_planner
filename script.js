@@ -7,6 +7,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
 */
 (() => {
+  const plannerChat = document.getElementById('planner-chat');
+  document.getElementById('open-planner-chat')?.addEventListener('click', () => plannerChat.showModal());
+  document.getElementById('close-planner-chat')?.addEventListener('click', () => plannerChat.close());
+  document.getElementById('reset-planner-chat')?.addEventListener('click', () => {
+    ['planner-chat-major', 'planner-chat-history', 'planner-chat-question'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('planner-chat-major').focus();
+  });
   const PWA_LAST_SETTINGS_URL_STORAGE_KEY = 'timetablePlannerPwaLastSettingsUrlV1';
   const isInstalledPwa = () =>
     !!window.matchMedia?.('(display-mode: standalone)').matches || !!window.navigator?.standalone;
@@ -12506,7 +12515,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     { key: 'mp-outlook-email', label: 'MP outlook email' },
     { key: 'technical-problems-student-logging-in-moodle', label: 'Technical problems – logging in, Moodle' },
     { key: 'supports-at-risk', label: 'Supports (at risk) – Counselling etc.' },
-    { key: 'mr-ms-sir-etc', label: 'Mr/Ms/Sir/etc', dividerAfter: true },
+    { key: 'mr-ms-sir-etc', label: 'Mr/Ms/Sir/etc' },
+    { key: 'mr-ms-sir-etc-including-gender', label: 'Mr/Ms/Sir/etc – including gender', dividerAfter: true },
     { key: 'proof-that-are-on-break', label: 'Employer wants proof that are on break' },
     { key: 'student-results-where-to-find', label: "Student's results – are on student portal" },
     { key: 'transcript-mid-course-where-to-find', label: 'Transcript request – mid–course – where to find' },
@@ -12542,6 +12552,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     'transcripts-for-graduate-where-to-find': 'Transcript request',
     'transcripts-for-graduate-was-lost-where-to-find': 'Transcript request',
     'mr-ms-sir-etc': 'Try sticking with first names only',
+    'mr-ms-sir-etc-including-gender': 'Try sticking with first names only',
   };
 
   const EMAIL_SCRIPTS_SECTION_HEADINGS = {
@@ -12723,6 +12734,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       'Lodge a complaint — where to find',
     ],
     'mr-ms-sir-etc': ['Mr/Ms/Sir/etc'],
+    'mr-ms-sir-etc-including-gender': ['Mr/Ms/Sir/etc – including gender', 'Mr/Ms/Sir/etc - including gender'],
     'username-password-wifi-outlook-moodle-computers': [
       'Username and Password - W-Fi, Outlook, Moodle, computers',
       'Username and Password - Wi-Fi, Outlook, Moodle, computers',
