@@ -81,7 +81,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         friendlyError.textContent = result.userMessage || 'Extra usage could not be granted. Please check your name and access key.';
         friendlyError.append(friendlyUnlock);
         friendlyError.hidden = false;
-        if (result.code === 'USAGE-BLOCKED') friendlyUnlock.hidden = true;
+        friendlyUnlock.hidden = !result.unlockRequired;
       }
     } catch {
       friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.append(friendlyUnlock); friendlyError.hidden = false;
@@ -278,6 +278,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         const failure = new Error(result.error || 'Chat is unavailable.');
         failure.userMessage = result.userMessage;
         failure.unlockRequired = result.unlockRequired;
+        failure.ownerOnly = result.ownerOnly;
         throw failure;
       }
       if (result.plannerState) {
@@ -298,7 +299,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       details.append(summary, detailText); friendlyError.replaceChildren(notice, details); friendlyError.hidden = false;
       friendlyUnlock.hidden = !error.unlockRequired;
       if (error.unlockRequired) {
-        notice.textContent = 'Usage allowance reached. Enter your name and access key for extra usage. Your name is kept for up to 90 days, not used to verify identity. These details are not sent to the AI.';
+        if (!error.ownerOnly) notice.textContent = 'Usage allowance reached. Enter your name and access key for extra usage. Your name is kept for up to 90 days, not used to verify identity. These details are not sent to the AI.';
         friendlyError.append(friendlyUnlock);
       }
     } finally {

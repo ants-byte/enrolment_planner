@@ -148,6 +148,6 @@ export async function usageRequest(env, browserId, action, data = {}) {
 export function restrictionMessage(status) {
   const who = status.scope === 'network' ? 'This network' : 'This browser';
   if (status.busy) return { userMessage: 'Another question is already running in this browser. Please wait for it to finish.', code: 'USAGE-BUSY' };
-  if (status.blockedUntil) return { userMessage: `${who} has used its normal allowance and its one extra allowance. AI access is blocked for 90 days. You can still use the main timetable planner.`, code: 'USAGE-BLOCKED', blockedUntil: status.blockedUntil };
+  if (status.blockedUntil) return { userMessage: `${who} has used its normal allowance and its one extra allowance. Student AI access is blocked for 90 days. Site owners can enter their name and owner access key below. You can still use the main timetable planner.`, code: 'USAGE-BLOCKED', unlockRequired: true, ownerOnly: true, blockedUntil: status.blockedUntil };
   return { userMessage: `${who} has reached its AI token allowance. To request extra usage, enter your name and the access key below. Your name is stored for usage records, not checked as proof of identity.`, code: 'USAGE-RESTRICTED', unlockRequired: true };
 }
