@@ -143,7 +143,9 @@ limits continue to bound the work performed by one question.
 
 ## One-semester AI pilot
 
-`wrangler.jsonc` configures a 125,000-token normal browser allowance per 90 days.
+`wrangler.jsonc` configures a 62,500-token normal browser allowance per 90 days.
+Its single 50% extra allowance is 31,250 tokens. These allowances and the overall
+pilot cap were halved to target approximately AUD 50 with exchange-rate headroom.
 An exhausted browser/network may request one extra 50% allowance using the
 owner-specified access key and a non-empty name. The name is stored, not used to
 validate identity, and never sent with the key to OpenAI. After the extra is
@@ -160,7 +162,7 @@ within output tokens; it is not counted twice). Deploy the `chat-usage-v1`
 migration with the Worker. No chat text is stored in the usage ledger. The
 namespace is private to the Worker, not exposed through the public MCP.
 
-The site-wide pilot cap is 6,000,000 combined input/output tokens. AI calls reserve
+The site-wide pilot cap is 3,000,000 combined input/output tokens. AI calls reserve
 a conservative input bound plus maximum output before dispatch. Responses settle
 the reservation against provider usage; failed connections without usage records
 are counted conservatively. Expired reservations remain chargeable rather than
@@ -179,3 +181,40 @@ Do not delete/recreate the namespace or change its fixed `site-budget` identity
 if the experiment's permanent stop must be preserved.
 
 Focused checks: `node tools/test-usage.mjs` and `node tools/test-chat.mjs`.
+
+## Prompt emails from Gmail
+
+Prompt notification code is ready but does nothing until a sender is configured.
+The intended sender is `adiserio@gmail.com`, recipient
+`antonydiserio@melbournepolytechnic.edu.au`, and subject
+`AI use on Subject Planner`. No OpenAI calls are needed for notification emails.
+
+1. Sign in as `adiserio@gmail.com` at https://script.google.com/ and create a
+   standalone Apps Script project.
+2. Paste `tools/prompt-email-apps-script.gs` into its code editor. Save, select
+   `initialisePromptEmail`, run it and authorise the mail-sending permission.
+3. Open Project Settings > Script Properties. Copy the generated
+   `PROMPT_EMAIL_SECRET` value privately. Do not send it through chat or commit it.
+4. Deploy > New deployment > Web app. Execute as Me; access Anyone. The script
+   verifies the private secret before it can send, and its recipient is fixed.
+5. Copy the deployed `/exec` URL. In Cloudflare > timetableplanner > Settings >
+   Variables and Secrets, add Worker secrets `PROMPT_EMAIL_WEBHOOK` (that URL)
+   and `PROMPT_EMAIL_SECRET` (the Script Property value). Redeploy the Worker.
+6. Submit a course question and check the recipient inbox. If needed, inspect
+   Apps Script Executions and the Worker `prompt-email-failed` event. Neither
+   logs prompt text or secrets. Editing the Apps Script requires deploying a new
+   version of that web app.
+
+Each accepted text request notifies only its newest prompt, without the internal
+main-planner JSON prefix or previous conversation. Unlock forms and their name/key
+fields are excluded. The student-facing notice explains that prompts may be
+emailed for pilot review. Emailed copies follow the mailbox's retention, separate
+from the 90-day usage-counter policy. Google sending quotas and delivery failures
+may prevent notifications; email failure does not interrupt AI answers. Retrying
+a question can generate another email.
+
+Alternatively, a configured Cloudflare Email Service binding `PROMPT_EMAIL` and
+verified sender variable `PROMPT_EMAIL_FROM` can send directly; this requires a
+verified domain and is not suitable for verifying `gmail.com` yourself.
+
+Focused notification check: `node tools/test-prompt-email.mjs`.

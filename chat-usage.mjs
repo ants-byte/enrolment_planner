@@ -1,5 +1,5 @@
 const RETENTION = 90 * 24 * 60 * 60 * 1000;
-const normalLimit = env => Math.max(1000, Number(env.CHAT_TOKEN_ALLOWANCE) || 125000);
+const normalLimit = env => Math.max(1000, Number(env.CHAT_TOKEN_ALLOWANCE) || 62500);
 const json = body => Response.json(body);
 
 // Private Durable Object binding only. No public usage/name lookup endpoint.
@@ -86,7 +86,7 @@ export class ChatUsage {
     const data = await request.json();
     const action = new URL(request.url).pathname;
     const record = await this.state.storage.get('global') || { input: 0, output: 0, total: 0, stopped: false, reservations: {} };
-    const cap = Math.max(1, Number(this.env.CHAT_TOTAL_TOKEN_CAP) || 2000000);
+    const cap = Math.max(1, Number(this.env.CHAT_TOTAL_TOKEN_CAP) || 3000000);
     const end = Date.parse(this.env.CHAT_EXPERIMENT_END || '');
     // An unset date fails closed, without permanently stopping a not-yet-configured pilot.
     if (!Number.isFinite(end)) return json({ allowed: false, notConfigured: true });
