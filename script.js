@@ -53,8 +53,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
       friendlyStatus.textContent = 'Keep going — you can ask a follow-up question.';
     } catch (error) {
-      friendlyMessages.pop(); renderFriendlyChat(); friendlyInput.value = draft;
+      // Keep the submitted bubble visible, but exclude the failed turn from future requests.
+      friendlyMessages.pop(); friendlyInput.value = draft;
       friendlyStatus.textContent = error.name === 'TimeoutError' ? 'That took too long. Please try again.' : error.message;
+      const failureBubble = document.createElement('p');
+      failureBubble.className = 'friendly-bubble assistant';
+      failureBubble.textContent = `${friendlyStatus.textContent}\n\nYour message is back in the box below so you can retry.`;
+      friendlyLog.append(failureBubble); friendlyLog.scrollTop = friendlyLog.scrollHeight;
     } finally {
       friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
       friendlyStatus.classList.remove('is-loading');
@@ -119,6 +124,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const content = plannerChatMessages.length ? prompt : `${history}\nQuestion: ${prompt}`;
     if (content.length > 6000) { chatStatus.textContent = 'Please shorten your history and question.'; return; }
     const messages = [...plannerChatMessages, { role: 'user', content }];
+    document.getElementById('planner-chat-background').open = false;
     plannerChatBusy = true; chatSend.disabled = true; chatReset.disabled = true;
     chatStatus.classList.add('feedback-loading');
     chatStatus.textContent = 'Checking course information…';
@@ -161,6 +167,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   document.getElementById('reset-planner-chat')?.addEventListener('click', () => {
     plannerChatMessages = []; plannerChatHistory = ''; renderPlannerChat();
     chatStatus.textContent = 'Chat cleared. Enter your history and question.';
+    document.getElementById('planner-chat-background').open = true;
     ['planner-chat-major', 'planner-chat-history', 'planner-chat-question'].forEach(id => {
       document.getElementById(id).value = '';
     });

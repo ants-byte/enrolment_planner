@@ -13895,6 +13895,7 @@ body.completed-mode #clear-selections {
 }
 #planner-chat textarea { resize: both; max-width: 100%; min-width: 120px; }
 #planner-chat #planner-chat-major { width: auto; max-width: 100%; }
+#planner-chat .planner-chat-disclaimer { margin: 12px 0 0; padding: 0 10px; }
 .planner-feedback-frame { position: relative; }
 .planner-feedback-frame #planner-chat-status { margin: 12px 0; }
 .planner-feedback-border { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
