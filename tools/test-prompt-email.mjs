@@ -14,6 +14,16 @@ try {
   assert(sent.prompt.startsWith('What can I study?'));
   assert(!sent.prompt.includes('passed'));
   assert(!sent.prompt.includes('antonysaccount'));
+  const originalError = console.error;
+  const errors = [];
+  console.error = value => errors.push(value);
+  try {
+    globalThis.fetch = async () => Response.json({ ok: false, code: 'AUTH_FAILED' });
+    await emailStudentPrompt({ PROMPT_EMAIL_WEBHOOK: 'https://script.google.com/macros/s/test/exec', PROMPT_EMAIL_SECRET: 'private-secret' }, 'private prompt');
+    assert(errors.some(value => value.includes('AUTH_FAILED')));
+    assert(!errors.join('').includes('private-secret'));
+    assert(!errors.join('').includes('private prompt'));
+  } finally { console.error = originalError; }
   let mail;
   await emailStudentPrompt({ PROMPT_EMAIL: { send: async value => { mail = value; } }, PROMPT_EMAIL_FROM: 'verified@example.com' }, 'Next question');
   assert.equal(mail.to, 'antonydiserio@melbournepolytechnic.edu.au');

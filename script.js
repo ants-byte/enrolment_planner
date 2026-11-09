@@ -79,11 +79,12 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         showFriendlyNotice(result.userMessage); friendlyInput.focus();
       } else {
         friendlyError.textContent = result.userMessage || 'Extra usage could not be granted. Please check your name and access key.';
+        friendlyError.append(friendlyUnlock);
         friendlyError.hidden = false;
         if (result.code === 'USAGE-BLOCKED') friendlyUnlock.hidden = true;
       }
     } catch {
-      friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.hidden = false;
+      friendlyError.textContent = 'The usage service could not be reached. Please try again shortly.'; friendlyError.append(friendlyUnlock); friendlyError.hidden = false;
     } finally { key.value = ''; submit.disabled = false; }
   });
   const friendlySend = document.getElementById('send-friendly-chat');
@@ -188,6 +189,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               const row = body.insertRow(); cells(lines[i]).forEach(value => { row.insertCell().textContent = value; }); i++;
             }
             i--; scroll.append(table); bubble.append(scroll);
+            const headings = Array.from(head.cells, cell => cell.textContent.toLowerCase());
+            if (headings.includes('day') && headings.includes('time')) {
+              const actions = document.createElement('span'); actions.className = 'friendly-timetable-actions';
+              const plain = Array.from(table.rows, row => Array.from(row.cells, cell => cell.textContent).join('\t')).join('\n');
+              const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy timetable';
+              copy.addEventListener('click', async () => {
+                try {
+                  if (navigator.clipboard?.write && window.ClipboardItem) {
+                    const formatted = table.cloneNode(true);
+                    formatted.style.cssText = 'border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;color:#111;';
+                    formatted.querySelectorAll('th,td').forEach(cell => { cell.style.cssText = `border:1px solid #888;padding:6px 8px;text-align:left;${cell.tagName === 'TH' ? 'background:#91b8e8;font-weight:bold;' : ''}`; });
+                    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([formatted.outerHTML], { type: 'text/html' }), 'text/plain': new Blob([plain], { type: 'text/plain' }) })]);
+                  } else await navigator.clipboard.writeText(plain);
+                  copy.textContent = 'Copied';
+                } catch { copy.textContent = 'Copy unavailable'; }
+                window.setTimeout(() => { copy.textContent = 'Copy timetable'; }, 2000);
+              });
+              const email = document.createElement('a'); email.textContent = 'Email selection to enrol_bit';
+              email.href = `mailto:enrol_bit@melbournepolytechnic.edu.au?subject=${encodeURIComponent('Subject selection')}&body=${encodeURIComponent('My proposed subject selection:\n\n' + plain)}`;
+              actions.append(copy, email); bubble.append(actions);
+            }
           } else bubble.append(document.createTextNode(lines[i] + '\n'));
         }
       }
@@ -275,6 +297,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const detailText = document.createElement('p'); detailText.textContent = error.message;
       details.append(summary, detailText); friendlyError.replaceChildren(notice, details); friendlyError.hidden = false;
       friendlyUnlock.hidden = !error.unlockRequired;
+      if (error.unlockRequired) {
+        notice.textContent = 'Usage allowance reached. Enter your name and access key for extra usage. Your name is kept for up to 90 days, not used to verify identity. These details are not sent to the AI.';
+        friendlyError.append(friendlyUnlock);
+      }
     } finally {
       friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
       window.clearInterval(workingTimer);

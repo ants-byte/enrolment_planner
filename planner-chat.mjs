@@ -74,7 +74,8 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
     const total = await env.CHAT_TOTAL_WORK_LIMITER.limit({ key: 'subject-planner' });
     if (!total.success) throw Object.assign(new Error('AI work limit reached'), { chatLimit: 'site' });
     const networkStatus = await usageRequest(env, networkId, 'ipstatus', { browserId });
-    if (networkStatus.restricted || networkStatus.blockedUntil) throw Object.assign(new Error('Token allowance reached'), { usageRestriction: networkStatus });
+    const browserStatus = await usageRequest(env, browserId, 'status');
+    if (!browserStatus.owner && (networkStatus.restricted || networkStatus.blockedUntil)) throw Object.assign(new Error('Token allowance reached'), { usageRestriction: networkStatus });
     const permit = await usageRequest(env, browserId, 'start');
     if (!permit.allowed) {
       if (permit.restricted || permit.blockedUntil) await usageRequest(env, networkId, 'ip', { browserId, exhausted: true, input: 0, output: 0 });
@@ -151,10 +152,11 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
   if (body?.action === 'unlock') {
     if (Object.keys(body).some(key => !['action', 'name', 'key'].includes(key)) || typeof body.name !== 'string' || typeof body.key !== 'string' || body.name.length > 120 || body.key.length > 200) return reply({ error: 'Enter your name and access key.' }, 400);
     const networkStatus = await usageRequest(env, networkId, 'ipstatus');
-    const scope = networkStatus.restricted || networkStatus.blockedUntil ? networkId : browserId;
+    const ownerKey = typeof env.CHAT_OWNER_KEY === 'string' && env.CHAT_OWNER_KEY.length >= 32 && body.key === env.CHAT_OWNER_KEY;
+    const scope = !ownerKey && (networkStatus.restricted || networkStatus.blockedUntil) ? networkId : browserId;
     const result = await usageRequest(env, scope, scope === networkId ? 'ipunlock' : 'unlock', { name: body.name, key: body.key });
     if (!result.allowed) return reply({ ...restrictionMessage(result), userMessage: result.invalid ? 'The access key was not accepted. Enter your name and the correct key.' : result.attemptsLimited ? 'Too many access-key attempts. Please wait an hour.' : restrictionMessage(result).userMessage, unlockRequired: !result.blockedUntil, error: 'Extra usage not granted.' }, 403);
-    return reply({ unlocked: true, extraPercent: result.extraPercent, userMessage: `Extra usage granted: ${result.extraPercent}% of the normal token allowance. This is your one and only extra allowance. Reaching this limit will block AI access for 90 days. The pilot end date and site-wide token cap still apply. Please send your question again.` });
+    return reply({ unlocked: true, extraPercent: result.extraPercent, userMessage: result.owner ? 'Owner access enabled for this browser across networks for up to 90 days. Browser and network token allowances do not apply. The site budget, pilot end date and short-term rate limits still apply. Please send your question again.' : `Extra usage granted: ${result.extraPercent}% of the normal token allowance. This is your one and only extra allowance. Reaching this limit will block AI access for 90 days. The pilot end date and site-wide token cap still apply. Please send your question again.` });
   }
   const history = body?.messages;
   if (!body || Object.keys(body).some(key => key !== 'messages') ||

@@ -22,7 +22,7 @@ export class ChatUsage {
         } else record.browserCountCapped = true;
       }
       const allowance = () => Math.floor(normalLimit(this.env) * (record.isIp ? 200 : 1) * (record.grants >= 1 ? 1.5 : 1));
-      const status = () => ({ total: record.total, allowance: allowance(), grants: record.grants,
+      const status = () => ({ owner: !!record.owner, total: record.total, allowance: allowance(), grants: record.grants,
         restricted: record.total >= allowance(), blockedUntil: record.blockedUntil, scope: record.isIp ? 'network' : 'browser',
         ...(record.isIp ? {
           browserCount: Object.keys(record.browsers || {}).length,
@@ -33,8 +33,8 @@ export class ChatUsage {
         } : {}) });
       let result;
       if (action === '/start') {
-        if (record.blockedUntil > now) result = { allowed: false, ...status() };
-        else if (record.total >= allowance()) result = { allowed: false, ...status() };
+        if (!record.owner && record.blockedUntil > now) result = { allowed: false, ...status() };
+        else if (!record.owner && record.total >= allowance()) result = { allowed: false, ...status() };
         else if (record.leaseUntil > now) result = { allowed: false, busy: true };
         else { record.lease = crypto.randomUUID(); record.leaseUntil = now + 120000; result = { allowed: true, lease: record.lease }; }
       } else if (action === '/finish') {
@@ -43,13 +43,17 @@ export class ChatUsage {
         const output = Math.max(0, Math.floor(Number(data.output) || 0));
         record.input += input; record.output += output; record.total += input + output;
         delete record.lease; delete record.leaseUntil;
-        if (record.grants >= 1 && record.total >= allowance()) {
+        if (!record.owner && record.grants >= 1 && record.total >= allowance()) {
           // Erase previous usage/name data; retain only the 90-day block marker.
           record = { expiresAt: now + RETENTION, blockedUntil: now + RETENTION, input: 0, output: 0, total: 0, grants: 1, names: [], isIp: record.isIp };
         }
         result = status();
       } else if (action === '/unlock' || action === '/ipunlock') {
-        if (record.blockedUntil > now) result = { allowed: false, ...status() };
+        if (!record.isIp && typeof this.env.CHAT_OWNER_KEY === 'string' && this.env.CHAT_OWNER_KEY.length >= 32 && data.key === this.env.CHAT_OWNER_KEY) {
+          record.owner = true; record.blockedUntil = 0;
+          result = { allowed: true, owner: true };
+        }
+        else if (record.blockedUntil > now) result = { allowed: false, ...status() };
         else if (record.total < allowance()) result = { allowed: false, notRestricted: true };
         else if (record.grants >= 1) result = { allowed: false, ...status() };
         else {

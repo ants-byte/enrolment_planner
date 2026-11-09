@@ -218,3 +218,13 @@ verified sender variable `PROMPT_EMAIL_FROM` can send directly; this requires a
 verified domain and is not suitable for verifying `gmail.com` yourself.
 
 Focused notification check: `node tools/test-prompt-email.mjs`.
+
+Notification diagnostics in Worker logs use `prompt-email-failed` with a safe
+code. `EMAIL_NOT_CONFIGURED` means the webhook URL/secret is missing;
+`WEBHOOK_URL_INVALID` requires the complete deployed `/exec` URL;
+`WEBHOOK_NOT_JSON_CHECK_DEPLOYMENT_ACCESS` often indicates a login page or wrong
+deployment access; `AUTH_FAILED` means the Worker secret does not match the
+Apps Script Property; `MAIL_QUOTA` indicates Google's sending quota is exhausted.
+`prompt-email-accepted` means the Apps Script reported success, not guaranteed
+inbox delivery. Use the latest `tools/prompt-email-apps-script.gs` and deploy a
+new Apps Script version to receive these detailed response codes.

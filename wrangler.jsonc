@@ -2,7 +2,9 @@
   "name": "timetableplanner",
   "main": "mcp-worker.mjs",
   "compatibility_date": "2026-11-06",
+  "observability": { "enabled": true },
   "build": { "command": "node tools/update-modified.mjs" },
+  "secrets": { "required": ["OPENAI_API_KEY"] },
   "vars": {
     "CHAT_TOKEN_ALLOWANCE": "62500",
     "CHAT_TOTAL_TOKEN_CAP": "3000000",
