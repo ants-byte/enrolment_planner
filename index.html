@@ -96,9 +96,10 @@ Last Modified: 11/07/2026
       </div>
     </aside>
     <aside class="sidebar">
-      <div class="sidebar-section instructions-section">
+      <div class="sidebar-section instructions-section planner-chat-launchers">
         <button id="open-planner-chat" class="clear-button" type="button" aria-haspopup="dialog"
           aria-controls="planner-chat">Ask the course planner</button>
+        <button id="open-friendly-chat" class="clear-button" type="button" aria-haspopup="dialog" aria-controls="friendly-chat" aria-label="Open friendly course planner chat" title="Try the friendly chat">✦</button>
       </div>
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
@@ -2043,13 +2044,27 @@ Last Modified: 11/07/2026
       </div>
     </div>
   </div>
+  <dialog id="friendly-chat" aria-labelledby="friendly-chat-title">
+    <header class="friendly-chat-header">
+      <div><span class="friendly-chat-eyebrow">LET’S PLAN YOUR NEXT STEP</span><h2 id="friendly-chat-title">Your course companion</h2><p>A little clarity for your next semester.</p></div>
+      <button id="close-friendly-chat" type="button" aria-label="Close friendly chat">×</button>
+    </header>
+    <div id="friendly-chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
+    <div class="friendly-chat-compose">
+      <p class="friendly-chat-privacy">Messages go to Cloudflare AI. Leave out personal details. Chat stays in this tab until cleared or reloaded.</p>
+      <label for="friendly-chat-input">What would you like to work out?</label>
+      <textarea id="friendly-chat-input" rows="3" placeholder="I’m studying Software Development. Here are my results…"></textarea>
+      <p id="friendly-chat-status" role="status">Enter to send · Shift+Enter for a new line</p>
+      <div class="friendly-chat-actions"><button id="reset-friendly-chat" type="button">Start fresh</button><button id="send-friendly-chat" type="button">Send message ↗</button></div>
+      <small>Planning guidance only. Check your selections with Enrolments.</small>
+    </div>
+  </dialog>
   <dialog id="planner-chat" aria-labelledby="planner-chat-title" aria-describedby="planner-chat-status">
     <div class="modal-header">
       <h2 id="planner-chat-title" class="modal-title">Ask the course planner</h2>
       <button id="close-planner-chat" class="modal-close" type="button" aria-label="Close course planner chat">X</button>
     </div>
     <div class="modal-body">
-      <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
       <details id="planner-chat-guidance" open>
         <summary>About your information and entering history</summary>
         <p>Your question and the history entered here are sent to Cloudflare AI. Chat stays in this tab until cleared or reloaded; it is not saved to a student record.</p>
@@ -2063,10 +2078,14 @@ Last Modified: 11/07/2026
         <option value="SD">Software Development</option>
       </select>
       <div class="planner-chat-field-heading"><label for="planner-chat-history">Study history</label><button type="button" data-chat-clear="planner-chat-history">Clear</button></div>
-      <textarea id="planner-chat-history" rows="6" placeholder="Examples&#10;BIT105, BIT111, BIT106&#10;BIT105 BIT111 BIT106&#10;Code   | Subject                  | Result&#10;BIT105 | Business Enquiry         | PA&#10;BIT111 | Programming Concepts     | 65&#10;BIT106 | Foundations of Computing | CRT&#10;BIT121 | Network Communication    | Withdrawn"></textarea>
+      <div class="planner-history-wrap">
+        <textarea id="planner-chat-history" rows="6" placeholder=" " aria-describedby="planner-history-examples"></textarea>
+        <div id="planner-history-examples" class="planner-history-examples"><strong>Examples:</strong><br>BIT105, BIT111, BIT106<br>BIT105 BIT111 BIT106<br><br><table><thead><tr><th>Code</th><th>Subject</th><th>Result</th></tr></thead><tbody><tr><td>BIT105</td><td>Business Enquiry</td><td>PA</td></tr><tr><td>BIT111</td><td>Programming Concepts</td><td>65</td></tr><tr><td>BIT106</td><td>Foundations of Computing</td><td>CRT</td></tr><tr><td>BIT121</td><td>Network Communication</td><td>Withdrawn</td></tr></tbody></table></div>
+      </div>
       <div class="planner-chat-field-heading"><label for="planner-chat-question">Your question</label><button type="button" data-chat-clear="planner-chat-question">Clear</button></div>
       <textarea id="planner-chat-question" rows="3" placeholder="What can I study next semester? Include your intended semester and year."></textarea>
-      <div id="planner-chat-messages" role="log" aria-label="Course planner conversation" aria-live="polite"></div>
+      <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
+      <div id="planner-chat-messages" hidden></div>
       <p>Answers may contain mistakes. Options are planning guidance and still need enrolment approval.</p>
     </div>
     <div class="modal-actions">

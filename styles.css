@@ -13804,6 +13804,34 @@ body.completed-mode #clear-selections {
 }
 
 #planner-chat::backdrop { background: #0009; }
+.planner-chat-launchers { display: flex; gap: 0; }
+.planner-chat-launchers #open-planner-chat { flex: 1; min-width: 0; border-radius: 4px 0 0 4px; }
+.planner-chat-launchers #open-friendly-chat { width: 36px; flex: 0 0 36px; border-radius: 0 4px 4px 0; border-left: 1px solid #ffffff66; }
+#friendly-chat { box-sizing: border-box; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid #c8d7e5; border-radius: 20px; background: #f3f7fb; color: #183047; box-shadow: 0 24px 80px #0005; }
+#friendly-chat::backdrop { background: #152b45aa; }
+.friendly-chat-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px; background: #e4eff8; gap: 12px; }
+.friendly-chat-eyebrow { font-size: 11px; letter-spacing: 1.5px; font-weight: 700; }
+.friendly-chat-header h2 { margin: 8px 0; font-size: 24px; }
+.friendly-chat-header p { margin: 0; }
+#friendly-chat button { width: auto; cursor: pointer; border: 1px solid #aebfd0; border-radius: 12px; padding: 9px 14px; font: inherit; background: #fff; color: #183047; }
+#friendly-chat #close-friendly-chat { padding: 0; width: 30px; height: 30px; font-size: 24px; }
+#friendly-chat-log { min-height: 140px; max-height: 36dvh; overflow-y: auto; padding: 8px 24px; }
+.friendly-bubble { padding: 14px 16px; border-radius: 16px 16px 16px 4px; max-width: 88%; white-space: pre-wrap; overflow-wrap: anywhere; background: #fff; border: 1px solid #dae4ed; line-height: 1.5; }
+.friendly-bubble.user { margin-left: auto; background: #dcecfb; border-radius: 16px 16px 4px 16px; }
+.friendly-chat-compose { padding: 0 24px 20px; }
+.friendly-chat-privacy, .friendly-chat-compose small { font-size: 12px; line-height: 1.4; }
+.friendly-chat-compose label { display: block; margin-bottom: 8px; font-weight: 700; }
+#friendly-chat-input { box-sizing: border-box; width: 100%; max-width: 100%; resize: both; padding: 12px; border: 1px solid #aebfd0; border-radius: 12px; font: inherit; background: #fff; color: #183047; }
+#friendly-chat-status { padding: 8px 10px; border: 1px solid #aebfd0; border-radius: 10px; font-size: 13px; }
+#friendly-chat-status.is-loading { animation: planner-feedback 1.2s ease-in-out infinite alternate; }
+.friendly-chat-actions { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+#friendly-chat #send-friendly-chat { background: #215d96; color: #fff; border-color: #215d96; }
+#friendly-chat button:disabled { opacity: .55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { #friendly-chat-status.is-loading { animation: none; } }
+:root[data-appearance="dark"] #friendly-chat { background: #152330; color: #edf5fc; }
+:root[data-appearance="dark"] .friendly-chat-header { background: #223c53; }
+:root[data-appearance="dark"] .friendly-bubble { background: #223344; border-color: #52677a; }
+:root[data-appearance="dark"] .friendly-bubble.user { background: #244c70; }
 #planner-chat .modal-header { position: relative; padding: 12px 42px 0 16px; margin-bottom: 0; }
 #planner-chat .modal-title { margin: 0; }
 #planner-chat .modal-close { position: absolute; top: 8px; right: 8px; }
@@ -13812,15 +13840,29 @@ body.completed-mode #clear-selections {
 #planner-chat .modal-actions { justify-content: center; padding: 12px 30px 16px; }
 #planner-chat .modal-actions .clear-button { width: auto; min-width: 0; flex: 0 1 130px; }
 #planner-chat label { display: block; margin: 12px 0 6px; font-weight: 700; }
-#planner-chat-status { border: 2px solid #397bb5; border-radius: 6px; padding: 10px; }
+#planner-chat-status { border: 2px solid #397bb5; border-radius: 6px; padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
 #planner-chat-status.feedback-updated { animation: planner-feedback 0.6s ease-out; }
-#planner-chat-status.feedback-loading { border: 2px solid #397bb5; animation: planner-feedback 1.2s ease-in-out infinite alternate; }
+#planner-chat-status.feedback-loading, #friendly-chat-status.is-loading {
+  border: 2px solid transparent;
+  background-image: repeating-linear-gradient(90deg, #397bb5 0 2px, transparent 2px 8px), repeating-linear-gradient(90deg, #397bb5 0 2px, transparent 2px 8px), repeating-linear-gradient(0deg, #397bb5 0 2px, transparent 2px 8px), repeating-linear-gradient(0deg, #397bb5 0 2px, transparent 2px 8px);
+  background-size: calc(100% + 16px) 2px, calc(100% + 16px) 2px, 2px calc(100% + 16px), 2px calc(100% + 16px);
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-repeat: no-repeat;
+  animation: planner-ants 1s linear infinite;
+}
+@keyframes planner-ants { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; } }
 @keyframes planner-feedback { from { box-shadow: 0 0 0 5px #397bb566; } to { box-shadow: 0 0 0 0 transparent; } }
-@media (prefers-reduced-motion: reduce) { #planner-chat-status.feedback-updated, #planner-chat-status.feedback-loading { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #planner-chat-status.feedback-updated, #planner-chat-status.feedback-loading, #friendly-chat-status.is-loading { animation: none; } }
 #planner-chat .planner-chat-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; margin-bottom: 6px; }
 #planner-chat .planner-chat-field-heading label { margin: 0; }
 #planner-chat .planner-chat-field-heading button { width: auto; padding: 2px 8px; }
 #planner-chat-history { line-height: 1.4; }
+#planner-chat .planner-history-wrap { position: relative; }
+#planner-chat .planner-history-wrap textarea { display: block; }
+#planner-chat .planner-history-examples { position: absolute; inset: 9px; overflow: hidden; pointer-events: none; color: #757575; line-height: 1.4; }
+#planner-chat-history:not(:placeholder-shown) + .planner-history-examples { display: none; }
+#planner-chat .planner-history-examples table { width: auto; border-collapse: collapse; font: inherit; color: inherit; }
+#planner-chat .planner-history-examples th, #planner-chat .planner-history-examples td { padding: 0 12px 0 0; border: 0; text-align: left; background: transparent; white-space: nowrap; }
 #planner-chat select, #planner-chat textarea {
   box-sizing: border-box;
   width: 100%;

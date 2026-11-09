@@ -7,6 +7,64 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
 
 */
 (() => {
+  const friendlyChat = document.getElementById('friendly-chat');
+  const friendlyLog = document.getElementById('friendly-chat-log');
+  const friendlyInput = document.getElementById('friendly-chat-input');
+  const friendlyStatus = document.getElementById('friendly-chat-status');
+  const friendlySend = document.getElementById('send-friendly-chat');
+  const friendlyReset = document.getElementById('reset-friendly-chat');
+  let friendlyMessages = [];
+  let friendlyBusy = false;
+  const renderFriendlyChat = () => {
+    friendlyLog.replaceChildren();
+    const greeting = document.createElement('p');
+    greeting.className = 'friendly-bubble assistant';
+    greeting.textContent = 'Hi! Let’s work out what comes next. Tell me your major and what you’ve passed or received credit for. You can paste your Student Portal results, then ask me a question.';
+    friendlyLog.append(greeting);
+    friendlyMessages.forEach(message => {
+      const bubble = document.createElement('p');
+      bubble.className = `friendly-bubble ${message.role}`;
+      bubble.textContent = message.content;
+      friendlyLog.append(bubble);
+    });
+    friendlyLog.scrollTop = friendlyLog.scrollHeight;
+  };
+  document.getElementById('open-friendly-chat').addEventListener('click', () => {
+    friendlyChat.showModal(); friendlyInput.focus();
+  });
+  document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
+  friendlyReset.addEventListener('click', () => {
+    friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
+    friendlyStatus.textContent = 'A fresh start. What would you like to know?'; friendlyInput.focus();
+  });
+  friendlySend.addEventListener('click', async () => {
+    if (friendlyBusy || !friendlyInput.value.trim()) return;
+    if (friendlyMessages.length >= 14) { friendlyStatus.textContent = 'Please start fresh to continue.'; return; }
+    if (friendlyInput.value.length > 6000) { friendlyStatus.textContent = 'Please shorten your message.'; return; }
+    const draft = friendlyInput.value;
+    friendlyMessages.push({ role: 'user', content: draft.trim() });
+    renderFriendlyChat(); friendlyInput.value = '';
+    friendlyBusy = true; friendlySend.disabled = true; friendlyReset.disabled = true; friendlyInput.disabled = true;
+    friendlyStatus.textContent = 'Checking course information…'; friendlyStatus.classList.add('is-loading');
+    try {
+      const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages }), signal: AbortSignal.timeout(90000) });
+      const result = await response.json();
+      if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
+      friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
+      friendlyStatus.textContent = 'Keep going — you can ask a follow-up question.';
+    } catch (error) {
+      friendlyMessages.pop(); renderFriendlyChat(); friendlyInput.value = draft;
+      friendlyStatus.textContent = error.name === 'TimeoutError' ? 'That took too long. Please try again.' : error.message;
+    } finally {
+      friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
+      friendlyStatus.classList.remove('is-loading');
+      if (friendlyChat.open) friendlyInput.focus();
+    }
+  });
+  friendlyInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); friendlySend.click(); }
+  });
+  renderFriendlyChat();
   const plannerChat = document.getElementById('planner-chat');
   let plannerChatMessages = [];
   let plannerChatHistory = '';
@@ -47,13 +105,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   chatSend?.addEventListener('click', async () => {
     if (plannerChatBusy) return;
     const question = document.getElementById('planner-chat-question');
-    if (!question.value.trim()) { question.focus(); return; }
-    const history = `Major: ${document.getElementById('planner-chat-major').value || 'undecided'}\nStudy history: ${document.getElementById('planner-chat-history').value}`;
+    const historyEntry = document.getElementById('planner-chat-history').value.trim();
+    const history = `Major: ${document.getElementById('planner-chat-major').value || 'undecided'}\nStudy history: ${historyEntry || 'First-year student starting the course. No completed subjects and no credits. Offer introductory subjects even if major is undecided; show options rather than requiring a major first.'}`;
     if (history !== plannerChatHistory) { plannerChatMessages = []; plannerChatHistory = history; }
     if (plannerChatMessages.length >= 14) {
       chatStatus.textContent = 'Conversation limit reached. Clear the chat to start again.'; return;
     }
-    const content = plannerChatMessages.length ? question.value.trim() : `${history}\nQuestion: ${question.value.trim()}`;
+    const prompt = question.value.trim() || 'What subjects can I take?';
+    const content = plannerChatMessages.length ? prompt : `${history}\nQuestion: ${prompt}`;
     if (content.length > 6000) { chatStatus.textContent = 'Please shorten your history and question.'; return; }
     const messages = [...plannerChatMessages, { role: 'user', content }];
     plannerChatBusy = true; chatSend.disabled = true; chatReset.disabled = true;
@@ -68,7 +127,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
       plannerChatMessages = [...messages, { role: 'assistant', content: result.answer }];
       renderPlannerChat(); question.value = '';
-      chatStatus.textContent = 'You can ask a follow-up question.';
+      chatStatus.textContent = result.answer;
     } catch (error) {
       chatStatus.textContent = error.name === 'TimeoutError' ? 'The request timed out. Please try again.' : error.message;
     } finally {
