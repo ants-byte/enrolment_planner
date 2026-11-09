@@ -13805,6 +13805,8 @@ body.completed-mode #clear-selections {
 
 #planner-chat::backdrop { background: #0009; }
 .planner-chat-launchers { display: flex; gap: 0; }
+.course-planner-launch { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+.course-planner-launch svg { flex: 0 0 auto; }
 .planner-chat-launchers #open-planner-chat { flex: 1; min-width: 0; border-radius: 4px 0 0 4px; }
 .planner-chat-launchers #open-friendly-chat { width: 36px; flex: 0 0 36px; border-radius: 0 4px 4px 0; border-left: 1px solid #ffffff66; }
 #friendly-chat { box-sizing: border-box; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid #c8d7e5; border-radius: 20px; background: #f3f7fb; color: #183047; box-shadow: 0 24px 80px #0005; }
@@ -13841,6 +13843,9 @@ body.completed-mode #clear-selections {
 #friendly-chat-log { flex: 1; min-height: 0; max-height: none; padding: 16px 24px; }
 .friendly-bubble { margin: 12px 0 24px; padding: 16px 18px; background: #f5f5f5; border: 0; border-radius: 18px; }
 .friendly-bubble.user { background: #eaeaea; border-radius: 18px; max-width: 78%; }
+.friendly-bubble.friendly-working { color: #777; background: transparent; border: 0; padding-left: 0; }
+:root[data-appearance="dark"] .friendly-bubble.friendly-working { color: #aaa; background: transparent; }
+@media (prefers-reduced-motion: reduce) { .friendly-working { animation: none; } }
 .friendly-chat-compose { flex: 0 0 auto; padding: 8px 20px 16px; }
 .friendly-chat-input-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .friendly-chat-input-shell { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid #8885; border-radius: 24px; background: #f5f5f5; }

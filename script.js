@@ -10,7 +10,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyChat = document.getElementById('friendly-chat');
   const friendlyLog = document.getElementById('friendly-chat-log');
   const friendlyInput = document.getElementById('friendly-chat-input');
-  const friendlyStatus = document.getElementById('friendly-chat-status');
+  const showFriendlyNotice = text => {
+    const bubble = document.createElement('p');
+    bubble.className = 'friendly-bubble assistant';
+    bubble.textContent = text;
+    friendlyLog.append(bubble);
+    friendlyLog.scrollTop = friendlyLog.scrollHeight;
+    return bubble;
+  };
   const friendlyError = document.getElementById('friendly-chat-error');
   const friendlySend = document.getElementById('send-friendly-chat');
   const friendlyReset = document.getElementById('reset-friendly-chat');
@@ -31,35 +38,55 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyLog.scrollTop = friendlyLog.scrollHeight;
   };
   document.getElementById('open-friendly-chat').addEventListener('click', () => {
-    friendlyChat.showModal(); friendlyInput.focus();
+    if (window.location.hash !== '#ask-course-planner') window.location.hash = '#ask-course-planner';
+    if (!friendlyChat.open) friendlyChat.showModal();
+    friendlyInput.focus();
   });
+  const syncFriendlyChatHash = () => {
+    if (window.location.hash === '#ask-course-planner') {
+      if (!friendlyChat.open) friendlyChat.showModal();
+    } else if (friendlyChat.open) friendlyChat.close();
+  };
+  window.addEventListener('hashchange', syncFriendlyChatHash);
+  friendlyChat.addEventListener('close', () => {
+    if (window.location.hash === '#ask-course-planner') {
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+    }
+  });
+  syncFriendlyChatHash();
   document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
   friendlyReset.addEventListener('click', () => {
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
-    friendlyStatus.textContent = 'A fresh start. What would you like to know?'; friendlyInput.focus();
+    friendlyInput.focus(); updateFriendlySend();
   });
   friendlySend.addEventListener('click', async () => {
     if (friendlyBusy || !friendlyInput.value.trim()) return;
-    if (friendlyMessages.length >= 14) { friendlyStatus.textContent = 'Please start fresh to continue.'; return; }
-    if (friendlyInput.value.length > 6000) { friendlyStatus.textContent = 'Please shorten your message.'; return; }
+    if (friendlyMessages.length >= 14) { showFriendlyNotice('Please select New chat to start fresh and continue.'); return; }
+    if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
     const draft = friendlyInput.value;
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages.push({ role: 'user', content: draft.trim() });
     renderFriendlyChat(); friendlyInput.value = '';
     friendlyBusy = true; friendlySend.disabled = true; friendlyReset.disabled = true; friendlyInput.disabled = true;
-    friendlyStatus.textContent = 'Checking course information…'; friendlyStatus.classList.add('is-loading');
+    const workingStarted = Date.now();
+    const workingBubble = showFriendlyNotice('Working for 0s...');
+    workingBubble.classList.add('friendly-working');
+    const workingTimer = window.setInterval(() => {
+      const seconds = Math.floor((Date.now() - workingStarted) / 1000);
+      const elapsed = seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
+      workingBubble.textContent = `Working for ${elapsed}...`;
+    }, 1000);
     try {
       const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages }), signal: AbortSignal.timeout(90000) });
       const result = await response.json();
       if (response.status === 422 && typeof result.error === 'string') {
         friendlyMessages.push({ role: 'assistant', content: 'Let’s work this out together. Which semester would you like a timetable for? You can also tell me your major and any subjects you’ve passed or received credit for. If you’re just starting, say “first year, no credits”.' });
-        renderFriendlyChat(); friendlyStatus.textContent = 'Reply below to continue.';
+        renderFriendlyChat();
         return;
       }
       if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
       friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
-      friendlyStatus.textContent = 'Keep going — you can ask a follow-up question.';
     } catch (error) {
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
@@ -71,10 +98,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const summary = document.createElement('summary'); summary.textContent = 'Technical details';
       const detailText = document.createElement('p'); detailText.textContent = error.message;
       details.append(summary, detailText); friendlyError.replaceChildren(notice, details); friendlyError.hidden = false;
-      friendlyStatus.textContent = 'Your message has been kept for retrying.';
     } finally {
       friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
-      friendlyStatus.classList.remove('is-loading');
+      window.clearInterval(workingTimer);
+      workingBubble.remove(); updateFriendlySend();
       if (friendlyChat.open) friendlyInput.focus();
     }
   });
@@ -84,107 +111,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   renderFriendlyChat();
   const updateFriendlySend = () => { friendlySend.disabled = friendlyBusy || !friendlyInput.value.trim(); };
   friendlyInput.addEventListener('input', updateFriendlySend);
-  new MutationObserver(updateFriendlySend).observe(friendlyStatus, { childList: true, attributes: true, attributeFilter: ['class'] });
   updateFriendlySend();
-  const plannerChat = document.getElementById('planner-chat');
-  let plannerChatMessages = [];
-  let plannerChatHistory = '';
-  let plannerChatBusy = false;
-  const chatStatus = document.getElementById('planner-chat-status');
-  const chatLog = document.getElementById('planner-chat-messages');
-  const chatSend = document.getElementById('send-planner-chat');
-  const chatReset = document.getElementById('reset-planner-chat');
-  plannerChat.addEventListener('click', event => {
-    if (event.target.closest('button')) document.getElementById('planner-chat-guidance').open = false;
-  });
-  plannerChat.querySelectorAll('[data-chat-clear]').forEach(button => {
-    button.addEventListener('click', () => {
-      if (plannerChatBusy) return;
-      const field = document.getElementById(button.dataset.chatClear);
-      field.value = ''; field.focus();
-    });
-  });
-  plannerChat.addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.target.matches('textarea, select')) {
-      event.preventDefault(); chatSend.click();
-    }
-  });
-  new MutationObserver(() => {
-    chatStatus.classList.remove('feedback-updated');
-    void chatStatus.offsetWidth;
-    chatStatus.classList.add('feedback-updated');
-  }).observe(chatStatus, { childList: true });
-  const renderPlannerChat = () => {
-    chatLog.replaceChildren();
-    plannerChatMessages.forEach(message => {
-      const paragraph = document.createElement('p');
-      paragraph.textContent = `${message.role === 'user' ? 'You' : 'Planner'}: ${message.content}`;
-      chatLog.append(paragraph);
-    });
-    chatLog.scrollTop = chatLog.scrollHeight;
-  };
-  chatSend?.addEventListener('click', async () => {
-    if (plannerChatBusy) return;
-    const question = document.getElementById('planner-chat-question');
-    const historyEntry = document.getElementById('planner-chat-history').value.trim();
-    const history = `Major: ${document.getElementById('planner-chat-major').value || 'undecided'}\nStudy history: ${historyEntry || 'First-year student starting the course. No completed subjects and no credits. Offer introductory subjects even if major is undecided; show options rather than requiring a major first.'}`;
-    if (history !== plannerChatHistory) { plannerChatMessages = []; plannerChatHistory = history; }
-    if (plannerChatMessages.length >= 14) {
-      chatStatus.textContent = 'Conversation limit reached. Clear the chat to start again.'; return;
-    }
-    const prompt = question.value.trim() || 'What subjects can I take?';
-    const content = plannerChatMessages.length ? prompt : `${history}\nQuestion: ${prompt}`;
-    if (content.length > 6000) { chatStatus.textContent = 'Please shorten your history and question.'; return; }
-    const messages = [...plannerChatMessages, { role: 'user', content }];
-    document.getElementById('planner-chat-background').open = false;
-    plannerChatBusy = true; chatSend.disabled = true; chatReset.disabled = true;
-    chatStatus.classList.add('feedback-loading');
-    chatStatus.textContent = 'Checking course information…';
-    try {
-      const response = await fetch('/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages }), signal: AbortSignal.timeout(90000),
-      });
-      const result = await response.json();
-      if (!response.ok || typeof result.answer !== 'string') throw new Error(result.error || 'Chat is unavailable.');
-      plannerChatMessages = [...messages, { role: 'assistant', content: result.answer }];
-      renderPlannerChat(); question.value = '';
-      chatStatus.textContent = result.answer;
-    } catch (error) {
-      chatStatus.textContent = error.name === 'TimeoutError' ? 'The request timed out. Please try again.' : error.message;
-    } finally {
-      chatStatus.classList.remove('feedback-loading');
-      plannerChatBusy = false; chatSend.disabled = false; chatReset.disabled = false;
-    }
-  });
-  const plannerChatHash = '#ask-course-planner';
-  const syncPlannerChatHash = () => {
-    if (window.location.hash === plannerChatHash) {
-      if (!plannerChat.open) plannerChat.showModal();
-    } else if (plannerChat.open) plannerChat.close();
-  };
-  document.getElementById('open-planner-chat')?.addEventListener('click', () => {
-    if (window.location.hash !== plannerChatHash) window.location.hash = plannerChatHash;
-    syncPlannerChatHash();
-  });
-  window.addEventListener('hashchange', syncPlannerChatHash);
-  plannerChat.addEventListener('close', () => {
-    if (window.location.hash === plannerChatHash) {
-      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
-    }
-  });
-  syncPlannerChatHash();
-  document.getElementById('close-planner-chat')?.addEventListener('click', () => plannerChat.close());
-  document.getElementById('exit-planner-chat')?.addEventListener('click', () => plannerChat.close());
-  document.getElementById('reset-planner-chat')?.addEventListener('click', () => {
-    plannerChatMessages = []; plannerChatHistory = ''; renderPlannerChat();
-    chatStatus.textContent = 'Chat cleared. Enter your history and question.';
-    document.getElementById('planner-chat-background').open = true;
-    ['planner-chat-major', 'planner-chat-history', 'planner-chat-question'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('planner-chat-major').focus();
-  });
   const PWA_LAST_SETTINGS_URL_STORAGE_KEY = 'timetablePlannerPwaLastSettingsUrlV1';
   const isInstalledPwa = () =>
     !!window.matchMedia?.('(display-mode: standalone)').matches || !!window.navigator?.standalone;
