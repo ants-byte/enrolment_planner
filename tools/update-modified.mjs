@@ -21,12 +21,12 @@ for (const file of files) {
 }
 if (!modified) throw new Error('Cannot determine the site modification time.');
 const date = new Date(modified);
-const options = { timeZone: 'Australia/Sydney' };
+const options = { timeZone: 'Australia/Melbourne' };
 const time = date.toLocaleTimeString('en-AU', { ...options, hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
 const day = date.toLocaleDateString('en-AU', { ...options, day: 'numeric', month: 'numeric', year: 'numeric' });
 const path = new URL('../index.html', import.meta.url);
 const html = readFileSync(path, 'utf8');
-const updated = html.replace(/<div id="site-modified">.*?<\/div>/, `<div id="site-modified">Last modified: <time datetime="${date.toISOString()}">${time}, ${day}</time> (Sydney time)</div>`);
+const updated = html.replace(/<div id="site-modified">.*?<\/div>/, `<div id="site-modified">Last modified: <time datetime="${date.toISOString()}">${time}, ${day}</time> (Melbourne time)</div>`);
 if (updated === html && !html.includes('id="site-modified"')) throw new Error('Missing footer timestamp element.');
 if (updated !== html) writeFileSync(path, updated);
-console.log(`Site last modified: ${time}, ${day} (Sydney time)`);
+console.log(`Site last modified: ${time}, ${day} (Melbourne time)`);

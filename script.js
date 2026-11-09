@@ -15,6 +15,26 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const chatLog = document.getElementById('planner-chat-messages');
   const chatSend = document.getElementById('send-planner-chat');
   const chatReset = document.getElementById('reset-planner-chat');
+  plannerChat.addEventListener('click', event => {
+    if (event.target.closest('button')) document.getElementById('planner-chat-guidance').open = false;
+  });
+  plannerChat.querySelectorAll('[data-chat-clear]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (plannerChatBusy) return;
+      const field = document.getElementById(button.dataset.chatClear);
+      field.value = ''; field.focus();
+    });
+  });
+  plannerChat.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.target.matches('textarea, select')) {
+      event.preventDefault(); chatSend.click();
+    }
+  });
+  new MutationObserver(() => {
+    chatStatus.classList.remove('feedback-updated');
+    void chatStatus.offsetWidth;
+    chatStatus.classList.add('feedback-updated');
+  }).observe(chatStatus, { childList: true });
   const renderPlannerChat = () => {
     chatLog.replaceChildren();
     plannerChatMessages.forEach(message => {
@@ -37,6 +57,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     if (content.length > 6000) { chatStatus.textContent = 'Please shorten your history and question.'; return; }
     const messages = [...plannerChatMessages, { role: 'user', content }];
     plannerChatBusy = true; chatSend.disabled = true; chatReset.disabled = true;
+    chatStatus.classList.add('feedback-loading');
     chatStatus.textContent = 'Checking course information…';
     try {
       const response = await fetch('/chat', {
@@ -51,6 +72,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     } catch (error) {
       chatStatus.textContent = error.name === 'TimeoutError' ? 'The request timed out. Please try again.' : error.message;
     } finally {
+      chatStatus.classList.remove('feedback-loading');
       plannerChatBusy = false; chatSend.disabled = false; chatReset.disabled = false;
     }
   });

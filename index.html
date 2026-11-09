@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 
 Author: Antony Di Serio
 Created: December 30, 2025
@@ -2050,25 +2050,28 @@ Last Modified: 11/07/2026
     </div>
     <div class="modal-body">
       <p id="planner-chat-status" role="status">Ask about your subjects, then follow up with more questions.</p>
-      <p>Your question and the history entered here are sent to Cloudflare AI. Chat stays in this tab until cleared or reloaded; it is not saved to a student record.</p>
-      <p>Enter subject codes only. Please leave out your name, student ID and other personal details.</p>
-      <label for="planner-chat-major">Major</label>
+      <details id="planner-chat-guidance" open>
+        <summary>About your information and entering history</summary>
+        <p>Your question and the history entered here are sent to Cloudflare AI. Chat stays in this tab until cleared or reloaded; it is not saved to a student record.</p>
+        <p>Enter subject codes, names or both, with any surrounding text, or paste a table directly from the Student Portal. Include result, grade or score columns if available so passes and approved credits can be distinguished from failed, withdrawn or incomplete subjects. If results are missing or unclear, the planner will ask you to confirm. Please remove your name, student ID and other personal details.</p>
+      </details>
+      <div class="planner-chat-field-heading"><label for="planner-chat-major">Major</label><button type="button" data-chat-clear="planner-chat-major">Clear</button></div>
       <select id="planner-chat-major">
         <option value="">Not decided</option>
         <option value="NS">Network Security</option>
         <option value="BA">Business Analytics</option>
         <option value="SD">Software Development</option>
       </select>
-      <label for="planner-chat-history">Study history</label>
-      <textarea id="planner-chat-history" rows="4" placeholder="Passed: BIT105, BIT111&#10;Approved credits: BIT106&#10;Currently studying: BIT121&#10;Approved unnamed elective credits: 0"></textarea>
-      <label for="planner-chat-question">Your question</label>
+      <div class="planner-chat-field-heading"><label for="planner-chat-history">Study history</label><button type="button" data-chat-clear="planner-chat-history">Clear</button></div>
+      <textarea id="planner-chat-history" rows="6" placeholder="Examples&#10;BIT105, BIT111, BIT106&#10;BIT105 BIT111 BIT106&#10;Code   | Subject                  | Result&#10;BIT105 | Business Enquiry         | PA&#10;BIT111 | Programming Concepts     | 65&#10;BIT106 | Foundations of Computing | CRT&#10;BIT121 | Network Communication    | Withdrawn"></textarea>
+      <div class="planner-chat-field-heading"><label for="planner-chat-question">Your question</label><button type="button" data-chat-clear="planner-chat-question">Clear</button></div>
       <textarea id="planner-chat-question" rows="3" placeholder="What can I study next semester? Include your intended semester and year."></textarea>
       <div id="planner-chat-messages" role="log" aria-label="Course planner conversation" aria-live="polite"></div>
       <p>Answers may contain mistakes. Options are planning guidance and still need enrolment approval.</p>
     </div>
     <div class="modal-actions">
-      <button id="reset-planner-chat" class="clear-button secondary" type="button">Clear draft</button>
       <button id="send-planner-chat" class="clear-button" type="button">Send</button>
+      <button id="reset-planner-chat" class="clear-button secondary" type="button">Clear All</button>
       <button id="exit-planner-chat" class="clear-button secondary" type="button">Exit</button>
     </div>
   </dialog>
@@ -2077,7 +2080,7 @@ Last Modified: 11/07/2026
   <script src="script.js?v=20261027-summer-1"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
-    <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time> (Sydney time)</div>
+    <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time> (Melbourne time)</div>
   </footer>
 </body>
 

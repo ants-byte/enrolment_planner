@@ -13812,6 +13812,15 @@ body.completed-mode #clear-selections {
 #planner-chat .modal-actions { justify-content: center; padding: 12px 30px 16px; }
 #planner-chat .modal-actions .clear-button { width: auto; min-width: 0; flex: 0 1 130px; }
 #planner-chat label { display: block; margin: 12px 0 6px; font-weight: 700; }
+#planner-chat-status { border: 2px solid #397bb5; border-radius: 6px; padding: 10px; }
+#planner-chat-status.feedback-updated { animation: planner-feedback 0.6s ease-out; }
+#planner-chat-status.feedback-loading { border: 2px solid #397bb5; animation: planner-feedback 1.2s ease-in-out infinite alternate; }
+@keyframes planner-feedback { from { box-shadow: 0 0 0 5px #397bb566; } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { #planner-chat-status.feedback-updated, #planner-chat-status.feedback-loading { animation: none; } }
+#planner-chat .planner-chat-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; margin-bottom: 6px; }
+#planner-chat .planner-chat-field-heading label { margin: 0; }
+#planner-chat .planner-chat-field-heading button { width: auto; padding: 2px 8px; }
+#planner-chat-history { line-height: 1.4; }
 #planner-chat select, #planner-chat textarea {
   box-sizing: border-box;
   width: 100%;
