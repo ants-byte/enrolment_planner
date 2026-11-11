@@ -214,7 +214,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               });
               const email = document.createElement('a'); email.textContent = 'Email selection to enrol_bit';
               email.href = `mailto:enrol_bit@melbournepolytechnic.edu.au?subject=${encodeURIComponent('Subject selection')}&body=${encodeURIComponent('My proposed subject selection:\n\n' + plain)}`;
-              actions.append(copy, email); bubble.append(actions);
+              actions.append(copy, email, document.createTextNode(' (enrol_bit@melbournepolytechnic.edu.au)')); bubble.append(actions);
             }
           } else bubble.append(document.createTextNode(lines[i] + '\n'));
         }
@@ -14704,7 +14704,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     updateBookmarkableSettingsUrl();
   };
 
-  function seedFriendlyChatFromPlanner() {
+  const localStudentKeys = new Map();
+  function getAcademicPlannerContext() {
     const completed = Array.from(subjectState.entries()).filter(([code, state]) => state.completed && !currentEnrolmentStudentRecord.has(code)).map(([code]) => code);
     const credited = completed.filter(code => /CRT|RPL/.test(manualEntryMeta.get(code)?.result || ''));
     const passed = completed.filter(code => !credited.includes(code));
@@ -14712,6 +14713,27 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const current = Array.from(currentEnrolmentStudentRecord);
     const selected = Array.from(subjectState.entries()).filter(([, state]) => state.toggled).map(([code]) => code);
     const history = { passed, credited, repeatFailureCounts: Object.fromEntries(getRepeatFailCounts().map(item => [item.code, item.count])), current, currentTreatedAsPassed: current.filter(code => passForEnrolmentsOverrides.has(code)), failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
+    return history;
+  }
+  if (['127.0.0.1', 'localhost'].includes(location.hostname)) {
+    window.getLocalPlannerAcademicContext = () => {
+      const studentId = getActiveStudentRecord()?.Student_IDs_Unique || 'manual';
+      if (!localStudentKeys.has(studentId)) localStudentKeys.set(studentId, crypto.randomUUID());
+      const plainText = html => {
+        const element = document.createElement('div');
+        element.innerHTML = html || '';
+        return element.textContent.replace(/\s+/g, ' ').trim();
+      };
+      return { ...getAcademicPlannerContext(), studentKey: localStudentKeys.get(studentId),
+        alerts: Object.fromEntries(['error', 'warning', 'info'].map(type => [type,
+          (alertContent[type] || []).map(message => ({ title: message.title || '', details: plainText(message.html) }))])),
+      };
+    };
+  }
+  function seedFriendlyChatFromPlanner() {
+    const history = getAcademicPlannerContext();
+    const { passed, credited, current, selected, failed } = history;
+    const completed = [...passed, ...credited];
     const context = JSON.stringify(history);
     if (context === friendlyMainContext) return;
     friendlyMainContext = context;
@@ -34087,6 +34109,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
   }
 
   const shouldRegisterServiceWorker = () => {
+    if (window.localPlannerBridge) return false;
     if (!window.isSecureContext || !("serviceWorker" in navigator)) return false;
     const params = new URLSearchParams(window.location.search);
     if (params.get('sw') === '0') return false;

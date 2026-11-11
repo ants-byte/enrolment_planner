@@ -5470,7 +5470,7 @@ body.graduate-highlight .electives-grid .subject-card.completed.elective-stream:
 .show-tooltip {
   position: relative;
   overflow: visible !important;
-  z-index: 12000 !important;
+  z-index: 1 !important;
 }
 
 body:has(#course-map-modal.show) .main-grid .hover-active,
