@@ -215,10 +215,7 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
             messages.push({ role: 'system', content: 'Before answering, call plan_subjects now with only explicitly reported passed/approved credits from the conversation. Wanting a subject does not satisfy its prerequisites. If no completed history is known, check introductory options with completed=[] and clearly state that assumption.' });
             continue;
           }
-          const semesterName = { SS: 'Summer Semester', S1: 'Semester 1', S2: 'Semester 2' }[config.semesterDetails.semester_S1_S2_SS];
-          const completed = recordedHistory && [...recordedHistory.passed, ...recordedHistory.credited];
-          const summary = recordedHistory ? `I have recorded your reported history: ${completed.join(', ') || 'no named completed subjects'}, plus ${recordedHistory.unspecifiedElectiveCredits} unspecified elective credits. ` : '';
-          return reply({ answer: `${summary}I couldn’t complete the eligibility check for your request in ${semesterName}, ${config.semesterDetails.year}. Your requested subjects remain in this conversation. Please retry the check; you do not need to repeat information you have already supplied.`, plannerState: syncState('') });
+          return reply({ answer: "Something went wrong at our end - I'm only AI, afterall! Please try again.", plannerState: syncState('') });
         }
         const blockedRequests = requestedCodes.filter(code => checkedPlans.length && checkedPlans.every(plan => plan.blockedOptions.some(subject => subject.code === code)));
         if (blockedRequests.length) {

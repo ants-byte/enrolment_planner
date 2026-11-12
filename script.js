@@ -97,28 +97,88 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyReset = document.getElementById('reset-friendly-chat');
   const friendlyTheme = document.getElementById('theme-friendly-chat');
   const friendlySettings = document.querySelector('.friendly-settings');
-  const phoneChatLayout = window.matchMedia('(max-width: 600px)');
-  const syncFriendlySettings = () => { friendlySettings.open = !phoneChatLayout.matches; };
-  syncFriendlySettings();
-  phoneChatLayout.addEventListener('change', syncFriendlySettings);
   friendlySettings.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && phoneChatLayout.matches && friendlySettings.open) {
+    if (event.key === 'Escape' && friendlySettings.open) {
       event.preventDefault(); event.stopPropagation();
       friendlySettings.open = false; friendlySettings.querySelector('summary').focus();
     }
   });
+  const friendlyMenuButton = friendlySettings.querySelector('summary');
+  friendlyMenuButton.setAttribute('aria-keyshortcuts', 'Alt+m');
+  const menuKeys = { n: friendlyReset, d: friendlyTheme, c: document.getElementById('density-friendly-chat'), h: document.getElementById('contrast-friendly-chat') };
+  const setFriendlyMenuLabel = (button, label, key) => {
+    const index = label.toLowerCase().indexOf(key);
+    const underline = document.createElement('u');
+    underline.textContent = label[index];
+    button.replaceChildren(document.createTextNode(label.slice(0, index)), underline, document.createTextNode(label.slice(index + 1)));
+    button.setAttribute('aria-keyshortcuts', key);
+  };
+  setFriendlyMenuLabel(friendlyReset, 'New chat', 'n');
+  const clearFriendlyAltHint = () => { friendlySettings.classList.remove('show-key-hint'); };
+  document.addEventListener('keydown', event => {
+    if (!friendlyChat.open || friendlyInput.inert || friendlyChat.querySelector('.friendly-chat-compose').inert) return;
+    if (event.key === 'Alt') friendlySettings.classList.add('show-key-hint');
+    const key = event.key.toLowerCase();
+    if (event.altKey && !event.ctrlKey && !event.metaKey && key === 'm') {
+      event.preventDefault(); clearFriendlyAltHint();
+      friendlySettings.open = true; friendlyMenuButton.focus();
+      return;
+    }
+    if (friendlySettings.open && friendlySettings.contains(document.activeElement)) {
+      if (!event.ctrlKey && !event.metaKey && menuKeys[key]) {
+        event.preventDefault();
+        if (!menuKeys[key].disabled) menuKeys[key].click();
+        return;
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const items = Object.values(menuKeys).filter(button => !button.disabled);
+        const index = items.indexOf(document.activeElement);
+        items[(index + (event.key === 'ArrowDown' ? 1 : items.length - 1) + items.length) % items.length].focus();
+        return;
+      }
+    }
+    if (event.key === 'Tab' && !event.defaultPrevented) {
+      const order = [friendlyInput, friendlySend, friendlyMenuButton, document.getElementById('close-friendly-chat')].filter(element => !element.disabled);
+      let index = order.indexOf(document.activeElement);
+      if (friendlySettings.contains(document.activeElement)) { index = order.indexOf(friendlyMenuButton); friendlySettings.open = false; }
+      event.preventDefault();
+      order[(index + (event.shiftKey ? order.length - 1 : 1) + order.length) % order.length].focus();
+    }
+  });
+  document.addEventListener('keyup', event => { if (event.key === 'Alt') clearFriendlyAltHint(); });
+  window.addEventListener('blur', clearFriendlyAltHint);
+  friendlyChat.addEventListener('close', clearFriendlyAltHint);
+  friendlySettings.querySelector('.friendly-settings-items').addEventListener('click', event => {
+    if (!event.target.closest('button')) return;
+    friendlySettings.open = false; clearFriendlyAltHint();
+    if (!friendlyChat.querySelector('.friendly-chat-compose').inert) friendlyMenuButton.focus();
+  });
+  const chatUrlSettings = new URLSearchParams(window.location.search);
+  const updateFriendlySettingsUrl = () => {
+    const url = new URL(window.location.href);
+    ['chatTheme', 'chatDensity', 'chatContrast'].forEach(key => {
+      url.searchParams.set(key, friendlyChat.dataset[key]);
+    });
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+  friendlyChat.addEventListener('toggle', () => {
+    if (friendlyChat.open) updateFriendlySettingsUrl();
+  });
   const applyFriendlyTheme = theme => {
     friendlyChat.dataset.chatTheme = theme;
-    friendlyTheme.textContent = theme === 'dark' ? 'Light' : 'Dark';
+    setFriendlyMenuLabel(friendlyTheme, 'Dark theme', 'd');
     friendlyTheme.setAttribute('aria-label', `Use ${theme === 'dark' ? 'light' : 'dark'} chat theme`);
     friendlyTheme.setAttribute('aria-pressed', String(theme === 'dark'));
   };
   let savedChatTheme;
   try { savedChatTheme = localStorage.getItem('plannerChatTheme'); } catch {}
+  if (['dark', 'light'].includes(chatUrlSettings.get('chatTheme'))) savedChatTheme = chatUrlSettings.get('chatTheme');
   applyFriendlyTheme(savedChatTheme === 'dark' || savedChatTheme === 'light' ? savedChatTheme : document.documentElement.dataset.appearance === 'dark' ? 'dark' : 'light');
   friendlyTheme.addEventListener('click', () => {
     const theme = friendlyChat.dataset.chatTheme === 'dark' ? 'light' : 'dark';
     applyFriendlyTheme(theme);
+    updateFriendlySettingsUrl();
     try { localStorage.setItem('plannerChatTheme', theme); } catch {}
   });
   [
@@ -129,15 +189,18 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     const apply = value => {
       const active = value === option.on;
       friendlyChat.dataset[option.key] = active ? option.on : option.off;
-      button.textContent = active ? option.onLabel : option.offLabel;
+      setFriendlyMenuLabel(button, button.dataset.settingLabel, option.key === 'chatDensity' ? 'c' : 'h');
       button.setAttribute('aria-pressed', String(active));
       button.setAttribute('aria-label', active ? option.onAction : option.offAction);
     };
     let saved;
     try { saved = localStorage.getItem(option.storage); } catch {}
+    const bookmarked = chatUrlSettings.get(option.key);
+    if ([option.on, option.off].includes(bookmarked)) saved = bookmarked;
     apply(saved);
     button.addEventListener('click', () => {
       apply(friendlyChat.dataset[option.key] === option.on ? option.off : option.on);
+      updateFriendlySettingsUrl();
       try { localStorage.setItem(option.storage, friendlyChat.dataset[option.key]); } catch {}
     });
   });
@@ -167,7 +230,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyLog.replaceChildren();
     const greeting = document.createElement('p');
     greeting.className = 'friendly-bubble assistant';
-    greeting.textContent = 'Hi! 👋 I can help you plan your timetable and can answer general course related queries.\n\nYou may wish to paste in a list of subjects you passed or your Credit Transfers, then ask what\'s available for you to study this semester.';
+    greeting.textContent = 'Hi! 👋 I can help you plan your timetable and answer general course related queries.\n\nYou may wish to paste in a list of subjects you passed, or paste in your Credit Transfers, then ask what\'s available for you to study this semester.';
     friendlyLog.append(greeting);
     if (friendlyMainSummary) {
       const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
@@ -250,6 +313,58 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
     friendlyLog.scrollTop = friendlyLog.scrollHeight;
   };
+  const pageShortcuts = {
+    a: 'open-friendly-chat', i: 'open-instructions-modal', r: 'clear-selections',
+    c: 'toggle-completed-mode', t: 'open-code-modal', y: 'select-by-typing-button',
+    d: 'main-grid-details', u: 'pass-for-enrolments', p: 'open-instructions-help', f: 'show-semester-timetable',
+    m: 'open-course-map', e: 'settings-button',
+    s: 'available-heading', v: 'override-toggle', w: 'toggle-sem-counts',
+    l: 'open-old-codes', h: 'vary-load',
+  };
+  const pageKeyHints = document.createElement('div');
+  pageKeyHints.className = 'page-key-hints';
+  pageKeyHints.setAttribute('aria-hidden', 'true');
+  document.body.append(pageKeyHints);
+  const shortcutTargetVisible = element => element && !element.disabled && !element.closest('[inert]') && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden';
+  Object.entries(pageShortcuts).forEach(([key, id]) => {
+    document.getElementById(id)?.setAttribute('aria-keyshortcuts', `Alt+${key}`);
+  });
+  const clearPageKeyHints = () => pageKeyHints.replaceChildren();
+  document.addEventListener('keydown', event => {
+    if (friendlyChat.open || document.querySelector('dialog[open], .modal-overlay.show')) return;
+    if (event.key === 'Alt' && !event.repeat) {
+      clearPageKeyHints();
+      Object.entries(pageShortcuts).forEach(([key, id]) => {
+        const target = document.getElementById(id);
+        if (!shortcutTargetVisible(target)) return;
+        const rect = target.getBoundingClientRect();
+        const hint = document.createElement('span');
+        hint.textContent = key;
+        hint.style.left = `${rect.left + rect.width / 2}px`;
+        hint.style.top = `${Math.max(0, rect.top - 16)}px`;
+        pageKeyHints.append(hint);
+      });
+    }
+    if (!event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    const target = document.getElementById(pageShortcuts[event.key.toLowerCase()]);
+    if (!shortcutTargetVisible(target)) return;
+    event.preventDefault(); clearPageKeyHints();
+    target.focus(); target.click();
+  });
+  document.addEventListener('keyup', event => { if (event.key === 'Alt') clearPageKeyHints(); });
+  window.addEventListener('blur', clearPageKeyHints);
+  window.addEventListener('scroll', clearPageKeyHints, true);
+  const friendlyLauncher = document.getElementById('open-friendly-chat');
+  let focusLauncherOnNextTab = true;
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Tab' || !focusLauncherOnNextTab || friendlyChat.open) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    focusLauncherOnNextTab = false;
+    friendlyLauncher.focus();
+  }, true);
+  document.addEventListener('pointerdown', () => { focusLauncherOnNextTab = false; }, true);
+  friendlyChat.addEventListener('close', () => { focusLauncherOnNextTab = true; });
   document.getElementById('open-friendly-chat').addEventListener('click', () => {
     seedFriendlyChatFromPlanner();
     if (window.location.hash !== '#ask-course-planner') window.location.hash = '#ask-course-planner';
@@ -258,7 +373,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   const syncFriendlyChatHash = () => {
     if (window.location.hash === '#ask-course-planner') {
-      if (!friendlyChat.open) friendlyChat.showModal();
+      if (!friendlyChat.open) { friendlyChat.showModal(); friendlyInput.focus(); }
     } else if (friendlyChat.open) friendlyChat.close();
   };
   window.addEventListener('hashchange', () => {
@@ -307,6 +422,44 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     friendlyPendingState = null;
     friendlyInput.focus(); updateFriendlySend();
   });
+  const friendlyNotices = document.querySelector('.friendly-notices');
+  let activeNotice = null;
+  let noticePinned = false;
+  const hideFriendlyNotice = () => {
+    if (activeNotice) {
+      document.getElementById(activeNotice.getAttribute('aria-controls')).hidden = true;
+      activeNotice.setAttribute('aria-expanded', 'false');
+    }
+    activeNotice = null; noticePinned = false;
+  };
+  const openFriendlyNotice = (button, pinned) => {
+    hideFriendlyNotice();
+    activeNotice = button; noticePinned = pinned;
+    document.getElementById(button.getAttribute('aria-controls')).hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+  };
+  friendlyNotices.querySelectorAll('button').forEach(button => {
+    button.addEventListener('pointerenter', event => {
+      if (event.pointerType === 'mouse' && !noticePinned) openFriendlyNotice(button, false);
+    });
+    button.addEventListener('click', () => {
+      const wasPinned = activeNotice === button && noticePinned;
+      hideFriendlyNotice();
+      if (!wasPinned) openFriendlyNotice(button, true);
+    });
+  });
+  friendlyNotices.addEventListener('pointerleave', () => { if (!noticePinned) hideFriendlyNotice(); });
+  friendlyNotices.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && activeNotice) {
+      const button = activeNotice;
+      event.preventDefault(); event.stopPropagation();
+      hideFriendlyNotice(); button.focus();
+    }
+  });
+  document.addEventListener('click', event => {
+    if (!friendlyNotices.contains(event.target)) hideFriendlyNotice();
+  });
+  friendlyChat.addEventListener('close', hideFriendlyNotice);
   friendlySend.addEventListener('click', async () => {
     if (friendlyBusy || !friendlyInput.value.trim()) return;
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
@@ -329,7 +482,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const result = await response.json();
       updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
-        friendlyMessages.push({ role: 'assistant', content: 'I could not finish that check. Your information is still in this conversation, so you do not need to repeat it. Please retry with one question or subject at a time; I will use the semester configured by the site.' });
+        friendlyMessages.push({ role: 'assistant', content: "Something went wrong at our end - I'm only AI, afterall! Please try again." });
         renderFriendlyChat();
         return;
       }
@@ -13380,7 +13533,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const buildCourseTimetableGridData = () => {
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    const slotNames = ['Morning', 'Afternoon'];
+    const slotNames = isOptionalSummerSemester() ? ['Morning'] : ['Morning', 'Afternoon'];
     const grid = new Map();
     dayNames.forEach((day) => {
       const slotMap = new Map();
@@ -13390,7 +13543,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     Object.entries(timetable).forEach(([id, data]) => {
       if (!isRunningThisSemester(id)) return;
       const day = data.day || '';
-      const slot = data.slot || '';
+      const slot = isOptionalSummerSemester() ? 'Morning' : data.slot || '';
       const dayMap = grid.get(day);
       if (!dayMap || !dayMap.has(slot)) return;
       dayMap.get(slot).push({ id, data });
@@ -13568,7 +13721,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       slotNames.forEach((slot) => {
         const th = document.createElement('th');
         th.scope = 'col';
-        th.textContent = getSlotHeading(slot);
+        th.textContent = isOptionalSummerSemester() ? getSlotHeading(slot).replace(/^AM\.\s*/, '') : getSlotHeading(slot);
         headRow.appendChild(th);
       });
       thead.appendChild(headRow);
@@ -15219,9 +15372,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
       handleToggle(cell);
     });
     cell.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
+      if (event.target === cell && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
-        handleToggle(cell);
+        if (!event.repeat) cell.click();
       }
     });
   });
@@ -33380,11 +33533,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
     courseMapContent.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       const targetCell = event.target?.closest?.('.course-map-cell[data-subject]');
-      if (!targetCell || !courseMapContent.contains(targetCell)) return;
-      if (!targetCell.classList.contains('course-map-staff-clickable')) return;
+      if (!targetCell || event.target !== targetCell || !courseMapContent.contains(targetCell)) return;
       event.preventDefault();
-      const code = targetCell.dataset.subject || '';
-      toggleCourseMapStaffSelectionByCode(code);
+      if (!event.repeat) targetCell.click();
     });
   }
   window.addEventListener('scroll', () => {
