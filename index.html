@@ -2046,15 +2046,29 @@ Last Modified: 11/07/2026
     <header class="friendly-chat-header">
       <h2 id="friendly-chat-title">Subject Planner <span>AI</span></h2>
       <button id="reset-friendly-chat" type="button" title="Start a new chat" aria-label="Start a new chat">New chat</button>
-      <button id="theme-friendly-chat" type="button" aria-label="Use dark chat theme" aria-pressed="false">Dark</button>
-      <button id="density-friendly-chat" type="button" aria-label="Use compact chat layout" aria-pressed="false">Compact</button>
-      <button id="contrast-friendly-chat" type="button" aria-label="Use high contrast" aria-pressed="false">Contrast</button>
+      <details class="friendly-settings">
+        <summary aria-label="Chat display settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+        <div class="friendly-settings-items">
+      <button data-setting-label="Dark theme" id="theme-friendly-chat" type="button" aria-label="Use dark chat theme" aria-pressed="false">Dark</button>
+      <button data-setting-label="Compact layout" id="density-friendly-chat" type="button" aria-label="Use compact chat layout" aria-pressed="false">Compact</button>
+      <button data-setting-label="High contrast" id="contrast-friendly-chat" type="button" aria-label="Use high contrast" aria-pressed="false">Contrast</button>
+        </div>
+      </details>
       <button id="close-friendly-chat" type="button" aria-label="Close friendly chat">×</button>
     </header>
+    <div id="friendly-reset-popup" class="friendly-reset-overlay" hidden>
+      <div class="friendly-reset-card" role="alertdialog" aria-modal="true" aria-labelledby="friendly-reset-title" aria-describedby="friendly-reset-description">
+        <h3 id="friendly-reset-title">Start a new chat?</h3>
+        <p id="friendly-reset-description">This will clear your chat history</p>
+        <div class="friendly-reset-actions">
+          <button id="cancel-friendly-reset" type="button">Cancel</button>
+          <button id="confirm-friendly-reset" type="button">New chat</button>
+        </div>
+      </div>
+    </div>
     <div id="friendly-chat-log" role="log" aria-live="polite" aria-label="Conversation"></div>
     <div class="friendly-chat-compose">
       <label for="friendly-chat-input" class="friendly-chat-input-label">Message the Subject Planner</label>
-      <p class="friendly-prompt-notice">Prompts may be emailed to <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a> for review of this pilot. Please leave out personal or sensitive information.</p>
       <div id="friendly-chat-error" role="alert" hidden></div>
       <form id="friendly-chat-unlock" hidden>
         <label for="friendly-chat-unlock-name">Your name</label>
@@ -2064,11 +2078,11 @@ Last Modified: 11/07/2026
         <button type="submit">Request extra usage</button>
       </form>
       <div class="friendly-chat-input-shell">
-        <textarea id="friendly-chat-input" rows="2" placeholder="Ask about your course or paste subject results as text. No file uploads."></textarea>
-        <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 4 21 20H3z"/></svg></button>
+        <textarea id="friendly-chat-input" rows="2" placeholder="Press Shift-Enter for new line, Enter to send prompt"></textarea>
+        <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <small id="friendly-token-counter" aria-live="polite" title="Personal token allowance remaining; updates after requests"></small>
       </div>
-      <small>AI can make mistakes. Check with Enrolments. Messages are processed through Cloudflare and sent to OpenAI; leave out personal details. Chat stays in this tab. Browser and network token usage is retained for up to 90 days to manage allowances.</small>
+      <small>AI makes mistakes. Please leave out personal or sensitive information; messages are processed through Cloudflare and sent to OpenAI. Be kind to Antony by keeping chats short: prompts = cents. Help me train it by emailing me about mistakes or limitations <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</small>
     </div>
   </dialog>
   <script src="vendor/xlsx.full.min.js"></script>

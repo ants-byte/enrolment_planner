@@ -33,7 +33,8 @@ export class ChatUsage {
         } : {}) });
       let result;
       if (action === '/scope') {
-        if (data.classification === 'BLOCK') record.offTopicCount = (record.offTopicCount || 0) + 1;
+        if (record.owner) record.offTopicCount = 0;
+        else if (data.classification === 'BLOCK') record.offTopicCount = (record.offTopicCount || 0) + 1;
         else if (['ALLOW', 'MIXED'].includes(data.classification)) record.offTopicCount = 0;
         if (record.offTopicCount >= 2) {
           record.blockedUntil = now + RETENTION; record.expiresAt = record.blockedUntil;

@@ -2,7 +2,7 @@
   "source": {
     "document": "Email Scripts.htm",
     "sha256": "fb63545495de69f52c838a439468ab656277fcbd31cb68e315cfe00c8480d90f",
-    "context": "Summer Semester 2026 email-script snapshot",
+    "context": "Summer Semester 2026 snapshot; cutoff sections updated by course-owner instructions 11 November 2026; original HTML may be locked, see Email Scripts.updated.htm",
     "citationMethod": "Document heading path and stable section ID; HTML has no reliable page numbers."
   },
   "limitations": [
@@ -989,17 +989,17 @@
     },
     {
       "id": "email-8a81773fdc32",
-      "heading": "Enrolment cutoff dates",
+      "heading": "Enrolment cutoff dates - Sem 1 and 2",
       "headingPath": [
         "Other Common Communications",
-        "Enrolment cutoff dates"
+        "Enrolment cutoff dates - Sem 1 and 2"
       ],
       "links": [],
       "reviewNotes": [
         "Administrative, immigration, refund and account procedures are source guidance, not a current verified determination. Use linked official sources or the responsible student-support team for confirmation. Never request passwords or a USI in chat.",
         "Dates, class times and rooms in this template may be dated examples. Use the configured current semester timetable and dates for actual planning."
       ],
-      "text": "Regarding enrolment cutoff dates:\n· Students who miss the first week of classes generally need permission from our Head of School to enrol.\n· Students who miss the first 2 weeks of classes are not generally allowed to enrol.\nFor Summer Semester 2026, the census date is Friday, 11 December 2026. Students withdrawing by this date remain eligible for a refund under the applicable fee rules. The date by which students can enrol is separate and must be confirmed."
+      "text": "For Semesters 1 and 2, pay and finalise enrolment by the configured Census Date. Census Date is also the final date for withdrawal with refund eligibility under the applicable fee rules; confirm individual arrangements with Enrolments.\nFirst attendance must be before Census Date. Students must attend at least one of the first two classes to be eligible to enrol. In a regular semester the first four classes normally fall across four weeks. Use the subject weekday and published start date to identify the second class. Census Date is not permission to miss early classes.\nStudents who miss the first week of classes generally need permission from our Head of School to enrol. Students who miss the first two weeks of classes are not generally allowed to enrol.\nIf enrolment or payment is still being finalised, attend early classes and explain the situation to the teacher. Moodle resources may not yet be available; ask the teacher for interim learning material. Attendance alone does not confirm enrolment or approval. Use current configured dates and the Higher Education Calendar; do not reuse Summer dates for Semesters 1 and 2."
     },
     {
       "id": "email-9b434f98579a",
@@ -1013,7 +1013,7 @@
         "Administrative, immigration, refund and account procedures are source guidance, not a current verified determination. Use linked official sources or the responsible student-support team for confirmation. Never request passwords or a USI in chat.",
         "Dates, class times and rooms in this template may be dated examples. Use the configured current semester timetable and dates for actual planning."
       ],
-      "text": "Regarding payments, the last possible day is also the day before the 3rd class begins (which is week 2, given there are 2 classes each week – one in the morning and one in the afternoon).\nThe Summer Semester 2026 census date is Friday, 11 December 2026. This is the final date for withdrawal with refund eligibility under the applicable fee rules. The late-enrolment cut-off is a separate date and must be confirmed with Enrolments."
+      "text": "Summer Semester 2026 begins Monday, 23 November 2026. Pay and finalise enrolment by Census Date, Friday, 11 December 2026. Census Date is also the final date for withdrawal with refund eligibility under the applicable fee rules; confirm individual arrangements with Enrolments.\nFirst attendance must be before Census Date. Students must attend at least one of their first two classes to be eligible to enrol. Summer has two class sessions on the subject teaching day each week, so the first four classes occur over the first two weeks. Attend the first teaching day if possible. Students who miss the first week generally need permission from our Head of School to enrol. Students who miss the first two weeks are not generally allowed to enrol.\nFor BIT352, the first Thursday teaching day is 26 November 2026. If you miss that day, attend Thursday, 3 December 2026 and obtain any required late-enrolment permission. Do not wait until 11 December to attend. This week-two example is not an automatic waiver of the first-two-class rule; confirm late attendance with the school.\nIf you cannot finalise enrolment until Census Date, still attend week-one and week-two classes and explain your situation to the teacher. You may not yet have Moodle resources; the teacher can help share learning material. Attendance does not itself confirm enrolment. These dates apply only to Summer Semester 2026 and must be reviewed for future semesters."
     },
     {
       "id": "email-84c70e27cefe",

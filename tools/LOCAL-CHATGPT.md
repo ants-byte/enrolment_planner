@@ -42,8 +42,17 @@ https://developers.openai.com/api/docs/guides/secure-mcp-tunnels
 5. In ChatGPT add a custom MCP server named **Subject Planner Local**. Choose
    **Tunnel**, select the associated tunnel, and select MCP authentication None
    for this private read-only server. Review the requested tools before connecting.
-6. Confirm discovery lists five tools, including **get_current_student_plan**.
+6. Confirm discovery lists six tools, including **get_current_student_plan** and
+   **search_officer_enrolment_guidance**. Restart the local server and refresh the
+   connector's tools after updating it.
    The original Cloudflare connection still lists four tools.
+
+The officer tool reads `Enrolment Officer LLM Reference.md` beside the Summer 2026
+enrolment source documents in the operator's OneDrive Operations folder. It is not
+served as a website asset or imported into the public Worker. To use a different
+private file, set `LOCAL_PLANNER_OFFICER_REFERENCE` to its absolute path before
+starting the server. It searches source text only; screenshots remain in the Word
+documents. Use this private connector only for authorised staff work.
 
 If Tunnel or the relevant workspace is unavailable, stop at this step and check
 account permissions/availability. Do not expose the academic context publicly as

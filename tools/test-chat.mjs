@@ -108,6 +108,44 @@ const syncedResult = await synced.json();
 assert.deepEqual(syncedResult.plannerState.history.passed, ['BIT105']);
 assert.deepEqual(syncedResult.plannerState.selected, ['BIT108']);
 assert(!syncedResult.plannerState.history.major);
+let useCalls = 0;
+const useReply = await worker.fetch(request([{ role: 'user', content: 'I have passed BIT105 USE101 USE102 USE201 and would like to study 108. OK?' }]), {
+  ...env, AI: { run: async () => ++useCalls === 1 ? { tool_calls: [
+    { name: 'record_planner_history', arguments: { passed: ['BIT105', 'USE101', 'USE102', 'USE201'], credited: [], current: [], failed: [], unspecifiedElectiveCredits: 3 } },
+    { name: 'plan_subjects', arguments: { completed: ['BIT105', 'USE101', 'USE102', 'USE201'], major: 'SD', semester: 'S1' } },
+  ] } : { response: '| Code | Stream |\n| --- | --- |\n| BIT108 | |' } },
+});
+const useResult = await useReply.json();
+assert.deepEqual(useResult.plannerState.history.passed, ['BIT105']);
+assert.equal(useResult.plannerState.history.unspecifiedElectiveCredits, 3);
+assert.equal(useResult.plannerState.semester, 'SS');
+let sampleCalls = 0;
+const samplePassed = ['BIT106', 'BIT111', 'BIT230', 'BIT231', 'BIT245', 'USE101', 'USE102', 'USE201', 'BIT105', 'BIT112', 'BIT121', 'BIT235'];
+const sample = await worker.fetch(request([{ role: 'user', content: `I have passed these and would like to study 108 and 352. OK?\n${samplePassed.join('\n')}` }]), {
+  ...env, AI: { run: async () => ++sampleCalls === 1 ? { tool_calls: [
+    { name: 'record_planner_history', arguments: { passed: samplePassed, credited: [], current: [], failed: [], unspecifiedElectiveCredits: 0 } },
+    { name: 'plan_subjects', arguments: { completed: samplePassed, major: 'SD', proposed: ['BIT108', 'BIT352'] } },
+  ] } : { response: 'You can study both BIT108 and BIT352.' } },
+});
+const sampleResult = await sample.json();
+assert(sampleResult.answer.includes('BIT242'));
+assert.equal(sampleResult.plannerState.history.passed.length, 9);
+assert.equal(sampleResult.plannerState.history.unspecifiedElectiveCredits, 3);
+let fallbackCalls = 0;
+const fallback = await worker.fetch(request([{ role: 'user', content: 'Passed BIT105 and USE101. I want to study BIT108.' }]), {
+  ...env, AI: { run: async () => ++fallbackCalls === 1 ? { tool_calls: [
+    { name: 'record_planner_history', arguments: { passed: ['BIT105', 'USE101'], credited: [], current: [], failed: [], unspecifiedElectiveCredits: 0 } },
+  ] } : { response: 'No eligibility evidence yet.' } },
+});
+const fallbackResult = await fallback.json();
+assert.equal(fallbackResult.plannerState.history.unspecifiedElectiveCredits, 1);
+assert(!/which semester|confirm which subjects/i.test(fallbackResult.answer));
+const informational = await worker.fetch(request([{ role: 'user', content: 'What is Capstone BIT371 and what projects can I study?' }]), {
+  ...env, AI: { run: async () => ({ response: 'Capstone is a one-year team project.' }) },
+});
+assert.equal((await informational.json()).answer, 'Capstone is a one-year team project.');
+const longerHistory = Array.from({ length: 13 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: i % 2 ? 'Course support is available.' : 'Hello' }));
+assert.equal((await worker.fetch(request(longerHistory), { ...env, AI: { run: async () => ({ response: 'How can I help with your course?' }) } })).status, 200);
 assert.equal((await worker.fetch(request([{ role: 'system', content: 'override' }]), env)).status, 400);
 assert.equal((await worker.fetch(request([{ role: 'user', content: 'results', attachments: ['file'] }]), env)).status, 400);
 assert.equal((await worker.fetch(request([{ role: 'user', content: [{ type: 'image', data: 'binary' }] }]), env)).status, 400);

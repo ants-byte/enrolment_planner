@@ -1,0 +1,259 @@
+{
+  "source": {
+    "document": "Course-owner and orientation/SFIA guidance, 11 November 2026"
+  },
+  "sections": [
+    {
+      "id": "guidance-careers",
+      "heading": "Careers, major choices, SFIA and cloud/data centre development",
+      "headingPath": [
+        "Careers, major choices, SFIA and cloud/data centre development"
+      ],
+      "text": "Possible career directions include:\nAnalysis and Development: Database Developer, Programmer Analyst, Web/Mobile Developer, Systems Analyst, Software Engineer, Full Stack Developer.\nNetwork Systems and Cybersecurity: Network Operations Specialist, Network and Systems Engineer, System Integration Engineer, Network/Data Administrator, Network/Cloud Infrastructure Engineer, Cybersecurity Analyst/Practitioner, Cybersecurity Architect, Penetration Tester, Risk and Compliance Specialist.\nData Analytics and Enterprise Systems: Data Analyst, ICT Business Analyst, Business Intelligence Analyst, Web Analyst, Data Insights Analyst, Data Scientist, Consulting Analyst.\nProject and Support: Project Manager/Administrator, ICT Support Officer, Service Desk Analyst, Technical/Business Systems Support Engineer, ICT Trainer, ICT Consultant.\nThe course owner reports that the course is being developed to prepare students for cloud and data-centre work in Melbourne's expanding AI data-centre sector. This describes development direction, not a guarantee of a particular unit, employment or internship. Match interests to current configured subject content and major requirements. SFIA is the Skills Framework for the Information Age; alignment is not automatic professional certification, a skills-assessment outcome or a job guarantee.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/",
+        "https://www.acs.org.au/cpd-education/accredited-courses.html"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-1",
+      "heading": "Historical SFIA role and subject alignment, page 1",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 1"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor  students  majoring  in Business  Analytics  \nICT Job  role:  Junior  ICT Business  Analyst,  SFIA  Job  Alignment  3-4 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nJunior ICT  Business  Analyst  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nChange and \nTransformation \nBusiness Change \nManagement \nBusiness analysis  BUAN 3-4\nBIT230c,*, BIT234*, \nBIT355*, BIT352c,*, BIT356 *, \nBIT371c,^,BIT372c,^ \nBusiness modelling BSMO 3-4 BIT230c,*, BIT355*, BIT356*, BIT371c,^, BIT372c,^\nDevelopment and \nImplementation Systems Development Data analysis  DTAN 3-4 BIT231, BIT234a, BIT355a, BIT362a, BIT371c,^,BIT372c,^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 1",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-2",
+      "heading": "Historical SFIA role and subject alignment, page 2",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 2"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor students majoring in Business Analytics\n ICT Job role: Web Developer, SFIA Job Alignment 3-4 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nWeb  Developer  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nDevelopment and \nImplementation Systems Development \nProgramming/ \nsoftware \ndevelopment \nPROG 2-4 BIT111c, BIT245* BIT363*, BIT371c,^, BIT372c,^\nTesting TEST 2-4 BIT111c, BIT352c*, BIT363* BIT371c,^, BIT372c,^\nDatabase design DBDS 2-4 BIT230c,*, BIT234*, BIT355*, BIT371c,^, BIT372c,^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 2",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-3",
+      "heading": "Historical SFIA role and subject alignment, page 3",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 3"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor  students  majoring  in Network  Security  \nICT  Job  role:  Junior  Computer  Network  and  Systems  Engineer,  SFIA  Job  Alignment 3-4 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nJunior  Computer  Network  and  Systems  Engineer  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nStrategy and \nArchitecture \nTechnical Strategy \nand Planning Network planning NTPL 3-4 BIT233*, BIT353*, BIT371c,^,BIT372c,^ \nDelivery and \nOperation Service Operation Network support NTAS 3-4\nBIT233*, BIT243*, BIT353*, \nBIT354*, BIT362*, \nBIT371c,^,BIT372c,^ \nDevelopment and \nImplementation Systems Development Systems design DESN 3-4 BIT230c,*, BIT233*, BIT243*, BIT353*, BIT371c,^,BIT372c,^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 3",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-4",
+      "heading": "Historical SFIA role and subject alignment, page 4",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 4"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor  students  majoring  in Network  Security  \nICT  Job  role: Network Operations  Specialist  SFIA  Job  Alignment  3 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nNetwork  Operations  Specialist  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nDelivery and \nOperation Service Operation \nNetwork support NTAS 3-4\nBIT233*, BIT243*, \nBIT353*, BIT354*, BIT362*, \nBIT371c,^, BIT372c,^ \nIT infrastructure ITOP 2-4\nBIT111c, BIT233*, BIT243*, \nBIT353*, BIT354*, BIT362*, \nBIT371c^, BIT372c^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 4",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-5",
+      "heading": "Historical SFIA role and subject alignment, page 5",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 5"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor students majoring in Software Development \nICT Job role:  Programmer  Analyst  Level  3-4 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nProgrammer  Analyst  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nDevelopment and \nImplementation Systems Development \nData analysis  DTAN 3-4 BIT231c, BIT358*, BIT364*, BIT371c,^, BIT372c,^ \nProgramming/ \nsoftware \ndevelopment \nPROG 2-4 BIT111c, BIT235*, BIT245*, BIT246*, BIT371c,^, BIT372c^ \nSystem design DESN 3-4 BIT230c,*, BIT357*, BIT371c,^,BIT372c,^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 5",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-sfia-6",
+      "heading": "Historical SFIA role and subject alignment, page 6",
+      "headingPath": [
+        "Historical SFIA role and subject alignment, page 6"
+      ],
+      "text": "Historical source dated March 2019. Subject codes and curriculum may have changed. Use current configuration for prerequisites, names and eligibility; do not promise SFIA levels from passing an individual unit.\nFor students majoring in Software Development \nICT Job  role:  Database  Administrator  Level  3-4 \nThis training may be delivered with Victorian and Commonwealth Government funding. \nInformation correct at March 2019 © MELBOURNE POLYTECHNIC \nNational Provider No. 3075 | CRICOS Provider 00724G |3847|PP|280319| \nDatabase  Administrator  \nSFIA  Category  SFIA  Sub  Category  SFIA  Skill  Code  Level  Subjects  \nDevelopment and \nImplementation Systems Development \nDatabase design DBDS 3-4 BIT358*, BIT364*, BIT371c,^,BIT372c,^ \nProgramming/ \nsoftware \ndevelopment \nPROG 2-4 BIT111c, BIT235 *, BIT245*, BIT246 *, BIT371c,^, BIT372c^ \nDelivery and \noperation \nService Operation Database administration DBAD 3-4 BIT231, BIT358*, BIT364*, BIT371c,^, BIT372c,^ ",
+      "document": "bachelor-of-information-technology-sfia.pdf, page 6",
+      "audience": "students",
+      "links": [],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-fees",
+      "heading": "Bachelor of IT fees and Local Student / International Student switch",
+      "headingPath": [
+        "Bachelor of IT fees and Local Student / International Student switch"
+      ],
+      "text": "For current fees open the Bachelor of IT page. It is important to use the Local Student | International Student switch at the top right of the page, then scroll down to fees for the applicable student category. Do not quote dollar amounts from historical documents. Ask Enrolments or International Office for individual fee and payment matters.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/",
+        "https://www.melbournepolytechnic.edu.au/students/international-students/international-student-tuition-payment/"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-apply",
+      "heading": "Applying for Bachelor of IT, ACS accreditation and admissions",
+      "headingPath": [
+        "Applying for Bachelor of IT, ACS accreditation and admissions"
+      ],
+      "text": "Apply through the Bachelor of IT registration form, telephone 1300 635 276, or submit the course enquiry form. The ACS accredited-courses directory is the source for current accreditation listings; check the relevant course and intake rather than promising a skills-assessment result. Local admissions categories are recent secondary education (current year or previous two years), VET study, higher education study, and work/life experience (left secondary school more than two years ago without subsequent VET/higher education study). Uncompleted prior study can affect the category. Indigenous applicants are welcomed. Domestic applicants with overseas qualifications should consult credit transfer/RPL guidance. English proficiency and course-specific requirements are on the course page. RPL and advanced related qualifications/work are assessed case by case by academics and, where appropriate, industry experts. Do not decide admission or credit approval in chat.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/study/bachelor/information-technology/",
+        "https://www.melbournepolytechnic.edu.au/register-course-form?course=11241&name=Bachelor%20of%20Information%20Technology&externalcode=HEBSIT&coursetype=HighEd&vtac=1",
+        "tel:+611300635276",
+        "https://www.melbournepolytechnic.edu.au/course-enquiry/?course=11241&name=Bachelor%20of%20Information%20Technology&externalcode=HEBSIT&coursetype=HighEd",
+        "https://www.acs.org.au/cpd-education/accredited-courses.html",
+        "https://www.melbournepolytechnic.edu.au/study/how-to-enrol/local-students/higher-education/higher-education-admissions-criteria-for-local-students/"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-contacts",
+      "heading": "Bachelor of IT staff email contacts and roles",
+      "headingPath": [
+        "Bachelor of IT staff email contacts and roles"
+      ],
+      "text": "Contact staff by email. For subject-specific questions contact the lecturer first. For wider course matters use school administration or enrol_bit@melbournepolytechnic.edu.au.\nNandini Biskunda, School Administration: NandiniBiskunda@melbournepolytechnic.edu.au\nUma Jagan-Mohan, School Administration: UmaJagan@melbournepolytechnic.edu.au\nSazia Parvin, Associate Professor and Head of Programs: SaziaParvin@melbournepolytechnic.edu.au\nSitalakshmi Venkatraman (Sita), Associate Professor and Industry Coordinator: SitaVenkat@melbournepolytechnic.edu.au\nAnthony Overmars, Senior Lecturer: AnthonyOvermars@melbournepolytechnic.edu.au\nAntony Di Serio, Lecturer: AntonyDiSerio@melbournepolytechnic.edu.au\nMd Sarwar Kamal, Lecturer: MdSarwarKamal@melbournepolytechnic.edu.au\nXiaodong Wang (Tony), Lecturer: XiaodongWang@melbournepolytechnic.edu.au\nDavid Robinson (Dave), Lecturer: DavidRobinson@melbournepolytechnic.edu.au\nRussul Al-Anni, Lecturer: RussulAl-Anni@melbournepolytechnic.edu.au\nDominic Mammone, Lecturer: DominicMammone@melbournepolytechnic.edu.au\nNidha Qazi, Lecturer: NidhaQazi@melbournepolytechnic.edu.au\nNikki Wan, Lecturer: NikkiWan@melbournepolytechnic.edu.au\nYe Wei (Silva), Lecturer: YeWei@melbournepolytechnic.edu.au\nShzaa Niazi, Lecturer: ShzaaNiazi@melbournepolytechnic.edu.au\nUchenna Promise Enwereonye, Lecturer: UchennaEnwereonye@melbournepolytechnic.edu.au\nSarang Hashemi, Lecturer: SarangHashemi@melbournepolytechnic.edu.au\nFor Antony also provide enrol_bit@melbournepolytechnic.edu.au. If an address is unknown, say so and refer to course administration; contact questions are relevant enrolment questions, not an off-topic penalty. Snapshot roles may change. Obvious institutional-domain typography in the orientation slide was normalized to melbournepolytechnic.edu.au.",
+      "document": "Orientation Semester 2 2026, slides 52-59; owner correction for Antony",
+      "audience": "students",
+      "links": [
+        "mailto:NandiniBiskunda@melbournepolytechnic.edu.au",
+        "mailto:UmaJagan@melbournepolytechnic.edu.au",
+        "mailto:SaziaParvin@melbournepolytechnic.edu.au",
+        "mailto:SitaVenkat@melbournepolytechnic.edu.au",
+        "mailto:AnthonyOvermars@melbournepolytechnic.edu.au",
+        "mailto:AntonyDiSerio@melbournepolytechnic.edu.au",
+        "mailto:MdSarwarKamal@melbournepolytechnic.edu.au",
+        "mailto:XiaodongWang@melbournepolytechnic.edu.au",
+        "mailto:DavidRobinson@melbournepolytechnic.edu.au",
+        "mailto:RussulAl-Anni@melbournepolytechnic.edu.au",
+        "mailto:DominicMammone@melbournepolytechnic.edu.au",
+        "mailto:NidhaQazi@melbournepolytechnic.edu.au",
+        "mailto:NikkiWan@melbournepolytechnic.edu.au",
+        "mailto:YeWei@melbournepolytechnic.edu.au",
+        "mailto:ShzaaNiazi@melbournepolytechnic.edu.au",
+        "mailto:UchennaEnwereonye@melbournepolytechnic.edu.au",
+        "mailto:SarangHashemi@melbournepolytechnic.edu.au",
+        "mailto:enrol_bit@melbournepolytechnic.edu.au"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-moodle",
+      "heading": "Enrolled but no Moodle subjects; Student Portal and Student Declaration",
+      "headingPath": [
+        "Enrolled but no Moodle subjects; Student Portal and Student Declaration"
+      ],
+      "text": "Teachers may keep Moodle subjects hidden until the first class. If you recently replied to your Student Declaration email, subject enrolment may take a few days to finish. Check the Student Portal to see whether you are enrolled; Moodle visibility is not enrolment confirmation. If subjects are not in Student Portal after a few days, ask Nandini Biskunda, School Administration, to follow up: NandiniBiskunda@melbournepolytechnic.edu.au. If enrolled in Student Portal but the first class has started and Moodle still has no subject, contact the lecturer or administration. Distinguish this from inability to log in. Do not add a Source line.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://melbpo.ly/StudentPortal",
+        "https://online.melbournepolytechnic.edu.au/my/",
+        "mailto:NandiniBiskunda@melbournepolytechnic.edu.au"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-orientation",
+      "heading": "Orientation: learning resources, email, rooms, assessment and internships",
+      "headingPath": [
+        "Orientation: learning resources, email, rooms, assessment and internships"
+      ],
+      "text": "Use your MP email for official teacher/school communications and monitor it regularly. The Student Portal is the starting point for enrolment, results, My Info, library and support. Office 365 is available to students through portal/library instructions. The library offers referencing help, LinkedIn Learning and study support; Studiosity offers after-hours learning advice. Student cards are available via Student Hub. In PE321, P means Preston, E the building, 3 the floor and 21 the room. The Moodle mobile app can provide teacher-message notifications and access to resources. Ask the teacher first about assessments, submission problems or grade concerns, then course administration if unresolved. Special consideration, extensions and reasonable adjustments are distinct processes; use HE-specific guidance and supporting evidence, not VET forms/deadlines applied automatically to a Bachelor student. Capstone is a year-long team project, typically with two or three other students; Software Development and Business Analytics often have external-company projects. Network Security external projects can be harder to source. Actual projects must be confirmed with course staff. Internship support and self-sourced opportunities exist; do not promise placements from a historical success anecdote. Use current configuration for all dates, grades, loads, timetables and SAS awards; the orientation slides contain obsolete grade ranges and Semester 2 dates. Refer international load/attendance/visa questions to International Office rather than deciding visa compliance.",
+      "document": "Orientation Semester 2 2026, selected slides 4-49",
+      "audience": "students",
+      "links": [
+        "https://melbpo.ly/StudentPortal",
+        "https://online.melbournepolytechnic.edu.au/my/",
+        "https://www.linkedin.com/learning/?u=42434828",
+        "https://libguides.melbournepolytechnic.edu.au/",
+        "https://techcareers.acs.org.au/search-jobs?keywords=internship&defaults_applied=1&locations=9692"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-services",
+      "heading": "Student services, support, prayer rooms, parking, scholarships and assessment support",
+      "headingPath": [
+        "Student services, support, prayer rooms, parking, scholarships and assessment support"
+      ],
+      "text": "Prayer Rooms: https://www.melbournepolytechnic.edu.au/students/key-facilities/prayer-rooms/\nParking: https://www.melbournepolytechnic.edu.au/students/key-facilities/parking/\nScholarships: https://www.melbournepolytechnic.edu.au/students/scholarships/.  Student Services and support (e.g. Services and Support Student Hub Learning Support Student Wellbeing & Counselling Service Student Equity and Access Service Yurrongi Centre Melbourne Polytechnic International Student Association Discrimination, Harassment and Bullying Information Accommodation Childcare Services Student Orientation Feedback and Complaints Wireless Access Jobs Board Hidden Disabilities Sunflower): https://www.melbournepolytechnic.edu.au/students/services-and-support/. International Student Association (MPISA): https://www.melbournepolytechnic.edu.au/students/international-students/international-student-support/international-student-association-mpisa/\nInternship: https://www.melbournepolytechnic.edu.au/students/international-students/international-student-support/professional-internship-program/\nDiscrimination, Harassment and Bullying Information: https://www.melbournepolytechnic.edu.au/students/services-and-support/discrimination-harassment-and-bullying/\nWireless Access (Android, iPhone etc): https://www.melbournepolytechnic.edu.au/students/services-and-support/wireless-access/\nFeedback and Complaints: https://www.melbournepolytechnic.edu.au/students/services-and-support/feedback-and-complaints/\nThe Yurrongi Centre is the central meeting place at Melbourne Polytechnic for Aboriginal and Torres Strait Islander students, staff and the communities we belong to: https://www.melbournepolytechnic.edu.au/students/services-and-support/yurrongi-centre/\nStudent Wellbeing & Counselling Service: https://www.melbournepolytechnic.edu.au/students/services-and-support/counselling/\nThe Student Hub is a starting point to assist current and former students with day to day enquiries, information and support services available at Melbourne Polytechnic or external providers: Call us: 1300 635 276 (navigate by pressing 2) Email us: https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/\nAccommodation: https://www.melbournepolytechnic.edu.au/students/services-and-support/accommodation/\nAcademic Calendar https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/\nMy Info provides access to view your personal contact details and course enrolment information. You can request changes to your phone number and email address from My Contact Details. https://melbpo.ly/my-info\n Using AI at Melbourne Polytechnic This page is to support all students with the safe, ethical and responsible use of AI at Melbourne Polytechnic.   As we learn more about AI, this page will be updated.  https://melbournepolytechnic.sharepoint.com/sites/StudentPortal/SitePages/AI-for-students.aspx?web=1\n Requests for alternative arrangements for assessment 2 min read At Melbourne Polytechnic, we’re committed to helping all learners succeed.   We understand that sometimes personal circumstances can affect your ability to complete assessments on time or perform at your best. That’s why we made it easier for VET students to access support when they need it most. Special Consideration Request: https://apps.powerapps.com/play/e/default-57cae833-7220-4008-8adb-e6904b0543f0/a/9bc4ebbd-712d-4305-ae0a-241ea8be4d0d?tenantId=57cae833-7220-4008-8adb-e6904b0543f0&hint=f25831c7-0b61-4cfa-9ba4-507ed1c5fe0a&sourcetime=1751425091731.  Assessment Extension Request:https://apps.powerapps.com/play/e/default-57cae833-7220-4008-8adb-e6904b0543f0/a/9bc4ebbd-712d-4305-ae0a-241ea8be4d0d?tenantId=57cae833-7220-4008-8adb-e6904b0543f0&hint=f25831c7-0b61-4cfa-9ba4-507ed1c5fe0a&sourcetime=1751425091731..Reasonable Adjustment  If you have a disability, ongoing health condition or mental health condition, you may be eligible for Reasonable Adjustments. These are measures designed to reduce barriers to accessing and participating in your course.  The Student Equity and Access Service (SEAS) is a free and confidential service that works with you to identify and implement appropriate adjustments based on your needs.  Reach out to Student Services: https://www.melbournepolytechnic.edu.au/students/services-and-support/student-equity-and-access-service/.\n Handling requests for alternative arrangements for assessment: https://melbournepolytechnic.sharepoint.com/sites/student/Pages/assessment-support.aspx\n \nThe assessment Power Apps links in the source were described for VET students; do not assert that they are the HE application route. Ask the teacher/administration for the current HE special consideration or assessment extension process. Student Hub: 1300 635 276, press 2. Nandini is course administration. For immediate service contact use current official service pages. Breastfeeding facilities: https://www.melbournepolytechnic.edu.au/students/key-facilities/breastfeeding-facilities/",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/students/key-facilities/prayer-rooms/",
+        "https://www.melbournepolytechnic.edu.au/students/key-facilities/parking/",
+        "https://www.melbournepolytechnic.edu.au/students/scholarships/.",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/.",
+        "https://www.melbournepolytechnic.edu.au/students/international-students/international-student-support/international-student-association-mpisa/",
+        "https://www.melbournepolytechnic.edu.au/students/international-students/international-student-support/professional-internship-program/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/discrimination-harassment-and-bullying/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/wireless-access/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/feedback-and-complaints/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/yurrongi-centre/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/counselling/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/student-hub/",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/accommodation/",
+        "https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/",
+        "https://melbpo.ly/my-info",
+        "https://melbournepolytechnic.sharepoint.com/sites/StudentPortal/SitePages/AI-for-students.aspx?web=1",
+        "https://apps.powerapps.com/play/e/default-57cae833-7220-4008-8adb-e6904b0543f0/a/9bc4ebbd-712d-4305-ae0a-241ea8be4d0d?tenantId=57cae833-7220-4008-8adb-e6904b0543f0&hint=f25831c7-0b61-4cfa-9ba4-507ed1c5fe0a&sourcetime=1751425091731.",
+        "https://apps.powerapps.com/play/e/default-57cae833-7220-4008-8adb-e6904b0543f0/a/9bc4ebbd-712d-4305-ae0a-241ea8be4d0d?tenantId=57cae833-7220-4008-8adb-e6904b0543f0&hint=f25831c7-0b61-4cfa-9ba4-507ed1c5fe0a&sourcetime=1751425091731..Reasonable",
+        "https://www.melbournepolytechnic.edu.au/students/services-and-support/student-equity-and-access-service/.",
+        "https://melbournepolytechnic.sharepoint.com/sites/student/Pages/assessment-support.aspx"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-charter",
+      "heading": "Student Charter and SLAM student life",
+      "headingPath": [
+        "Student Charter and SLAM student life"
+      ],
+      "text": "Student Charter: MP commits to industry opportunities, practical learning, teachers who support student potential, help identifying strengths, education and wellbeing support in a safe inclusive environment, and a collaborative community. The charter reflects student feedback and guides staff practice. SLAM (Student Life at Melbourne Polytechnic) runs free events for current students, competitions, music, pop-ups, giveaways and support for student-run activities. Check Student Portal for events. Contact slam@melbournepolytechnic.edu.au.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://melbpo.ly/StudentPortal",
+        "mailto:slam@melbournepolytechnic.edu.au",
+        "https://www.facebook.com/SLAMteam",
+        "https://www.instagram.com/slamteam/",
+        "https://www.tiktok.com/@slamteam",
+        "https://www.youtube.com/channel/UCzLL3tQORQWIg0F3vjbSSoA"
+      ],
+      "reviewNotes": []
+    },
+    {
+      "id": "guidance-calendar",
+      "heading": "Academic calendar, Census Date and late enrolment",
+      "headingPath": [
+        "Academic calendar, Census Date and late enrolment"
+      ],
+      "text": "Use configured current semester dates first, and the Higher Education Calendar for official updates. Do not reuse Semester 2 orientation dates for Summer. Summer 2026 teaching begins Monday 23 November 2026 and Census Date is Friday 11 December 2026. See updated Email Scripts cutoff sections for attendance, permission after missing week one, week-two first-attendance deadlines, and payment/withdrawal timing. Dates are specific to this semester; never advance them to a future intake by assumption.",
+      "document": "Course-owner guidance, 11 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/"
+      ],
+      "reviewNotes": []
+    }
+  ]
+}

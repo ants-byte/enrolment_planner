@@ -25,7 +25,9 @@ try {
   assert.equal((await publish({}, { Origin: 'https://evil.example' })).status, 403);
   assert.equal((await publish({}, { 'X-Local-Planner-Token': 'wrong' })).status, 403);
   const discovery = await rpc('tools/list');
-  assert.equal(discovery.result.tools.length, 5);
+  assert.equal(discovery.result.tools.length, 6);
+  assert(discovery.result.tools.some(tool => tool.name === 'search_officer_enrolment_guidance'));
+  assert.equal((await fetch(`${base}/Enrolment%20Officer%20LLM%20Reference.md`)).status, 404);
   assert((await rpc('tools/call', { name: 'get_current_student_plan', arguments: {} })).result.isError);
   assert.equal((await publish({ passed: ['BIT108'], current: ['BIT111'], major: 'SD', name: 'Private Name', studentId: '123' })).status, 200);
   const result = await rpc('tools/call', { name: 'get_current_student_plan', arguments: {} });

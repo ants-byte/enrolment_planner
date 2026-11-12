@@ -2,6 +2,7 @@ import { plannerInstructions } from './planner-instructions.mjs';
 import config from './semester-config.json' with { type: 'json' };
 export { ChatUsage } from './chat-usage.mjs';
 import { handleChat } from './planner-chat.mjs';
+import { normalizeCompleted } from './planner-history.mjs';
 import { informationTools, describeSubject, getCourseInformation, searchEmailScripts, searchEnrolmentRules, studentSemesterDetails } from './mcp-information.mjs';
 
 const subjects = Object.fromEntries(Object.entries(config.subjects).filter(([code]) => /^BIT\d+$/.test(code)));
@@ -12,10 +13,11 @@ const tool = {
     type: 'object', additionalProperties: false,
     required: ['completed', 'major'],
     properties: {
-      completed: { type: 'array', maxItems: 100, items: { type: 'string' }, description: 'Passed/credited BIT codes only; exclude failed, withdrawn and ungraded enrolments.' },
+      completed: { type: 'array', maxItems: 100, items: { type: 'string' }, description: 'Passed/credited BIT codes and USE elective-credit codes; exclude failed, withdrawn and ungraded enrolments.' },
       major: { type: 'string', enum: ['NS', 'BA', 'SD'] },
+      proposed: { type: 'array', maxItems: 8, items: { type: 'string' }, description: 'Optional subjects the student wants to study, as BIT codes, separate from completed history. Use to check prospective excess electives and compare majors.' },
       semester: { type: 'string', enum: ['S1', 'S2', 'SS'], description: 'Target semester; defaults to the configured current semester.' },
-      unspecifiedElectiveCredits: { type: 'integer', minimum: 0, maximum: 4, description: 'Approved unspecified elective credits, excluding named subjects already in completed.' },
+      unspecifiedElectiveCredits: { type: 'integer', minimum: 0, maximum: 5, description: 'Approved unspecified elective credits. USE codes describe these same credits; do not count them twice.' },
     },
   },
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -24,17 +26,22 @@ const tool = {
 export function planSubjects(args) {
   if (!args || !Array.isArray(args.completed) || args.completed.length > 100 ||
       args.completed.some(code => typeof code !== 'string') || !['NS', 'BA', 'SD'].includes(args.major) ||
+      (args.proposed !== undefined && (!Array.isArray(args.proposed) || args.proposed.length > 8 || args.proposed.some(code => typeof code !== 'string'))) ||
       (args.semester !== undefined && !['S1', 'S2', 'SS'].includes(args.semester)) ||
-      (args.unspecifiedElectiveCredits !== undefined && (!Number.isInteger(args.unspecifiedElectiveCredits) || args.unspecifiedElectiveCredits < 0 || args.unspecifiedElectiveCredits > 4)) ||
+      (args.unspecifiedElectiveCredits !== undefined && (!Number.isInteger(args.unspecifiedElectiveCredits) || args.unspecifiedElectiveCredits < 0 || args.unspecifiedElectiveCredits > 5)) ||
       Object.keys(args).some(key => !Object.hasOwn(tool.inputSchema.properties, key))) {
-    throw new Error('Provide completed as an array of subject codes, major as NS/BA/SD, optional semester as S1/S2/SS, and optional unspecifiedElectiveCredits as 0–4.');
+    throw new Error('Provide completed as an array of subject codes, major as NS/BA/SD, optional proposed subjects, optional semester as S1/S2/SS, and optional unspecifiedElectiveCredits as 0–5.');
   }
-  const completed = new Set(args.completed.map(code => code.trim().toUpperCase()));
+  const normalized = normalizeCompleted(args.completed, args.unspecifiedElectiveCredits || 0);
+  args = { ...args, ...normalized };
+  const completed = new Set(args.completed);
   const unknown = [...completed].filter(code => !subjects[code]);
   if (unknown.length) throw new Error(`Unknown subject codes: ${unknown.join(', ')}. Use unspecifiedElectiveCredits for approved unnamed electives.`);
   const current = config.semesterDetails.semester_S1_S2_SS;
   const semester = args.semester || current;
   const isMajor = code => subjects[code].majorStreams?.includes(args.major);
+  const proposed = [...new Set((args.proposed || []).map(code => code.trim().toUpperCase()))];
+  if (proposed.some(code => !subjects[code])) throw new Error('Unknown proposed subject code');
   const majorCount = [...completed].filter(isMajor).length;
   const electiveCount = [...completed].filter(code => !subjects[code].core && !isMajor(code)).length + (args.unspecifiedElectiveCredits || 0);
   const electiveSlots = Math.max(0, config.programRequirements.elective - electiveCount);
@@ -70,11 +77,31 @@ export function planSubjects(args) {
   } while (changed);
   const remainingSubjectCount = required.length + electiveSlots;
   const excessElectiveCount = Math.max(0, electiveCount - config.programRequirements.elective);
+  const projected = new Set([...completed, ...proposed]);
+  const majorComparisons = ['NS', 'BA', 'SD'].map(major => {
+    const majorSubjects = [...completed].filter(code => subjects[code].majorStreams?.includes(major)).length;
+    const electives = [...completed].filter(code => !subjects[code].core && !subjects[code].majorStreams?.includes(major)).length + args.unspecifiedElectiveCredits;
+    const projectedElectives = [...projected].filter(code => !subjects[code].core && !subjects[code].majorStreams?.includes(major)).length + args.unspecifiedElectiveCredits;
+    return { major, completedMajorSubjects: majorSubjects, electiveSubjects: electives,
+      projectedElectiveSubjects: projectedElectives, projectedExcessElectiveSubjects: Math.max(0, projectedElectives - config.programRequirements.elective),
+      excessElectiveSubjects: Math.max(0, electives - config.programRequirements.elective) };
+  }).sort((a, b) => a.excessElectiveSubjects - b.excessElectiveSubjects || b.completedMajorSubjects - a.completedMajorSubjects);
   const alternatingMajorOptions = [...eligible].filter(code => isMajor(code) &&
     (config.subjectsRunning.semester1Only.includes(code) || config.subjectsRunning.semester2Only.includes(code)));
   return {
     major: args.major, semester, configuredSemester: studentSemesterDetails(),
-    completed: [...completed],
+    completed: [...completed], unspecifiedElectiveCredits: args.unspecifiedElectiveCredits,
+    majorComparisons,
+    selectionImpact: { proposed, ...majorComparisons.find(item => item.major === args.major),
+      minimumTotalSubjectsIncludingProjectedExcess: config.programRequirements.total + majorComparisons.find(item => item.major === args.major).projectedExcessElectiveSubjects,
+      caveat: 'This counts award allocation only; proposed subjects are not completed and still require eligibility, load, clash and enrolment approval checks.' },
+    likelyMajor: majorComparisons[0].completedMajorSubjects > majorComparisons[1].completedMajorSubjects ? majorComparisons[0].major : null,
+    capstoneProgress: ['BIT371', 'BIT372'].map(code => ({ ...describe(code), completed: completed.has(code),
+      completedMajorSubjects: majorCount, missingPrerequisites: (subjects[code].prerequisites || []).filter(pre => !completed.has(pre)),
+      ownerAdvisedMajorSubjectTarget: code === 'BIT371' ? 3 : 5,
+      majorSubjectsStillNeededForTarget: Math.max(0, (code === 'BIT371' ? 3 : 5) - majorCount),
+      minimumFurtherRegularSemesters: completed.has('BIT372') ? 0 : completed.has('BIT371') ? 1 : 2,
+      timingAdvice: 'BIT371 and BIT372 form a sequential one-year project. Plan BIT371 for the second-last regular semester. A late start can delay graduation; a load-only estimate is not a graduation date.' })),
     semesterStudyLoad: semester === 'SS' ? { maximumSubjects: config.summerSchool.maximumSubjects } : { standardSubjects: config.planningGuidance.earlyCompletion.standardSemesterLoad },
     guidance: 'For explanatory advice, summer procedures, credit transfers and contacts, use search_enrolment_rules and its recorded source-precedence decisions. Full prerequisites and corequisites are included for every returned subject. Timetable details apply only to timetableAppliesTo, not automatically to the requested future semester.',
     remainingCore: required.filter(code => subjects[code].core).map(describe),
@@ -85,6 +112,7 @@ export function planSubjects(args) {
       completedMajorSubjects: majorCount,
       remainingSubjects: remainingSubjectCount,
       excessElectiveSubjects: excessElectiveCount,
+      minimumTotalSubjectsIncludingExcess: config.programRequirements.total + excessElectiveCount,
       standardLoadSemesterLowerBound: Math.ceil(remainingSubjectCount / config.planningGuidance.earlyCompletion.standardSemesterLoad),
       estimateCaveat: 'Load-only lower bound, not a graduation forecast. Prerequisite chains, Capstone sequencing, alternating offerings and approvals can extend study; summer or approved overload may change the load calculation.',
     },
@@ -95,7 +123,7 @@ export function planSubjects(args) {
       }] : []),
       ...(excessElectiveCount ? [{
         code: 'excess-electives',
-        message: `${excessElectiveCount} supplied elective subject(s)/credit(s) exceed the award elective slots for this major and do not reduce remaining requirements. Recheck credit allocation if changing major.`,
+        message: `${excessElectiveCount} elective subject(s)/credit(s) exceed the four elective slots for this major. Completing the award would involve at least ${config.programRequirements.total + excessElectiveCount} subjects/credits, including the excess. Additional paid subjects may increase costs and delay graduation. Compare alternative majors before selecting another non-major subject.`,
       }] : []),
       ...(alternatingMajorOptions.length ? [{
         code: 'alternating-major-subjects', subjects: alternatingMajorOptions,

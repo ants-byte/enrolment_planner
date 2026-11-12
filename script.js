@@ -66,7 +66,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const updateTokenCounter = result => {
     if (!result.tokenUsage) return;
     const counter = document.getElementById('friendly-token-counter');
-    counter.textContent = result.tokenUsage.owner ? 'Owner access' : `${result.tokenUsage.remaining.toLocaleString()} tokens left`;
+    counter.textContent = result.tokenUsage.owner ? 'Owner access' : `${result.tokenUsage.low ? 'Allowance running low: ' : ''}${result.tokenUsage.remaining.toLocaleString()} tokens left`;
   };
   const friendlyUnlock = document.getElementById('friendly-chat-unlock');
   friendlyUnlock.addEventListener('submit', async event => {
@@ -96,6 +96,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlySend = document.getElementById('send-friendly-chat');
   const friendlyReset = document.getElementById('reset-friendly-chat');
   const friendlyTheme = document.getElementById('theme-friendly-chat');
+  const friendlySettings = document.querySelector('.friendly-settings');
+  const phoneChatLayout = window.matchMedia('(max-width: 600px)');
+  const syncFriendlySettings = () => { friendlySettings.open = !phoneChatLayout.matches; };
+  syncFriendlySettings();
+  phoneChatLayout.addEventListener('change', syncFriendlySettings);
+  friendlySettings.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && phoneChatLayout.matches && friendlySettings.open) {
+      event.preventDefault(); event.stopPropagation();
+      friendlySettings.open = false; friendlySettings.querySelector('summary').focus();
+    }
+  });
   const applyFriendlyTheme = theme => {
     friendlyChat.dataset.chatTheme = theme;
     friendlyTheme.textContent = theme === 'dark' ? 'Light' : 'Dark';
@@ -136,11 +147,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let friendlyMainSummary = '';
   let friendlyHistoryBreakdown = '';
   let friendlyPendingState = null;
+  const appendFriendlyLinks = (element, text) => {
+    const pattern = /\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:|tel:)[^\s)]+)\)|https?:\/\/[^\s<>|]+|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+    let offset = 0;
+    for (const match of text.matchAll(pattern)) {
+      element.append(document.createTextNode(text.slice(offset, match.index)));
+      const raw = match[2] || match[0];
+      const href = raw.includes('@') && !/^(?:https?:|mailto:|tel:)/i.test(raw) ? `mailto:${raw}` : raw;
+      const trimmed = href.replace(/[.,;]+$/, '');
+      const link = document.createElement('a'); link.href = trimmed;
+      link.textContent = match[1] || raw.slice(0, raw.length - (href.length - trimmed.length));
+      if (/^https?:/i.test(trimmed)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      element.append(link, document.createTextNode(href.slice(trimmed.length)));
+      offset = match.index + match[0].length;
+    }
+    element.append(document.createTextNode(text.slice(offset)));
+  };
   const renderFriendlyChat = () => {
     friendlyLog.replaceChildren();
     const greeting = document.createElement('p');
     greeting.className = 'friendly-bubble assistant';
-    greeting.textContent = 'Hi! 👋 What would you like to know about your course?\n\nI can help you find subjects, understand prerequisites or plan your next semester. Ask a question, or paste your results to get started.';
+    greeting.textContent = 'Hi! 👋 I can help you plan your timetable and can answer general course related queries.\n\nYou may wish to paste in a list of subjects you passed or your Credit Transfers, then ask what\'s available for you to study this semester.';
     friendlyLog.append(greeting);
     if (friendlyMainSummary) {
       const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
@@ -189,10 +216,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             const scroll = document.createElement('span'); scroll.className = 'friendly-table-scroll';
             const table = document.createElement('table');
             const head = table.createTHead().insertRow();
-            cells(lines[i]).forEach(value => { const th = document.createElement('th'); th.textContent = value; head.append(th); });
+            cells(lines[i]).forEach(value => { const th = document.createElement('th'); appendFriendlyLinks(th, value); head.append(th); });
             const body = table.createTBody(); i += 2;
             while (i < lines.length && lines[i].includes('|')) {
-              const row = body.insertRow(); cells(lines[i]).forEach(value => { row.insertCell().textContent = value; }); i++;
+              const row = body.insertRow(); cells(lines[i]).forEach(value => { appendFriendlyLinks(row.insertCell(), value); }); i++;
             }
             i--; scroll.append(table); bubble.append(scroll);
             const headings = Array.from(head.cells, cell => cell.textContent.toLowerCase());
@@ -216,7 +243,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               email.href = `mailto:enrol_bit@melbournepolytechnic.edu.au?subject=${encodeURIComponent('Subject selection')}&body=${encodeURIComponent('My proposed subject selection:\n\n' + plain)}`;
               actions.append(copy, email, document.createTextNode(' (enrol_bit@melbournepolytechnic.edu.au)')); bubble.append(actions);
             }
-          } else bubble.append(document.createTextNode(lines[i] + '\n'));
+          } else appendFriendlyLinks(bubble, lines[i] + '\n');
         }
       }
       friendlyLog.append(bubble);
@@ -247,7 +274,33 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   syncFriendlyChatHash();
   window.addEventListener('load', () => { if (friendlyChat.open) seedFriendlyChatFromPlanner(); });
   document.getElementById('close-friendly-chat').addEventListener('click', () => friendlyChat.close());
-  friendlyReset.addEventListener('click', () => {
+  const friendlyResetPopup = document.getElementById('friendly-reset-popup');
+  const cancelFriendlyReset = document.getElementById('cancel-friendly-reset');
+  const confirmFriendlyReset = document.getElementById('confirm-friendly-reset');
+  const setFriendlyResetPopup = open => {
+    friendlyResetPopup.hidden = !open;
+    friendlyChat.querySelectorAll('.friendly-chat-header, #friendly-chat-log, .friendly-chat-compose')
+      .forEach(element => { element.inert = open; });
+    (open ? cancelFriendlyReset : friendlyReset).focus();
+  };
+  friendlyReset.addEventListener('click', () => setFriendlyResetPopup(true));
+  cancelFriendlyReset.addEventListener('click', () => setFriendlyResetPopup(false));
+  friendlyResetPopup.addEventListener('click', event => {
+    if (event.target === friendlyResetPopup) setFriendlyResetPopup(false);
+  });
+  friendlyResetPopup.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault(); event.stopPropagation(); setFriendlyResetPopup(false);
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      (document.activeElement === cancelFriendlyReset ? confirmFriendlyReset : cancelFriendlyReset).focus();
+    }
+  });
+  friendlyChat.addEventListener('close', () => {
+    if (!friendlyResetPopup.hidden) setFriendlyResetPopup(false);
+  });
+  confirmFriendlyReset.addEventListener('click', () => {
+    setFriendlyResetPopup(false);
     friendlyUnlock.hidden = true; friendlyUnlock.reset();
     friendlyError.hidden = true; friendlyError.replaceChildren();
     friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
@@ -256,7 +309,6 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   friendlySend.addEventListener('click', async () => {
     if (friendlyBusy || !friendlyInput.value.trim()) return;
-    if (friendlyMessages.length >= 10) { showFriendlyNotice('Please select New chat to start fresh and continue. Your usage allowance does not reset.'); return; }
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
     const draft = friendlyInput.value;
     friendlyUnlock.hidden = true;
@@ -277,7 +329,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const result = await response.json();
       updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
-        friendlyMessages.push({ role: 'assistant', content: 'Let’s work this out together. Which semester would you like a timetable for? You can also tell me your major and any subjects you’ve passed or received credit for. If you’re just starting, say “first year, no credits”.' });
+        friendlyMessages.push({ role: 'assistant', content: 'I could not finish that check. Your information is still in this conversation, so you do not need to repeat it. Please retry with one question or subject at a time; I will use the semester configured by the site.' });
         renderFriendlyChat();
         return;
       }
@@ -4686,8 +4738,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const getCourseMapRemainingSemesterEstimate = () => {
     const { remainingTotal } = getCourseMapRemainingBreakdownCounts();
     if (remainingTotal <= 0) return 0;
-    const loadThreshold = Math.max(1, getLoadThreshold());
-    const fallback = Math.max(1, Math.ceil(remainingTotal / loadThreshold));
+    const loadThreshold = Math.max(1, fullLoadCap || 4);
+    const plannedCount = getPlannedCount();
+    const currentSemesterUsed = plannedCount >= loadThreshold;
+    const fallback = Math.max(1,
+      Math.ceil((remainingTotal + plannedCount) / loadThreshold) - (currentSemesterUsed ? 1 : 0)
+    );
     const hasHistory = (() => {
       try {
         return getHistoryRows().length > 0;
@@ -12785,7 +12841,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     {key: "credits-subject-outlines", label: "Credit Transfers - Please provide Subject Outlines"},
     {key: "credits-use-what", label: "Credits – USE – what is it?"},
     {key: "credits-use-major", label: "Credits – USE and major explained"},
-    { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates', dividerAfter: true },
+    { key: 'enrolment-cutoff-dates-regular', label: 'Enrolment cutoff dates - Sem 1 and 2' },
+    { key: 'enrolment-cutoff-dates', label: 'Enrolment cutoff dates – summer school', dividerAfter: true },
     { key: 'withdrawal-from-course-how-to', label: 'Withdrawal from course – how to' },
     {key: "withdrawal-confirmation", label: "Withdrawal – Change to enrolment confirmation"},
     {key: "withdrawal-confirmation-late", label: "Withdrawal – Change to enrolment confirmation. Late Enrolment."},
@@ -12975,7 +13032,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     '12-subjects-remaining': ['12 subjects remaining'],
     '6-credits': ['6 credits'],
     '12-credits-post-bachelor-visa-concern': ['Credits. 12 = post-bachelor visa concern'],
-    'enrolment-cutoff-dates': ['Enrolment cutoff dates'],
+    'enrolment-cutoff-dates-regular': ['Enrolment cutoff dates - Sem 1 and 2', 'Enrolment cutoff dates'],
+    'enrolment-cutoff-dates': ['Enrolment cutoff dates – summer school'],
     'fee-payment-suspension-blocking-enrolment': ['Fees/Suspension blocking enrolment'],
     'capstone-explained': ['Capstone Explained'],
     'completing-the-course-early': ['Completing The Course Early'],
@@ -13216,10 +13274,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     else emailScriptsAccessResizeObserver.observe(emailScriptsAccessList);
   };
 
-  const getEnrolmentCutoffHeading = () =>
-    getConfiguredSemesterIdentity()?.semester === 'SS'
-      ? 'Enrolment cutoff dates – summer school'
-      : 'Enrolment cutoff dates';
+  const getEnrolmentCutoffHeading = () => 'Enrolment cutoff dates – summer school';
 
   const syncEmailScriptsSeasonalLabel = () => {
     const heading = getEnrolmentCutoffHeading();
@@ -14771,7 +14826,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
           rows.push(`${code} ${result}`);
         });
       });
-      const count = Math.max(0, Math.min(4, history.unspecifiedElectiveCredits || 0));
+      const count = Math.max(0, Math.min(5, history.unspecifiedElectiveCredits || 0));
       electivePlaceholderState = Array.from(validUseCodes).slice(0, count);
       while (electivePlaceholderState.length < 4) electivePlaceholderState.push('');
       if (history.major) setMajorDropdownSelection({ NS: 'network', BA: 'ba', SD: 'sd' }[history.major] || 'undecided');
@@ -19373,7 +19428,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       semester: getPlanningSemesterKey(currentSemesterKey),
     };
     let year = base.year;
-    let semester = base.semester;
+    let semester = getPlanningSemesterKey(base.semester);
     let semestersToAdvance = Math.max(0, offset);
 
     while (semestersToAdvance > 0) {
@@ -19391,7 +19446,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const remainingSemesters = getCourseMapRemainingSemesterEstimate();
     const remainingOffset = Math.max(
       0,
-      remainingSemesters - (getPlannedCount() > 0 ? 0 : 1)
+      remainingSemesters - (getPlannedCount() >= Math.max(1, fullLoadCap || 4) ? 0 : 1)
     );
     return getSemesterIdentityAfterOffset(planningSemesterOffset + remainingOffset);
   };
@@ -33794,8 +33849,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     notice.id = 'mobile-notice';
     notice.className = 'mobile-notice';
     notice.innerHTML = `
-      <div class="mobile-notice__title">Desktop recommended</div>
-      <p>This page is designed for larger screens. For the best experience, please use a laptop or desktop computer.</p>
+      <div class="mobile-notice__title">Switch to Landscape or Desktop</div>
+      <p>For phones, AI mode will fit better on the screen. If you do want to use the main page turn your phone sideways into landscape mode.</p>
       <button type="button" class="mobile-notice__dismiss">OK</button>
     `;
     document.body.appendChild(notice);
