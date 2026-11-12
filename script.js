@@ -502,7 +502,10 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
       const notice = document.createElement('p');
-      notice.textContent = error.userMessage || (error.name === 'TimeoutError'
+      const isLocalChatHost = /^(?:localhost|127(?:\.\d{1,3}){3}|\[?::1\]?|.+\.localhost)$/i.test(window.location.hostname);
+      notice.textContent = error.userMessage || (isLocalChatHost
+        ? 'You are using a localhost preview. AI chat needs the deployed site or a local server configured to handle /chat. Your message is ready below.'
+        : error.name === 'TimeoutError'
         ? 'The reply is taking too long. Your message is ready below — please try sending it again.'
         : 'We couldn’t connect to the Subject Planner just now. Your message is ready below, please try again shortly.');
       const details = document.createElement('details');

@@ -14056,3 +14056,5 @@ body.completed-mode #clear-selections {
 .semester-timetable-table .semester-timetable-name,
 .semester-timetable-table .semester-timetable-meta { white-space: normal; overflow-wrap: anywhere; }
 .semester-timetable-table .semester-timetable-code { flex-shrink: 0; }
+
+.friendly-settings-heading { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; opacity: .7; }
