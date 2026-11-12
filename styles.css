@@ -12312,7 +12312,7 @@ body.completed-mode .completed:hover::after {
 
 .semester-timetable-content {
   display: grid;
-  grid-template-columns: repeat(2, minmax(420px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5.4px;
   margin-top: 5.4px;
   min-width: 0;
@@ -12636,7 +12636,9 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  gap: 4px 10px;
+  gap: 4px 12px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .semester-timetable-not-running-list li:not(.semester-timetable-not-running-item) {
@@ -12653,14 +12655,16 @@ body.tooltips-esc-suppressed .semester-timetable-not-running-list li:hover .cour
   border-radius: 6px;
   padding: 3px 6px 3px 8px;
   background: #fff;
-  min-height: 2.6em;
-  white-space: nowrap;
+  min-height: 0;
+  white-space: normal;
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
-  width: 369px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   flex: 0 0 auto;
-  margin-left: 28px;
+  margin-left: 0;
 }
 
 .semester-timetable-not-running-item .semester-timetable-code {
@@ -14018,3 +14022,37 @@ body.completed-mode #clear-selections {
 
 .page-key-hints { position: fixed; inset: 0; z-index: 99999; pointer-events: none; }
 .page-key-hints span { position: absolute; transform: translateX(-50%); padding: 1px 5px; border: 1px solid #777; border-radius: 4px; background: #fff; color: #202123; font-size: 11px; line-height: 1.3; }
+
+#semester-timetable-modal.semester-timetable-summer .semester-timetable-modal {
+  box-sizing: border-box;
+  width: min(900px, calc(100vw - 120px));
+  max-width: calc(100vw - 120px);
+  min-width: min(520px, calc(100vw - 120px));
+}
+.semester-timetable-not-running-item { display: flex; box-sizing: border-box; }
+.semester-timetable-not-running-item .semester-timetable-code { flex: 0 0 auto; }
+.semester-timetable-not-running-item .semester-timetable-name { white-space: normal; overflow-wrap: anywhere; }
+
+#semester-timetable-modal .modal-body, .semester-timetable-not-running { box-sizing: border-box; min-width: 0; max-width: 100%; }
+
+#semester-timetable-modal.semester-timetable-summer .semester-timetable-table thead th {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-weight: 400;
+}
+#semester-timetable-modal.semester-timetable-summer .semester-timetable-table thead th + th { border-left: 0; }
+#semester-timetable-modal.semester-timetable-summer .semester-timetable-table .semester-timetable-corner { border-right: 0; }
+#semester-timetable-modal .semester-timetable-not-running { margin-top: 20px; }
+
+.semester-timetable-table .semester-timetable-empty { padding-left: 6px; }
+
+.semester-timetable-content .semester-timetable-table tbody th.semester-timetable-day,
+.semester-timetable-content .semester-timetable-table tbody td:has(> .semester-timetable-empty) {
+  vertical-align: middle;
+}
+
+.semester-timetable-content .semester-timetable-table tbody th.semester-timetable-day { text-align: left; padding-left: 6px; }
+
+.semester-timetable-table .semester-timetable-name,
+.semester-timetable-table .semester-timetable-meta { white-space: normal; overflow-wrap: anywhere; }
+.semester-timetable-table .semester-timetable-code { flex-shrink: 0; }

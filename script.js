@@ -13669,6 +13669,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const renderCourseTimetableModal = () => {
     if (!courseTimetableContent) return;
     courseTimetableContent.innerHTML = '';
+    courseTimetableModal.classList.toggle('semester-timetable-summer', isOptionalSummerSemester());
     const { dayNames, slotNames, grid } = buildCourseTimetableGridData();
     const isList = courseTimetableView === 'list';
     courseTimetableContent.classList.toggle('semester-timetable-list-mode', isList);
@@ -13721,7 +13722,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       slotNames.forEach((slot) => {
         const th = document.createElement('th');
         th.scope = 'col';
-        th.textContent = isOptionalSummerSemester() ? getSlotHeading(slot).replace(/^AM\.\s*/, '') : getSlotHeading(slot);
+        th.textContent = isOptionalSummerSemester() ? 'All classes run 9 AM to 4 PM with a half hour lunch break.' : getSlotHeading(slot);
         headRow.appendChild(th);
       });
       thead.appendChild(headRow);
@@ -13752,6 +13753,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
       });
       table.appendChild(tbody);
       courseTimetableContent.appendChild(table);
+      requestAnimationFrame(() => {
+        if (!table.isConnected || !table.getClientRects().length) return;
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        const height = Math.max(...rows.map(row => row.getBoundingClientRect().height));
+        rows.forEach(row => { row.style.height = `${height}px`; });
+      });
     }
     if (courseTimetableNotRunningList) {
       courseTimetableNotRunningList.innerHTML = '';
