@@ -254,6 +254,40 @@
         "https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/"
       ],
       "reviewNotes": []
+    },
+    {
+      "id": "guidance-calendar-2026-s2",
+      "heading": "Higher Education Calendar dates - Semester 2 2026",
+      "headingPath": [
+        "Higher Education Calendar",
+        "Semester 2 2026"
+      ],
+      "text": "Start: 20 July 2026. Census: 14 August 2026. Break: 31 August to 4 September 2026. Teaching ends: 23 October 2026. Exams: 26 October to 6 November 2026. Results release to MyInfo/Student Portal: 20 November 2026. Supplementary assessments/exams: 27 and 30 November 2026. Completion letters and official transcripts for eligible approved graduates: 18 December 2026. Board conferral: February/March 2027; My eQuals documents within 10 business days of conferral. These dates apply only to the named semester. Continuing students can request transcripts through Student Request. Do not infer future dates from this snapshot.",
+      "document": "Official Higher Education Calendar, verified 13 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/"
+      ],
+      "reviewNotes": [
+        "Dated snapshot; not a live calendar lookup."
+      ]
+    },
+    {
+      "id": "guidance-calendar-2026-summer",
+      "heading": "Higher Education Calendar dates - Summer Semester 2026/2027",
+      "headingPath": [
+        "Higher Education Calendar",
+        "Summer Semester 2026/2027"
+      ],
+      "text": "Start: 23 November 2026. Census: 11 December 2026. Break: 21 December 2026 to 1 January 2027. Teaching ends: 22 January 2027. Exams: 25 to 29 January 2027. Results release to MyInfo/Student Portal: 8 February 2027. Supplementary assessments/exams: 15 and 16 February 2027. Completion letters, official transcripts and Board conferral: TBC. These dates apply only to the named semester. Continuing students can request transcripts through Student Request. Do not infer future dates from this snapshot.",
+      "document": "Official Higher Education Calendar, verified 13 November 2026",
+      "audience": "students",
+      "links": [
+        "https://www.melbournepolytechnic.edu.au/students/academic-calendars/higher-education-calendar/"
+      ],
+      "reviewNotes": [
+        "Dated snapshot; not a live calendar lookup."
+      ]
     }
   ]
 }

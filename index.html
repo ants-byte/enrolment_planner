@@ -656,19 +656,19 @@ Last Modified: 11/07/2026
             <div class="key-row">
               <div class="key-item">
                 <div class="swatch core"></div>
-                A core subject
+                Core subject
               </div>
               <div class="key-item">
                 <div class="swatch network"></div>
-                A Network Security stream subject
+                Network Security stream subject
               </div>
               <div class="key-item">
                 <div class="swatch software"></div>
-                A Software Development stream subject
+                Software Development stream subject
               </div>
               <div class="key-item">
                 <div class="swatch ba"></div>
-                A Business Analytics stream subject
+                Business Analytics stream subject
               </div>
               <div class="key-item">
                 <div class="swatch dual"></div>
@@ -676,7 +676,7 @@ Last Modified: 11/07/2026
               </div>
               <div class="key-item">
                 <div class="swatch core-completed"></div>
-                <span id="main-key-completed-label">Darkened subject card: One of your completed subjects</span>
+                <span id="main-key-completed-label">Darkened subject card = you completed this subject</span>
               </div>
               <div class="key-item key-item-clear-cards-only">
                 <div class="swatch core-selected"></div>
@@ -684,8 +684,7 @@ Last Modified: 11/07/2026
               </div>
               <div class="key-item">
                 <div class="swatch core-can-select"></div>
-                <span id="main-key-can-select-label">Bright subject card: You can select this subject this
-                  semester</span>
+                <span id="main-key-can-select-label">Bright subject card = this subject is available to you now</span>
               </div>
             </div>
             <div class="footnote" id="sas-footnote"></div>
@@ -2044,7 +2043,6 @@ Last Modified: 11/07/2026
   </div>
   <dialog id="friendly-chat" aria-labelledby="friendly-chat-title">
     <header class="friendly-chat-header">
-      <h2 id="friendly-chat-title">Subject Planner <span>AI</span></h2>
       <details class="friendly-settings">
         <summary aria-label="Chat display settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
         <div class="friendly-settings-items">
@@ -2056,12 +2054,18 @@ Last Modified: 11/07/2026
       <button data-setting-label="High contrast" id="contrast-friendly-chat" type="button" aria-label="Use high contrast" aria-pressed="false">Contrast</button>
         </div>
       </details>
+      <h2 id="friendly-chat-title">Subject Planner <span>AI</span></h2>
       <button id="close-friendly-chat" type="button" aria-label="Close friendly chat"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </header>
     <div id="friendly-reset-popup" class="friendly-reset-overlay" hidden>
       <div class="friendly-reset-card" role="alertdialog" aria-modal="true" aria-labelledby="friendly-reset-title" aria-describedby="friendly-reset-description">
         <h3 id="friendly-reset-title">Start a new chat?</h3>
         <p id="friendly-reset-description">This will clear your chat history</p>
+        <div id="friendly-reset-choices" class="friendly-reset-choices" hidden>
+          <button id="clear-friendly-selections" type="button">Clear subject choices and chat history</button>
+          <button id="clear-friendly-history" type="button">Clear study history, timetable choices, and chat history</button>
+          <button id="keep-friendly-planner" type="button">Keep history and subject choices but clear other chat history</button>
+        </div>
         <div class="friendly-reset-actions">
           <button id="cancel-friendly-reset" type="button">Cancel</button>
           <button id="confirm-friendly-reset" type="button">New chat</button>
@@ -2080,9 +2084,12 @@ Last Modified: 11/07/2026
         <button type="submit">Request extra usage</button>
       </form>
       <div class="friendly-chat-input-shell">
-        <textarea id="friendly-chat-input" rows="2" placeholder="Press Shift-Enter for new line, Enter to send prompt"></textarea>
+        <textarea id="friendly-chat-input" rows="1" placeholder="Press Shift-Enter for new line, Enter to send prompt"></textarea>
         <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <small id="friendly-token-counter" aria-live="polite" title="Personal token allowance remaining; updates after requests"></small>
+        <div class="friendly-token-info">
+          <button id="friendly-token-counter" type="button" aria-label="Token allowance information" aria-expanded="false" aria-controls="friendly-token-details">%</button>
+          <div id="friendly-token-details" class="friendly-notice-panel" aria-live="polite" hidden>Personal token allowance remaining will appear here after a request.</div>
+        </div>
       </div>
       <div class="friendly-notices">
         <button type="button" aria-expanded="false" aria-controls="friendly-privacy">Privacy</button>
@@ -2098,7 +2105,7 @@ Last Modified: 11/07/2026
         </div>
         <div id="friendly-kindness" class="friendly-notice-panel" hidden>
           <p>Please keep your prompts to the smallest minimum. Your prompts cost Antony cents and then dollars &#128532;</p>
-          <p><img class="friendly-dragon" src="images/flying-dragon-rider.png" alt="Flying red dragon carrying a rider">This site is under continuous development. Help Antony train it by emailing me about mistakes or limitations <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+          <p><img class="friendly-dragon" src="images/flying-dragon-rider.png" alt="Flying red dragon carrying a rider">This site is under continuous development. Help Antony train it by emailing him about mistakes or limitations <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
         </div>
       </div>
     </div>

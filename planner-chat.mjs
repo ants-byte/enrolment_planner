@@ -5,7 +5,7 @@ import { emailStudentPrompt } from './prompt-email.mjs';
 import { normalizeHistory } from './planner-history.mjs';
 const model = 'gpt-6.1-sol';
 const instructions = `${plannerInstructions}
-Whenever the student supplies or corrects study history (including main-planner context), call record_planner_history with the complete explicitly reported history, separating passed, approved credits, failed and currently studying subjects. Do not infer completion from wishes or your own suggestions. This structured history updates the main planner when chat closes. Record a major only if the student explicitly chose it. Never record a comparison/default major as their choice. Call this before plan_subjects; use the same completed history in both. Never erase earlier history merely because it is not repeated in a follow-up.`;
+Whenever the student supplies or corrects study history (including main-planner context), call record_planner_history with the complete explicitly reported history, separating passed, approved credits, failed and currently studying subjects. Do not infer completion from wishes or your own suggestions. This structured history updates the main planner when chat closes. Record a major only if the student explicitly chose it. Never record a comparison/default major as their choice. Call this before plan_subjects; use the same completed history in both. Never erase earlier history merely because it is not repeated in a follow-up. For explicit removals or corrections, call record_planner_history with the full revised history, including empty arrays when the last subject is removed. Never claim a history change was made without recording it through that tool.`;
 const redact = text => text.replace(/(?:\$|USD\s*|AUD\s*)\s*[\d,]+(?:\.\d+)?/gi, '[amount omitted]');
 const formatTimetable = text => {
   text = text.replace(/\b(BIT\d{3})\s*[-–—]\s*/g, '$1 ').replace(/\s*—\s*/g, ', ');
@@ -215,7 +215,7 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
             messages.push({ role: 'system', content: 'Before answering, call plan_subjects now with only explicitly reported passed/approved credits from the conversation. Wanting a subject does not satisfy its prerequisites. If no completed history is known, check introductory options with completed=[] and clearly state that assumption.' });
             continue;
           }
-          return reply({ answer: "Something went wrong at our end - I'm only AI, afterall! Please try again.", plannerState: syncState('') });
+          return reply({ answer: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.  Press the Instructions button if you are unsure how.", plannerState: syncState('') });
         }
         const blockedRequests = requestedCodes.filter(code => checkedPlans.length && checkedPlans.every(plan => plan.blockedOptions.some(subject => subject.code === code)));
         if (blockedRequests.length) {

@@ -14005,8 +14005,8 @@ body.completed-mode #clear-selections {
 #friendly-chat #cancel-friendly-reset { background: transparent; color: inherit; }
 #friendly-chat #confirm-friendly-reset { background: #397bb5; border-color: #397bb5; color: #fff; }
 
-.friendly-notices { position: relative; display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 6px; }
-#friendly-chat .friendly-notices > button { padding: 4px 0; border: 0; border-radius: 3px; background: transparent; color: inherit; font-size: 11px; line-height: 1.4; white-space: nowrap; }
+.friendly-notices { position: relative; display: flex; justify-content: center; align-items: center; gap: 34px; margin-top: 6px; }
+#friendly-chat .friendly-notices > button { padding: 4px 0; border: 0; border-radius: 3px; background: transparent; color: #808080; font-size: 14.4px; line-height: 1.4; white-space: nowrap; }
 #friendly-chat .friendly-notices > button:hover, #friendly-chat .friendly-notices > button[aria-expanded="true"] { text-decoration: underline; }
 .friendly-heart { color: #e9a3ab; margin-left: 3px; }
 .friendly-notice-panel { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); box-sizing: border-box; width: min(440px, 100%); max-height: 50dvh; overflow-y: auto; padding: 14px 16px; border: 1px solid #8885; border-radius: 12px; background: var(--chat-bg, #fff); color: var(--chat-text, #202123); box-shadow: 0 4px 20px #0003; font-size: 13px; line-height: 1.5; z-index: 40; }
@@ -14058,3 +14058,21 @@ body.completed-mode #clear-selections {
 .semester-timetable-table .semester-timetable-code { flex-shrink: 0; }
 
 .friendly-settings-heading { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; opacity: .7; }
+
+#friendly-chat-input:focus, #friendly-chat-input:focus-visible { outline: none; border: 0; box-shadow: none; }
+#friendly-chat .friendly-chat-input-shell:focus-within { border-color: #397bb5; }
+#friendly-chat .friendly-chat-compose { padding-bottom: 6px; }
+#friendly-chat .friendly-settings-items { left: 0; right: auto; }
+.friendly-token-info { position: relative; flex: 0 0 16px; align-self: flex-end; display: flex; align-items: center; justify-content: center; width: 16px; height: 36px; }
+#friendly-chat #friendly-token-counter { padding: 4px; border: 0; background: transparent; color: inherit; font-size: 12px; }
+#friendly-token-details { left: auto; right: 0; transform: none; width: min(300px, calc(100vw - 80px)); }
+
+.friendly-instructions-label { display: inline-block; padding: 1px 8px; border: 1px solid #8888; border-radius: 999px; font-size: .95em; line-height: 1.4; }
+
+#friendly-chat[data-chat-density] .friendly-chat-input-shell { position: relative; padding: 8px 18px 8px 10px; }
+#friendly-chat-input { flex: 1 1 0; width: 0; min-width: 0; line-height: 20px; min-height: 36px; }
+
+.friendly-reset-choices:not([hidden]) { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+#friendly-chat .friendly-reset-choices button { text-align: left; background: transparent; color: inherit; line-height: 1.4; }
+
+.friendly-summary-leadin { display: inline-block; padding-bottom: 12px; }

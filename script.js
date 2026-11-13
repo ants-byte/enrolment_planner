@@ -65,7 +65,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyError = document.getElementById('friendly-chat-error');
   const updateTokenCounter = result => {
     if (!result.tokenUsage) return;
-    const counter = document.getElementById('friendly-token-counter');
+    const counter = document.getElementById('friendly-token-details');
     counter.textContent = result.tokenUsage.owner ? 'Owner access' : `${result.tokenUsage.low ? 'Allowance running low: ' : ''}${result.tokenUsage.remaining.toLocaleString()} tokens left`;
   };
   const friendlyUnlock = document.getElementById('friendly-chat-unlock');
@@ -210,6 +210,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let friendlyMainSummary = '';
   let friendlyHistoryBreakdown = '';
   let friendlyPendingState = null;
+  let friendlyResetUndo = null;
   const appendFriendlyLinks = (element, text) => {
     const pattern = /\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:|tel:)[^\s)]+)\)|https?:\/\/[^\s<>|]+|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
     let offset = 0;
@@ -232,7 +233,29 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     greeting.className = 'friendly-bubble assistant';
     greeting.textContent = 'Hi! 👋 I can help you plan your timetable and answer general course related queries.\n\nYou may wish to paste in a list of subjects you passed, or paste in your Credit Transfers, then ask what\'s available for you to study this semester.';
     friendlyLog.append(greeting);
-    if (friendlyMainSummary) {
+    if (friendlyResetUndo) {
+      const cleared = document.createElement('div');
+      cleared.className = 'friendly-bubble assistant';
+      const message = document.createElement('p');
+      message.textContent = 'Your selections (study history and/or subject choices) and chat history have all been cleared.';
+      const restore = document.createElement('p');
+      restore.append(document.createTextNode('If you would like to restore your selections '));
+      const undo = document.createElement('button');
+      undo.type = 'button';
+      const undoArrow = document.createElement('span');
+      undoArrow.setAttribute('aria-hidden', 'true'); undoArrow.textContent = '\u21b6';
+      undo.append(undoArrow, document.createTextNode(' undo'));
+      undo.addEventListener('click', undoFriendlyReset);
+      restore.append(undo);
+      cleared.append(message);
+      [['Study history cleared', friendlyResetUndo.clearedHistory], ['Subject choices cleared', friendlyResetUndo.clearedChoices]].forEach(([label, codes]) => {
+        if (!codes?.length) return;
+        const list = document.createElement('p');
+        list.textContent = `${label}: ${codes.join(', ')}`;
+        cleared.append(list);
+      });
+      cleared.append(restore); friendlyLog.append(cleared);
+    } else if (friendlyMainSummary) {
       const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
       summary.textContent = `${friendlyMainSummary}\n\nWould you like to change anything or ask any questions about this? Changes to your history and any offered timetable will carry back to the main planner when you close this chat.`;
       const summaryText = summary.textContent;
@@ -240,6 +263,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       summaryText.split('\n').forEach((line, index) => {
         if (index) summary.append(document.createTextNode('\n'));
         let lineTarget = summary;
+        if (index === 0) {
+          lineTarget = document.createElement('span');
+          lineTarget.className = 'friendly-summary-leadin';
+          summary.append(lineTarget);
+        }
         if (/^(Major|Passed\/Credits|Currently studying|Selected subjects):/.test(line)) {
           lineTarget = document.createElement('span');
           lineTarget.className = 'friendly-summary-line';
@@ -306,6 +334,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               email.href = `mailto:enrol_bit@melbournepolytechnic.edu.au?subject=${encodeURIComponent('Subject selection')}&body=${encodeURIComponent('My proposed subject selection:\n\n' + plain)}`;
               actions.append(copy, email, document.createTextNode(' (enrol_bit@melbournepolytechnic.edu.au)')); bubble.append(actions);
             }
+          } else if (lines[i].includes('Press the Instructions button if you are unsure how.')) {
+            const [before, after] = lines[i].split('Press the Instructions button if you are unsure how.');
+            appendFriendlyLinks(bubble, before + 'Press the ');
+            const label = document.createElement('span');
+            label.className = 'friendly-instructions-label'; label.textContent = 'Instructions';
+            bubble.append(label);
+            appendFriendlyLinks(bubble, ' button if you are unsure how.' + after + '\n');
           } else appendFriendlyLinks(bubble, lines[i] + '\n');
         }
       }
@@ -392,7 +427,42 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   const friendlyResetPopup = document.getElementById('friendly-reset-popup');
   const cancelFriendlyReset = document.getElementById('cancel-friendly-reset');
   const confirmFriendlyReset = document.getElementById('confirm-friendly-reset');
+  const resetChoices = document.getElementById('friendly-reset-choices');
+  const clearFriendlySelections = document.getElementById('clear-friendly-selections');
+  const clearFriendlyHistory = document.getElementById('clear-friendly-history');
+  const keepFriendlyPlanner = document.getElementById('keep-friendly-planner');
+  function getFriendlyResetContext() {
+    const main = getAcademicPlannerContext();
+    const history = friendlyPendingState?.history || main;
+    const selected = friendlyPendingState?.selected || main.selected;
+    return {
+      hasHistory: ['passed', 'credited', 'failed', 'current'].some(key => history[key]?.length) || history.unspecifiedElectiveCredits > 0,
+      hasSelections: selected.length > 0,
+    };
+  }
+  function updateFriendlyResetAvailability() {
+    const { hasHistory, hasSelections } = getFriendlyResetContext();
+    friendlyReset.disabled = friendlyBusy || !(hasHistory || hasSelections || friendlyMessages.length || friendlyInput.value.trim());
+  }
+  friendlySettings.addEventListener('toggle', updateFriendlyResetAvailability);
+  window.addEventListener('load', updateFriendlyResetAvailability);
+  friendlyInput.addEventListener('input', updateFriendlyResetAvailability);
   const setFriendlyResetPopup = open => {
+    if (open) {
+      const { hasHistory, hasSelections } = getFriendlyResetContext();
+      const hasPlannerState = hasHistory || hasSelections;
+      resetChoices.hidden = !hasPlannerState;
+      confirmFriendlyReset.hidden = hasPlannerState;
+      document.getElementById('friendly-reset-description').textContent = hasPlannerState
+        ? 'Choose what to clear before starting a new chat.' : 'This will clear your chat history';
+      clearFriendlySelections.hidden = !hasSelections;
+      clearFriendlyHistory.hidden = !hasHistory;
+      keepFriendlyPlanner.hidden = !friendlyMessages.length && !friendlyInput.value.trim();
+      clearFriendlyHistory.textContent = hasSelections ? 'Clear study history, timetable choices, and chat history' : 'Clear study history and chat history';
+      const keep = hasHistory && hasSelections ? 'history and subject choices' : hasHistory ? 'history' : 'subject choices';
+      keepFriendlyPlanner.textContent = `Keep ${keep} but clear other chat history`;
+    }
+
     friendlyResetPopup.hidden = !open;
     friendlyChat.querySelectorAll('.friendly-chat-header, #friendly-chat-log, .friendly-chat-compose')
       .forEach(element => { element.inert = open; });
@@ -408,20 +478,84 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       event.preventDefault(); event.stopPropagation(); setFriendlyResetPopup(false);
     } else if (event.key === 'Tab') {
       event.preventDefault();
-      (document.activeElement === cancelFriendlyReset ? confirmFriendlyReset : cancelFriendlyReset).focus();
+      const buttons = Array.from(friendlyResetPopup.querySelectorAll('button')).filter(button => !button.hidden && !button.closest('[hidden]'));
+      const index = buttons.indexOf(document.activeElement);
+      buttons[(index + (event.shiftKey ? buttons.length - 1 : 1) + buttons.length) % buttons.length].focus();
     }
   });
   friendlyChat.addEventListener('close', () => {
     if (!friendlyResetPopup.hidden) setFriendlyResetPopup(false);
   });
-  confirmFriendlyReset.addEventListener('click', () => {
+  function undoFriendlyReset() {
+    if (!friendlyResetUndo || friendlyBusy) return;
+    const saved = friendlyResetUndo; friendlyResetUndo = null;
+    currentEnrolmentOverrideCodes = saved.currentOverride;
+    restoreStudentSnapshot(saved.planner);
+    manualEntryMeta.clear();
+    saved.meta.forEach((value, code) => manualEntryMeta.set(code, { ...value }));
+    refreshCurrentEnrolmentStudentRecord();
+    friendlyPendingState = saved.pending;
+    friendlyMessages = saved.messages;
+    friendlyMainContext = saved.context;
+    friendlyMainSummary = saved.summary;
+    friendlyHistoryBreakdown = saved.breakdown;
+    friendlyInput.value = saved.draft;
+    updateSelectedList(); updateBookmarkableSettingsUrl();
+    renderFriendlyChat(); updateFriendlySend(); updateFriendlyResetAvailability();
+    friendlyInput.focus();
+  }
+  const resetFriendlyConversation = action => {
+    const before = getAcademicPlannerContext();
+    const historyCodes = history => ['passed', 'credited', 'failed', 'current'].flatMap(key => history?.[key] || [])
+      .concat(Array.from(validUseCodes).slice(0, history?.unspecifiedElectiveCredits || 0));
+    const previousHistory = new Set([...historyCodes(before), ...historyCodes(friendlyPendingState?.history)]);
+    const previousChoices = new Set([...before.selected, ...(friendlyPendingState?.selected || [])]);
+    const undo = action === 'history' || action === 'selections' ? {
+      planner: captureStudentSnapshot(),
+      meta: new Map(Array.from(manualEntryMeta, ([code, value]) => [code, { ...value }])),
+      currentOverride: currentEnrolmentOverrideCodes ? new Set(currentEnrolmentOverrideCodes) : null,
+      pending: friendlyPendingState ? structuredClone(friendlyPendingState) : null,
+      messages: friendlyMessages.map(message => ({ ...message })),
+      context: friendlyMainContext, summary: friendlyMainSummary,
+      breakdown: friendlyHistoryBreakdown, draft: friendlyInput.value,
+    } : null;
+    friendlyResetUndo = null;
+    if (action === 'history') {
+      manualEntryAliases.clear();
+      manualEntryMeta.clear();
+      currentEnrolmentOverrideCodes = null;
+      passForEnrolmentsOverrides.clear();
+      currentEnrolmentsPlannedOverrides.clear();
+      friendlyPendingState = {
+        history: { passed: [], credited: [], failed: [], current: [], unspecifiedElectiveCredits: 0 },
+        selected: [], semester: currentSemesterKey,
+      };
+    } else if (action === 'selections') {
+      friendlyPendingState = { ...friendlyPendingState, selected: [], semester: currentSemesterKey };
+    }
+    // Commit retained chat changes as well as explicit clearing before reseeding.
+    applyFriendlyChatToPlanner();
+    if (undo) {
+      const after = getAcademicPlannerContext();
+      const remainingHistory = new Set(historyCodes(after));
+      const remainingChoices = new Set(after.selected);
+      undo.clearedHistory = [...previousHistory].filter(code => !remainingHistory.has(code)).sort();
+      undo.clearedChoices = [...previousChoices].filter(code => !remainingChoices.has(code)).sort();
+    }
     setFriendlyResetPopup(false);
     friendlyUnlock.hidden = true; friendlyUnlock.reset();
     friendlyError.hidden = true; friendlyError.replaceChildren();
-    friendlyMessages = []; friendlyInput.value = ''; renderFriendlyChat();
-    friendlyPendingState = null;
-    friendlyInput.focus(); updateFriendlySend();
-  });
+    friendlyMessages = []; friendlyInput.value = '';
+    friendlyMainContext = '';
+    seedFriendlyChatFromPlanner();
+    friendlyResetUndo = undo;
+    renderFriendlyChat();
+    friendlyInput.focus(); updateFriendlySend(); updateFriendlyResetAvailability();
+  };
+  confirmFriendlyReset.addEventListener('click', () => resetFriendlyConversation('chat'));
+  clearFriendlySelections.addEventListener('click', () => resetFriendlyConversation('selections'));
+  clearFriendlyHistory.addEventListener('click', () => resetFriendlyConversation('history'));
+  keepFriendlyPlanner.addEventListener('click', () => resetFriendlyConversation('keep'));
   const friendlyNotices = document.querySelector('.friendly-notices');
   let activeNotice = null;
   let noticePinned = false;
@@ -438,7 +572,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     document.getElementById(button.getAttribute('aria-controls')).hidden = false;
     button.setAttribute('aria-expanded', 'true');
   };
-  friendlyNotices.querySelectorAll('button').forEach(button => {
+  const friendlyTokenInfo = document.querySelector('.friendly-token-info');
+  friendlyChat.querySelectorAll('.friendly-notices > button, #friendly-token-counter').forEach(button => {
     button.addEventListener('pointerenter', event => {
       if (event.pointerType === 'mouse' && !noticePinned) openFriendlyNotice(button, false);
     });
@@ -449,7 +584,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     });
   });
   friendlyNotices.addEventListener('pointerleave', () => { if (!noticePinned) hideFriendlyNotice(); });
-  friendlyNotices.addEventListener('keydown', event => {
+  friendlyTokenInfo.addEventListener('pointerleave', () => { if (!noticePinned) hideFriendlyNotice(); });
+  friendlyChat.querySelector('.friendly-chat-compose').addEventListener('keydown', event => {
     if (event.key === 'Escape' && activeNotice) {
       const button = activeNotice;
       event.preventDefault(); event.stopPropagation();
@@ -457,12 +593,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
   });
   document.addEventListener('click', event => {
-    if (!friendlyNotices.contains(event.target)) hideFriendlyNotice();
+    if (!friendlyNotices.contains(event.target) && !friendlyTokenInfo.contains(event.target)) hideFriendlyNotice();
   });
   friendlyChat.addEventListener('close', hideFriendlyNotice);
   friendlySend.addEventListener('click', async () => {
     if (friendlyBusy || !friendlyInput.value.trim()) return;
     if (friendlyInput.value.length > 6000) { showFriendlyNotice('Please shorten your message so I can help.'); return; }
+    friendlyResetUndo = null;
     const draft = friendlyInput.value;
     friendlyUnlock.hidden = true;
     friendlyError.hidden = true; friendlyError.replaceChildren();
@@ -482,7 +619,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const result = await response.json();
       updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
-        friendlyMessages.push({ role: 'assistant', content: "Something went wrong at our end - I'm only AI, afterall! Please try again." });
+        friendlyMessages.push({ role: 'assistant', content: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.  Press the Instructions button if you are unsure how." });
         renderFriendlyChat();
         return;
       }
@@ -518,7 +655,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         friendlyError.append(friendlyUnlock);
       }
     } finally {
-      friendlyBusy = false; friendlySend.disabled = false; friendlyReset.disabled = false; friendlyInput.disabled = false;
+      friendlyBusy = false; friendlySend.disabled = false; friendlyInput.disabled = false; updateFriendlyResetAvailability();
       window.clearInterval(workingTimer);
       workingBubble.remove(); updateFriendlySend();
       if (friendlyChat.open) friendlyInput.focus();
@@ -1579,13 +1716,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       mainKeyCompletedLabel.textContent =
         activeCardTheme === CLEAR_CARDS_THEME
           ? 'Light blue subject card: One of your completed subjects'
-          : 'Darkened subject card: One of your completed subjects';
+          : 'Darkened subject card = you completed this subject';
     }
     if (mainKeyCanSelectLabel) {
       mainKeyCanSelectLabel.textContent =
         activeCardTheme === CLEAR_CARDS_THEME
           ? 'Subject card glow: You can select this subject this semester'
-          : 'Bright subject card: You can select this subject this semester';
+          : 'Bright subject card = this subject is available to you now';
     }
   };
   const applyCardTheme = (theme, { persist = true } = {}) => {
@@ -14955,6 +15092,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const context = JSON.stringify(history);
     if (context === friendlyMainContext) return;
     friendlyMainContext = context;
+    friendlyResetUndo = null;
     friendlyPendingState = null;
     friendlyMessages = [];
     const names = codes => codes.map(code => {
@@ -14969,8 +15107,14 @@ const TRIAGE_READ_MAX_ROWS = 0;
       unnamedCodes.length ? `Unnamed elective credits: ${unnamedCodes.join(', ')}` : '',
     ].filter(Boolean).join('\n\n');
     const currentSummary = current.map(code => `${code} (${passForEnrolmentsOverrides.has(code) ? 'treated as already passed for planning' : 'not treated as already passed'})`).join(', ') || 'None';
-    friendlyMainSummary = completed.length || current.length || selected.length || failed.length || history.unspecifiedElectiveCredits || history.major !== 'undecided'
-      ? `Here’s what you have in the main planner:\nMajor: ${history.major}\nPassed/Credits: ${completedCodes.join(', ') || 'None'}\nCurrently studying: ${currentSummary}\nSelected subjects: ${names(selected)}` : '';
+    const summaryLines = [
+      completedCodes.length ? `Passed/Credits: ${completedCodes.join(', ')}` : '',
+      history.major && history.major !== 'undecided' ? `Major: ${history.major}` : '',
+      current.length ? `Currently studying: ${currentSummary}` : '',
+      selected.length ? `Selected subjects: ${names(selected)}` : '',
+    ].filter(Boolean);
+    friendlyMainSummary = summaryLines.length
+      ? `Here\u2019s what you have in the main planner:\n${summaryLines.join('\n')}` : '';
     renderFriendlyChat();
   }
 
@@ -14980,6 +15124,18 @@ const TRIAGE_READ_MAX_ROWS = 0;
     friendlyPendingState = null;
     const history = state.history;
     if (history) {
+      const historyCodes = new Set(['passed', 'credited', 'failed', 'current']
+        .flatMap(key => history[key] || []));
+      // Chat returns a complete history snapshot, including explicit removals.
+      manualEntryResults = manualEntryResults.filter(entry => historyCodes.has(entry.id));
+      for (const code of manualEntryMeta.keys()) {
+        if (!historyCodes.has(code)) manualEntryMeta.delete(code);
+      }
+      subjectState.forEach((value, code) => {
+        if (value.completed && !historyCodes.has(code)) {
+          subjectState.set(code, { ...value, completed: false });
+        }
+      });
       const rows = [];
       [['passed', 'PA'], ['credited', 'CRT'], ['failed', 'N'], ['current', 'H']].forEach(([key, result]) => {
         (history[key] || []).filter(code => validSubjectCodes.has(code)).forEach(code => {
@@ -16432,7 +16588,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
           const config = Object.values(majorConfig).find((entry) => entry.code === streamCode);
           return config?.configKey?.replace(/\s+\([A-Z]+\)$/, '') || streamCode;
         });
-        return `${code} belongs to both ${naturalList(streamNames)}.`;
+        return `${code} belongs to both ${naturalList(streamNames)}`;
       });
     setText('shared-stream-subject-guidance', sharedStreamDescriptions.join(' '));
 
