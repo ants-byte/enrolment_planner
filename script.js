@@ -26005,7 +26005,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const explainKey = courseMapStructureExplainMode && courseMapStructureExpandedStream
         ? courseMapStructureExpandedStream
         : '';
-      const effectiveMajorKey = explainKey || majorKey;
+      const effectiveMajorKey = courseMapStructureExplainMode ? explainKey : majorKey;
       if (sharedCell) {
         const hideSharedCell = courseMapStructureExplainMode && !!courseMapStructureExpandedStream;
         sharedCell.hidden = hideSharedCell;
@@ -33772,7 +33772,6 @@ function buildStudentRecordsFromWorkbook(workbook) {
             updateCourseMapStatuses();
             updateCourseMapStreamLabels();
             positionCourseMapArrows();
-            positionCourseMapSharedBit245();
             courseMapStructureFirstExpandTimer = null;
           }, 1500);
           return;
@@ -33804,7 +33803,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
           courseMapStructureFirstExpandTimer = setTimeout(() => {
             courseMapModal.classList.remove('course-map-structure-first-expand');
             courseMapModal.classList.remove('course-map-structure-preparing-expand');
-            positionCourseMapSharedBit245();
+            positionCourseMapArrows();
             scheduleCourseMapRelayout();
             courseMapStructureFirstExpandTimer = null;
           }, 1500);
