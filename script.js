@@ -211,6 +211,27 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let friendlyHistoryBreakdown = '';
   let friendlyPendingState = null;
   let friendlyResetUndo = null;
+  function describeFriendlyPlannerChanges(state) {
+    if (!state) return '';
+    const main = getAcademicPlannerContext();
+    const previousHistory = friendlyPendingState?.history || main;
+    const previousMajor = friendlyPendingState?.history?.major || main.major;
+    const previousChoices = friendlyPendingState?.selected || main.selected;
+    const sameCodes = (a, b) => JSON.stringify([...(a || [])].sort()) === JSON.stringify([...(b || [])].sort());
+    const changes = [];
+    if (state.history) {
+      if (['passed', 'credited', 'failed', 'current'].some(key => !sameCodes(state.history[key], previousHistory[key])) ||
+          (state.history.unspecifiedElectiveCredits || 0) !== (previousHistory.unspecifiedElectiveCredits || 0)) changes.push('study history');
+      if (state.history.major && state.history.major !== previousMajor) {
+        const names = { NS: 'Network Security', BA: 'Business Analytics', SD: 'Software Development' };
+        changes.push(`major (${names[state.history.major] || state.history.major})`);
+      }
+    }
+    if (Array.isArray(state.selected) && state.semester === currentSemesterKey && !sameCodes(state.selected, previousChoices)) changes.push('subject choices');
+    if (!changes.length) return '';
+    return `${friendlyChat.open ? 'When you close this chat, the main grid will update' : 'The main grid has been updated'}: ${changes.join('; ')}.`;
+  }
+
   const appendFriendlyLinks = (element, text) => {
     const pattern = /\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:|tel:)[^\s)]+)\)|https?:\/\/[^\s<>|]+|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
     let offset = 0;
@@ -343,6 +364,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
             appendFriendlyLinks(bubble, ' button if you are unsure how.' + after + '\n');
           } else appendFriendlyLinks(bubble, lines[i] + '\n');
         }
+      }
+      if (message.plannerUpdate) {
+        const note = document.createElement('em');
+        note.className = 'friendly-planner-update'; note.textContent = message.plannerUpdate;
+        bubble.append(note);
       }
       friendlyLog.append(bubble);
     });
@@ -615,7 +641,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       workingBubble.textContent = `Working for ${elapsed}...`;
     }, 1000);
     try {
-      const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages }), signal: AbortSignal.timeout(90000) });
+      const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: friendlyMessages.map(({ role, content }) => ({ role, content })) }), signal: AbortSignal.timeout(90000) });
       const result = await response.json();
       updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
@@ -630,10 +656,15 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
         failure.ownerOnly = result.ownerOnly;
         throw failure;
       }
+      const plannerUpdate = describeFriendlyPlannerChanges(result.plannerState);
       if (result.plannerState) {
-        friendlyPendingState = { ...friendlyPendingState, ...result.plannerState, history: result.plannerState.history || friendlyPendingState?.history || null };
+        const history = result.plannerState.history;
+        const retainedMajor = friendlyPendingState?.history?.major;
+        friendlyPendingState = { ...friendlyPendingState, ...result.plannerState, history: history
+          ? { ...history, ...(retainedMajor && !history.major ? { major: retainedMajor } : {}) }
+          : friendlyPendingState?.history || null };
       }
-      friendlyMessages.push({ role: 'assistant', content: result.answer }); renderFriendlyChat();
+      friendlyMessages.push({ role: 'assistant', content: result.answer, ...(plannerUpdate ? { plannerUpdate } : {}) }); renderFriendlyChat();
       if (!friendlyChat.open) applyFriendlyChatToPlanner();
     } catch (error) {
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
