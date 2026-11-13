@@ -3555,6 +3555,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const downloadCourseMapImageButton = document.getElementById('download-course-map-image');
   const courseMapEmailToolsButton = document.getElementById('course-map-email-tools');
   const courseMapHistoryButton = document.getElementById('course-map-history');
+  const courseMapAddHistoryButton = document.getElementById('course-map-add-history');
+  let courseMapHistoryEntryOn = false;
   const courseMapRemainingButton = document.getElementById('course-map-remaining');
   const courseMapNextSemesterButton = document.getElementById('course-map-next-semester');
   const courseMapOldCodesButton = document.getElementById('course-map-old-codes');
@@ -25910,10 +25912,55 @@ function buildStudentRecordsFromWorkbook(workbook) {
       });
     });
     staffActions.appendChild(staffCopyTimetableBtn);
+    const staffEmailOptionsBtn = document.createElement('button');
+    staffEmailOptionsBtn.type = 'button';
+    staffEmailOptionsBtn.className = 'clear-button secondary modal-copy-codes course-map-email-options';
+    staffEmailOptionsBtn.setAttribute('aria-label', 'Email subject options to student');
+    staffEmailOptionsBtn.title = 'Email subject options to student';
+    staffEmailOptionsBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m3 6 9 7 9-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    staffEmailOptionsBtn.addEventListener('click', async () => {
+      if (staffEmailOptionsBtn.disabled) return;
+      const record = getActiveStudentRecord();
+      const recipients = [...new Set([record?.Institute_Email, record?.Primary_Email].map(value => String(value || '').trim()).filter(Boolean))].join('; ');
+      if (!recipients) { window.alert('Select a student with an email address first.'); return; }
+      staffEmailOptionsBtn.disabled = true;
+      try {
+        const options = Object.entries(timetable).filter(([id]) => isRunningThisSemester(id)).map(([id, data]) => ({ id, data, dayFull: data.day, slot: data.slot })).sort(compareByDaySlotThenCode);
+        const tableData = (rows, heading) => {
+          const table = document.createElement('table');
+          const header = table.createTHead().insertRow();
+          ['Code', 'Subject', 'Day', 'Time', 'Room', 'Lecturer'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
+          const body = table.createTBody();
+          rows.forEach(({ id, data, dayFull, slot }) => {
+            const row = body.insertRow();
+            [id, getSubjectName(id), dayFull || data.day || '', isOptionalSummerSemester() ? '9 AM to 4 PM' : formatTimeRange(getDisplayTimeRange(slot) || slot || ''), data.room || 'TBA', data.teacher || 'TBA'].forEach(value => { row.insertCell().textContent = value; });
+          });
+          return buildSimpleTableCopyData(table, heading);
+        };
+        const full = tableData(options, 'Full semester options');
+        const selected = tableData(getSelectedRows(), 'Current selections');
+        const copy = async part => {
+          if (window.ClipboardItem && navigator.clipboard?.write) await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([part.html], { type: 'text/html' }), 'text/plain': new Blob([part.text], { type: 'text/plain' }) })]);
+          else await navigator.clipboard.writeText(part.text);
+        };
+        await copy(full);
+        await new Promise(resolve => setTimeout(resolve, PERSONALS_CLIPBOARD_STEP_DELAY_MS));
+        await copy(selected);
+        const identity = getSemesterIdentityAfterOffset(planningSemesterOffset);
+        const semester = isOptionalSummerSemester() ? 'Summer' : identity.semester === 'S1' ? '1' : '2';
+        const subject = `Subject options for Semester ${semester}, ${String(identity.year).slice(-2)}`;
+        openTimetableEmailDraftSafe(recipients, `Hello ${getStudentFirstName(record) || ''}\n\n${selected.text}\n\n${full.text}`, 'Your current selections are on the clipboard, with the full semester options in clipboard history.', subject);
+        triggerFlash(staffEmailOptionsBtn);
+      } catch {
+        window.alert('Could not prepare the subject tables. Please check clipboard access and try again.');
+      } finally { staffEmailOptionsBtn.disabled = false; }
+    });
+    staffActions.appendChild(staffEmailOptionsBtn);
+
 
     const staffInfoActions = document.createElement('div');
     staffInfoActions.className = 'course-map-staff-info-actions';
-    [courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
+    [courseMapAddHistoryButton, courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
       .filter(Boolean)
       .forEach((button) => staffInfoActions.appendChild(button));
     staffPanel.appendChild(staffInfoActions);
@@ -26406,14 +26453,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
         (status === 'course-map-status-next' || status === 'course-map-status-later');
       const staffClickable =
         getCourseMapIsStaffMode() &&
-        !completedMode &&
         !!st &&
-        !st.completed &&
-        !isBlockedByRequisites;
+        (courseMapHistoryEntryOn || (!completedMode && !st.completed && !isBlockedByRequisites &&
+          (isRunningThisSemester(code) || st.toggled)));
       cell.classList.toggle('course-map-staff-clickable', staffClickable);
       cell.classList.toggle('course-map-staff-toggleable-current', staffClickable && currentCodes.has(code));
       if (staffClickable) {
-        const isActive = !!st?.toggled || currentCodes.has(code);
+        const isActive = courseMapHistoryEntryOn ? !!st?.completed : !!st?.toggled || currentCodes.has(code);
         cell.tabIndex = 0;
         cell.setAttribute('role', 'button');
         cell.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -26637,10 +26683,33 @@ function buildStudentRecordsFromWorkbook(workbook) {
 
   const toggleCourseMapStaffSelectionByCode = (id) => {
     if (!getCourseMapIsStaffMode()) return false;
-    if (completedMode) return false;
     if (!id || !validSubjectCodes.has(id)) return false;
+    if (courseMapHistoryEntryOn) {
+      const state = subjectState.get(id);
+      if (!state) return false;
+      const completed = !state.completed;
+      manualEntryResults = manualEntryResults.filter(entry => entry.id !== id);
+      manualEntryMeta.delete(id); manualEntryAliases.delete(id);
+      manualEntryCurrent.delete(id); workbookCurrent.delete(id);
+      currentEnrolmentOverrideCodes?.delete(id);
+      passForEnrolmentsOverrides.delete(id); currentEnrolmentsPlannedOverrides.delete(id);
+      if (completed) {
+        manualEntryResults.push({ id, result: 'PA', date: '' });
+        manualEntryMeta.set(id, { result: 'PA', date: '' });
+      }
+      subjectState.set(id, { completed, toggled: false });
+      refreshCurrentEnrolmentStudentRecord();
+      applySubjectStateToCells(); rebuildElectiveBitStateFromState();
+      setElectiveCredits(buildElectiveAssignments(), true);
+      conditionalRecompute({ force: true, usePlanned: false });
+      updateSelectedList(); updateResetState(); updateWarnings(); updateBookmarkableSettingsUrl();
+      updateCourseMapStatuses(); scheduleCourseMapRelayout();
+      return true;
+    }
+    if (completedMode) return false;
     const st = subjectState.get(id);
     if (!st || st.completed) return false;
+    if (!isRunningThisSemester(id) && !st.toggled) return false;
     if (!courseMapCells.get(id)?.classList.contains('course-map-staff-clickable')) return false;
 
     const isCurrentRecord = currentEnrolmentStudentRecord.has(id);
@@ -32727,6 +32796,12 @@ function buildStudentRecordsFromWorkbook(workbook) {
   }
   if (historyButton) historyButton.addEventListener('click', showHistoryModal);
   if (remainingButton) remainingButton.addEventListener('click', showRemainingModal);
+  courseMapAddHistoryButton.addEventListener('click', () => {
+    courseMapHistoryEntryOn = !courseMapHistoryEntryOn;
+    courseMapAddHistoryButton.setAttribute('aria-pressed', String(courseMapHistoryEntryOn));
+    courseMapAddHistoryButton.textContent = courseMapHistoryEntryOn ? 'Finish history' : 'Add history';
+    updateCourseMapStatuses();
+  });
   if (courseMapHistoryButton) courseMapHistoryButton.addEventListener('click', showHistoryModal);
   if (courseMapRemainingButton) courseMapRemainingButton.addEventListener('click', showRemainingModal);
   if (oldCodesButton) oldCodesButton.addEventListener('click', showOldCodesModal);

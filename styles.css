@@ -14109,3 +14109,9 @@ body.completed-mode #clear-selections {
   transform: translateY(-6px);
   box-shadow: none;
 }
+
+#course-map-add-history[aria-pressed="true"] { outline: 2px solid #ffeb00; outline-offset: 1px; }
+
+#course-map-modal .course-map-cell:is([data-subject="BIT245"], [data-mirrored-subject="BIT245"]):not(.course-map-status-passed):not(.course-map-status-current):not(.course-map-status-selected):not(.course-map-status-next):not(.course-map-status-later) {
+  background: linear-gradient(to bottom, #bee0fa, #e8c8ed) right 32px center / 2px calc(100% - 16px) no-repeat #fff !important;
+}
