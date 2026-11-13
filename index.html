@@ -13,8 +13,14 @@ Last Modified: 11/07/2026
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="Plan your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
+    content="Use the Subject Planner to select your timetable for the coming semester of your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
   <link rel="canonical" href="https://timetableplanner.adiserio.workers.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Timetable Planner for Bachelor of IT, Melbourne Polytechnic">
+  <meta property="og:description" content="Use the Subject Planner to select your timetable for the coming semester of your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
+  <meta property="og:url" content="https://timetableplanner.adiserio.workers.dev/">
+  <meta property="og:image" content="https://timetableplanner.adiserio.workers.dev/images/timetable%202.png">
+  <meta property="og:image:alt" content="Bachelor of IT timetable planner">
   <title>Timetable Planner for Bachelor of IT, Melbourne Polytechnic</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +31,7 @@ Last Modified: 11/07/2026
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/x-icon" href="images/timetable%202.ico">
 
 </head>
 
@@ -1384,6 +1390,13 @@ Last Modified: 11/07/2026
               <button id="reset-course-map-font-size" class="course-map-font-size-reset" type="button">Font</button>
               <input id="course-map-font-size" type="range" min="0.75" max="2" step="0.05" value="1"
                 aria-label="Course map font size">
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-available-highlight" checked aria-label="Highlighting of available subjects">
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">Highlighting of available subjects</span>
             </div>
             <div class="toggle-row course-map-show-hide-row" id="course-map-list-colours-row">
               <label class="switch">

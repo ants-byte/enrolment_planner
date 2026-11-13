@@ -4086,11 +4086,15 @@ input:checked+.slider:before {
 
 
 .title-icon {
-  width: 40px;
+  box-sizing: content-box;
+  width: 36px;
+  height: 36px;
   aspect-ratio: 1 / 1;
-  background: center / contain no-repeat url("images/timetable.png");
-
-  padding: 0;
+  background: center / 36px 36px no-repeat url("images/timetable%202.png");
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 12px;
+  color: inherit;
   margin: 0;
   cursor: pointer;
   flex-shrink: 0;
@@ -14082,3 +14086,26 @@ body.completed-mode #clear-selections {
 #friendly-chat[data-chat-contrast="high"] .friendly-planner-update { color: inherit; }
 
 .sidebar-group-heading { margin: 12px 0 4px; font: inherit; font-weight: 400; color: #fff; line-height: 1.1; }
+
+.main-grid .subject-card.can-select-now { outline: 1px solid #ffeb00; outline-offset: 0; }
+
+#course-map-modal:not(.course-map-available-highlight-off) .course-map-cell.course-map-available-highlight {
+  outline: 1px solid #ffeb00;
+  outline-offset: 0;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+}
+#course-map-modal .course-map-cell.course-map-available-highlight:hover,
+#course-map-modal.course-map-staff-mode .course-map-cell.course-map-staff-clickable:hover {
+  outline: 1px solid #ffeb00;
+  outline-offset: 0;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+}
+
+#course-map-modal:not(.course-map-available-highlight-off) .course-map-cell.course-map-available-highlight:hover {
+  transform: translateY(-6px);
+  box-shadow: none;
+}

@@ -229,7 +229,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (Array.isArray(state.selected) && state.semester === currentSemesterKey && !sameCodes(state.selected, previousChoices)) changes.push('subject choices');
     if (!changes.length) return '';
-    return `${friendlyChat.open ? 'When you close this chat, the main grid will update' : 'The main grid has been updated'}: ${changes.join('; ')}.`;
+    return `The main grid has been updated: ${changes.join('; ')}.`;
   }
 
   const appendFriendlyLinks = (element, text) => {
@@ -278,7 +278,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       cleared.append(restore); friendlyLog.append(cleared);
     } else if (friendlyMainSummary) {
       const summary = document.createElement('p'); summary.className = 'friendly-bubble assistant';
-      summary.textContent = `${friendlyMainSummary}\n\nWould you like to change anything or ask any questions about this? Changes to your history and any offered timetable will carry back to the main planner when you close this chat.`;
+      summary.textContent = `${friendlyMainSummary}\n\nWould you like to change anything or ask any questions about this? Changes to your history, subject choices and major update the main planner immediately in the background.`;
       const summaryText = summary.textContent;
       summary.replaceChildren();
       summaryText.split('\n').forEach((line, index) => {
@@ -664,8 +664,8 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
           ? { ...history, ...(retainedMajor && !history.major ? { major: retainedMajor } : {}) }
           : friendlyPendingState?.history || null };
       }
+      applyFriendlyChatToPlanner();
       friendlyMessages.push({ role: 'assistant', content: result.answer, ...(plannerUpdate ? { plannerUpdate } : {}) }); renderFriendlyChat();
-      if (!friendlyChat.open) applyFriendlyChatToPlanner();
     } catch (error) {
       // Keep the submitted bubble visible, but exclude the failed turn from future requests.
       friendlyMessages.pop(); friendlyInput.value = draft;
@@ -26609,6 +26609,14 @@ function buildStudentRecordsFromWorkbook(workbook) {
         cell.classList.remove('course-map-structure-duplicate-top');
       });
     }
+    courseMapContent.querySelectorAll('.course-map-cell').forEach(cell => {
+      const code = cell.dataset.mirroredSubject || cell.dataset.subject;
+      const state = code ? subjectState.get(code) : null;
+      const available = !!state && !state.completed && !state.toggled && !currentCodes.has(code)
+        && isRunningThisSemester(code) && !getCourseMapStatusClass(code)
+        && !(areElectivesFull() && isElectiveId(code));
+      cell.classList.toggle('course-map-available-highlight', available);
+    });
     syncCourseMapSemCountBadgesFromMainGrid();
     updateCourseMapStreamLabels();
   };
@@ -33291,6 +33299,20 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
     updateCourseMapPrereqToggle();
   }
+  const courseMapAvailableHighlightToggle = document.getElementById('toggle-course-map-available-highlight');
+  const applyCourseMapAvailableHighlight = enabled => {
+    courseMapAvailableHighlightToggle.checked = enabled;
+    courseMapModal.classList.toggle('course-map-available-highlight-off', !enabled);
+  };
+  applyCourseMapAvailableHighlight(new URLSearchParams(window.location.search).get('courseMapHighlight') !== '0');
+  courseMapAvailableHighlightToggle.addEventListener('change', () => {
+    const enabled = courseMapAvailableHighlightToggle.checked;
+    applyCourseMapAvailableHighlight(enabled);
+    const url = new URL(window.location.href);
+    if (enabled) url.searchParams.delete('courseMapHighlight');
+    else url.searchParams.set('courseMapHighlight', '0');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  });
   if (toggleCourseMapListColoursButton) {
     toggleCourseMapListColoursButton.addEventListener('change', () => {
       courseMapListColoursOn = !!toggleCourseMapListColoursButton.checked;
