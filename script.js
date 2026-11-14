@@ -10931,8 +10931,10 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const hasCurrent = currentEnrolmentStudentRecord.size > 0;
     const summer = isOptionalSummerSemester();
     const enabled = summer || (hasHistory && hasCurrent);
+    const passEnrolmentsRow = passForEnrolmentsToggle?.closest('.toggle-row');
+    if (passEnrolmentsRow) passEnrolmentsRow.hidden = !hasCurrent;
     if (courseMapPassForEnrolmentsToggleRow) {
-      const showCourseMapToggle = (summer || hasCurrent) && !getCourseMapIsStaffMode();
+      const showCourseMapToggle = hasCurrent && !getCourseMapIsStaffMode();
       courseMapPassForEnrolmentsToggleRow.hidden = !showCourseMapToggle;
     }
     const toggles = [passForEnrolmentsToggle, courseMapPassForEnrolmentsToggle].filter(Boolean);

@@ -14132,7 +14132,7 @@ body.completed-mode #clear-selections {
 
 #major-section-descriptor, #history-section-descriptor, #sidebar-section-descriptor { font-weight: 700; }
 
-.semester-options-heading { color: #fff; font-weight: 700; margin: .875px 0 2px; padding-left: 5px; }
+.semester-options-heading { color: #fff; font-weight: 700; margin: 8px 0 2px; padding-left: 5px; }
 
 #main-grid-details.subject-details-ready,
 #course-map-modal .course-map-staff-open-window.subject-details-ready { border: 3px solid #ffd700; }
@@ -14191,3 +14191,8 @@ body.completed-mode #clear-selections {
 
 #load-modal.summer-load-mode #apply-load-modal { display: none; }
 #summer-load-choices .clear-button { white-space: nowrap; width: auto; flex: 0 0 auto; padding: 12px; }
+
+.available-heading-row:has(+ .semester-options-heading) { margin-bottom: 0; }
+
+.toggle-row[hidden]:has(#pass-for-enrolments),
+#course-map-pass-for-enrolments-row[hidden] { display: none; }
