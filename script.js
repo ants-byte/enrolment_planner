@@ -355,13 +355,13 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
               email.href = `mailto:enrol_bit@melbournepolytechnic.edu.au?subject=${encodeURIComponent('Subject selection')}&body=${encodeURIComponent('My proposed subject selection:\n\n' + plain)}`;
               actions.append(copy, email, document.createTextNode(' (enrol_bit@melbournepolytechnic.edu.au)')); bubble.append(actions);
             }
-          } else if (lines[i].includes('Press the Instructions button if you are unsure how.')) {
-            const [before, after] = lines[i].split('Press the Instructions button if you are unsure how.');
-            appendFriendlyLinks(bubble, before + 'Press the ');
+          } else if (lines[i].startsWith('If you are unsure how to do this manually,')) {
+            const [before, after = ''] = lines[i].split('Instructions');
+            appendFriendlyLinks(bubble, before);
             const label = document.createElement('span');
             label.className = 'friendly-instructions-label'; label.textContent = 'Instructions';
             bubble.append(label);
-            appendFriendlyLinks(bubble, ' button if you are unsure how.' + after + '\n');
+            appendFriendlyLinks(bubble, after + '\n');
           } else appendFriendlyLinks(bubble, lines[i] + '\n');
         }
       }
@@ -416,9 +416,17 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   window.addEventListener('blur', clearPageKeyHints);
   window.addEventListener('scroll', clearPageKeyHints, true);
   const friendlyLauncher = document.getElementById('open-friendly-chat');
+  const chatMode = new URLSearchParams(window.location.search).get('mode')?.toLowerCase();
+  const staffChatDisabled = chatMode !== 'student' && (chatMode === 'staff' ||
+    window.location.protocol === 'file:' || ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname) ||
+    /sharepoint/i.test(window.location.hostname));
+  friendlyLauncher.disabled = staffChatDisabled;
+  if (staffChatDisabled) friendlyLauncher.title = 'Student AI chat is unavailable in staff mode.';
+
   let focusLauncherOnNextTab = true;
   document.addEventListener('keydown', event => {
     if (event.key !== 'Tab' || !focusLauncherOnNextTab || friendlyChat.open) return;
+    if (friendlyLauncher.disabled) { focusLauncherOnNextTab = false; return; }
     event.preventDefault();
     event.stopImmediatePropagation();
     focusLauncherOnNextTab = false;
@@ -427,12 +435,14 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   document.addEventListener('pointerdown', () => { focusLauncherOnNextTab = false; }, true);
   friendlyChat.addEventListener('close', () => { focusLauncherOnNextTab = true; });
   document.getElementById('open-friendly-chat').addEventListener('click', () => {
+    if (friendlyLauncher.disabled) return;
     seedFriendlyChatFromPlanner();
     if (window.location.hash !== '#ask-course-planner') window.location.hash = '#ask-course-planner';
     if (!friendlyChat.open) friendlyChat.showModal();
     friendlyInput.focus();
   });
   const syncFriendlyChatHash = () => {
+    if (friendlyLauncher.disabled) return;
     if (window.location.hash === '#ask-course-planner') {
       if (!friendlyChat.open) { friendlyChat.showModal(); friendlyInput.focus(); }
     } else if (friendlyChat.open) friendlyChat.close();
@@ -645,7 +655,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       const result = await response.json();
       updateTokenCounter(result);
       if (response.status === 422 && typeof result.error === 'string') {
-        friendlyMessages.push({ role: 'assistant', content: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.  Press the Instructions button if you are unsure how." });
+        friendlyMessages.push({ role: 'assistant', content: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.\n\nIf you are unsure how to do this manually, close this dialog and look at the top of the page for the Instructions" });
         renderFriendlyChat();
         return;
       }
@@ -1285,7 +1295,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     isStudentModeParam || (['http:', 'https:'].includes(window.location.protocol) && !isStaffMode);
   const COLOURED_CARD_THEME = 'default';
   const CLEAR_CARDS_THEME = 'clear-cards';
-  const DEFAULT_CARD_THEME = isStudentMode ? COLOURED_CARD_THEME : CLEAR_CARDS_THEME;
+  const DEFAULT_CARD_THEME = CLEAR_CARDS_THEME;
   const MIN_ROOT_FONT_SIZE_PX = 10;
   const MAX_ROOT_FONT_SIZE_PX = 32;
   const DEFAULT_ROOT_FONT_SIZE_PX = 16;
@@ -2785,7 +2795,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   // Zero means no row truncation: the whole Triage roster must be read.
 const TRIAGE_READ_MAX_ROWS = 0;
   const SOURCE_READ_MAX_ROWS = 0;
-  const SOURCE_SHEET_NAMES = ['Results', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students', 'Info', 'INFO', 'info', 'Email Lists', 'EMAIL LISTS', 'email lists', 'Student notes', 'Student notes ts', 'StudentFlags', 'Student Flags', 'Student_Flags'];
+  const SOURCE_SHEET_NAMES = ['Results', 'StrataEnrolments', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students', 'Info', 'INFO', 'info', 'Email Lists', 'EMAIL LISTS', 'email lists', 'Student notes', 'Student notes ts', 'StudentFlags', 'Student Flags', 'Student_Flags'];
   const TRIAGE_SHEET_NAMES = ['Triage', 'TRIAGE', 'triage'];
   const WORKBOOK_PARSE_TIMEOUT_MS = 300000;
   const WORKER_PARSE_TIMEOUT_MS = 300000;
@@ -3784,6 +3794,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
         return Array.from(workbookSubjects.keys());
       },
       setStudentRecord(record) {
+        if (staffWorkbookStudentRecord !== (record || null)) window.stopLocalPlannerSharing?.();
         staffWorkbookStudentRecord = record || null;
       },
       getStudentRecord() {
@@ -3798,7 +3809,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       },
       reset() {
         workbookSubjects.clear();
-        staffWorkbookStudentRecord = null;
+        this.setStudentRecord(null);
         staffWorkbookCourseInfo = null;
         creditPointsEarned = '';
       },
@@ -5933,6 +5944,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
       courseMapStaffOpenWindowButton.classList.toggle('is-your-times', hasFullLoad);
+      courseMapStaffOpenWindowButton.classList.toggle('subject-details-ready', isOptionalSummerSemester()
+        ? selectedCount >= 1 && selectedCount <= 2 : hasFullLoad);
       courseMapStaffOpenWindowButton.setAttribute('aria-hidden', 'false');
       courseMapStaffOpenWindowButton.setAttribute(
         'data-tooltip-html',
@@ -6115,9 +6128,11 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const isLocalEnv = isLikelyLocalFile || isLocalHost;
   const isSharePointHost = /sharepoint/i.test(location.hostname);
-  const allowCourseMapModeToggle = !isStudentModeParam && isLocalEnv;
+  const allowCourseMapModeToggle = !isStudentModeParam && (isLocalEnv || isSharePointHost || isStaffModeParam);
   const staffFacing =
     !isStudentModeParam && (isLocalHost || isSharePointHost || isLikelyLocalFile || isStaffModeParam);
+  friendlyLauncher.disabled = !!staffFacing;
+  if (staffFacing && friendlyChat.open) friendlyChat.close();
   courseMapStaffMode = !!staffFacing;
   const shouldShowTeacherCopy = !isStudentModeParam && (isSharePointHost || isStaffModeParam);
   const dropZoneEnabled = !isStudentModeParam && (isLocalEnv || isSharePointHost || isStaffModeParam);
@@ -6136,7 +6151,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   }
   if (staffFacing) {
     if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
-    if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter History';
+    if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter your passes and credits';
   }
   const focusStaffLoadFromFolderButton = () => {
     if (!staffFacing || !loadFromFolderButton) return;
@@ -6830,7 +6845,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   let overrideMode = false;
   let livePrereqUpdates = false;
   let livePrereqEnabled = false;
-  let passForEnrolmentsEnabled = false;
+  let passForEnrolmentsEnabled = isOptionalSummerSemester();
   let fullLoadCap = 4;
   let summerLoadCap = 2;
   let studentType = 'international';
@@ -10677,6 +10692,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
       mainGridDetailsButton.textContent = hasSelected ? 'My times' : 'Subject details';
       mainGridDetailsButton.dataset.mode = hasSelected ? 'selected' : 'available';
       mainGridDetailsButton.classList.toggle('is-my-times', hasSelected);
+      mainGridDetailsButton.classList.toggle('subject-details-ready', isOptionalSummerSemester()
+        ? getPlannedCount() >= 1 && getPlannedCount() <= 2
+        : getLoadThreshold() > 0 && getPlannedCount() >= getLoadThreshold());
       mainGridDetailsButton.setAttribute(
         'data-tooltip-html',
         hasSelected
@@ -10816,7 +10834,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const updateCompletedModeUI = () => {
     if (!completedModeButton) return;
-    completedModeButton.textContent = completedMode ? 'Finish entering history' : 'Clicking mode';
+    completedModeButton.textContent = completedMode ? 'Finish entering history' : 'Click in grid';
     completedModeButton.setAttribute('aria-pressed', completedMode ? 'true' : 'false');
     completedModeButton.classList.toggle('completed-mode-wide', completedMode);
     if (!completedMode) {
@@ -10928,10 +10946,6 @@ const TRIAGE_READ_MAX_ROWS = 0;
       applyPassForEnrolmentsState();
       return;
     }
-    if (summer && !passForEnrolmentsEnabled) {
-      applyPassForEnrolmentsState();
-      return;
-    }
     const active = passForEnrolmentsEnabled && enabled;
     toggles.forEach((toggle) => {
       toggle.checked = active;
@@ -10939,7 +10953,6 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   const applyPassForEnrolmentsState = () => {
-    if (isOptionalSummerSemester()) passForEnrolmentsEnabled = true;
     // Roll back any previous overrides first.
     passForEnrolmentsOverrides.forEach((code) => {
       const st = subjectState.get(code);
@@ -11606,15 +11619,6 @@ const TRIAGE_READ_MAX_ROWS = 0;
         <br>Open their '<strong>Activity</strong>' tab and look to the bottom for '<strong>Suspensions (Current)</strong>' panel.
         <br> Within there you'll see an '<strong>Allow Enrol?</strong>' column with Y and N values.</span></span></p>`,
       });
-    }
-    if (activeStudentId) {
-      const comparison = getCurrentEnrolmentComparisonForRecord(activeRecord);
-      if (comparison.hasBoth && comparison.mismatch) {
-        errorPayloads.push({
-          title: 'Current enrolment mismatch (Students vs Triage sheets)',
-          html: `<p><strong class="alert-inline-title alert-title-error">Current enrolment mismatch</strong> <span class="alert-inline-text">The Students and Triage sheets in Enrolment Data and Tracking.xlsx list different current subjects for this student.</span></p><p class="alert-inline-text"><strong>Students sheet:</strong> ${escapeHtml(comparison.sourceCurrentCodes.join(', '))}</p><p class="alert-inline-text"><strong>Triage sheet (In Strata):</strong> ${escapeHtml(comparison.triageCurrentCodes.join(', '))}</p>`,
-        });
-      }
     }
     if (electiveError) errorPayloads.push(electiveError);
     if (prereqError) errorPayloads.push(prereqError);
@@ -15098,14 +15102,22 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const credited = completed.filter(code => /CRT|RPL/.test(manualEntryMeta.get(code)?.result || ''));
     const passed = completed.filter(code => !credited.includes(code));
     const failed = manualEntryResults.filter(entry => getGradeStatus(entry.result) === 'fail').map(entry => entry.id);
-    const current = Array.from(currentEnrolmentStudentRecord);
+    const comparison = getCurrentEnrolmentComparisonForRecord(getActiveStudentRecord());
+    const current = [...new Set([...currentEnrolmentStudentRecord, ...(comparison.summerTransition ? comparison.sourceCurrentCodes : [])])];
     const selected = Array.from(subjectState.entries()).filter(([, state]) => state.toggled).map(([code]) => code);
-    const history = { passed, credited, repeatFailureCounts: Object.fromEntries(getRepeatFailCounts().map(item => [item.code, item.count])), current, currentTreatedAsPassed: current.filter(code => passForEnrolmentsOverrides.has(code)), failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
+    const enrolmentSources = {
+      results: comparison.sourceCurrentCodes,
+      strataEnrolments: comparison.triageCurrentCodes,
+      summerTransition: !!comparison.summerTransition,
+      pendingSemester2Results: comparison.summerTransition
+        ? comparison.sourceCurrentCodes.filter(code => !comparison.triageCurrentCodes.includes(code)) : [],
+    };
+    const history = { passed, credited, enrolmentSources, repeatFailureCounts: Object.fromEntries(getRepeatFailCounts().map(item => [item.code, item.count])), current, currentTreatedAsPassed: current.filter(code => passForEnrolmentsOverrides.has(code)), failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
     return history;
   }
-  if (['127.0.0.1', 'localhost'].includes(location.hostname)) {
+  if (window.localPlannerBridge && staffFacing && location.hostname === '127.0.0.1') {
     window.getLocalPlannerAcademicContext = () => {
-      const studentId = getActiveStudentRecord()?.Student_IDs_Unique || 'manual';
+      const studentId = getStudentRecordId(staffWorkbookState.getStudentRecord()) || 'manual';
       if (!localStudentKeys.has(studentId)) localStudentKeys.set(studentId, crypto.randomUUID());
       const plainText = html => {
         const element = document.createElement('div');
@@ -15116,6 +15128,24 @@ const TRIAGE_READ_MAX_ROWS = 0;
         alerts: Object.fromEntries(['error', 'warning', 'info'].map(type => [type,
           (alertContent[type] || []).map(message => ({ title: message.title || '', details: plainText(message.html) }))])),
       };
+    };
+    window.getLocalPlannerStudentHistory = () => {
+      const record = staffWorkbookState.getStudentRecord();
+      const id = getStudentRecordId(record);
+      if (!id) return null;
+      const toRow = (code, result, date) => ({ code, result: normalizeGradeToken(result || ''), date });
+      // Keep earlier attempts for subjects currently being repeated.
+      const results = manualEntryResults.map(row => toRow(row.id, row.result, row.date));
+      const recordedCodes = new Set(results.map(row => row.code));
+      for (const row of getHistoryRows()) {
+        if (!recordedCodes.has(row.id)) results.push(toRow(row.id.startsWith('unknown-') ? row.displayCode : row.id, row.result, row.date));
+      }
+      const current = new Map([...manualEntryCurrent, ...workbookCurrent]);
+      const currentEnrolments = Array.from(currentEnrolmentStudentRecord, code => {
+        const meta = current.get(code);
+        return toRow(code, meta?.result, meta?.date);
+      });
+      return { id, name: getStudentDisplayName(record), results, currentEnrolments };
     };
   }
   function seedFriendlyChatFromPlanner() {
@@ -15241,7 +15271,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       hideSelectByTypingModal();
       showOneOffAlertModal(
         'Typed selections',
-        '<p>Switch out of <strong>Clicking mode</strong> (History mode) to select subjects for this semester.</p>'
+        '<p>Switch out of <strong>Click in grid</strong> (History mode) to select subjects for this semester.</p>'
       );
       return;
     }
@@ -16834,14 +16864,14 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const triageRecord = studentId ? triageRecords.get(studentId) : null;
     const sourceCurrentCodes = Array.from(
       new Set(
-        Array.from(workbookCurrent.keys())
+        Array.from(record.Results_List ? parseCurrentEntriesFromResults(record.Results_List).keys() : workbookCurrent.keys())
           .map((code) => normalizeSubjectCode(code))
           .filter((code) => code && validSubjectCodes.has(code))
       )
     ).sort();
     const triageCurrentCodes = Array.from(
       new Set(
-        (triageRecord?.inStrata ? parseInStrataCodes(triageRecord.inStrata) : [])
+        parseInStrataCodes(record.Strata_Enrolment_Subjects ?? triageRecord?.inStrata ?? '')
           .map((code) => normalizeSubjectCode(code))
           .filter((code) => code && validSubjectCodes.has(code))
       )
@@ -16859,6 +16889,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       sourceCurrentCodes,
       triageCurrentCodes,
       hasBoth,
+      summerTransition: hasBoth,
       mismatch,
     };
   };
@@ -16873,7 +16904,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const nextOverrideSignature = overrideCodes ? overrideCodes.slice().sort().join('|') : '';
     currentEnrolmentOverrideCodes = overrideCodes ? new Set(overrideCodes) : null;
 
-    const missingCodes = getTriageInStrataMissingCodesForRecord(record);
+    const historyCodes = getStudentHistoryCodeSet();
+    const missingCodes = comparison.triageCurrentCodes.filter(code => !historyCodes.has(code));
     if (!missingCodes.length) {
       if (previousOverrideSignature !== nextOverrideSignature) {
         refreshCurrentEnrolmentStudentRecord();
@@ -19800,7 +19832,13 @@ const TRIAGE_READ_MAX_ROWS = 0;
       0,
       remainingSemesters - (getPlannedCount() >= Math.max(1, fullLoadCap || 4) ? 0 : 1)
     );
-    return getSemesterIdentityAfterOffset(planningSemesterOffset + remainingOffset);
+    const graduation = getSemesterIdentityAfterOffset(planningSemesterOffset + remainingOffset);
+    const base = getConfiguredSemesterIdentity();
+    // Remaining regular semesters after Summer begin in the following calendar year.
+    if ((base?.semester || currentSemesterKey) === 'SS' && remainingSemesters > 0) {
+      graduation.year += 1;
+    }
+    return graduation;
   };
   const getEstimatedGraduationSemesterLabel = () => {
     const { year, semester } = getEstimatedGraduationSemesterIdentity();
@@ -21816,6 +21854,31 @@ const TRIAGE_READ_MAX_ROWS = 0;
   return new Map([...histories].map(([id, entries]) => [id, entries.join(', ')]));
 }
 
+function buildRawStrataEnrolments(workbook) {
+  const sheet = workbook.Sheets?.StrataEnrolments;
+  if (!sheet) return null;
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+  const idNames = ['studentid', 'studentidsunique', 'studentnumber'];
+  const codeNames = ['enrolmentunit', 'enrolmentunitid', 'unitid', 'unitcode', 'subjectcode'];
+  const start = rows.findIndex(row => {
+    const headers = row.map(normalizeHeader);
+    return headers.some(value => idNames.includes(value)) && headers.some(value => codeNames.includes(value));
+  });
+  if (start < 0) return null;
+  const headers = rows[start].map(normalizeHeader);
+  const idCol = headers.findIndex(value => idNames.includes(value));
+  const codeCol = headers.findIndex(value => codeNames.includes(value));
+  const enrolments = new Map();
+  rows.slice(start + 1).forEach(row => {
+    const id = normalizeStudentId(row[idCol]);
+    const code = String(row[codeCol] || '').trim().toUpperCase();
+    if (!id || !/^BIT\d{3}$/.test(code)) return;
+    if (!enrolments.has(id)) enrolments.set(id, new Set());
+    enrolments.get(id).add(code);
+  });
+  return enrolments;
+}
+
 function buildStudentRecordsFromWorkbook(workbook) {
     if (!workbook) return [];
     const sheetName = workbook.Sheets?.StudentsWebWorkings ? 'StudentsWebWorkings' : 'Students';
@@ -21823,6 +21886,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     if (!sheet) return [];
     const names = workbook.Workbook?.Names || [];
     const rawResultHistories = buildRawResultsHistory(workbook);
+    const rawStrataEnrolments = buildRawStrataEnrolments(workbook);
     let columnMap = {};
     names.forEach((nameEntry) => {
       if (!nameEntry?.Name || !nameEntry.Ref) return;
@@ -22022,6 +22086,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       if (!studentId || !hasValue) continue;
       record.Student_IDs_Unique = studentId;
     if (!String(record.Results_List || '').trim() && rawResultHistories.has(studentId)) record.Results_List = rawResultHistories.get(studentId);
+    if (rawStrataEnrolments) record.Strata_Enrolment_Subjects = [...(rawStrataEnrolments.get(studentId) || [])].join(', ');
       if (studentFlagsById.has(studentId)) {
         record.Student_Flags = studentFlagsById.get(studentId);
       }
@@ -25293,6 +25358,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
     if (courseMapStaffModeLabel) {
       courseMapStaffModeLabel.textContent = staffMode ? 'Staff mode is active.' : 'Student mode is active.';
     }
+    if (openCourseMapModeButton) {
+      openCourseMapModeButton.hidden = !staffFacing;
+      openCourseMapModeButton.textContent = staffMode ? 'Show student view' : 'Show staff view';
+      openCourseMapModeButton.setAttribute('aria-pressed', String(staffMode));
+    }
     if (!courseMapModeToggleButton) return;
     if (!allowCourseMapModeToggle) {
       courseMapModeToggleButton.hidden = true;
@@ -25316,7 +25386,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     }
     if (courseMapExplainStructureViewButton) {
       courseMapExplainStructureViewButton.textContent =
-        `Major and Electives view${courseMapStructureExplainMode ? ' (active)' : ''}`;
+        courseMapStructureExplainMode ? 'End animate mode' : 'Animate';
+      courseMapExplainStructureViewButton.setAttribute('aria-pressed', String(courseMapStructureExplainMode));
     }
   };
 
@@ -25960,10 +26031,17 @@ function buildStudentRecordsFromWorkbook(workbook) {
 
     const staffInfoActions = document.createElement('div');
     staffInfoActions.className = 'course-map-staff-info-actions';
-    [courseMapAddHistoryButton, courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
+    if (courseMapAddHistoryButton) staffActions.appendChild(courseMapAddHistoryButton);
+    [courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
       .filter(Boolean)
       .forEach((button) => staffInfoActions.appendChild(button));
-    staffPanel.appendChild(staffInfoActions);
+    staffPanel.appendChild(staffInfoActions);
+    const staffModeActions = document.createElement('div');
+    staffModeActions.className = 'course-map-staff-mode-actions';
+    [courseMapDefaultStudentViewButton, courseMapDefaultStaffViewButton]
+      .filter(Boolean).forEach(button => staffModeActions.appendChild(button));
+    staffPanel.appendChild(staffModeActions);
+    courseMapModeDialog?.querySelectorAll('.course-map-mode-row').forEach(row => staffPanel.appendChild(row));
 
     courseMapContent.appendChild(staffPanel);
     enablePanelResize(staffPanel, {
@@ -26578,7 +26656,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const slotRaw = cell.dataset.electiveSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
       let mirroredCode = displayedElectiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
-      if (courseMapStructureExplainMode && !courseMapStructureExpandedStream) mirroredCode = '';
+      if (courseMapStructureExplainMode && !courseMapStructureExpandedStream && !/^USE\d{3}$/i.test(mirroredCode)) mirroredCode = '';
       const expandedMajorCodes = courseMapStructureExplainMode && courseMapStructureExpandedStream
         ? new Set((majorLayouts[courseMapStructureExpandedStream] || []).map((code) => String(code || '').toUpperCase()))
         : null;
@@ -32031,7 +32109,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
       .replace(/\bObject\s+Oriented\b/gi, 'OO')
       .replace(/\bFoundations\s+of\b/gi, 'Fndtn of');
 
-  const updateSelectedList = () => {
+  const updateSelectedList = () => {
+    const optionsHeading = document.getElementById('semester-options-heading');
+    if (optionsHeading) {
+      const count = isOptionalSummerSemester() ? '1 or 2' : String(getLoadThreshold());
+      optionsHeading.setAttribute('data-tooltip-html', `<p>Click on ${count} of the subjects below to choose your timetable for this semester.</p><p>These are the only subjects available to you after considering what we are running this semester, what their prerequisites are, what you have completed, and what you need.</p>`);
+      if (selectedListEl?.parentElement) selectedListEl.before(optionsHeading);
+    }
     if (!selectedListSection || !selectedListEl) return;
     if (semesterConfigError) {
       selectedListEl.innerHTML = '';
@@ -32127,13 +32211,14 @@ function buildStudentRecordsFromWorkbook(workbook) {
       availableLoadError = null;
     }
     if (sidebarSectionDescriptor) {
-      const count = available.length;
+      const count = isOptionalSummerSemester() ? '1 or 2' : loadThreshold;
       const subjectLabel = count === 1 ? 'subject' : 'subjects';
+      const selectionHeading = `Select your ${count} ${subjectLabel}`;
       if (staffFacing) {
-        sidebarSectionDescriptor.textContent = 'Select subjects';
+        sidebarSectionDescriptor.textContent = selectionHeading;
       } else {
         sidebarSectionDescriptor.innerHTML =
-          `<span class="inline-strong">Choose your subjects</span> using one or all of these techniques: 
+          `<span class="inline-strong">${selectionHeading}</span> using one or all of these techniques: 
           <br>1. Clicking among the subjects below 
           <br>2. Clicking in the main grid
           <br>3. Clicking 'Select' to see full detail`;
@@ -32494,7 +32579,18 @@ function buildStudentRecordsFromWorkbook(workbook) {
   }
   if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
   if (availableHeading) {
-    const activateAvailable = () => showAvailableModal();
+    const activateAvailable = () => {
+      const cards = subjects.filter(cell => cell.classList.contains('can-select-now') &&
+        !cell.classList.contains('completed') && !cell.classList.contains('toggled'));
+      cards.forEach(cell => cell.classList.remove('available-grid-pulse'));
+      if (cards.length) void cards[0].offsetWidth;
+      cards.forEach(cell => {
+        cell.classList.add('available-grid-pulse');
+        cell.addEventListener('animationend', event => {
+          if (event.animationName.startsWith('available-grid-pulse')) cell.classList.remove('available-grid-pulse');
+        }, { once: true });
+      });
+    };
     availableHeading.addEventListener('click', activateAvailable);
     availableHeading.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -33466,10 +33562,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
   if (openCourseMapModeButton) {
     openCourseMapModeButton.addEventListener('click', (event) => {
       event.stopPropagation();
-      const nextVisible = !isCourseMapModeDialogVisible();
+      if (!staffFacing) return;
       hideCourseMapShowHideDialog();
       hideCourseMapImageDialog();
-      setCourseMapModeDialogVisible(nextVisible);
+      hideCourseMapModeDialog();
+      setCourseMapStaffModeFromControl(!getCourseMapIsStaffMode());
     });
   }
   if (courseMapModeActions) {

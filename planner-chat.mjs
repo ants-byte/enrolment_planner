@@ -215,7 +215,7 @@ async function handleBrowserChat(request, env, definitions, handlers, browserId,
             messages.push({ role: 'system', content: 'Before answering, call plan_subjects now with only explicitly reported passed/approved credits from the conversation. Wanting a subject does not satisfy its prerequisites. If no completed history is known, check introductory options with completed=[] and clearly state that assumption.' });
             continue;
           }
-          return reply({ answer: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.  Press the Instructions button if you are unsure how.", plannerState: syncState('') });
+          return reply({ answer: "Sorry, AI is not accessible at the moment.  You could try again later\n\nIf you just want to enter your history and choose a timetable, you can do it the good old manual way by closing this chat window and using the website.\n\nIf you are unsure how to do this manually, close this dialog and look at the top of the page for the Instructions", plannerState: syncState('') });
         }
         const blockedRequests = requestedCodes.filter(code => checkedPlans.length && checkedPlans.every(plan => plan.blockedOptions.some(subject => subject.code === code)));
         if (blockedRequests.length) {

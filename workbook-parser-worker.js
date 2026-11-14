@@ -68,7 +68,7 @@ const TRIAGE_MAX_PREVIEW_COLS = 12;
 const TRIAGE_READ_MAX_ROWS = 0;
 const SOURCE_READ_MAX_ROWS = 0;
 const SOURCE_SHEET_NAMES = [
-  'Results', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students',
+  'Results', 'StrataEnrolments', 'StudentsWebWorkings', 'Students', 'STUDENTS', 'students',
   'Info', 'INFO', 'info', 'Email Lists', 'EMAIL LISTS', 'email lists',
   'StudentFlags', 'STUDENTFLAGS', 'studentflags',
   'Student Flags', 'STUDENT FLAGS', 'student flags',
@@ -435,6 +435,31 @@ function buildRawResultsHistory(workbook) {
   return new Map([...histories].map(([id, entries]) => [id, entries.join(', ')]));
 }
 
+function buildRawStrataEnrolments(workbook) {
+  const sheet = workbook.Sheets?.StrataEnrolments;
+  if (!sheet) return null;
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+  const idNames = ['studentid', 'studentidsunique', 'studentnumber'];
+  const codeNames = ['enrolmentunit', 'enrolmentunitid', 'unitid', 'unitcode', 'subjectcode'];
+  const start = rows.findIndex(row => {
+    const headers = row.map(normalizeHeader);
+    return headers.some(value => idNames.includes(value)) && headers.some(value => codeNames.includes(value));
+  });
+  if (start < 0) return null;
+  const headers = rows[start].map(normalizeHeader);
+  const idCol = headers.findIndex(value => idNames.includes(value));
+  const codeCol = headers.findIndex(value => codeNames.includes(value));
+  const enrolments = new Map();
+  rows.slice(start + 1).forEach(row => {
+    const id = normalizeStudentId(row[idCol]);
+    const code = String(row[codeCol] || '').trim().toUpperCase();
+    if (!id || !/^BIT\d{3}$/.test(code)) return;
+    if (!enrolments.has(id)) enrolments.set(id, new Set());
+    enrolments.get(id).add(code);
+  });
+  return enrolments;
+}
+
 function buildStudentRecordsFromWorkbook(workbook) {
   if (!workbook) return [];
   const sheetName = workbook.Sheets?.StudentsWebWorkings ? 'StudentsWebWorkings' : 'Students';
@@ -442,6 +467,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
   if (!sheet) return [];
   const names = workbook.Workbook?.Names || [];
   const rawResultHistories = buildRawResultsHistory(workbook);
+  const rawStrataEnrolments = buildRawStrataEnrolments(workbook);
   let columnMap = {};
   names.forEach((nameEntry) => {
     if (!nameEntry?.Name || !nameEntry.Ref) return;
@@ -629,6 +655,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const studentId = normalizeStudentId(record.Student_IDs_Unique);
     if (!studentId || !hasValue) continue;
     record.Student_IDs_Unique = studentId;
+    if (rawStrataEnrolments) record.Strata_Enrolment_Subjects = [...(rawStrataEnrolments.get(studentId) || [])].join(', ');
     if (!String(record.Results_List || '').trim() && rawResultHistories.has(studentId)) record.Results_List = rawResultHistories.get(studentId);
     if (studentFlagsById.has(studentId)) {
       record.Student_Flags = studentFlagsById.get(studentId);

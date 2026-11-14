@@ -119,7 +119,7 @@ Last Modified: 11/07/2026
             id="major-section-descriptor" class="sidebar-section-descriptor"
             data-guidance-template="If this is your <b>1st semester</b>, this is not important.<br> - You can leave it as 'Unsure (using Network Security)' or choose something else<br>
             By <b>2nd semester or 2nd year</b><br> - You should have decided what your major will be.  You'll need to start completing those subjects, being careful not to study too many Electives (which will be subjects from the other 2 streams) and preparing yourself for Capstone
-            <br>What is <b>Capstone</b>?<br>Capstone is [[CAPSTONE_CODES]].<br>It is a 1 year project focused on your major. [[CAPSTONE_REQUIREMENTS]]<br><br>Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."
+            <br>What is <b>Capstone</b>?<br>Capstone is [[CAPSTONE_CODES]].<br>It is a 1 year project focused on your major. [[CAPSTONE_REQUIREMENTS]]<br><br>Mouse over the '<b>Click in grid</b>' and '<b>Typing mode</b>' buttons to see what they do."
             data-tooltip-html=""><b>Major.</b>
             Select what's likely for you.</span></div>
         <div class="major-dropdown" id="major-select" data-value="undecided">
@@ -139,13 +139,13 @@ Last Modified: 11/07/2026
         <div class="sidebar-heading-with-text dim-when-complete">
           <span class="sidebar-heading">2.</span>
           <span class="sidebar-section-descriptor" id="history-section-descriptor"
-            data-tooltip-html="Mouse over the '<b>Clicking mode</b>' and '<b>Typing mode</b>' buttons to see what they do."><span
+            data-tooltip-html="Mouse over the '<b>Click in grid</b>' and '<b>Typing mode</b>' buttons to see what they do."><span
               class="inline-strong">History.</span> Enter your passes & credits</span>
         </div>
         <div class="buttons">
           <button id="toggle-completed-mode" class="clear-button" aria-pressed="false" data-tooltip-html="Go into '<b>History mode</b>'.
             <br>Then you'll be able to add subjects to your history by clicking on subject cards in the main grid to the right.<br>
-            Then click on this button again to go back to normal mode.">Clicking mode</button>
+            Then click on this button again to go back to normal mode.">Click in grid</button>
           <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false"
             data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">By
             typing</button>
@@ -170,15 +170,14 @@ Last Modified: 11/07/2026
         <div id="selected-list-section">
           <div class="available-heading-row">
             <button class="clear-button available-heading" id="available-heading" type="button"
-              aria-label="Show available subjects"
-              data-tooltip-html="Open a window that shows you the subjects you can study this sememster
-	    <br>You can click on them to make your selections for this semester.
-	    <br>When you have chosen your full load of subjects, the window will switch to showing your final timetable">Select</button>
+              aria-label="Highlight available subjects in the grid"
+              data-tooltip-html="Highlight the subjects available to select this semester with an expanding yellow border. Click those cards in the grid to choose your timetable.">Click in grid</button>
             <button class="clear-button available-heading secondary" id="select-by-typing-button" type="button" hidden
               aria-label="Select subjects by typing"
               data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">By
               typing</button>
           </div>
+          <div id="semester-options-heading" class="semester-options-heading" data-tooltip-html="">Or click on these (your options):</div>
           <div id="selected-list" class="available-list" role="group" aria-label="Available subjects"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
@@ -231,15 +230,16 @@ Last Modified: 11/07/2026
             <span class="switch-label">Show semesters to complete</span>
           </div>
           <h3 class="sidebar-group-heading">Information</h3>
-          <div class="semester-timetable-section dim-when-complete">
-            <button id="show-semester-timetable" class="clear-button secondary" type="button"
-              data-tooltip="See the complete semester offering from our school.">Full semester timetable</button>
-          </div>
+
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
             <button id="open-remaining" class="clear-button secondary" type="button"
-              data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Remaining
+              data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Your remaining
               subjects</button>
+          <div class="semester-timetable-section dim-when-complete">
+            <button id="show-semester-timetable" class="clear-button secondary" type="button"
+              data-tooltip="See the complete semester offering from our school.">Semester Timetable</button>
+          </div>
             <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
               data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Plan for
               future semesters</button>
@@ -797,7 +797,7 @@ Last Modified: 11/07/2026
               <p class="instructions-step-title"><strong>Enter your passes and credits.</strong></p>
               <p>There are two easy ways:</p>
               <ul class="instructions-sublist">
-                <li><strong>Clicking mode:</strong> Click the "Clicking Mode" button in the sidebar to go into
+                <li><strong>Click in grid:</strong> Click the "Click in grid" button in the sidebar to go into
                   <i>History Mode</i>. You can then click subjects in the grid to mark them completed.</li>
                 <li><strong>Typing mode:</strong> Open a panel by clicking the "By Typing" button. Then paste or type in
                   subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be
@@ -1383,6 +1383,7 @@ Last Modified: 11/07/2026
           <button id="open-course-map-show-hide" class="clear-button secondary" type="button" aria-haspopup="dialog"
             aria-expanded="false" aria-controls="course-map-show-hide-dialog"
             data-tooltip-html="Open display options for the Course Map, including font size, notes, colours, and prerequisite display.">View</button>
+          <button id="course-map-explain-structure-view" class="clear-button secondary" type="button" aria-pressed="false">Animate</button>
           <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
             <h3 id="course-map-show-hide-dialog-title">View</h3>
@@ -1470,16 +1471,11 @@ Last Modified: 11/07/2026
               </label>
               <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
             </div>
-            <button id="course-map-explain-structure-view" class="clear-button secondary course-map-default-view"
-              type="button">
-              Major and Electives view
-            </button>
+
           </div>
         </div>
         <div class="course-map-mode-actions">
-          <button id="open-course-map-mode" class="clear-button secondary" type="button" aria-haspopup="dialog"
-            aria-expanded="false" aria-controls="course-map-mode-dialog"
-            data-tooltip-html="Open Course Map mode options, including prerequisite override, current-enrolment handling, study load, and staff mode.">Mode</button>
+          <button id="open-course-map-mode" class="clear-button secondary" type="button" aria-pressed="false" hidden>Show student view</button>
           <div id="course-map-mode-dialog" class="course-map-mode-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-mode-dialog-title">
             <h3 id="course-map-mode-dialog-title">Mode</h3>
@@ -1519,7 +1515,7 @@ Last Modified: 11/07/2026
           data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your
           history</button>
         <button id="course-map-remaining" class="clear-button secondary" type="button"
-          data-tooltip-html="Show the subjects still needed and the estimated remaining semesters.">Remaining
+          data-tooltip-html="Show the subjects still needed and the estimated remaining semesters.">Your remaining
           subjects</button>
         <button id="course-map-next-semester" class="clear-button secondary hidden-initial" type="button"
           data-tooltip-html="Show subjects that should become available next semester based on the current selections.">Next

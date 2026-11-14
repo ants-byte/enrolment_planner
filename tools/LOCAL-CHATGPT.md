@@ -1,73 +1,43 @@
 # Local Subject Planner in ChatGPT
 
-This separate developer connection reads the academic plan currently shared by
-your local webpage. It does not change the Cloudflare app or send requests to the
-paid OpenAI chat API. ChatGPT still receives the academic context through MCP.
-Names, student IDs, contact details, fee/visa data and workbooks are excluded.
+The private bridge serves the planner at `http://127.0.0.1:5501/` and the MCP
+endpoint at `http://127.0.0.1:8787/mcp`. Both listeners bind to this PC. The
+browser's workbook access and settings stay under the existing planner address.
 
-## Start the local website
+1. Stop VS Code Live Server on port 5501 and stop Wrangler on port 8787 if it
+   is running. From this checkout, run `node tools/local-planner-server.mjs`.
+2. Reopen the planner at the same address. If the sharing button is missing,
+   reload with Ctrl+Shift+R. If an old PWA service worker still supplies stale
+   files, unregister that service worker in the browser developer tools and reload.
+3. Start the OpenAI tunnel using the existing **SubjectPlannerLocalhost** profile
+   that points to `http://127.0.0.1:8787/mcp`. In ChatGPT, refresh the connector's
+   tools or reconnect. The existing tunnel target does not need to change.
+4. Select a synthetic workbook student and click **Share with ChatGPT**. In the
+   intended private ChatGPT chat, ask SubjectPlannerLocalhost for the student's
+   history and supply the access code shown in the planner. Compare the result
+   with the planner, then click **Stop sharing with ChatGPT**.
 
-From the VS Code PowerShell terminal in the project directory:
+`get_selected_student` returns the selected workbook student's ID and name.
+`get_student_history` also returns subject codes, results, dates where available,
+and current enrolments. The tools read the student already selected in the
+planner. They accept a temporary access code and have no student search or
+update operation. The existing `get_current_student_plan` also requires the code.
 
-```powershell
-node tools/local-planner-server.mjs
-```
+Sharing starts off. The code is scoped to one sharing tab and expires after
+five minutes. The bridge drops the in-memory copy after ten seconds without
+updates. Changing or clearing the workbook student stops sharing. Use a new code
+for the next student. Keep the code and any resulting ChatGPT conversation
+private. Stopping sharing revokes future reads. Data already returned remains
+in the chat under its retention settings.
 
-Open **http://127.0.0.1:8787/** instead of the Live Server address on port 5501.
-Load a student as usual. Click **Share academic plan with ChatGPT** at the bottom
-right. Only the listed academic fields are shared; no student records are written
-to disk by the bridge. It retains one current snapshot in process memory.
-Sharing updates every two seconds and expires after ten seconds without updates.
-If multiple tabs share, the most recently updated tab wins: check the six-character
-tab label in ChatGPT's tool result. Use one sharing tab at a time.
-Click **Stop sharing with ChatGPT** when finished. Stop the server with Ctrl+C.
-The existing website AI composer is not wired to this server: ask in ChatGPT.
+The bridge keeps workbook files off the MCP listener and never writes a
+snapshot to disk. Cloudflare continues to expose only the four course and rules
+tools. The private `search_officer_enrolment_guidance` tool still reads the
+officer reference from the operator's local Operations folder. Set
+`LOCAL_PLANNER_OFFICER_REFERENCE` before starting the bridge to use a different
+private source.
 
-## Connect the private server
+Run `node tools/test-local-planner.mjs` to check local discovery and synthetic
+records, and `node tools/test-mcp.mjs` to check the public tool surface.
 
-Use OpenAI's official instructions:
-https://developers.openai.com/api/docs/guides/secure-mcp-tunnels
-
-1. In https://platform.openai.com/settings/organization/tunnels create a tunnel
-   associated with the ChatGPT workspace where you want the plugin.
-2. Install the supported `tunnel-client` from the download link there. Run
-   `tunnel-client help quickstart` and follow its current HTTP-server setup.
-3. The private MCP URL is **http://127.0.0.1:8787/mcp**. Use the tunnel ID from
-   Platform settings and the HTTP option `--mcp-server-url`. The client needs a
-   runtime key with Tunnels Read + Use; enter credentials locally using the
-   client's supported secure setup, never in chat or committed files.
-4. Run `tunnel-client doctor --profile <your-profile> --explain`, then
-   `tunnel-client run --profile <your-profile>`. Keep both the planner server and
-   tunnel client running. Do not use a public tunnel for student context.
-5. In ChatGPT add a custom MCP server named **Subject Planner Local**. Choose
-   **Tunnel**, select the associated tunnel, and select MCP authentication None
-   for this private read-only server. Review the requested tools before connecting.
-6. Confirm discovery lists six tools, including **get_current_student_plan** and
-   **search_officer_enrolment_guidance**. Restart the local server and refresh the
-   connector's tools after updating it.
-   The original Cloudflare connection still lists four tools.
-
-The officer tool reads `Enrolment Officer LLM Reference.md` beside the Summer 2026
-enrolment source documents in the operator's OneDrive Operations folder. It is not
-served as a website asset or imported into the public Worker. To use a different
-private file, set `LOCAL_PLANNER_OFFICER_REFERENCE` to its absolute path before
-starting the server. It searches source text only; screenshots remain in the Word
-documents. Use this private connector only for authorised staff work.
-
-If Tunnel or the relevant workspace is unavailable, stop at this step and check
-account permissions/availability. Do not expose the academic context publicly as
-a workaround.
-
-## Test
-
-Use a synthetic student first, enable sharing, start a new ChatGPT conversation
-with only **Subject Planner Local** selected, and ask:
-
-> Read the academic plan currently shared by my local planner. Summarise it,
-> distinguish current subjects from confirmed passes, and suggest eligible subjects
-> for the configured current semester. State any provisional planning assumptions.
-
-Changing students does not erase old ChatGPT messages. Start a new ChatGPT chat
-for each student; stop sharing before switching records. The bridge's privacy
-filter does not remove information you manually type into ChatGPT. Context already
-sent remains subject to ChatGPT's retention and your institution's requirements.
+[OpenAI Secure MCP Tunnel setup](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)

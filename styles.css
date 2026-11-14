@@ -1841,6 +1841,7 @@ body.staff-mode .drop-sidebar.is-active {
 }
 
 .sidebar-heading-with-text {
+  margin-top: 18px;
   display: flex;
   align-items: baseline;
   gap: 6px;
@@ -2413,7 +2414,7 @@ body.next-semester-planning-mode #btn-codes {
   padding: 5px 5px 8px 5px;
   color: #111111;
   line-height: 1.4;
-  border: rgba(161, 160, 160, 0.5) 1px solid;
+  border: 0;
   border-radius: 4px;
   background: var(--bg);
 
@@ -10149,6 +10150,7 @@ body.completed-mode .completed:hover::after {
 }
 
 #course-map-modal .course-map-major-grid .course-map-structure-use::after {
+  display: none;
   content: attr(data-placeholder-label);
   position: absolute;
   inset: 0;
@@ -11534,7 +11536,8 @@ body.completed-mode .completed:hover::after {
 .course-map-staff-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
   position: relative;
   z-index: 1;
@@ -11542,7 +11545,7 @@ body.completed-mode .completed:hover::after {
 
 .course-map-staff-info-actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   flex-wrap: wrap;
   position: relative;
@@ -14006,8 +14009,6 @@ body.completed-mode #clear-selections {
 .friendly-reset-card h3 { margin: 0 0 12px; font-size: 18px; }
 .friendly-reset-card p { margin: 0 0 24px; line-height: 1.5; }
 .friendly-reset-actions { display: flex; justify-content: flex-end; gap: 10px; }
-#friendly-chat #cancel-friendly-reset { background: transparent; color: inherit; }
-#friendly-chat #confirm-friendly-reset { background: #397bb5; border-color: #397bb5; color: #fff; }
 
 .friendly-notices { position: relative; display: flex; justify-content: center; align-items: center; gap: 34px; margin-top: 6px; }
 #friendly-chat .friendly-notices > button { padding: 4px 0; border: 0; border-radius: 3px; background: transparent; color: #808080; font-size: 14.4px; line-height: 1.4; white-space: nowrap; }
@@ -14077,7 +14078,7 @@ body.completed-mode #clear-selections {
 #friendly-chat-input { flex: 1 1 0; width: 0; min-width: 0; line-height: 20px; min-height: 36px; }
 
 .friendly-reset-choices:not([hidden]) { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-#friendly-chat .friendly-reset-choices button { text-align: left; background: transparent; color: inherit; line-height: 1.4; }
+#friendly-chat .friendly-reset-choices button { text-align: left; line-height: 1.4; }
 
 .friendly-summary-leadin { display: inline-block; padding-bottom: 12px; }
 
@@ -14085,7 +14086,7 @@ body.completed-mode #clear-selections {
 #friendly-chat[data-chat-theme="dark"] .friendly-planner-update { color: #aaa; }
 #friendly-chat[data-chat-contrast="high"] .friendly-planner-update { color: inherit; }
 
-.sidebar-group-heading { margin: 12px 0 4px; font: inherit; font-weight: 400; color: #fff; line-height: 1.1; }
+.sidebar-group-heading { margin: 18px 0 4px; font: inherit; font-weight: 700; color: #fff; line-height: 1.1; }
 
 .main-grid .subject-card.can-select-now { outline: 1px solid #ffeb00; outline-offset: 0; }
 
@@ -14125,3 +14126,30 @@ body.completed-mode #clear-selections {
 }
 
 #course-map-modal:is(.course-map-major-ba, .course-map-major-sd) .course-map-cell:is([data-subject="BIT245"], [data-mirrored-subject="BIT245"])::before { content: none; }
+
+.course-map-staff-mode-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+.course-map-staff-mode-actions .clear-button { width: auto; margin: 0; padding: 2px 8px; font-size: inherit; text-align: left; }
+
+#major-section-descriptor, #history-section-descriptor, #sidebar-section-descriptor { font-weight: 700; }
+
+.semester-options-heading { color: #fff; font-weight: 700; margin: 7px 0 2px; }
+
+#main-grid-details.subject-details-ready,
+#course-map-modal .course-map-staff-open-window.subject-details-ready { border: 3px solid #ffd700; }
+
+.next-sem-actions > .semester-timetable-section { margin-top: 8px; }
+
+.semester-options-heading + #selected-list { margin-top: 3px; padding-top: 2px; }
+
+.subject-card.available-grid-pulse { animation: available-grid-pulse 850ms ease-out 3; }
+@keyframes available-grid-pulse {
+  from { outline: 3px solid #ffeb00; outline-offset: 0; }
+  to { outline: 3px solid #ffeb0000; outline-offset: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .subject-card.available-grid-pulse { animation: available-grid-pulse-still 2.5s linear; }
+  @keyframes available-grid-pulse-still { from, to { outline: 3px solid #ffeb00; outline-offset: 3px; } }
+}
+
+#friendly-chat .friendly-reset-card button { background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end)); border-color: var(--btn-primary-border); color: #fff; }
+#friendly-chat .friendly-reset-card button:hover { background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end)); }
