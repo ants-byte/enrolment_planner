@@ -148,8 +148,7 @@ Last Modified: 11/07/2026
             <br>Then you'll be able to add subjects to your history by clicking on subject cards in the main grid to the right.<br>
             Then click on this button again to go back to normal mode.">Click in grid</button>
           <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false"
-            data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">By
-            typing</button>
+            data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">Type / Paste</button>
         </div>
         <label id="withdraw-current-enrolment-control" class="history-withdraw-check" hidden
           data-tooltip="If you withdraw a student from a current Strata enrolment, a Withdrawal form will need to be prepared">
@@ -174,19 +173,17 @@ Last Modified: 11/07/2026
               aria-label="Highlight available subjects in the grid"
               data-tooltip-html="Highlight the subjects available to select this semester with an expanding yellow border. Click those cards in the grid to choose your timetable.">Click in grid</button>
             <button class="clear-button available-heading secondary" id="select-by-typing-button" type="button" hidden
-              aria-label="Select subjects by typing"
-              data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">By
-              typing</button>
+              aria-label="Select subjects by typing or pasting"
+              data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">Type / Paste</button>
           </div>
           <div id="semester-options-heading" class="semester-options-heading" data-tooltip-html="">Or click on these (your options):</div>
           <div id="selected-list" class="available-list" role="group" aria-label="Available subjects"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
-              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Subjects
-              details</button>
+              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Your options - subject details</button>
             <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
           </div>
-          <h3 class="sidebar-group-heading">Options</h3>
+          <h3 class="sidebar-group-heading" id="sidebar-options-heading">Options</h3>
           <div class="toggle-row"
             data-tooltip="Turn on if you want to select a subject even though you haven't completed its prerequisite(s).">
             <label class="switch">
@@ -801,7 +798,7 @@ Last Modified: 11/07/2026
               <ul class="instructions-sublist">
                 <li><strong>Click in grid:</strong> Click the "Click in grid" button in the sidebar to go into
                   <i>History Mode</i>. You can then click subjects in the grid to mark them completed.</li>
-                <li><strong>Typing mode:</strong> Open a panel by clicking the "By Typing" button. Then paste or type in
+                <li><strong>Typing mode:</strong> Open a panel by clicking the "Type / Paste" button. Then paste or type in
                   subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be
                   extraced
                 </li>

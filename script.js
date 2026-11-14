@@ -5976,7 +5976,10 @@ const TRIAGE_READ_MAX_ROWS = 0;
       courseMapStaffActionsRowEl.setAttribute('aria-hidden', 'false');
     }
     if (courseMapStaffOpenWindowButton) {
-      courseMapStaffOpenWindowButton.textContent = hasFullLoad ? 'Your times' : 'Subject details';
+      const hasFullSelection = isOptionalSummerSemester()
+        ? selectedCount >= 1 && selectedCount <= 2 : hasFullLoad;
+      courseMapStaffOpenWindowButton.textContent = hasFullSelection
+        ? 'Your timetable details' : 'Your options - subject details';
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
       courseMapStaffOpenWindowButton.classList.toggle('is-your-times', hasFullLoad);
@@ -6182,9 +6185,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   }
   if (selectByTypingButton) {
     selectByTypingButton.hidden = false;
-    if (!staffFacing) selectByTypingButton.textContent = 'b. By typing';
   }
-  if (!staffFacing && availableHeading) availableHeading.textContent = 'a. Click in grid';
   if (presetMpDip) {
     presetMpDip.disabled = !staffFacing;
     presetMpDip.setAttribute('aria-disabled', staffFacing ? 'false' : 'true');
@@ -10729,7 +10730,11 @@ const TRIAGE_READ_MAX_ROWS = 0;
     clearButton.classList.toggle('disabled', !hasAny);
     clearButton.style.display = hasAny ? '' : 'none';
     if (mainGridDetailsButton) {
-      mainGridDetailsButton.textContent = hasSelected ? 'My times' : 'Subject details';
+      const hasFullSelection = isOptionalSummerSemester()
+        ? getPlannedCount() >= 1 && getPlannedCount() <= 2
+        : getLoadThreshold() > 0 && getPlannedCount() >= getLoadThreshold();
+      mainGridDetailsButton.textContent = hasFullSelection
+        ? 'Your timetable details' : 'Your options - subject details';
       mainGridDetailsButton.dataset.mode = hasSelected ? 'selected' : 'available';
       mainGridDetailsButton.classList.toggle('is-my-times', hasSelected);
       mainGridDetailsButton.classList.toggle('subject-details-ready', isOptionalSummerSemester()
@@ -26060,7 +26065,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const staffOpenWindowBtn = document.createElement('button');
     staffOpenWindowBtn.type = 'button';
     staffOpenWindowBtn.className = 'clear-button secondary course-map-staff-open-window hidden-initial';
-    staffOpenWindowBtn.textContent = 'Subject details';
+    staffOpenWindowBtn.textContent = 'Your options - subject details';
     staffOpenWindowBtn.setAttribute('data-tooltip-html', 'Open the available subjects table with subject codes, names, streams, and availability.');
     staffOpenWindowBtn.style.display = 'none';
     staffOpenWindowBtn.addEventListener('click', () => {
@@ -32231,7 +32236,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const optionsHeading = document.getElementById('semester-options-heading');
     if (optionsHeading) {
       const count = isOptionalSummerSemester() ? '1 or 2' : String(getLoadThreshold());
-      if (!staffFacing) optionsHeading.textContent = `c. Click to select ${count} of these:`;
+      optionsHeading.hidden = !staffFacing;
       optionsHeading.setAttribute('data-tooltip-html', `<p>Click on ${count} of the subjects below to choose your timetable for this semester.</p><p>These are the only subjects available to you after considering what we are running this semester, what their prerequisites are, what you have completed, and what you need.</p>`);
       if (selectedListEl?.parentElement) selectedListEl.before(optionsHeading);
     }
@@ -32338,9 +32343,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       } else {
         sidebarSectionDescriptor.innerHTML =
           `<span class="inline-strong">${selectionHeading} from the ${available.length} available using these techniques:</span>
-          <br>a. Clicking in the main grid
-          <br>b. Pasting or typing in subject codes
-          <br>c. Clicking among the subjects below`;
+          <span class="selection-techniques" role="list">
+            <span role="listitem"><span>a.</span><span>Clicking in the main grid</span></span>
+            <span role="listitem"><span>b.</span><span>Pasting or typing in subject codes</span></span>
+            <span role="listitem"><span>c.</span><span>Clicking among the subjects below</span></span>
+          </span>`;
       }
     }
     selectedListEl.innerHTML = '';

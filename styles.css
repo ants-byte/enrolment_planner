@@ -1849,6 +1849,16 @@ body.staff-mode .drop-sidebar.is-active {
   margin-bottom: var(--sidebar-heading-control-gap);
 }
 
+.sidebar-heading-with-text,
+#sidebar-options-heading {
+  border-top: 0.5px solid #383838;
+  padding-top: 6px;
+}
+
+.major-picker > .sidebar-heading-with-text {
+  margin-top: 9px;
+}
+
 .sidebar-section-descriptor {
   display: inline-block;
   font-weight: 400;
@@ -1856,6 +1866,17 @@ body.staff-mode .drop-sidebar.is-active {
 
 .sidebar-section-descriptor .inline-strong {
   font-weight: 700;
+}
+
+.selection-techniques {
+  display: block;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+.selection-techniques > [role="listitem"] {
+  display: grid;
+  grid-template-columns: 1.3em minmax(0, 1fr);
 }
 
 .accepted-offered.is-offered {
