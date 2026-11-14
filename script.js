@@ -32580,6 +32580,16 @@ function buildStudentRecordsFromWorkbook(workbook) {
   if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
   if (availableHeading) {
     const activateAvailable = () => {
+      const grid = plannerContainer?.querySelector('.main-grid');
+      const key = plannerContainer?.querySelector('.key');
+      plannerContainer?.querySelector('.available-grid-frame')?.remove();
+      if (grid && key) {
+        const frame = document.createElement('div');
+        frame.className = 'available-grid-frame'; frame.setAttribute('aria-hidden', 'true');
+        frame.style.height = `${Math.max(0, key.getBoundingClientRect().top - grid.getBoundingClientRect().top - 4)}px`;
+        grid.appendChild(frame);
+        frame.addEventListener('animationend', () => frame.remove(), { once: true });
+      }
       const cards = subjects.filter(cell => cell.classList.contains('can-select-now') &&
         !cell.classList.contains('completed') && !cell.classList.contains('toggled'));
       cards.forEach(cell => cell.classList.remove('available-grid-pulse'));

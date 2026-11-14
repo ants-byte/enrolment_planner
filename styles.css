@@ -3001,8 +3001,8 @@ body.next-semester-planning-mode #btn-codes {
 }
 
 .completed-mode #toggle-completed-mode {
-  box-shadow: 0 0 0 2px #fff, 0 0 16px rgba(29, 111, 209, 0.8);
-  border-color: #f7f9ff;
+  box-shadow: 0 0 0 2px #ffd700, 0 0 16px rgba(29, 111, 209, 0.8);
+  border-color: #ffd700;
 }
 
 .clear-button:active {
@@ -6175,7 +6175,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
 
 .key {
   border: 1px solid #bababa;
-  margin-top: 12px;
+  margin-top: 24px;
   padding: 3px 12px;
   display: grid;
   grid-template-columns: 55% 45%;
@@ -14132,7 +14132,7 @@ body.completed-mode #clear-selections {
 
 #major-section-descriptor, #history-section-descriptor, #sidebar-section-descriptor { font-weight: 700; }
 
-.semester-options-heading { color: #fff; font-weight: 700; margin: 7px 0 2px; }
+.semester-options-heading { color: #fff; font-weight: 700; margin: 3.5px 0 2px; }
 
 #main-grid-details.subject-details-ready,
 #course-map-modal .course-map-staff-open-window.subject-details-ready { border: 3px solid #ffd700; }
@@ -14141,15 +14141,46 @@ body.completed-mode #clear-selections {
 
 .semester-options-heading + #selected-list { margin-top: 3px; padding-top: 2px; }
 
-.subject-card.available-grid-pulse { animation: available-grid-pulse 850ms ease-out 3; }
+.subject-card.available-grid-pulse { animation: available-grid-pulse 500ms ease-in-out 3; }
 @keyframes available-grid-pulse {
-  from { outline: 3px solid #ffeb00; outline-offset: 0; }
-  to { outline: 3px solid #ffeb0000; outline-offset: 14px; }
+  0%, 100% {
+    outline: 3px solid #d99500;
+    outline-offset: 0;
+    box-shadow: 0 0 0 0 #80500000;
+    transform: translateY(0);
+  }
+  50% {
+    outline: 6px solid #995900;
+    outline-offset: 30px;
+    box-shadow: 0 0 0 10px #ffc400dd, 0 0 48px 26px #684000ee, 0 14px 26px #0009;
+    transform: translateY(-8px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .subject-card.available-grid-pulse { animation: available-grid-pulse-still 2.5s linear; }
+  .subject-card.available-grid-pulse { animation: available-grid-pulse-still 1.5s linear; }
   @keyframes available-grid-pulse-still { from, to { outline: 3px solid #ffeb00; outline-offset: 3px; } }
 }
 
 #friendly-chat .friendly-reset-card button { background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end)); border-color: var(--btn-primary-border); color: #fff; }
 #friendly-chat .friendly-reset-card button:hover { background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end)); }
+
+.available-grid-frame {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: calc(100% + 16px);
+  box-sizing: border-box;
+  border: 5px solid #ffd700;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 40;
+  animation: available-grid-frame-pulse 500ms ease-in-out 3;
+}
+@keyframes available-grid-frame-pulse {
+  0%, 100% { box-shadow: 0 0 4px 1px #a8660066; outline: 0 solid #a8660000; outline-offset: 0; }
+  50% { box-shadow: 0 0 32px 12px #a86600cc, inset 0 0 18px 5px #ffd700aa; outline: 5px solid #a86600; outline-offset: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .available-grid-frame { animation: available-grid-frame-still 1.5s linear; }
+  @keyframes available-grid-frame-still { from, to { border-color: #ffd700; } }
+}
