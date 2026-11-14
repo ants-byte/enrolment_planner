@@ -32342,7 +32342,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
         sidebarSectionDescriptor.textContent = selectionHeading;
       } else {
         sidebarSectionDescriptor.innerHTML =
-          `<span class="inline-strong">${selectionHeading} from the ${available.length} available using these techniques:</span>
+          `<span class="inline-strong">${selectionHeading} from the ${available.length} available by:</span>
           <span class="selection-techniques" role="list">
             <span role="listitem"><span>a.</span><span>Clicking in the main grid</span></span>
             <span role="listitem"><span>b.</span><span>Pasting or typing in subject codes</span></span>

@@ -6370,11 +6370,6 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   padding-right: 12px;
 }
 
-/* Extra safety: never show staff-only quick-entry button in student mode. */
-body.student-mode #select-by-typing-button {
-  display: none !important;
-}
-
 .selected-list-actions {
   display: flex;
   gap: 8px;
