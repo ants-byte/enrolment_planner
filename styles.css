@@ -1859,6 +1859,10 @@ body.staff-mode .drop-sidebar.is-active {
   margin-top: 9px;
 }
 
+#sidebar-options-heading {
+  border-top-color: #808080;
+}
+
 .sidebar-section-descriptor {
   display: inline-block;
   font-weight: 400;

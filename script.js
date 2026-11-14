@@ -34273,7 +34273,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const streams = getElectiveStreams(majorKey);
     const streamText = streams
       .map((s) => `<span class="stream-label-mid ${s.className}">${s.label}</span>`)
-      .join(' or ');
+      .join(' and/or ');
     el.innerHTML = `Fill the 4 Elective boxes above (<span class="stream-label-mid">Elective 1</span> to <span class="stream-label-mid">Elective 4</span>) with subjects from these ${streamText} streams:`;
   };
   const updateMajor = () => {
