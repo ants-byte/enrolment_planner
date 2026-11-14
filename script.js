@@ -6144,13 +6144,17 @@ const TRIAGE_READ_MAX_ROWS = 0;
   if (enrolmentOfficersHelpSection) {
     enrolmentOfficersHelpSection.classList.toggle('hidden-initial', !staffFacing);
   }
-  if (selectByTypingButton) selectByTypingButton.hidden = !staffFacing;
+  if (selectByTypingButton) {
+    selectByTypingButton.hidden = false;
+    if (!staffFacing) selectByTypingButton.textContent = 'b. By typing';
+  }
+  if (!staffFacing && availableHeading) availableHeading.textContent = 'a. Click in grid';
   if (presetMpDip) {
     presetMpDip.disabled = !staffFacing;
     presetMpDip.setAttribute('aria-disabled', staffFacing ? 'false' : 'true');
   }
   if (staffFacing) {
-    if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose Major';
+    if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose your major (it can be a guess if unsure).';
     if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter your passes and credits';
   }
   const focusStaffLoadFromFolderButton = () => {
@@ -11765,10 +11769,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
     if (!loadModal) return;
     const summer = isOptionalSummerSemester();
     document.getElementById('load-summer-explanation').hidden = !summer;
+    loadModal.classList.toggle('summer-load-mode', summer);
+    document.getElementById('summer-load-choices').hidden = !summer;
     loadModal.querySelectorAll('.load-explanations, .modal-body > .toggle-row, #load-error').forEach((element) => {
       element.style.display = summer ? 'none' : '';
     });
-    if (applyLoadModal) applyLoadModal.hidden = false;
+    if (applyLoadModal) applyLoadModal.hidden = summer;
     if (cancelLoadModal) cancelLoadModal.textContent = 'Cancel';
     if (summer) {
       loadValueInput.closest('.toggle-row').style.display = '';
@@ -11810,7 +11816,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
     syncLoadFormState();
     loadModal.classList.add('show');
     loadModal.setAttribute('aria-hidden', 'false');
-    if (loadValueInput && !loadValueInput.disabled) loadValueInput.focus();
+    if (isOptionalSummerSemester()) loadModal.querySelector('[data-summer-load]').focus();
+    else if (loadValueInput && !loadValueInput.disabled) loadValueInput.focus();
   };
 
   const hideLoadModal = () => {
@@ -32109,10 +32116,17 @@ function buildStudentRecordsFromWorkbook(workbook) {
       .replace(/\bObject\s+Oriented\b/gi, 'OO')
       .replace(/\bFoundations\s+of\b/gi, 'Fndtn of');
 
-  const updateSelectedList = () => {
+  const updateSelectedList = () => {
+    if (majorSectionDescriptor) {
+      const completed = getCompletedCount() + getUseCreditsCount() - getExcessCompletedElectiveCount();
+      majorSectionDescriptor.textContent = completed <= 4
+        ? 'Choose your major (it can be a guess if unsure).'
+        : 'Choose your Major';
+    }
     const optionsHeading = document.getElementById('semester-options-heading');
     if (optionsHeading) {
       const count = isOptionalSummerSemester() ? '1 or 2' : String(getLoadThreshold());
+      if (!staffFacing) optionsHeading.textContent = `c. Click to select ${count} of these:`;
       optionsHeading.setAttribute('data-tooltip-html', `<p>Click on ${count} of the subjects below to choose your timetable for this semester.</p><p>These are the only subjects available to you after considering what we are running this semester, what their prerequisites are, what you have completed, and what you need.</p>`);
       if (selectedListEl?.parentElement) selectedListEl.before(optionsHeading);
     }
@@ -32218,10 +32232,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
         sidebarSectionDescriptor.textContent = selectionHeading;
       } else {
         sidebarSectionDescriptor.innerHTML =
-          `<span class="inline-strong">${selectionHeading}</span> using one or all of these techniques: 
-          <br>1. Clicking among the subjects below 
-          <br>2. Clicking in the main grid
-          <br>3. Clicking 'Select' to see full detail`;
+          `<span class="inline-strong">${selectionHeading} from the ${available.length} available using these techniques:</span>
+          <br>a. Clicking in the main grid
+          <br>b. Pasting or typing in subject codes
+          <br>c. Clicking among the subjects below`;
       }
     }
     selectedListEl.innerHTML = '';
@@ -34582,6 +34596,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
       syncLoadFormState();
     });
+  loadModal?.querySelectorAll('[data-summer-load]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (!isOptionalSummerSemester()) return;
+      loadValueInput.value = button.dataset.summerLoad;
+      applyLoadSettings();
+    });
+  });
   if (applyLoadModal) applyLoadModal.addEventListener('click', applyLoadSettings);
   document.getElementById('load-label')?.addEventListener('dblclick', resetLoadToFullLoad);
   courseMapLoadLabel?.addEventListener('dblclick', resetLoadToFullLoad);

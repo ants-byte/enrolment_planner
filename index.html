@@ -2030,7 +2030,11 @@ Last Modified: 11/07/2026
         </div>
         <div class="toggle-row">
           <label for="load-value">How many subjects I will study this semester:</label>
-          <select id="load-value" class="load-value-select"></select>
+          <select id="load-value" class="load-value-select"></select>
+          <div id="summer-load-choices" hidden>
+            <button type="button" class="clear-button" data-summer-load="1">One subject</button>
+            <button type="button" class="clear-button" data-summer-load="2">Two subjects</button>
+          </div>
           <span id="load-lock-msg" class="load-lock-msg">You must study
             <span id="load-lock-standard-count"></span> subjects - a full load</span>
         </div>
