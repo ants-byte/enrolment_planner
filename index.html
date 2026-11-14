@@ -113,6 +113,7 @@ Last Modified: 11/07/2026
       <div class="sidebar-section reset-section" id="reset-section">
         <button id="clear-selections" class="clear-button"
           data-tooltip="Clear your current selections and start fresh.">Reset</button>
+        <button id="undo-reset" class="clear-button" type="button" hidden><span aria-hidden="true">↶</span> Undo</button>
       </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
@@ -236,13 +237,14 @@ Last Modified: 11/07/2026
             <button id="open-remaining" class="clear-button secondary" type="button"
               data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Your remaining
               subjects</button>
+            <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
+              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Select for
+              future semesters</button>
           <div class="semester-timetable-section dim-when-complete">
             <button id="show-semester-timetable" class="clear-button secondary" type="button"
               data-tooltip="See the complete semester offering from our school.">Semester Timetable</button>
           </div>
-            <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
-              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Plan for
-              future semesters</button>
+
             <button id="open-course-map" class="clear-button secondary" type="button" data-tooltip-html="Open the course map.
             <br>It shows all the subjects in our course (that is, all the subjects you can see to the right), but organised differently.
             <br>It's not interactive.
@@ -1365,6 +1367,10 @@ Last Modified: 11/07/2026
             <input id="course-map-student-search" class="course-map-student-search" type="text"
               placeholder="Search student" autocomplete="off" aria-keyshortcuts="Control+Alt+S"
               data-tooltip-html="<div>Search by student ID, email, or name.</div><div class=&quot;tooltip-line-gap&quot;>Press Ctrl+Alt+S to move focus here.</div>" />
+            <button id="course-map-recent-students-button" class="clear-button secondary student-search-recent" type="button"
+              aria-label="Recently loaded students" aria-haspopup="menu" aria-expanded="false"
+              aria-controls="course-map-recent-students-menu" title="Previously displayed students" disabled>▼</button>
+            <div id="course-map-recent-students-menu" class="recent-students-menu" role="menu" hidden></div>
             <div id="course-map-student-search-dropdown"
               class="student-search-dropdown course-map-student-search-dropdown" hidden></div>
           </div>

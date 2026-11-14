@@ -3562,6 +3562,20 @@ body.next-semester-planning-mode #btn-codes {
   margin: 0;
 }
 
+#reset-section {
+  display: flex;
+  gap: 8px;
+}
+
+#reset-section > .clear-button {
+  flex: 1;
+  width: auto;
+}
+
+#undo-reset[hidden] {
+  display: none;
+}
+
 .toggle-row {
   display: flex;
   align-items: center;
@@ -13810,6 +13824,17 @@ body.completed-mode #clear-selections {
   cursor: pointer;
 }
 .recent-students-menu button:hover, .recent-students-menu button:focus-visible { background: #3b5060; }
+.recent-students-menu .recent-students-clear { border-top: 1px solid #888; }
+#course-map-modal .course-map-student-search { padding-right: 32px; }
+#course-map-modal .student-search-recent {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+}
+#course-map-modal .recent-students-menu { min-width: 240px; }
 #planner-chat {
   width: min(620px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
@@ -14132,7 +14157,7 @@ body.completed-mode #clear-selections {
 
 #major-section-descriptor, #history-section-descriptor, #sidebar-section-descriptor { font-weight: 700; }
 
-.semester-options-heading { color: #fff; font-weight: 700; margin: 8px 0 2px; padding-left: 5px; }
+.semester-options-heading { color: #fff; font-weight: 400; margin: 4px 0 2px; padding-left: 5px; }
 
 #main-grid-details.subject-details-ready,
 #course-map-modal .course-map-staff-open-window.subject-details-ready { border: 3px solid #ffd700; }

@@ -2961,54 +2961,90 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const studentSearchEmpty = document.getElementById('student-search-empty');
   const studentDataPreview = document.getElementById('student-data-preview');
   const clearStudentButton = document.getElementById('clear-student');
-  const recentStudentsButton = document.getElementById('recent-students-button');
-  const recentStudentsMenu = document.getElementById('recent-students-menu');
+  const recentStudentControls = [
+    ['recent-students-button', 'recent-students-menu'],
+    ['course-map-recent-students-button', 'course-map-recent-students-menu'],
+  ].map(([button, menu]) => ({
+    button: document.getElementById(button), menu: document.getElementById(menu),
+  })).filter(({ button, menu }) => button && menu);
+  const recentStudentsStorageKey = 'subjectPlanner.recentStudents';
   let recentStudents = [];
-
+  try {
+    const stored = JSON.parse(localStorage.getItem(recentStudentsStorageKey) || '[]');
+    if (Array.isArray(stored)) {
+      recentStudents = stored.filter((entry) =>
+        entry && typeof entry.id === 'string' && typeof entry.label === 'string'
+      ).slice(0, 30);
+    }
+  } catch { }
+  const saveRecentStudents = () => {
+    try { localStorage.setItem(recentStudentsStorageKey, JSON.stringify(recentStudents)); } catch { }
+  };
+  const closeRecentStudents = () => recentStudentControls.forEach(({ button, menu }) => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  });
   const renderRecentStudents = () => {
-    if (!recentStudentsMenu || !recentStudentsButton) return;
-    recentStudentsMenu.replaceChildren();
-    const previous = recentStudents.filter((entry) => entry.id !== activeStudentId);
-    recentStudentsButton.disabled = previous.length === 0;
-    previous.forEach((entry) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('role', 'menuitem');
-      button.textContent = entry.label;
-      button.addEventListener('click', () => {
-        recentStudentsMenu.hidden = true;
-        recentStudentsButton.setAttribute('aria-expanded', 'false');
-        const record = findStudentRecordById(entry.id);
-        if (record) applyStudentSearchSelection(record);
+    recentStudentControls.forEach(({ button: toggle, menu }) => {
+      menu.replaceChildren();
+      toggle.disabled = recentStudents.length === 0;
+      recentStudents.forEach((entry) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.textContent = entry.label;
+        button.addEventListener('click', () => {
+          closeRecentStudents();
+          const record = findStudentRecordById(entry.id);
+          if (record) applyStudentSearchSelection(record);
+        });
+        menu.appendChild(button);
       });
-      recentStudentsMenu.appendChild(button);
+      if (recentStudents.length) {
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'recent-students-clear';
+        clear.setAttribute('role', 'menuitem');
+        clear.textContent = 'Clear this history';
+        clear.addEventListener('click', () => {
+          recentStudents = [];
+          saveRecentStudents();
+          closeRecentStudents();
+          renderRecentStudents();
+        });
+        menu.appendChild(clear);
+      }
     });
   };
-
   const rememberDisplayedStudent = (record) => {
     const id = getStudentRecordId(record);
     if (!id) return;
     const label = [id, record.Given_Name, record.Family_Name].filter(Boolean).join(' ');
-    recentStudents = [{ id, label }, ...recentStudents.filter((entry) => entry.id !== id)].slice(0, 15);
+    recentStudents = [{ id, label }, ...recentStudents.filter((entry) => entry.id !== id)].slice(0, 30);
+    saveRecentStudents();
     renderRecentStudents();
   };
-
-  recentStudentsButton?.addEventListener('click', () => {
-    renderRecentStudents();
-    recentStudentsMenu.hidden = !recentStudentsMenu.hidden;
-    recentStudentsButton.setAttribute('aria-expanded', String(!recentStudentsMenu.hidden));
+  recentStudentControls.forEach(({ button, menu }) => {
+    button.disabled = recentStudents.length === 0;
+    button.addEventListener('click', () => {
+      const opening = menu.hidden;
+      closeRecentStudents();
+      renderRecentStudents();
+      menu.hidden = !opening;
+      button.setAttribute('aria-expanded', String(opening));
+    });
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        closeRecentStudents();
+        button.focus();
+      }
+    });
   });
   document.addEventListener('click', (event) => {
-    if (!recentStudentsMenu || event.target.closest('#recent-students-button, #recent-students-menu')) return;
-    recentStudentsMenu.hidden = true;
-    recentStudentsButton?.setAttribute('aria-expanded', 'false');
-  });
-  recentStudentsMenu?.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      recentStudentsMenu.hidden = true;
-      recentStudentsButton.focus();
-      recentStudentsButton.setAttribute('aria-expanded', 'false');
-    }
+    if (recentStudentControls.some(({ button, menu }) =>
+      button.contains(event.target) || menu.contains(event.target))) return;
+    closeRecentStudents();
   });
   const STUDENT_COLUMNS = [
     'Student_IDs_Unique',
@@ -12720,10 +12756,75 @@ const TRIAGE_READ_MAX_ROWS = 0;
     }
   };
 
+  const undoResetButton = document.getElementById('undo-reset');
+  let resetUndo = null;
+  const dismissResetUndo = () => {
+    resetUndo = null;
+    if (undoResetButton) undoResetButton.hidden = true;
+  };
+  // Focus navigation is harmless; the next activation or edit ends the undo window.
+  const expireResetUndo = (event) => {
+    if (!resetUndo || event.target.closest?.('#undo-reset')) return;
+    if (event.type === 'keydown' && !['Enter', ' ', 'Escape'].includes(event.key)) return;
+    dismissResetUndo();
+  };
+  ['click', 'input', 'change', 'keydown'].forEach((type) =>
+    document.addEventListener(type, expireResetUndo, true)
+  );
+  undoResetButton?.addEventListener('click', () => {
+    if (!resetUndo) return;
+    const saved = resetUndo;
+    dismissResetUndo();
+    planningSemesterOffset = saved.planningSemesterOffset;
+    futurePlanningSnapshot = saved.futurePlanningSnapshot;
+    planningSemesterSelectionHistory = saved.planningSemesterSelectionHistory;
+    finalPlanningExpectationIdentity = saved.finalPlanningExpectationIdentity;
+    overrideMode = saved.overrideMode;
+    fullLoadCap = saved.fullLoadCap;
+    showSemCounts = saved.showSemCounts;
+    courseMapStudentSemCountsOn = saved.courseMapStudentSemCountsOn;
+    exceptionalLoadApproved = saved.exceptionalLoadApproved;
+    remainingConfirmed = saved.remainingConfirmed;
+    remainingNoticeUnlocked = saved.remainingNoticeUnlocked;
+    livePrereqEnabled = saved.livePrereqEnabled;
+    livePrereqUpdates = saved.livePrereqUpdates;
+    currentEnrolmentOverrideCodes = saved.currentEnrolmentOverrideCodes;
+    withdrawnCurrentEnrolments.clear();
+    saved.withdrawnCurrentEnrolments.forEach((code) => withdrawnCurrentEnrolments.add(code));
+    document.body.classList.toggle('next-semester-planning-mode', planningSemesterOffset > 0);
+    suppressNextFullLoadAutoModal = true;
+    restoreStudentSnapshot(saved.student);
+    manualEntryMeta.clear();
+    saved.manualEntryMeta.forEach((meta, code) => manualEntryMeta.set(code, { ...meta }));
+    refreshCurrentEnrolmentStudentRecord();
+    updateOverrideUI();
+    updateLiveUI();
+    syncLoadFormState();
+    updateVaryLoadLabel();
+    updateSemCountUI();
+    updateCourseMapSemCountToggleUi();
+    updatePassForEnrolmentsAvailability();
+    subjects.forEach((cell) => attachTooltip(cell));
+    updateSelectedList();
+    updateBookmarkableSettingsUrl();
+  });
   if (clearButton) {
     clearButton.addEventListener('click', () => {
       if (clearButton.disabled) return;
+      const saved = {
+        student: captureStudentSnapshot(),
+        manualEntryMeta: new Map(Array.from(manualEntryMeta, ([code, meta]) => [code, { ...meta }])),
+        currentEnrolmentOverrideCodes: currentEnrolmentOverrideCodes && new Set(currentEnrolmentOverrideCodes),
+        withdrawnCurrentEnrolments: new Set(withdrawnCurrentEnrolments),
+        planningSemesterOffset, futurePlanningSnapshot,
+        planningSemesterSelectionHistory: [...planningSemesterSelectionHistory],
+        finalPlanningExpectationIdentity, overrideMode, fullLoadCap, showSemCounts,
+        courseMapStudentSemCountsOn, exceptionalLoadApproved, remainingConfirmed,
+        remainingNoticeUnlocked, livePrereqEnabled, livePrereqUpdates,
+      };
       resetStudentSelections();
+      resetUndo = saved;
+      if (undoResetButton) undoResetButton.hidden = false;
     });
   }
   nextSemesterBackToTodayButton?.addEventListener('click', resetStudentSelections);
@@ -26044,7 +26145,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     [courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
       .filter(Boolean)
       .forEach((button) => staffInfoActions.appendChild(button));
-    staffPanel.appendChild(staffInfoActions);
+    staffPanel.appendChild(staffInfoActions);
+
     const staffModeActions = document.createElement('div');
     staffModeActions.className = 'course-map-staff-mode-actions';
     [courseMapDefaultStudentViewButton, courseMapDefaultStaffViewButton]
@@ -32124,7 +32226,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
       majorSectionDescriptor.textContent = completed <= 4
         ? 'Choose your major (it can be a guess if unsure).'
         : 'Choose your Major';
-    }
+    }
+
     const optionsHeading = document.getElementById('semester-options-heading');
     if (optionsHeading) {
       const count = isOptionalSummerSemester() ? '1 or 2' : String(getLoadThreshold());
