@@ -17,7 +17,8 @@ Last Modified: 11/07/2026
   <link rel="canonical" href="https://timetableplanner.adiserio.workers.dev/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Timetable Planner for Bachelor of IT, Melbourne Polytechnic">
-  <meta property="og:description" content="Use the Subject Planner to select your timetable for the coming semester of your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
+  <meta property="og:description"
+    content="Use the Subject Planner to select your timetable for the coming semester of your Melbourne Polytechnic Bachelor of Information Technology course, explore majors and choose subjects for your semester timetable.">
   <meta property="og:url" content="https://timetableplanner.adiserio.workers.dev/">
   <meta property="og:image" content="https://timetableplanner.adiserio.workers.dev/images/timetable%202.png">
   <meta property="og:image:alt" content="Bachelor of IT timetable planner">
@@ -103,7 +104,11 @@ Last Modified: 11/07/2026
     </aside>
     <aside class="sidebar">
       <div class="sidebar-section instructions-section">
-        <button id="open-friendly-chat" class="clear-button course-planner-launch" type="button" aria-haspopup="dialog" aria-controls="friendly-chat">Ask the Subject Planner <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5Z"/></svg></button>
+        <button id="open-friendly-chat" class="clear-button course-planner-launch" type="button" aria-haspopup="dialog"
+          aria-controls="friendly-chat">Ask the Subject Planner <svg viewBox="0 0 24 24" width="18" height="18"
+            aria-hidden="true">
+            <path fill="currentColor" d="M12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5Z" />
+          </svg></button>
       </div>
       <div class="sidebar-section instructions-section">
         <button id="open-instructions-modal" class="clear-button dim-when-complete" type="button" aria-haspopup="dialog"
@@ -113,7 +118,8 @@ Last Modified: 11/07/2026
       <div class="sidebar-section reset-section" id="reset-section">
         <button id="clear-selections" class="clear-button"
           data-tooltip="Clear your current selections and start fresh.">Reset</button>
-        <button id="undo-reset" class="clear-button" type="button" hidden><span aria-hidden="true">↶</span> Undo</button>
+        <button id="undo-reset" class="clear-button" type="button" hidden><span aria-hidden="true">↶</span>
+          Undo</button>
       </div>
       <div class="sidebar-section major-picker dim-when-complete">
         <div class="sidebar-heading-with-text"><span class="sidebar-heading">1.</span><span
@@ -148,7 +154,8 @@ Last Modified: 11/07/2026
             <br>Then you'll be able to add subjects to your history by clicking on subject cards in the main grid to the right.<br>
             Then click on this button again to go back to normal mode.">Click in grid</button>
           <button id="open-code-modal" class="clear-button dim-when-complete" aria-expanded="false"
-            data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">Type / Paste</button>
+            data-tooltip-html="This will open a window that you can enter your history into.<br>You can paste or type.<br><br>The format is not important - subject codes will be extracted.<br><br>If you paste in a table containing your grades and dates, these too will be captured.  You will be able to see them via the 'History' button">Type
+            / Paste</button>
         </div>
         <label id="withdraw-current-enrolment-control" class="history-withdraw-check" hidden
           data-tooltip="If you withdraw a student from a current Strata enrolment, a Withdrawal form will need to be prepared">
@@ -171,16 +178,20 @@ Last Modified: 11/07/2026
           <div class="available-heading-row">
             <button class="clear-button available-heading" id="available-heading" type="button"
               aria-label="Highlight available subjects in the grid"
-              data-tooltip-html="Wiggle the subjects available to select this semester. Click those cards in the grid to choose your timetable.">Click in grid</button>
+              data-tooltip-html="Wiggle the subjects available to select this semester. Click those cards in the grid to choose your timetable.">Click
+              in grid</button>
             <button class="clear-button available-heading" id="select-by-typing-button" type="button"
               aria-label="Select subjects by typing or pasting"
-              data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">Type / Paste</button>
+              data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">Type
+              / Paste</button>
           </div>
-          <div id="semester-options-heading" class="semester-options-heading" data-tooltip-html="">Or click on these (your options):</div>
+          <div id="semester-options-heading" class="semester-options-heading" data-tooltip-html="">Or click on these
+            (your options):</div>
           <div id="selected-list" class="available-list" role="group" aria-label="Available subjects"></div>
           <div class="selected-list-actions">
             <button id="main-grid-details" class="clear-button secondary" type="button"
-              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Your options - subject details</button>
+              data-tooltip-html="Show the available subjects table with subject codes, names, streams, and availability.">Your
+              options - subject details</button>
             <button id="show-timetable" class="clear-button secondary hidden-initial" type="button">My times</button>
           </div>
           <h3 class="sidebar-group-heading" id="sidebar-options-heading">Options</h3>
@@ -232,19 +243,23 @@ Last Modified: 11/07/2026
           <div class="next-sem-actions">
             <button id="open-history" class="clear-button secondary" type="button">Your history</button>
             <button id="open-remaining" class="clear-button secondary" type="button"
-              data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Your remaining
+              data-tooltip="See a list of all subjects you have not yet completed.&#10;&#10;Your available elective options will be shown in a second table, and you'll know that a maximum of four electives can be counted toward your course.">Your
+              remaining
               subjects</button>
             <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
-              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Select for
+              data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Select
+              for
               future semesters</button>
             <div class="page-section-shortcuts">
-              <button id="scroll-to-colour-key" class="clear-button secondary page-section-shortcut" type="button" hidden>See Colour Key ↘</button>
-              <button id="scroll-to-sas-subjects" class="clear-button secondary page-section-shortcut" type="button" hidden>See SAS information ↘</button>
+              <button id="scroll-to-colour-key" class="clear-button secondary page-section-shortcut" type="button"
+                hidden>See Colour Key ↘</button>
+              <button id="scroll-to-sas-subjects" class="clear-button secondary page-section-shortcut" type="button"
+                hidden>See SAS information ↘</button>
             </div>
-          <div class="semester-timetable-section dim-when-complete">
-            <button id="show-semester-timetable" class="clear-button secondary" type="button"
-              data-tooltip="See the complete semester offering from our school.">Semester Timetable</button>
-          </div>
+            <div class="semester-timetable-section dim-when-complete">
+              <button id="show-semester-timetable" class="clear-button secondary" type="button"
+                data-tooltip="See the complete semester offering from our school.">Semester Timetable</button>
+            </div>
 
             <button id="open-course-map" class="clear-button secondary" type="button" data-tooltip-html="Open the course map.
             <br>It shows all the subjects in our course (that is, all the subjects you can see to the right), but organised differently.
@@ -351,7 +366,8 @@ Last Modified: 11/07/2026
                   <div class="title-settings-reset-row title-settings-separator-before" role="group"
                     aria-label="Page reset controls">
                     <button id="settings-default-sidebar-widths" class="title-settings-action" type="button"
-                      data-tooltip-html="<div>Reset the sidebars, main grid, and Course Map to their default widths.</div><div class=&quot;tooltip-line-gap&quot;>All width measurements will be removed from the URL.</div>">Default widths</button>
+                      data-tooltip-html="<div>Reset the sidebars, main grid, and Course Map to their default widths.</div><div class=&quot;tooltip-line-gap&quot;>All width measurements will be removed from the URL.</div>">Default
+                      widths</button>
                     <button id="settings-reset-page" class="title-settings-action" type="button"
                       data-tooltip="Clear all entries and reset appearance and size to default">Reset page</button>
                   </div>
@@ -386,8 +402,7 @@ Last Modified: 11/07/2026
                       </label>
                       <label class="title-settings-radio-row"
                         data-tooltip-html="<div>You are the only one working today so there is no risk of 2 teacher's overwriting each other's Triage entries.</div><div class=&quot;tooltip-line-gap&quot;>The difference with the other options is that no empty rows will be purposefully left in the workbook. New students will be written to the next available row.</div>">
-                        <input id="settings-triage-lanes-solo" name="settings-triage-lanes" type="radio"
-                          value="solo" />
+                        <input id="settings-triage-lanes-solo" name="settings-triage-lanes" type="radio" value="solo" />
                         <span>Going solo</span>
                       </label>
                       <label class="title-settings-radio-row title-settings-triage-one-using-row"
@@ -477,7 +492,8 @@ Last Modified: 11/07/2026
             </div>
             <div class="subject-card info-card" data-slot="r1c5">
               <div class="hover-zone"></div>
-              <div class="info-tooltip">Complete all <span id="program-total-subjects"></span> subjects in this top grid to graduate. That is:
+              <div class="info-tooltip">Complete all <span id="program-total-subjects"></span> subjects in this top grid
+                to graduate. That is:
                 <ul>
                   <li><span id="program-core-subjects"></span> Core subjects</li>
                   <li><span id="program-major-subjects"></span> major subjects</li>
@@ -777,16 +793,20 @@ Last Modified: 11/07/2026
                 <li>You can just leave the dropdown as Undecided or switch it to another.</li>
                 <li>Some soft advice that will help keep your options for next semester and beyond:
                   <ul class="instructions-sublist">
-                    <li>Choose <span id="guidance-first-semester-network-subjects"></span> if you have a feeling that Network Security may become your major.</li>
+                    <li>Choose <span id="guidance-first-semester-network-subjects"></span> if you have a feeling that
+                      Network Security may become your major.</li>
                     <li>Study <span id="guidance-first-semester-general-subjects"></span> this semester.</li>
-                    <li>If you have a feeling Software Development may become your major, study <span id="guidance-first-semester-software-subjects"></span> now.</li>
+                    <li>If you have a feeling Software Development may become your major, study <span
+                        id="guidance-first-semester-software-subjects"></span> now.</li>
                   </ul>
                 </li>
               </ul>
               <p><strong>Your 2nd semester?</strong> By second semester, you should be starting to settle on your choice
                 for major. If unsure, try dipping your toe into 1 or 2 streams.</p>
-              <p><strong>Your 2nd year?</strong> If you have passes or credits for <span id="guidance-major-decision-threshold"></span> subjects or more, you should now be
-                certain about which major stream will be yours. Your goal now is to complete <span id="guidance-major-minimum"></span> of your major's subjects,
+              <p><strong>Your 2nd year?</strong> If you have passes or credits for <span
+                  id="guidance-major-decision-threshold"></span> subjects or more, you should now be
+                certain about which major stream will be yours. Your goal now is to complete <span
+                  id="guidance-major-minimum"></span> of your major's subjects,
                 but preferably <span id="guidance-major-preferred"></span> of them, by the end of your 2nd year.</p>
             </div>
           </li>
@@ -801,8 +821,10 @@ Last Modified: 11/07/2026
               <p>There are two easy ways:</p>
               <ul class="instructions-sublist">
                 <li><strong>Click in grid:</strong> Click the "Click in grid" button in the sidebar to go into
-                  <i>History Mode</i>. You can then click subjects in the grid to mark them completed.</li>
-                <li><strong>Typing mode:</strong> Open a panel by clicking the "Type / Paste" button. Then paste or type in
+                  <i>History Mode</i>. You can then click subjects in the grid to mark them completed.
+                </li>
+                <li><strong>Typing mode:</strong> Open a panel by clicking the "Type / Paste" button. Then paste or type
+                  in
                   subject codes (e.g. BIT111, USE101). If you provide a block of text, any subjects codes within will be
                   extraced
                 </li>
@@ -886,7 +908,8 @@ Last Modified: 11/07/2026
                 <li>For <strong>subjects and timetables</strong> and helping you through the enrolment into the
                   <strong>Bachelor of IT</strong>, write to David and Antony, and the rest of our Bachelor of IT
                   Enrolment Team at <a
-                    href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</li>
+                    href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.
+                </li>
                 <li>For <strong>broader Bachelor of IT questions</strong>, contact our Bachelor of IT staff Uma at <a
                     href="mailto:UmaJagan@melbournepolytechnic.edu.au">UmaJagan@melbournepolytechnic.edu.au</a> or
                   Nandini at <a
@@ -934,25 +957,34 @@ Last Modified: 11/07/2026
               <p>There are two possible ways to complete your course earlier. Click to expand:</p>
               <details class="help-support-accordion" data-help-exclusive-accordion>
                 <summary>1. Summer Semester</summary>
-                <p>You may be able to study subjects during Summer Semester, which is a <span id="help-summer-duration-weeks"></span>-week intensive that
+                <p>You may be able to study subjects during Summer Semester, which is a <span
+                    id="help-summer-duration-weeks"></span>-week intensive that
                   runs November to February.</p>
-                <p>Summer Semester is optional. Students may enrol in a maximum of <span id="help-summer-maximum-subjects"></span> Summer Semester subjects. You can
+                <p>Summer Semester is optional. Students may enrol in a maximum of <span
+                    id="help-summer-maximum-subjects"></span> Summer Semester subjects. You can
                   study in Summer Semester at any point during your course (some students begin their studies in Summer
                   Semester).</p>
-                <p>There is no guarantee that Summer Semester will be offered. We normally offer only <span id="help-summer-typical-count"></span> subjects,
+                <p>There is no guarantee that Summer Semester will be offered. We normally offer only <span
+                    id="help-summer-typical-count"></span> subjects,
                   depending on student demand.</p>
-                <p>The subjects currently considered most likely to run are <em id="help-summer-likely-subjects"></em>. Other subjects may also be offered.</p>
-                <p>When at least <span id="help-summer-minimum-demand"></span> students want to enrol in one of the subjects, we then run it. If fewer than that are
+                <p>The subjects currently considered most likely to run are <em id="help-summer-likely-subjects"></em>.
+                  Other subjects may also be offered.</p>
+                <p>When at least <span id="help-summer-minimum-demand"></span> students want to enrol in one of the
+                  subjects, we then run it. If fewer than that are
                   interested, we withdraw it from the semester.</p>
                 <p>Please let us know if there is a subject that you want us to offer in Summer. We make that decision
-                  in early October, so please write to us then. We won't try to run <span id="help-summer-not-offered-streams"></span> subjects, and
-                  <strong>cannot</strong> run <span id="help-summer-not-offered-subjects"></span>.</p>
+                  in early October, so please write to us then. We won't try to run <span
+                    id="help-summer-not-offered-streams"></span> subjects, and
+                  <strong>cannot</strong> run <span id="help-summer-not-offered-subjects"></span>.
+                </p>
                 <p>Regarding visa and work considerations: if an international student opts to study in Summer Semester,
                   the same visa conditions apply to paid-work hour limits as apply in Semesters 1 and 2.</p>
               </details>
               <details class="help-support-accordion" data-help-exclusive-accordion>
-                <summary>2. Studying <span id="help-overload-subject-count-heading"></span> subjects in one semester</summary>
-                <p>You may be permitted to study <span id="help-overload-subject-count"></span> subjects in a semester only when:</p>
+                <summary>2. Studying <span id="help-overload-subject-count-heading"></span> subjects in one semester
+                </summary>
+                <p>You may be permitted to study <span id="help-overload-subject-count"></span> subjects in a semester
+                  only when:</p>
                 <ul>
                   <li>doing so would allow you to complete your course and graduate within that year; and</li>
                   <li>your average grade over the previous year is at least <span id="help-overload-grade"></span>.</li>
@@ -986,9 +1018,12 @@ Last Modified: 11/07/2026
       </div>
       <div class="modal-body">
         <section class="help-support-content early-completion-content" aria-label="Completing early information">
-          <h3>Summer School and studying <span id="early-overload-subject-count-heading"></span> subjects per semester</h3>
-          <p>If you have <span id="early-window-one"></span> subjects remaining, you would normally take 3 semesters to complete them, but there may
-            be a way to complete them in 2 semesters. Similarly, if you have <span id="early-window-two"></span> subjects remaining, you may be able
+          <h3>Summer School and studying <span id="early-overload-subject-count-heading"></span> subjects per semester
+          </h3>
+          <p>If you have <span id="early-window-one"></span> subjects remaining, you would normally take 3 semesters to
+            complete them, but there may
+            be a way to complete them in 2 semesters. Similarly, if you have <span id="early-window-two"></span>
+            subjects remaining, you may be able
             to complete them in 1 semester instead of 2.</p>
           <p>It may be possible to complete your course earlier by taking extra subjects, but this depends on which
             subjects are available, whether this is the first or second semester, and whether you meet the
@@ -996,9 +1031,12 @@ Last Modified: 11/07/2026
           <p>There are two possibilities:</p>
           <ul>
             <li>You may be able to study subjects during Summer School, but only if suitable subjects are running and
-              you are eligible to enrol in them. We only run <span id="early-summer-typical-count"></span> subjects. It depends on how many students are
-              interested. Students can enrol in a maximum of <span id="early-summer-maximum-subjects"></span> subjects over summer. It is completely optional.</li>
-            <li>The only time you can study <span id="early-overload-subject-count"></span> subjects in a semester is when it will allow you to graduate that year and
+              you are eligible to enrol in them. We only run <span id="early-summer-typical-count"></span> subjects. It
+              depends on how many students are
+              interested. Students can enrol in a maximum of <span id="early-summer-maximum-subjects"></span> subjects
+              over summer. It is completely optional.</li>
+            <li>The only time you can study <span id="early-overload-subject-count"></span> subjects in a semester is
+              when it will allow you to graduate that year and
               when your average grade for the past year has been at least <span id="early-overload-grade"></span>.</li>
           </ul>
         </section>
@@ -1367,8 +1405,8 @@ Last Modified: 11/07/2026
             <input id="course-map-student-search" class="course-map-student-search" type="text"
               placeholder="Search student" autocomplete="off" aria-keyshortcuts="Control+Alt+S"
               data-tooltip-html="<div>Search by student ID, email, or name.</div><div class=&quot;tooltip-line-gap&quot;>Press Ctrl+Alt+S to move focus here.</div>" />
-            <button id="course-map-recent-students-button" class="clear-button secondary student-search-recent" type="button"
-              aria-label="Recently loaded students" aria-haspopup="menu" aria-expanded="false"
+            <button id="course-map-recent-students-button" class="clear-button secondary student-search-recent"
+              type="button" aria-label="Recently loaded students" aria-haspopup="menu" aria-expanded="false"
               aria-controls="course-map-recent-students-menu" title="Previously displayed students" disabled>▼</button>
             <div id="course-map-recent-students-menu" class="recent-students-menu" role="menu" hidden></div>
             <div id="course-map-student-search-dropdown"
@@ -1395,7 +1433,9 @@ Last Modified: 11/07/2026
           <button id="open-course-map-show-hide" class="clear-button secondary" type="button" aria-haspopup="dialog"
             aria-expanded="false" aria-controls="course-map-show-hide-dialog"
             data-tooltip-html="Open display options for the Course Map, including font size, notes, colours, and prerequisite display.">View</button>
-          <button id="course-map-explain-structure-view" class="clear-button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-animate-chooser">Switch major</button>
+          <button id="course-map-explain-structure-view" class="clear-button secondary" type="button"
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-animate-chooser">Switch
+            major</button>
           <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
             <h3 id="course-map-show-hide-dialog-title">View</h3>
@@ -1406,7 +1446,8 @@ Last Modified: 11/07/2026
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
-                <input type="checkbox" id="toggle-course-map-available-highlight" checked aria-label="Highlighting of available subjects">
+                <input type="checkbox" id="toggle-course-map-available-highlight" checked
+                  aria-label="Highlighting of available subjects">
                 <span class="slider"></span>
               </label>
               <span class="switch-label">Highlighting of available subjects</span>
@@ -1460,7 +1501,7 @@ Last Modified: 11/07/2026
               <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject
                 cards (showing)</span>
             </div>
-            
+
             <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
@@ -1469,12 +1510,13 @@ Last Modified: 11/07/2026
               <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names
                 (removed)</span>
             </div>
-            
+
 
           </div>
         </div>
         <div class="course-map-mode-actions">
-          <button id="open-course-map-mode" class="clear-button secondary" type="button" aria-pressed="false" hidden>Show student view</button>
+          <button id="open-course-map-mode" class="clear-button secondary" type="button" aria-pressed="false"
+            hidden>Show student view</button>
           <div id="course-map-mode-dialog" class="course-map-mode-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-mode-dialog-title">
             <h3 id="course-map-mode-dialog-title">Mode</h3>
@@ -1499,11 +1541,12 @@ Last Modified: 11/07/2026
               <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
               <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
             </div>
-            
-            
+
+
           </div>
         </div>
-        <button id="course-map-add-history" class="clear-button secondary" type="button" aria-pressed="false">Add history</button>
+        <button id="course-map-add-history" class="clear-button secondary" type="button" aria-pressed="false">Add
+          history</button>
         <button id="course-map-history" class="clear-button secondary" type="button"
           data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your
           history</button>
@@ -1544,11 +1587,12 @@ Last Modified: 11/07/2026
           data-tooltip-html="Create and open this student's folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.">Temp
           Create</button>
         <div class="course-map-information-actions">
-        <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes" type="button"
-          data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
-        <button id="course-map-full-semester-timetable"
-          class="clear-button secondary course-map-full-semester-timetable" type="button"
-          data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Semester Timetable</button>
+          <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes" type="button"
+            data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
+          <button id="course-map-full-semester-timetable"
+            class="clear-button secondary course-map-full-semester-timetable" type="button"
+            data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Semester
+            Timetable</button>
         </div>
         <button id="close-course-map-cta" class="clear-button secondary" type="button"
           data-tooltip-html="Close the Course Map.">Close</button>
@@ -1617,12 +1661,14 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-course-map-triage-sync-help" aria-label="Close syncing help">X</button>
       </div>
       <div class="modal-body">
-        <p>After writing from this website to Enrolment Data and Tracking.xlsx, don’t try to open the workbook straight away.</p>
+        <p>After writing from this website to Enrolment Data and Tracking.xlsx, don’t try to open the workbook straight
+          away.</p>
         <p>Instead, go to the folder that contains it (Windows Explorer) and look for the green tick that tells you that
           it has finished uploading to SharePoint. Then wait for another 1 to 2 minutes.</p>
         <p>This should be enough time to get past Excel pausing opening the workbook while it runs ‘Syncing workbook…’.
           If you do get a dialog telling you that “Excel is Syncing workbook…”, let it complete.</p>
-        <p>If what you entered is lost, don't worry because a record of what you tried to write to Enrolment Data and Tracking.xlsx will be
+        <p>If what you entered is lost, don't worry because a record of what you tried to write to Enrolment Data and
+          Tracking.xlsx will be
           stored in ‘Triage Updates.xlsx’ in your teacher temp folder.</p>
       </div>
       <div class="modal-actions">
@@ -1658,7 +1704,8 @@ Last Modified: 11/07/2026
       </div>
       <div class="modal-body">
         <p>These options help prevent two teachers from writing over each other’s entries in
-          <strong>Enrolment Data and Tracking.xlsx</strong>.</p>
+          <strong>Enrolment Data and Tracking.xlsx</strong>.
+        </p>
         <p>Triage is a sheet in that workbook, not a separate file. Close the whole workbook in Excel before
           saving from this website. Row-assignment options do not enable simultaneous editing in Excel.</p>
 
@@ -1673,7 +1720,8 @@ Last Modified: 11/07/2026
         </ul>
 
         <h3>After writing to Enrolment Data and Tracking.xlsx</h3>
-        <p>Do not open <strong>Enrolment Data and Tracking.xlsx</strong> immediately after writing to it from this website.</p>
+        <p>Do not open <strong>Enrolment Data and Tracking.xlsx</strong> immediately after writing to it from this
+          website.</p>
         <p>Instead:</p>
         <ol>
           <li>Open the folder containing <strong>Enrolment Data and Tracking.xlsx</strong> in Windows Explorer.</li>
@@ -1687,7 +1735,8 @@ Last Modified: 11/07/2026
           finish before continuing.</p>
 
         <h3>If your entry is lost</h3>
-        <p>Do not worry if the information you entered does not appear in <strong>Enrolment Data and Tracking.xlsx</strong>.</p>
+        <p>Do not worry if the information you entered does not appear in <strong>Enrolment Data and
+            Tracking.xlsx</strong>.</p>
         <p>A record of what the website attempted to write will be saved in <strong>Triage Updates.xlsx</strong>
           in your teacher temp folder. This is a recovery log, not a second enrolment workbook.</p>
       </div>
@@ -1803,7 +1852,8 @@ Last Modified: 11/07/2026
           </table>
         </div>
         <div id="timetable-fees" class="timetable-fees" hidden></div>
-        <p id="future-timetable-note" class="future-timetable-note" hidden>Class times, rooms, and teachers are decided in the month before semester begins.</p>
+        <p id="future-timetable-note" class="future-timetable-note" hidden>Class times, rooms, and teachers are decided
+          in the month before semester begins.</p>
         <div class="timetable-actions subject-table-actions">
           <div class="modal-action-group">
             <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
@@ -1990,21 +2040,29 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-load-modal" aria-label="Close load modal">X</button>
       </div>
       <div class="modal-body">
-        <p id="load-summer-explanation" hidden>Summer School is optional. You can choose to study zero, 1 or 2 subjects, but no more than 2. It is a 7-week intensive covering a full semester's work, so 2 subjects is a full study load.</p>
+        <p id="load-summer-explanation" hidden>Summer School is optional. You can choose to study zero, 1 or 2 subjects,
+          but no more than 2. It is a 7-week intensive covering a full semester's work, so 2 subjects is a full study
+          load.</p>
         <div class="load-explanations">
           <div class="load-explanations-title">Explanations:</div>
-          <p><strong>Domestic students</strong> can study full-time or part-time, up to the standard load of <span id="load-standard-count-domestic"></span> subjects each
+          <p><strong>Domestic students</strong> can study full-time or part-time, up to the standard load of <span
+              id="load-standard-count-domestic"></span> subjects each
             semester.</p>
-          <p><strong>International students</strong> must normally study a full load of <span id="load-standard-count-international"></span> subjects (visa requirement).
+          <p><strong>International students</strong> must normally study a full load of <span
+              id="load-standard-count-international"></span> subjects (visa requirement).
             This can only be varied in exceptional circumstances such as a high failure rate that led to an academic
             intervention.</p>
-          <p><strong>More than <span id="load-standard-count-overload"></span> subjects?</strong> Studying more than the standard load is only possible when <strong><span id="load-remaining-count-one"></span> or
+          <p><strong>More than <span id="load-standard-count-overload"></span> subjects?</strong> Studying more than the
+            standard load is only possible when <strong><span id="load-remaining-count-one"></span> or
               fewer</strong> subjects remain in the final
-            year or <strong><span id="load-remaining-count-two"></span> or fewer</strong> subjects remain in the final semester <strong>AND</strong> a <span id="load-overload-grade-label"></span> average
+            year or <strong><span id="load-remaining-count-two"></span> or fewer</strong> subjects remain in the final
+            semester <strong>AND</strong> a <span id="load-overload-grade-label"></span> average
             (which is <span id="load-overload-grade-range"></span>) has been achieved over the past year.</p>
         </div>
         <div class="toggle-row">
-          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have <span id="load-confirm-remaining-counts"></span> subjects remaining and a <span id="load-confirm-grade-label"></span>
+          <label><input type="checkbox" id="load-remaining-confirm"> I confirm I have <span
+              id="load-confirm-remaining-counts"></span> subjects remaining and a <span
+              id="load-confirm-grade-label"></span>
             average over the past year.
           </label>
         </div>
@@ -2024,7 +2082,8 @@ Last Modified: 11/07/2026
         </div>
         <div class="toggle-row">
           <label for="load-value">How many subjects I will study this semester:</label>
-          <select id="load-value" class="load-value-select"></select>
+          <select id="load-value" class="load-value-select"></select>
+
           <div id="summer-load-choices" hidden>
             <button type="button" class="clear-button" data-summer-load="1">One subject</button>
             <button type="button" class="clear-button" data-summer-load="2">Two subjects</button>
@@ -2054,26 +2113,39 @@ Last Modified: 11/07/2026
   <dialog id="friendly-chat" aria-labelledby="friendly-chat-title">
     <header class="friendly-chat-header">
       <details class="friendly-settings">
-        <summary aria-label="Chat display settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></summary>
+        <summary aria-label="Chat display settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" />
+          </svg></summary>
         <div class="friendly-settings-items">
           <div class="friendly-settings-heading">Options</div>
-      <button data-setting-label="Dark theme" id="theme-friendly-chat" type="button" aria-label="Use dark chat theme" aria-pressed="false">Dark</button>
-      <button data-setting-label="Compact layout" id="density-friendly-chat" type="button" aria-label="Use compact chat layout" aria-pressed="false">Compact</button>
-      <button data-setting-label="High contrast" id="contrast-friendly-chat" type="button" aria-label="Use high contrast" aria-pressed="false">Contrast</button>
+          <button data-setting-label="Dark theme" id="theme-friendly-chat" type="button"
+            aria-label="Use dark chat theme" aria-pressed="false">Dark</button>
+          <button data-setting-label="Compact layout" id="density-friendly-chat" type="button"
+            aria-label="Use compact chat layout" aria-pressed="false">Compact</button>
+          <button data-setting-label="High contrast" id="contrast-friendly-chat" type="button"
+            aria-label="Use high contrast" aria-pressed="false">Contrast</button>
         </div>
       </details>
       <h2 id="friendly-chat-title">Subject Planner <span>AI</span></h2>
-      <button id="reset-friendly-chat" type="button" title="Start a new chat" aria-label="Start a new chat" aria-keyshortcuts="Alt+n" hidden>New Chat</button>
-      <button id="close-friendly-chat" type="button" aria-label="Close friendly chat"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button id="reset-friendly-chat" type="button" title="Start a new chat" aria-label="Start a new chat"
+        aria-keyshortcuts="Alt+n" hidden>New Chat</button>
+      <button id="close-friendly-chat" type="button" aria-label="Close friendly chat"><svg viewBox="0 0 24 24"
+          width="20" height="20" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg></button>
     </header>
     <div id="friendly-reset-popup" class="friendly-reset-overlay" hidden>
-      <div class="friendly-reset-card" role="alertdialog" aria-modal="true" aria-labelledby="friendly-reset-title" aria-describedby="friendly-reset-description">
+      <div class="friendly-reset-card" role="alertdialog" aria-modal="true" aria-labelledby="friendly-reset-title"
+        aria-describedby="friendly-reset-description">
         <h3 id="friendly-reset-title">Start a new chat?</h3>
         <p id="friendly-reset-description">This will clear your chat history</p>
         <div id="friendly-reset-choices" class="friendly-reset-choices" hidden>
           <button id="clear-friendly-selections" type="button">Clear subject choices and chat history</button>
-          <button id="clear-friendly-history" type="button">Clear study history, timetable choices, and chat history</button>
-          <button id="keep-friendly-planner" type="button">Keep history and subject choices but clear other chat history</button>
+          <button id="clear-friendly-history" type="button">Clear study history, timetable choices, and chat
+            history</button>
+          <button id="keep-friendly-planner" type="button">Keep history and subject choices but clear other chat
+            history</button>
         </div>
         <div class="friendly-reset-actions">
           <button id="cancel-friendly-reset" type="button">Cancel</button>
@@ -2093,28 +2165,44 @@ Last Modified: 11/07/2026
         <button type="submit">Request extra usage</button>
       </form>
       <div class="friendly-chat-input-shell">
-        <textarea id="friendly-chat-input" rows="1" placeholder="Press Shift-Enter for new line, Enter to send prompt"></textarea>
-        <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <textarea id="friendly-chat-input" rows="1"
+          placeholder="Press Shift-Enter for new line, Enter to send prompt"></textarea>
+        <button id="send-friendly-chat" type="button" aria-label="Send message" title="Send message (Enter)"><svg
+            viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M12 19V5m-6 6 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg></button>
         <div class="friendly-token-info">
-          <button id="friendly-token-counter" type="button" aria-label="Token allowance information" aria-expanded="false" aria-controls="friendly-token-details">%</button>
-          <div id="friendly-token-details" class="friendly-notice-panel" aria-live="polite" hidden>Personal token allowance remaining will appear here after a request.</div>
+          <button id="friendly-token-counter" type="button" aria-label="Token allowance information"
+            aria-expanded="false" aria-controls="friendly-token-details">%</button>
+          <div id="friendly-token-details" class="friendly-notice-panel" aria-live="polite" hidden>Personal token
+            allowance remaining will appear here after a request.</div>
         </div>
       </div>
       <div class="friendly-notices">
         <button type="button" aria-expanded="false" aria-controls="friendly-privacy">Privacy</button>
         <button type="button" aria-expanded="false" aria-controls="friendly-accuracy">AI makes mistakes</button>
-        <button type="button" aria-expanded="false" aria-controls="friendly-kindness">Be kind <span class="friendly-heart" aria-hidden="true">&#9829;</span></button>
+        <button type="button" aria-expanded="false" aria-controls="friendly-kindness">Be kind <span
+            class="friendly-heart" aria-hidden="true">&#9829;</span></button>
         <div id="friendly-privacy" class="friendly-notice-panel" hidden>
           <p>This site doesn't contain any personal information.</p>
-          <p>Please don't enter any personal or sensitive information into your prompts: messages are processed through Cloudflare and sent to OpenAI.</p>
+          <p>Please don't enter any personal or sensitive information into your prompts: messages are processed through
+            Cloudflare and sent to OpenAI.</p>
         </div>
         <div id="friendly-accuracy" class="friendly-notice-panel" hidden>
-          <p>AI makes mistakes. Please don't rely on the information provided here. Confirm your understanding with the enrolment team at <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
-          <p>Help Antony train it by emailing me about mistakes or limitations <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+          <p>AI makes mistakes. Please don't rely on the information provided here. Confirm your understanding with the
+            enrolment team at <a
+              href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+          <p>Help Antony train it by emailing me about mistakes or limitations <a
+              href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
         </div>
         <div id="friendly-kindness" class="friendly-notice-panel" hidden>
-          <p>Please keep your prompts to the smallest minimum. Your prompts cost Antony cents and then dollars &#128532;</p>
-          <p><img class="friendly-dragon" src="images/flying-dragon-rider.png" alt="Flying red dragon carrying a rider">This site is under continuous development. Help Antony train it by emailing him about mistakes or limitations <a href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
+          <p>Please keep your prompts to the smallest minimum. Your prompts cost Antony cents and then dollars &#128532;
+          </p>
+          <p><img class="friendly-dragon" src="images/flying-dragon-rider.png"
+              alt="Flying red dragon carrying a rider">This site is under continuous development. Help Antony train it
+            by emailing him about mistakes or limitations <a
+              href="mailto:enrol_bit@melbournepolytechnic.edu.au">enrol_bit@melbournepolytechnic.edu.au</a>.</p>
         </div>
       </div>
     </div>
@@ -2124,7 +2212,8 @@ Last Modified: 11/07/2026
   <script src="script.js?v=20261115-elective-scroll-3"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
-    <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time> (Melbourne time)</div>
+    <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time>
+      (Melbourne time)</div>
   </footer>
 </body>
 
