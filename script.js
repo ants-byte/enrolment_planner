@@ -6052,7 +6052,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
     if (courseMapStaffPanelRaf) cancelAnimationFrame(courseMapStaffPanelRaf);
     courseMapStaffPanelRaf = requestAnimationFrame(() => {
       if (!courseMapStaffPanelEl || courseMapStaffPanelEl.hidden || !courseMapContent) return;
-      courseMapStaffPanelEl.style.top = '200px';
+      const coreGrid = courseMapContent.querySelector('.course-map-core-block');
+      if (!coreGrid) return;
+      const overlayGrid = courseMapContent.querySelector('.course-map-structure-selected-stream .course-map-stream-grid');
+      const gridBottom = Math.max(coreGrid.getBoundingClientRect().bottom,
+        overlayGrid?.getBoundingClientRect().bottom || 0);
+      courseMapStaffPanelEl.style.top = `${Math.ceil(gridBottom - courseMapContent.getBoundingClientRect().top + 16)}px`;
     });
   };
 
@@ -6935,6 +6940,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
   let courseMapNotesOn = !staffFacing;
   let courseMapStructureExplainMode = false;
   let courseMapStructureExpandedStream = '';
+  let courseMapMajorSwitchSnapshot = null;
+  let courseMapMajorSwitchAnimating = false;
   let courseMapMajorElectivesReturnMode = '';
   let courseMapLastDefaultViewMode = staffFacing ? 'staff' : 'student';
   let courseMapStreamPulseTimer = null;
@@ -25500,9 +25507,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
         `Default Staff mode & view${showActive && courseMapLastDefaultViewMode === 'staff' ? ' (on)' : ''}`;
     }
     if (courseMapExplainStructureViewButton) {
-      courseMapExplainStructureViewButton.textContent =
-        courseMapStructureExplainMode ? 'End animate mode' : 'Animate';
-      courseMapExplainStructureViewButton.setAttribute('aria-pressed', String(courseMapStructureExplainMode));
+      courseMapExplainStructureViewButton.textContent = 'Switch major';
+      courseMapExplainStructureViewButton.disabled = courseMapMajorSwitchAnimating;
     }
   };
 
@@ -25564,6 +25570,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
 
   const updateCourseMapModeUi = () => {
     if (!courseMapModal) return;
+    if (!courseMapMajorSwitchSnapshot && !courseMapMajorSwitchAnimating) {
+      courseMapStructureExplainMode = hasSelectedMajor();
+      courseMapStructureExpandedStream = getSelectedMajorKey();
+    }
     const staffMode = getCourseMapIsStaffMode();
     courseMapModal.classList.toggle('course-map-staff-mode', staffMode);
     courseMapModal.classList.toggle('course-map-student-view', !staffMode);
@@ -26033,6 +26043,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const staffPanel = document.createElement('div');
     staffPanel.className = 'course-map-staff-panel';
     staffPanel.hidden = true;
+    if (courseMapAddHistoryButton) staffPanel.appendChild(courseMapAddHistoryButton);
 
     const alertHost = document.createElement('div');
     alertHost.className = 'course-map-staff-alert-buttons-host';
@@ -26051,7 +26062,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const staffClearBtn = document.createElement('button');
     staffClearBtn.type = 'button';
     staffClearBtn.className = 'clear-button secondary course-map-staff-clear hidden-initial disabled';
-    staffClearBtn.textContent = 'Clear';
+    staffClearBtn.textContent = 'Clear Selections';
     staffClearBtn.setAttribute('data-tooltip-html', 'Clear the current Course Map subject selections.');
     staffClearBtn.style.display = 'none';
     staffClearBtn.disabled = true;
@@ -26146,18 +26157,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
 
     const staffInfoActions = document.createElement('div');
     staffInfoActions.className = 'course-map-staff-info-actions';
-    if (courseMapAddHistoryButton) staffActions.appendChild(courseMapAddHistoryButton);
     [courseMapHistoryButton, courseMapRemainingButton, courseMapNextSemesterButton]
       .filter(Boolean)
       .forEach((button) => staffInfoActions.appendChild(button));
-    staffPanel.appendChild(staffInfoActions);
-
-    const staffModeActions = document.createElement('div');
-    staffModeActions.className = 'course-map-staff-mode-actions';
-    [courseMapDefaultStudentViewButton, courseMapDefaultStaffViewButton]
-      .filter(Boolean).forEach(button => staffModeActions.appendChild(button));
-    staffPanel.appendChild(staffModeActions);
     courseMapModeDialog?.querySelectorAll('.course-map-mode-row').forEach(row => staffPanel.appendChild(row));
+    staffPanel.appendChild(staffInfoActions);
 
     courseMapContent.appendChild(staffPanel);
     enablePanelResize(staffPanel, {
@@ -26259,11 +26263,6 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const labels = courseMapContent
       ? Array.from(courseMapContent.querySelectorAll('.course-map-stream-label'))
       : [];
-    const emphasizeDescriptorTerms = (text = '') =>
-      String(text || '')
-        .replace(/\b(Major|major)\b/g, '<strong>$1</strong>')
-        .replace(/\b(Elective|elective|electives)\b/g, '<strong>$1</strong>');
-
     labels.forEach((label) => {
       const stream = label.dataset.stream || '';
       const isMajor = selectedMajor && stream === majorKey && courseMapIndicatorsOn;
@@ -26296,16 +26295,6 @@ function buildStudentRecordsFromWorkbook(workbook) {
         sd: 'Software Development',
       };
       const streamName = (courseMapAiNamesOn && courseMapAiNameOverlay.streams[stream]) || streamNames[stream] || '';
-      const descriptor = undecided
-        ? 'No Major selected'
-        : isMajor
-          ? 'Your major subjects'
-          : 'Your elective subjects';
-      const descriptorHtml = emphasizeDescriptorTerms(descriptor);
-      const streamNameHtml =
-        courseMapAiNamesOn && stream === 'ba' && streamName === 'AI Data Analytics'
-          ? 'AI&nbsp;Data<wbr> Analytics'
-          : escapeHtml(streamName);
       const nameDisplay =
         courseMapAiNamesOn && stream === 'ba' && streamName === 'AI Data Analytics'
           ? 'AI&nbsp;Data<br>Analytics'
@@ -26314,10 +26303,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
             : courseMapStructureExplainMode
               ? escapeHtml(streamName)
             : escapeHtml(streamName).replace(' ', '<br>');
-      const labelHtml = !courseMapIndicatorsOn
-        ? `<span class="stream-name">${nameDisplay}</span>`
-        : `<span class="stream-name">${streamNameHtml}</span><span class="stream-descriptor">${descriptorHtml}</span>`;
-      label.innerHTML = labelHtml;
+      label.innerHTML = `<span class="stream-name">${nameDisplay}</span>`;
       const streamNameEl = label.querySelector('.stream-name');
       const tooltipTextBase = undecided
         ? 'No major has been selected.'
@@ -26358,24 +26344,48 @@ function buildStudentRecordsFromWorkbook(workbook) {
           const majorGrid = courseMapContent?.querySelector('.course-map-major-grid');
           const bit372 = courseMapContent?.querySelector('.course-map-cell[data-subject="BIT372"]');
           if (selectedSection && majorGrid) {
+            // Measure at the overlay's final width, without the previous minimum height.
+            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${Math.max(0, majorGrid.getBoundingClientRect().width / 5 * 3)}px`);
+            courseMapModal.style.removeProperty('--course-map-overlay-row-height');
+            const overlayRowHeight = Math.max(64, ...[
+              ...selectedSection.querySelectorAll('.course-map-stream-grid > .course-map-cell'),
+              ...majorGrid.querySelectorAll('.course-map-cell'),
+            ].map(cell => cell.offsetHeight));
+            courseMapModal.style.setProperty('--course-map-overlay-row-height', `${Math.ceil(overlayRowHeight)}px`);
             const streamRect = courseMapStreamsBlockEl.getBoundingClientRect();
             const majorRect = majorGrid.getBoundingClientRect();
             const targetWidth = Math.max(0, (majorRect.width / 5) * 3);
-            const electiveGridWidth = Math.max(0, (majorRect.width / 5) * 2 + 12);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-top', `${Math.round(majorRect.top - streamRect.top)}px`);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-left', `${Math.round(majorRect.left - streamRect.left)}px`);
             courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${Math.round(targetWidth)}px`);
-            courseMapStreamsBlockEl.style.setProperty('--course-map-elective-grid-width', `${Math.round(electiveGridWidth)}px`);
+            const setElectiveColumns = columns => {
+              courseMapStreamsBlockEl.style.setProperty('--course-map-elective-columns', String(columns));
+              courseMapStreamsBlockEl.style.setProperty('--course-map-elective-grid-width',
+                `${Math.round(Math.max(0, majorRect.width / 5 * columns + (columns - 1) * 12))}px`);
+            };
             if (bit372) {
               const bit372Rect = bit372.getBoundingClientRect();
               courseMapStreamsBlockEl.style.setProperty('--course-map-elective-right-inset', `${Math.round(streamRect.right - bit372Rect.right)}px`);
             }
+            // Try the taller layout first; measure in content coordinates so scrolling
+            // or the card transition cannot change which arrangement fits.
+            setElectiveColumns(2);
+            const body = courseMapModal.querySelector('.modal-body');
+            if (body && body.clientHeight > 0) {
+              const streamsTop = courseMapStreamsBlockEl.getBoundingClientRect().top -
+                body.getBoundingClientRect().top + body.scrollTop;
+              if (streamsTop + courseMapStreamsBlockEl.offsetHeight > body.clientHeight - 8) {
+                setElectiveColumns(3);
+              }
+            }
           }
         } else {
+          courseMapModal.style.removeProperty('--course-map-overlay-row-height');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-top');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-left');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-width');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-grid-width');
+          courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-columns');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-right-inset');
         }
         if (courseMapStructureExplainMode) {
@@ -26393,7 +26403,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
           if (expandedExplainView && section?.classList.contains('course-map-structure-selected-stream')) {
             label.style.position = '';
             label.style.left = '';
-            label.style.top = '';
+            const coreBottom = courseMapContent.querySelector('.course-map-core-block')?.getBoundingClientRect().bottom;
+            label.style.top = coreBottom == null ? ''
+              : `${Math.ceil(coreBottom - section.getBoundingClientRect().top + 20)}px`;
             label.style.width = '';
             return;
           }
@@ -26414,14 +26426,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
           } else {
             label.style.width = '';
           }
-          // Keep labels fully to the left of the subject blocks (no overlap into the grid).
-          // For elective labels, reduce the gap slightly so they sit closer without crossing into cards.
-          const gap = isExplodedExplainLabel ? 4 : (isElective ? 2 : 6);
-          const sectionRect = section?.getBoundingClientRect?.();
-          const normalGridLeft =
-            isExplodedExplainLabel && sectionRect
-              ? gridRect.left - containerRect.left
-              : gridRect.left - containerRect.left;
+          const gap = isExplodedExplainLabel ? 32 : (isElective ? 2 : 6);
+          const normalGridLeft = gridRect.left - containerRect.left +
+            (isExplodedExplainLabel ? parseFloat(getComputedStyle(grid).paddingLeft) || 0 : 0);
           const left = normalGridLeft - label.offsetWidth - gap;
           const labelHeight = label.offsetHeight || 0;
           // Center when possible; otherwise anchor to the grid top to avoid drifting upward into other blocks.
@@ -26434,26 +26441,6 @@ function buildStudentRecordsFromWorkbook(workbook) {
           label.style.left = `${Math.round(left)}px`;
           label.style.top = `${Math.round(top)}px`;
         });
-        if (expandedExplainView) {
-          const firstLabel = courseMapStreamsBlockEl.querySelector('.course-map-structure-exploded-first .course-map-stream-label');
-          const secondLabel = courseMapStreamsBlockEl.querySelector('.course-map-structure-exploded-second .course-map-stream-label');
-          if (firstLabel && secondLabel) {
-            const firstGrid = firstLabel.closest('.course-map-stream')?.querySelector('.course-map-stream-grid');
-            const secondGrid = secondLabel.closest('.course-map-stream')?.querySelector('.course-map-stream-grid');
-            const firstGridRect = firstGrid?.getBoundingClientRect?.();
-            const secondGridRect = secondGrid?.getBoundingClientRect?.();
-            secondLabel.style.left = firstLabel.style.left;
-            secondLabel.style.top = `${Math.round((firstLabel.offsetTop || 0) + (firstLabel.offsetHeight || 0) + 4)}px`;
-            secondLabel.style.width = firstLabel.style.width || secondLabel.style.width || '';
-            if (firstGridRect && secondGridRect) {
-              const blockTop = firstGridRect.top - containerRect.top;
-              const blockBottom = secondGridRect.bottom - containerRect.top;
-              const labelTop = blockTop + ((blockBottom - blockTop) - firstLabel.offsetHeight - secondLabel.offsetHeight - 4) / 2 - 12;
-              firstLabel.style.top = `${Math.round(labelTop)}px`;
-              secondLabel.style.top = `${Math.round(labelTop + firstLabel.offsetHeight + 4)}px`;
-            }
-          }
-        }
         updateCourseMapNotesOverlap();
         if (typeof afterPosition === 'function') {
           if (!layoutSettled) {
@@ -26505,6 +26492,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
   };
 
   const updateCourseMapStatuses = () => {
+    if (!courseMapMajorSwitchSnapshot && !courseMapMajorSwitchAnimating &&
+        courseMapStructureExpandedStream !== getSelectedMajorKey()) updateCourseMapModeUi();
     const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     const majorKey = explainMajorKey || getMajorKeyFromUi();
     const selectedMajor = courseMapStructureExplainMode ? !!explainMajorKey : hasSelectedMajor();
@@ -26722,7 +26711,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
       });
     } else if (courseMapStructureExplainMode && courseMapStructureExpandedStream === 'ns') {
       courseMapSharedPlaceholders.forEach((cell) => {
-        setCourseMapPlaceholderMirrorText(cell, '', '');
+        const showSharedElective = cell.dataset.placeholder === 'bit245-ba';
+        setCourseMapPlaceholderMirrorText(cell, showSharedElective ? 'BIT245' : '', '');
         cell.classList.remove(
           'course-map-status-passed',
           'course-map-status-current',
@@ -26731,6 +26721,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
           'course-map-status-later',
           'course-map-in-major'
         );
+        if (showSharedElective && sharedStatus) cell.classList.add(sharedStatus);
       });
     }
     let displayedElectiveBitState = electiveBitState;
@@ -26772,6 +26763,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const slotRaw = cell.dataset.electiveSlot;
       const slotIndex = slotRaw ? Math.max(0, parseInt(slotRaw, 10) - 1) : idx;
       let mirroredCode = displayedElectiveBitState[slotIndex] || electivePlaceholderState[slotIndex] || '';
+      if (courseMapMajorSwitchSnapshot) mirroredCode = '';
       if (courseMapStructureExplainMode && !courseMapStructureExpandedStream && !/^USE\d{3}$/i.test(mirroredCode)) mirroredCode = '';
       const expandedMajorCodes = courseMapStructureExplainMode && courseMapStructureExpandedStream
         ? new Set((majorLayouts[courseMapStructureExpandedStream] || []).map((code) => String(code || '').toUpperCase()))
@@ -26785,7 +26777,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
       setCourseMapPlaceholderMirrorText(
         cell,
         mirroredCode,
-        cell.dataset.placeholderLabel || `Elective Subject ${slotIndex + 1}`
+        courseMapMajorSwitchSnapshot ? `Elective ${slotIndex + 1}`
+          : cell.dataset.placeholderLabel || `Elective Subject ${slotIndex + 1}`
       );
       const isStructureUse = courseMapStructureExplainMode && /^USE\d{3}$/i.test(String(mirroredCode || ''));
       cell.classList.toggle('course-map-structure-use', isStructureUse);
@@ -26799,6 +26792,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
         cell.style.removeProperty('--course-map-elective-landing-dy');
         cell.style.removeProperty('--course-map-elective-landing-scale-x');
         cell.style.removeProperty('--course-map-elective-landing-scale-y');
+      }
+      if (!courseMapMajorSwitchSnapshot && !courseMapMajorSwitchAnimating) {
+        cell.classList.toggle('course-map-structure-use-visible', isStructureUse);
+        cell.classList.toggle('course-map-structure-elective-landing-visible', isStructureLanding);
       }
       const status = mirroredCode ? getElectiveSlotStatus(slotIndex) : '';
       if (status) cell.classList.add(status);
@@ -26851,6 +26848,19 @@ function buildStudentRecordsFromWorkbook(workbook) {
     }
     courseMapContent.querySelectorAll('.course-map-cell').forEach(cell => {
       const code = cell.dataset.mirroredSubject || cell.dataset.subject;
+      if (cell.dataset.electiveSlot) {
+        const editableCredit = getCourseMapIsStaffMode() && courseMapHistoryEntryOn &&
+          (!code || validUseCodes.has(code));
+        cell.classList.toggle('course-map-staff-clickable', editableCredit);
+        cell.tabIndex = editableCredit ? 0 : -1;
+        if (editableCredit) {
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('aria-pressed', code ? 'true' : 'false');
+        } else {
+          cell.removeAttribute('role');
+          cell.removeAttribute('aria-pressed');
+        }
+      }
       const state = code ? subjectState.get(code) : null;
       const available = !!state && !state.completed && !state.toggled && !currentCodes.has(code)
         && isRunningThisSemester(code) && !getCourseMapStatusClass(code)
@@ -26873,6 +26883,32 @@ function buildStudentRecordsFromWorkbook(workbook) {
     positionCourseMapArrows();
     positionCourseMapCoreConnector();
     positionCourseMapStaffPanel();
+  };
+
+  const toggleCourseMapElectiveCredit = (cell) => {
+    if (!cell || !getCourseMapIsStaffMode() || !courseMapHistoryEntryOn) return false;
+    const index = Number(cell.dataset.electiveSlot) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= 4) return false;
+    const code = cell.dataset.mirroredSubject || cell.dataset.subject || '';
+    if (code && !validUseCodes.has(code)) return false;
+    if (electivePlaceholderState[index]) {
+      electivePlaceholderState[index] = '';
+      fillFirstFreeSlotFromOverflow();
+    } else {
+      const nextUse = electiveCodeOrder.find(code => !electivePlaceholderState.includes(code));
+      if (!nextUse) return false;
+      electivePlaceholderState[index] = nextUse;
+    }
+    setElectiveCredits(buildElectiveAssignments(), true);
+    conditionalRecompute({ force: true, usePlanned: false });
+    updateElectiveWarning();
+    updateSelectedList();
+    updateResetState();
+    updateWarnings();
+    updateBookmarkableSettingsUrl();
+    updateCourseMapStatuses();
+    scheduleCourseMapRelayout();
+    return true;
   };
 
   const toggleCourseMapStaffSelectionByCode = (id) => {
@@ -32706,25 +32742,17 @@ function buildStudentRecordsFromWorkbook(workbook) {
   if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
   if (availableHeading) {
     const activateAvailable = () => {
-      const grid = plannerContainer?.querySelector('.main-grid');
-      const key = plannerContainer?.querySelector('.key');
-      plannerContainer?.querySelector('.available-grid-frame')?.remove();
-      if (grid && key) {
-        const frame = document.createElement('div');
-        frame.className = 'available-grid-frame'; frame.setAttribute('aria-hidden', 'true');
-        frame.style.height = `${Math.max(0, key.getBoundingClientRect().top - grid.getBoundingClientRect().top - 4)}px`;
-        grid.appendChild(frame);
-        frame.addEventListener('animationend', () => frame.remove(), { once: true });
-      }
-      const cards = subjects.filter(cell => cell.classList.contains('can-select-now') &&
-        !cell.classList.contains('completed') && !cell.classList.contains('toggled'));
-      cards.forEach(cell => cell.classList.remove('available-grid-pulse'));
-      if (cards.length) void cards[0].offsetWidth;
+      const cards = Array.from(document.querySelectorAll(
+        '.main-grid .subject-card.can-select-now, .electives-grid .subject-card.can-select-now'
+      )).filter(cell => !cell.classList.contains('completed') && !cell.classList.contains('toggled'));
       cards.forEach(cell => {
-        cell.classList.add('available-grid-pulse');
-        cell.addEventListener('animationend', event => {
-          if (event.animationName.startsWith('available-grid-pulse')) cell.classList.remove('available-grid-pulse');
-        }, { once: true });
+        cell.getAnimations().filter(animation => animation.id === 'available-card-wiggle')
+          .forEach(animation => animation.cancel());
+        cell.animate([0, 10, -10, 10, -10, 0].map(angle => ({
+          transform: `rotate(${angle}deg)`,
+          transformOrigin: '50% 50%',
+          zIndex: 1000,
+        })), { id: 'available-card-wiggle', duration: 500, easing: 'linear' });
       });
     };
     availableHeading.addEventListener('click', activateAvailable);
@@ -33557,16 +33585,95 @@ function buildStudentRecordsFromWorkbook(workbook) {
       hideCourseMapModeDialog();
     });
   }
-  if (courseMapExplainStructureViewButton) {
-    courseMapExplainStructureViewButton.addEventListener('click', () => {
-      if (courseMapStructureExplainMode) {
-        applyCourseMapViewDefaults(courseMapMajorElectivesReturnMode || (staffFacing ? 'staff' : 'student'));
+  const courseMapAnimateChooser = document.getElementById('course-map-animate-chooser');
+  const positionCourseMapAnimateChooser = () => {
+    if (!courseMapAnimateChooser?.open || !courseMapExplainStructureViewButton) return;
+    const rect = courseMapExplainStructureViewButton.getBoundingClientRect();
+    courseMapAnimateChooser.style.left = `${rect.left}px`;
+    courseMapAnimateChooser.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+  };
+  window.addEventListener('resize', positionCourseMapAnimateChooser);
+  document.addEventListener('scroll', positionCourseMapAnimateChooser, true);
+  const cancelCourseMapMajorSwitch = () => {
+    courseMapExplainStructureViewButton?.setAttribute('aria-expanded', 'false');
+    if (!courseMapMajorSwitchSnapshot) return;
+    courseMapStructureExplainMode = courseMapMajorSwitchSnapshot.explainMode;
+    courseMapStructureExpandedStream = courseMapMajorSwitchSnapshot.expandedStream;
+    courseMapMajorSwitchSnapshot = null;
+    renderCourseMapModal();
+    syncCourseMapKeyPanelBottomOffset();
+  };
+  const finishCourseMapMajorSwitch = () => {
+    courseMapMajorSwitchAnimating = false;
+    renderCourseMapModal();
+    syncCourseMapKeyPanelBottomOffset();
+  };
+  courseMapAnimateChooser?.addEventListener('close', cancelCourseMapMajorSwitch);
+  courseMapAnimateChooser?.addEventListener('cancel', () => {
+    cancelCourseMapMajorSwitch();
+  });
+  const startCourseMapAnimation = (stream) => {
+    if (!['ns', 'ba', 'sd'].includes(stream) || courseMapMajorSwitchAnimating) return;
+    if (!courseMapMajorSwitchSnapshot) {
+      courseMapMajorSwitchSnapshot = {
+        explainMode: courseMapStructureExplainMode,
+        expandedStream: courseMapStructureExpandedStream,
+      };
+      courseMapStructureExplainMode = true;
+      courseMapStructureExpandedStream = '';
+      renderCourseMapModal();
+    }
+    courseMapMajorSwitchSnapshot = null;
+    courseMapMajorSwitchAnimating = true;
+    courseMapAnimateChooser?.close();
+    // Use the normal major-selection path so prerequisites, electives and warnings update too.
+    setMajorDropdownSelection(mapStreamKeyToDropdownValue(stream));
+    updateBookmarkableSettingsUrl();
+    updateCourseMapDefaultViewButtonLabels();
+    // Let the overview render, then use the existing stream transition.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!courseMapStructureExplainMode || !courseMapModal?.classList.contains('show')) {
+        finishCourseMapMajorSwitch();
         return;
       }
-      courseMapMajorElectivesReturnMode = getCourseMapIsStaffMode() ? 'staff' : 'student';
-      applyCourseMapViewDefaults('structure');
+      const label = courseMapContent.querySelector(`.course-map-stream[data-stream="${stream}"] .course-map-stream-label .stream-name`);
+      if (label) label.click();
+      else finishCourseMapMajorSwitch();
+    }));
+  };
+  document.getElementById('close-course-map-animate-chooser')?.addEventListener('click', () => {
+    courseMapAnimateChooser.close();
+  });
+  courseMapAnimateChooser?.addEventListener('click', (event) => {
+    const choice = event.target.closest('[data-animate-stream]');
+    if (choice) startCourseMapAnimation(choice.dataset.animateStream);
+    else if (event.target === courseMapAnimateChooser) {
+      const rect = courseMapAnimateChooser.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right ||
+          event.clientY < rect.top || event.clientY > rect.bottom) courseMapAnimateChooser.close();
+    }
+  });
+  courseMapAnimateChooser?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      courseMapAnimateChooser.close();
+    }
+  });
+  if (courseMapExplainStructureViewButton) {
+    courseMapExplainStructureViewButton.addEventListener('click', () => {
+      if (courseMapMajorSwitchAnimating || courseMapMajorSwitchSnapshot) return;
+      courseMapMajorSwitchSnapshot = {
+        explainMode: courseMapStructureExplainMode,
+        expandedStream: courseMapStructureExpandedStream,
+      };
+      courseMapStructureExplainMode = true;
+      courseMapStructureExpandedStream = '';
       hideCourseMapShowHideDialog();
-      pulseCourseMapMajorElectivesHints();
+      renderCourseMapModal();
+      courseMapAnimateChooser?.showModal();
+      courseMapExplainStructureViewButton.setAttribute('aria-expanded', 'true');
+      positionCourseMapAnimateChooser();
     });
   }
   if (courseMapDefaultStaffViewButton) {
@@ -33936,6 +34043,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
     courseMapContent.addEventListener('click', (event) => {
       const target = event.target;
+      const electiveSlot = target?.closest?.('.course-map-cell[data-elective-slot]');
+      if (electiveSlot && courseMapContent.contains(electiveSlot) && toggleCourseMapElectiveCredit(electiveSlot)) {
+        event.preventDefault();
+        return;
+      }
       const clickedExplainArrow = target?.closest?.('.course-map-explain-arrows span, .course-map-major-explain-arrows span');
       if (clickedExplainArrow && courseMapContent.contains(clickedExplainArrow) && courseMapStructureExplainMode && !courseMapStructureExpandedStream) {
         event.preventDefault();
@@ -33958,6 +34070,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       if (!streamSection || !courseMapContent.contains(streamSection)) return;
       const streamKey = streamSection.dataset.stream;
       if (!['ns', 'ba', 'sd'].includes(streamKey || '')) return;
+      if (courseMapStructureExplainMode && !courseMapMajorSwitchAnimating) {
+        event.preventDefault();
+        courseMapExplainStructureViewButton?.click();
+        return;
+      }
       if (courseMapStructureExplainMode) {
         event.preventDefault();
         hideAllVisibleTooltips();
@@ -34039,9 +34156,15 @@ function buildStudentRecordsFromWorkbook(workbook) {
             positionCourseMapArrows();
             scheduleCourseMapRelayout();
             courseMapStructureFirstExpandTimer = null;
+            finishCourseMapMajorSwitch();
           }, 1500);
         } : null);
         positionCourseMapArrows();
+        return;
+      }
+      if (!hasSelectedMajor()) {
+        event.preventDefault();
+        startCourseMapAnimation(streamKey);
         return;
       }
       const nextMajorValue = mapStreamKeyToDropdownValue(streamKey);
@@ -34058,7 +34181,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
     courseMapContent.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
-      const targetCell = event.target?.closest?.('.course-map-cell[data-subject]');
+      const targetCell = event.target?.closest?.('.course-map-cell[data-subject], .course-map-cell[data-elective-slot]');
       if (!targetCell || event.target !== targetCell || !courseMapContent.contains(targetCell)) return;
       event.preventDefault();
       if (!event.repeat) targetCell.click();
@@ -34835,6 +34958,158 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
     }
   });
+  if (mainGrid && electivesGrid) {
+    const electiveOptionsButton = document.createElement('button');
+    electiveOptionsButton.type = 'button';
+    electiveOptionsButton.className = 'clear-button see-elective-options';
+    electiveOptionsButton.textContent = 'See Elective Options ↓';
+    electiveOptionsButton.hidden = true;
+    mainGrid.appendChild(electiveOptionsButton);
+    const pageSectionShortcuts = [
+      { button: document.getElementById('scroll-to-colour-key'), section: plannerContainer?.querySelector('.key-row'), heading: '.key > div:first-child' },
+      { button: document.getElementById('scroll-to-sas-subjects'), section: document.getElementById('sas-footnote'), heading: '#sas-footnote .sas-heading-line1' },
+    ].filter(entry => entry.button && entry.section);
+    const getElectiveScrollRoot = () => {
+      for (let parent = mainGrid.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+        if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
+      }
+      return document.scrollingElement;
+    };
+    const getElectiveViewport = (root) => root === document.scrollingElement
+      ? { top: 0, bottom: window.innerHeight }
+      : root.getBoundingClientRect();
+    const updatePageSectionShortcuts = () => {
+      const viewport = getElectiveViewport(getElectiveScrollRoot());
+      pageSectionShortcuts.forEach(({ button, heading }) => {
+        const rect = plannerContainer?.querySelector(heading)?.getBoundingClientRect();
+        button.hidden = !rect?.height || rect.bottom <= viewport.bottom;
+      });
+    };
+    const updateElectiveOptionsButton = () => {
+      const slots = [2, 3, 4, 5].map(column => mainGridSlots.get(`r5c${column}`));
+      const empty = slots.map((cell, index) => cell && !electiveBitState[index] && !electivePlaceholderState[index] &&
+        !['completed', 'toggled', 'current-enrolment', 'filled-elective', 'use-credit'].some(name => cell.classList.contains(name)));
+      if (!empty.some(Boolean) || !mainGrid.getBoundingClientRect().width) {
+        if (!electiveOptionsButton.hidden) electiveOptionsButton.hidden = true;
+        return;
+      }
+      const rows = new Map();
+      Array.from(electivesGrid.children).filter(cell => cell.dataset.subject).forEach(cell => {
+        const rect = cell.getBoundingClientRect();
+        if (rect.height) rows.set(cell.offsetTop, Math.max(rows.get(cell.offsetTop) || 0, rect.bottom));
+      });
+      const rowBottoms = [...rows].sort((a, b) => a[0] - b[0]).map(([, bottom]) => bottom);
+      const viewport = getElectiveViewport(getElectiveScrollRoot());
+      if (!rowBottoms.length || rowBottoms[Math.min(1, rowBottoms.length - 1)] <= viewport.bottom) {
+        if (!electiveOptionsButton.hidden) electiveOptionsButton.hidden = true;
+        return;
+      }
+      // Prefer the centres of boxes 2 and 3, then move right to avoid filled cards.
+      const pair = [[1, 2], [2, 3], [0, 1]].find(indices => indices.every(index => empty[index]));
+      const index = empty.lastIndexOf(true);
+      const first = slots[pair ? pair[0] : index];
+      const last = slots[pair ? pair[1] : index];
+      // Layout offsets stay fixed while card hover effects change their painted bounds.
+      const left = pair ? first.offsetLeft + first.offsetWidth / 2 : first.offsetLeft + 6;
+      const right = pair ? last.offsetLeft + last.offsetWidth / 2 : last.offsetLeft + last.offsetWidth - 6;
+      const position = {
+        left: `${left}px`,
+        top: `${first.offsetTop + first.offsetHeight - 8}px`,
+        width: `${right - left}px`,
+      };
+      Object.entries(position).forEach(([property, value]) => {
+        if (electiveOptionsButton.style[property] !== value) electiveOptionsButton.style[property] = value;
+      });
+      if (electiveOptionsButton.hidden) electiveOptionsButton.hidden = false;
+    };
+    let electiveOptionsFrame = null;
+    let electiveOptionsScrolling = false;
+    const scheduleElectiveOptionsButton = () => {
+      if (electiveOptionsScrolling || electiveOptionsFrame !== null) return;
+      electiveOptionsFrame = requestAnimationFrame(() => {
+        electiveOptionsFrame = null;
+        if (electiveOptionsScrolling) return;
+        updateElectiveOptionsButton();
+        updatePageSectionShortcuts();
+      });
+    };
+    let finishElectiveOptionsScroll = null;
+    let electiveScrollFrame = null;
+    const animatePlannerScroll = (root, target, onComplete) => {
+      finishElectiveOptionsScroll?.(false);
+      if (electiveScrollFrame !== null) cancelAnimationFrame(electiveScrollFrame);
+      const start = root.scrollTop;
+      let started = null;
+      const scroll = now => {
+        if (started === null) started = now;
+        const progress = Math.min(1, (now - started) / 500);
+        root.scrollTo({ top: start + (target - start) * (1 - Math.cos(Math.PI * progress)) / 2, behavior: 'instant' });
+        electiveScrollFrame = progress < 1 ? requestAnimationFrame(scroll) : null;
+        if (progress === 1) {
+          updatePageSectionShortcuts();
+          onComplete?.();
+        }
+      };
+      electiveScrollFrame = requestAnimationFrame(scroll);
+    };
+    const highlightPlannerSection = section => section.animate([
+      { outline: '3px solid #ffd700', outlineOffset: '3px' },
+      { outline: '3px solid #ffd700', outlineOffset: '3px' },
+    ], { duration: 500 });
+    pageSectionShortcuts.forEach(({ button, section }) => {
+      button.addEventListener('click', () => {
+        const root = getElectiveScrollRoot();
+        animatePlannerScroll(root, root.scrollHeight - root.clientHeight, () => {
+          highlightPlannerSection(section);
+        });
+      });
+    });
+    electiveOptionsButton.addEventListener('click', event => {
+      event.stopPropagation();
+      const coreLabel = plannerContainer?.querySelector('.key .key-item');
+      if (!coreLabel) return;
+      const root = getElectiveScrollRoot();
+      const viewport = getElectiveViewport(root);
+      const coreRect = coreLabel.getBoundingClientRect();
+      const start = root.scrollTop;
+      const target = Math.min(root.scrollHeight - root.clientHeight,
+        Math.max(start, start + coreRect.top + coreRect.height / 2 - viewport.bottom));
+      finishElectiveOptionsScroll?.(false);
+      if (electiveScrollFrame !== null) {
+        cancelAnimationFrame(electiveScrollFrame);
+        electiveScrollFrame = null;
+      }
+      electiveOptionsScrolling = true;
+      const previousAnchor = root.style.overflowAnchor;
+      root.style.overflowAnchor = 'none';
+      const finish = (highlight = true) => {
+        root.style.overflowAnchor = previousAnchor;
+        electiveOptionsScrolling = false;
+        finishElectiveOptionsScroll = null;
+        scheduleElectiveOptionsButton();
+        if (!highlight) return;
+        highlightPlannerSection(electivesGrid);
+        electivesGrid.querySelectorAll('.subject-card:not(.empty):not(.elective-spacer)').forEach(cell => {
+          cell.animate([
+            { boxShadow: 'inset 0 0 0 3px #ffd700' },
+            { boxShadow: 'inset 0 0 0 3px #ffd700' },
+          ], { duration: 500 });
+        });
+      };
+      animatePlannerScroll(root, target, () => finish());
+      finishElectiveOptionsScroll = finish;
+    });
+    const electiveOptionsObserver = new MutationObserver(scheduleElectiveOptionsButton);
+    [mainGrid, electivesGrid, plannerContainer?.querySelector('.key')].filter(Boolean).forEach(grid => {
+      electiveOptionsObserver.observe(grid, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-subject'] });
+    });
+    const electiveOptionsResizeObserver = new ResizeObserver(scheduleElectiveOptionsButton);
+    [mainGrid, electivesGrid, plannerContainer?.querySelector('.key')].filter(Boolean)
+      .forEach(grid => electiveOptionsResizeObserver.observe(grid));
+    window.addEventListener('resize', scheduleElectiveOptionsButton);
+    document.addEventListener('scroll', scheduleElectiveOptionsButton, true);
+    scheduleElectiveOptionsButton();
+  }
   // Initial sync of reset button state
   updateResetState();
   updateVaryLoadLabel();

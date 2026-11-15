@@ -27,7 +27,7 @@ Last Modified: 11/07/2026
   <link
     href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260718-65">
+  <link rel="stylesheet" href="styles.css?v=20261115-elective-button-layer">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -171,7 +171,7 @@ Last Modified: 11/07/2026
           <div class="available-heading-row">
             <button class="clear-button available-heading" id="available-heading" type="button"
               aria-label="Highlight available subjects in the grid"
-              data-tooltip-html="Highlight the subjects available to select this semester with an expanding yellow border. Click those cards in the grid to choose your timetable.">Click in grid</button>
+              data-tooltip-html="Wiggle the subjects available to select this semester. Click those cards in the grid to choose your timetable.">Click in grid</button>
             <button class="clear-button available-heading" id="select-by-typing-button" type="button"
               aria-label="Select subjects by typing or pasting"
               data-tooltip-html="Opens a new window where you can type or paste in the subjects you will study this semester.<br><br>Subject codes are needed e.g., BIT121 or even 121. Subject names will be ignored.">Type / Paste</button>
@@ -237,6 +237,10 @@ Last Modified: 11/07/2026
             <button id="move-to-next-semester" class="clear-button secondary" type="button" hidden
               data-tooltip="Treat current enrolments and selections as completed, then plan the following semester.">Select for
               future semesters</button>
+            <div class="page-section-shortcuts">
+              <button id="scroll-to-colour-key" class="clear-button secondary page-section-shortcut" type="button" hidden>See Colour Key ↘</button>
+              <button id="scroll-to-sas-subjects" class="clear-button secondary page-section-shortcut" type="button" hidden>See SAS information ↘</button>
+            </div>
           <div class="semester-timetable-section dim-when-complete">
             <button id="show-semester-timetable" class="clear-button secondary" type="button"
               data-tooltip="See the complete semester offering from our school.">Semester Timetable</button>
@@ -1376,9 +1380,15 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-course-map" aria-label="Close course map">X</button>
       </div>
       <div class="modal-body">
-        <button id="close-course-map-major-electives-view"
-          class="clear-button secondary course-map-close-major-electives-view" type="button" hidden>Return to
-          staff/student view</button>
+        <dialog id="course-map-animate-chooser" aria-labelledby="course-map-animate-title">
+          <button id="close-course-map-animate-chooser" type="button" aria-label="Close stream chooser">×</button>
+          <h3 id="course-map-animate-title">Choose your major</h3>
+          <div class="course-map-animate-choices">
+            <button class="clear-button" type="button" data-animate-stream="ns">Network Security</button>
+            <button class="clear-button" type="button" data-animate-stream="ba">Business Analytics</button>
+            <button class="clear-button" type="button" data-animate-stream="sd">Software Development</button>
+          </div>
+        </dialog>
         <div id="course-map-content" class="course-map-content"></div>
       </div>
       <div class="modal-actions">
@@ -1386,7 +1396,7 @@ Last Modified: 11/07/2026
           <button id="open-course-map-show-hide" class="clear-button secondary" type="button" aria-haspopup="dialog"
             aria-expanded="false" aria-controls="course-map-show-hide-dialog"
             data-tooltip-html="Open display options for the Course Map, including font size, notes, colours, and prerequisite display.">View</button>
-          <button id="course-map-explain-structure-view" class="clear-button secondary" type="button" aria-pressed="false">Animate</button>
+          <button id="course-map-explain-structure-view" class="clear-button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="course-map-animate-chooser">Switch major</button>
           <div id="course-map-show-hide-dialog" class="course-map-show-hide-dialog" role="dialog" aria-modal="false"
             aria-hidden="true" aria-labelledby="course-map-show-hide-dialog-title">
             <h3 id="course-map-show-hide-dialog-title">View</h3>
@@ -1451,14 +1461,7 @@ Last Modified: 11/07/2026
               <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject
                 cards (showing)</span>
             </div>
-            <div class="toggle-row course-map-show-hide-row">
-              <label class="switch">
-                <input type="checkbox" id="toggle-course-map-indicators" aria-label="Show stream heading text" checked>
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label" id="course-map-indicators-toggle-label">Text below stream headings
-                (showing)</span>
-            </div>
+            
             <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
@@ -1467,13 +1470,7 @@ Last Modified: 11/07/2026
               <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names
                 (removed)</span>
             </div>
-            <div class="toggle-row course-map-show-hide-row course-map-staff-mode-row">
-              <label class="switch">
-                <input type="checkbox" id="course-map-staff-mode-toggle" aria-label="Staff mode">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label" id="course-map-staff-mode-label">Staff mode</span>
-            </div>
+            
 
           </div>
         </div>
@@ -1503,14 +1500,8 @@ Last Modified: 11/07/2026
               <button id="course-map-vary-load" class="clear-button secondary load-button" type="button">4</button>
               <span id="course-map-load-label" class="switch-label">Subjects this semester?</span>
             </div>
-            <button id="course-map-default-student-view" class="clear-button secondary course-map-default-view"
-              type="button">
-              Default student mode &amp; view
-            </button>
-            <button id="course-map-default-staff-view" class="clear-button secondary course-map-default-view"
-              type="button">
-              Default Staff mode &amp; view
-            </button>
+            
+            
           </div>
         </div>
         <button id="course-map-add-history" class="clear-button secondary" type="button" aria-pressed="false">Add history</button>
@@ -1553,12 +1544,13 @@ Last Modified: 11/07/2026
           type="button" hidden
           data-tooltip-html="Create and open this student's folder in the teacher temp folder. If a folder for this student ID already exists in any teacher temp folder, creation is blocked and that existing folder is opened instead. Folder name: Student ID FAMILY NAME, Given Name.">Temp
           Create</button>
+        <div class="course-map-information-actions">
         <button id="course-map-old-codes" class="clear-button secondary course-map-old-codes" type="button"
           data-tooltip-html="Show old subject codes and their current replacements.">Old codes</button>
         <button id="course-map-full-semester-timetable"
           class="clear-button secondary course-map-full-semester-timetable" type="button"
-          data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Full Semester
-          Timetable</button>
+          data-tooltip-html="Open the full semester timetable, not just the selected subjects.">Semester Timetable</button>
+        </div>
         <button id="close-course-map-cta" class="clear-button secondary" type="button"
           data-tooltip-html="Close the Course Map.">Close</button>
       </div>
@@ -2131,7 +2123,7 @@ Last Modified: 11/07/2026
   </dialog>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20261027-summer-1"></script>
+  <script src="script.js?v=20261115-elective-scroll-3"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time> (Melbourne time)</div>
