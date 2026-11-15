@@ -105,7 +105,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   });
   const friendlyMenuButton = friendlySettings.querySelector('summary');
   friendlyMenuButton.setAttribute('aria-keyshortcuts', 'Alt+m');
-  const menuKeys = { n: friendlyReset, d: friendlyTheme, c: document.getElementById('density-friendly-chat'), h: document.getElementById('contrast-friendly-chat') };
+  const menuKeys = { d: friendlyTheme, c: document.getElementById('density-friendly-chat'), h: document.getElementById('contrast-friendly-chat') };
   const setFriendlyMenuLabel = (button, label, key) => {
     const index = label.toLowerCase().indexOf(key);
     const underline = document.createElement('u');
@@ -113,12 +113,16 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     button.replaceChildren(document.createTextNode(label.slice(0, index)), underline, document.createTextNode(label.slice(index + 1)));
     button.setAttribute('aria-keyshortcuts', key);
   };
-  setFriendlyMenuLabel(friendlyReset, 'New chat', 'n');
   const clearFriendlyAltHint = () => { friendlySettings.classList.remove('show-key-hint'); };
   document.addEventListener('keydown', event => {
     if (!friendlyChat.open || friendlyInput.inert || friendlyChat.querySelector('.friendly-chat-compose').inert) return;
     if (event.key === 'Alt') friendlySettings.classList.add('show-key-hint');
     const key = event.key.toLowerCase();
+    if (event.altKey && !event.ctrlKey && !event.metaKey && key === 'n' && !friendlyReset.hidden && !friendlyReset.disabled) {
+      event.preventDefault();
+      friendlyReset.click();
+      return;
+    }
     if (event.altKey && !event.ctrlKey && !event.metaKey && key === 'm') {
       event.preventDefault(); clearFriendlyAltHint();
       friendlySettings.open = true; friendlyMenuButton.focus();
@@ -139,7 +143,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
       }
     }
     if (event.key === 'Tab' && !event.defaultPrevented) {
-      const order = [friendlyInput, friendlySend, friendlyMenuButton, document.getElementById('close-friendly-chat')].filter(element => !element.disabled);
+      const order = [friendlyInput, friendlySend, friendlyMenuButton, friendlyReset, document.getElementById('close-friendly-chat')].filter(element => !element.disabled && !element.hidden);
       let index = order.indexOf(document.activeElement);
       if (friendlySettings.contains(document.activeElement)) { index = order.indexOf(friendlyMenuButton); friendlySettings.open = false; }
       event.preventDefault();
@@ -229,7 +233,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     }
     if (Array.isArray(state.selected) && state.semester === currentSemesterKey && !sameCodes(state.selected, previousChoices)) changes.push('subject choices');
     if (!changes.length) return '';
-    return `The main grid has been updated: ${changes.join('; ')}.`;
+    return `The main grid behind this AI dialog has been updated: ${changes.join('; ')}.`;
   }
 
   const appendFriendlyLinks = (element, text) => {
@@ -249,6 +253,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
     element.append(document.createTextNode(text.slice(offset)));
   };
   const renderFriendlyChat = () => {
+    friendlyReset.hidden = friendlyMessages.length === 0;
     friendlyLog.replaceChildren();
     const greeting = document.createElement('p');
     greeting.className = 'friendly-bubble assistant';
@@ -479,6 +484,7 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   function updateFriendlyResetAvailability() {
     const { hasHistory, hasSelections } = getFriendlyResetContext();
     friendlyReset.disabled = friendlyBusy || !(hasHistory || hasSelections || friendlyMessages.length || friendlyInput.value.trim());
+    friendlyReset.hidden = friendlyMessages.length === 0;
   }
   friendlySettings.addEventListener('toggle', updateFriendlyResetAvailability);
   window.addEventListener('load', updateFriendlyResetAvailability);
@@ -8491,6 +8497,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     capstoneGuidance.subjects.every((code) => !subjectState.get(code)?.completed);
 
   const shouldShowRemainingNotice = (remainingCount) => {
+    if (isOptionalSummerSemester()) return false;
     if (!remainingNoticeUnlocked) return false;
     if (!planningGuidance.earlyCompletion.noticeRemainingCounts.includes(remainingCount)) return false;
     if (
@@ -8530,6 +8537,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   const getSummerSchoolOpportunityAlert = () => {
+    if (isOptionalSummerSemester()) return null;
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const planningSemesterKey = getSemesterKeyForOffset(0);
     const isSemesterOneWindow =
@@ -8569,6 +8577,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   const getCapstoneEarlyCompletionCautionAlert = () => {
+    if (isOptionalSummerSemester()) return null;
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const planningSemesterKey = getSemesterKeyForOffset(0);
     const hasEarlyCompletionOption =
@@ -8746,7 +8755,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const studyingCount = getCurrentStudyCodes().size;
     const hasRealStudentRecord = !!record && Object.keys(record).length > 0;
     const skipVisaVariation = hasCurrentHistoryHoldOrUngradedSubject();
-    if (staffFacing && hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record) && !skipVisaVariation) {
+    if (!isOptionalSummerSemester() && staffFacing && hasRealStudentRecord && studyingCount > 0 && isInternationalStudent(record) && !skipVisaVariation) {
       if (studyingCount < loadThreshold) {
         infoMessages.push({
           title: 'Visa requirement variation',
@@ -25407,14 +25416,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const row = document.createElement('tr');
       if (className) row.className = className;
       const oldCell = document.createElement('td');
-      oldCell.textContent = oldCode;
+      const previousSubject = previousCodeByNew[newCode];
+      oldCell.textContent = previousSubject?.startsWith(`${oldCode} `)
+        ? previousSubject : `${oldCode} ${getSubjectName(newCode)}`;
       const newCell = document.createElement('td');
-      newCell.textContent = newCode;
-      const nameCell = document.createElement('td');
-      nameCell.textContent = getSubjectName(newCode);
+      newCell.textContent = `${newCode} ${getSubjectName(newCode)}`;
       row.appendChild(oldCell);
       row.appendChild(newCell);
-      row.appendChild(nameCell);
       oldCodesTableBody.appendChild(row);
     };
     const { priority, rest } = getOldCodeRows();
@@ -25423,7 +25431,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const divider = document.createElement('tr');
       divider.className = 'old-codes-divider-row';
       const cell = document.createElement('td');
-      cell.colSpan = 3;
+      cell.colSpan = 2;
       cell.setAttribute('aria-hidden', 'true');
       divider.appendChild(cell);
       oldCodesTableBody.appendChild(divider);

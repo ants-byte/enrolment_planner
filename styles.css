@@ -8326,7 +8326,7 @@ body.history-graduated #btn-codes {
   margin-top: 6px;
 }
 
-.old-codes-modal {
+.modal.old-codes-modal {
   width: max-content;
   min-width: 0;
   max-width: calc(100vw - 32px);
@@ -8365,20 +8365,14 @@ body.history-graduated #btn-codes {
   padding: 6px 10px;
   text-align: left;
   border-bottom: 1px solid #a9bde1;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .old-codes-table th:nth-child(1),
 .old-codes-table th:nth-child(2),
 .old-codes-table td:nth-child(1),
 .old-codes-table td:nth-child(2) {
-  width: 1%;
-}
-
-.old-codes-table th:nth-child(3),
-.old-codes-table td:nth-child(3) {
-  width: auto;
-  white-space: nowrap;
+  width: 50%;
 }
 
 .old-codes-table thead th {
@@ -13986,7 +13980,11 @@ body.completed-mode #clear-selections {
   min-width: min(800px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
 }
-#friendly-chat { min-height: min(360px, calc(100dvh - 24px)); }
+#friendly-chat { width: min(1110px, calc(100vw - 24px)); min-height: min(360px, calc(100dvh - 24px)); }
+#friendly-chat .friendly-chat-header h2 { flex: 0 1 auto; }
+#friendly-chat #reset-friendly-chat { margin-left: 40px; margin-right: 0; flex: 0 0 auto; }
+#friendly-chat #reset-friendly-chat[hidden] { display: none; }
+#friendly-chat #close-friendly-chat { margin-left: auto; }
 .chat-resize-edge { position: absolute; z-index: 10; touch-action: none; }
 .chat-resize-edge.n { top: 0; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
 .chat-resize-edge.s { bottom: 0; left: 12px; right: 12px; height: 6px; cursor: ns-resize; }
