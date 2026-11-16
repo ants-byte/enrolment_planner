@@ -1,5 +1,53 @@
 # ChatGPT course planner connection
 
+## Microsoft 365 Copilot desktop setup
+
+The intended client is Microsoft 365 Copilot signed in with the Melbourne
+Polytechnic work account. The account screenshot shows Copilot Chat (Basic).
+Its ability to use a custom agent depends on tenant permissions and licensing
+or organization-funded Copilot Studio capacity/pay-as-you-go. Confirm these
+with IT before purchasing anything.
+
+Start with a Copilot Studio agent using the existing public course MCP.
+
+1. Sign in at https://copilotstudio.microsoft.com with the work account and
+   check that you can create an agent with tools. Ask IT for maker access and
+   an appropriate environment if these controls are unavailable. A trial can
+   test an agent but cannot publish it.
+2. Create a Subject Planner agent, enable generative orchestration, then select
+   Tools > Add a tool > New tool > Model Context Protocol.
+3. Use `https://timetableplanner.adiserio.workers.dev/mcp` as the server URL.
+   Choose None for authentication on this public course-only endpoint. Add its
+   four tools and test a subject-description and prerequisite question.
+4. Put the applicable course-owner guidance from the exported string in
+   `planner-instructions.mjs` into the agent instructions. Test the rules in
+   Copilot Studio, since MCP initialization instructions alone do not verify
+   how a different client will follow them.
+5. Once tenant publishing and billing are approved, publish the agent and add
+   the Teams and Microsoft 365 channel with availability in Microsoft Copilot.
+   Install it for yourself and test it in the desktop app's Agents area.
+
+The public endpoint accepts supplied academic history but cannot read the
+student selected in the local website. That requires a later, authenticated
+connection from Microsoft to the private bridge. Microsoft cloud services
+cannot reach this PC's `127.0.0.1` endpoint directly. The existing OpenAI secure
+tunnel is part of the working ChatGPT connection and has not been verified as
+accessible to Microsoft. Keep selected-student tools on the private bridge.
+
+Cleanup audit on 15 November 2026 found no isolated ChatGPT-desktop-only or
+Copilot-specific integration in this checkout. Keep `tools/local-planner-server.mjs`,
+`tools/local-planner-browser.js`, `tools/officer-reference.mjs`, their tests,
+and `tools/start-local-tunnel.ps1` because they provide shared MCP capabilities.
+The `enrol://` scripts support folder and enrolment workflows.
+
+Microsoft setup references
+
+- https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent
+- https://learn.microsoft.com/en-us/microsoft-copilot-studio/billing-licensing
+- https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-add-bot-to-microsoft-teams
+
+## Existing website and ChatGPT MCP setup
+
 The Cloudflare Worker adds a stateless, read-only `/mcp` endpoint. It uses
 `semester-config.json`; update that file to update course rules and offerings.
 No API key, database or student-history storage is required.

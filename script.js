@@ -3582,6 +3582,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const courseMapLoadFilesButton = document.getElementById('course-map-load-files');
   const toggleCourseMapPrereqButton = document.getElementById('toggle-course-map-prereq');
   const courseMapPrereqToggleLabel = document.getElementById('course-map-prereq-toggle-label');
+  const toggleCourseMapClocks = document.getElementById('toggle-course-map-clocks');
   const toggleCourseMapPrereqTextButton = document.getElementById('toggle-course-map-prereq-text');
   const courseMapPrereqTextToggleLabel = document.getElementById('course-map-prereq-text-toggle-label');
   const toggleCourseMapIndicatorsButton = document.getElementById('toggle-course-map-indicators');
@@ -3608,6 +3609,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const courseMapEmailToolsButton = document.getElementById('course-map-email-tools');
   const courseMapHistoryButton = document.getElementById('course-map-history');
   const courseMapAddHistoryButton = document.getElementById('course-map-add-history');
+  const courseMapResetHistoryButton = document.getElementById('course-map-reset-history');
   let courseMapHistoryEntryOn = false;
   const courseMapRemainingButton = document.getElementById('course-map-remaining');
   const courseMapNextSemesterButton = document.getElementById('course-map-next-semester');
@@ -3621,6 +3623,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const closeHistoryCta = document.getElementById('close-history-cta');
   const oldCodesModal = document.getElementById('old-codes-modal');
   const oldCodesTableBody = document.getElementById('old-codes-table-body');
+  const noSubjectsDialog = document.getElementById('no-subjects-dialog');
+  const ancientCodesTableBody = document.getElementById('ancient-codes-table-body');
   const closeOldCodes = document.getElementById('close-old-codes');
   const closeOldCodesCta = document.getElementById('close-old-codes-cta');
   const copyHistory = document.getElementById('copy-history');
@@ -5645,6 +5649,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
       emptyChip.className = 'course-map-info-chip course-map-info-empty';
       emptyChip.textContent = 'No student selected';
       courseMapStudentInfoStrip.appendChild(emptyChip);
+      [courseMapStudFormsButton, courseMapCtTempButton, courseMapTempCreateButton]
+        .filter(Boolean).forEach(button => courseMapStudentInfoStrip.appendChild(button));
 
       const remainingChip = document.createElement('button');
       remainingChip.type = 'button';
@@ -5933,6 +5939,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
       );
     }
 
+    [courseMapStudFormsButton, courseMapCtTempButton, courseMapTempCreateButton]
+      .filter(Boolean).forEach(button => courseMapStudentInfoStrip.appendChild(button));
+
     const remainingChip = document.createElement('button');
     remainingChip.type = 'button';
     remainingChip.className = 'course-map-info-chip course-map-info-remaining';
@@ -5985,7 +5994,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       const hasFullSelection = isOptionalSummerSemester()
         ? selectedCount >= 1 && selectedCount <= 2 : hasFullLoad;
       courseMapStaffOpenWindowButton.textContent = hasFullSelection
-        ? 'Your timetable details' : 'Your options - subject details';
+        ? 'Your timetable details' : 'Your options. See full details';
       courseMapStaffOpenWindowButton.style.display = 'block';
       courseMapStaffOpenWindowButton.classList.remove('hidden-initial');
       courseMapStaffOpenWindowButton.classList.toggle('is-your-times', hasFullLoad);
@@ -6060,10 +6069,26 @@ const TRIAGE_READ_MAX_ROWS = 0;
       if (!courseMapStaffPanelEl || courseMapStaffPanelEl.hidden || !courseMapContent) return;
       const coreGrid = courseMapContent.querySelector('.course-map-core-block');
       if (!coreGrid) return;
-      const overlayGrid = courseMapContent.querySelector('.course-map-structure-selected-stream .course-map-stream-grid');
-      const gridBottom = Math.max(coreGrid.getBoundingClientRect().bottom,
-        overlayGrid?.getBoundingClientRect().bottom || 0);
-      courseMapStaffPanelEl.style.top = `${Math.ceil(gridBottom - courseMapContent.getBoundingClientRect().top + 16)}px`;
+      // The permanent grid already reserves the tallest card height. Do not
+      // follow the overlay's animated rectangle or the controls move with it.
+      const gridBottom = coreGrid.getBoundingClientRect().bottom;
+      courseMapStaffPanelEl.style.top = `${Math.ceil(gridBottom - courseMapContent.getBoundingClientRect().top + 24)}px`;
+      const listHost = courseMapStaffSelectedListHostEl;
+      const body = courseMapContent.closest('.modal-body');
+      if (listHost && body) {
+        const controlsBelow = [];
+        for (let sibling = listHost.nextElementSibling; sibling; sibling = sibling.nextElementSibling) {
+          if (sibling.getBoundingClientRect().height && getComputedStyle(sibling).position !== 'absolute') controlsBelow.push(sibling);
+        }
+        const gap = parseFloat(getComputedStyle(courseMapStaffPanelEl).rowGap) || 0;
+        const reservedHeight = controlsBelow.reduce((height, control) => height + control.getBoundingClientRect().height + gap, 0);
+        const historyRow = courseMapStaffPanelEl.querySelector('.course-map-staff-info-actions');
+        const footerOverlap = (historyRow?.getBoundingClientRect().height || 0) / 2;
+        const firstRow = listHost.querySelector('.available-item');
+        const minimumHeight = (firstRow?.getBoundingClientRect().height || 28) + 14;
+        listHost.style.maxHeight = `${Math.max(minimumHeight, Math.min(window.innerHeight, body.getBoundingClientRect().bottom) +
+          footerOverlap - listHost.getBoundingClientRect().top - reservedHeight)}px`;
+      }
     });
   };
 
@@ -6202,7 +6227,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     presetMpDip.setAttribute('aria-disabled', staffFacing ? 'false' : 'true');
   }
   if (staffFacing) {
-    if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose your major (it can be a guess if unsure).';
+    if (majorSectionDescriptor) majorSectionDescriptor.textContent = 'Choose your major';
     if (historySectionDescriptor) historySectionDescriptor.textContent = 'Enter your passes and credits';
   }
   const focusStaffLoadFromFolderButton = () => {
@@ -6934,6 +6959,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const passForEnrolmentsOverrides = new Set();
   const currentEnrolmentsPlannedOverrides = new Set();
   let loadedStudentSnapshot = null;
+  let noSubjectsPopupTimer = null;
+  let lastNoSubjectsNotice = '';
   let suppressNextFullLoadAutoModal = false;
   let nextSemWarning = null;
   let finalSemWarning = null;
@@ -10706,6 +10733,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   const updateResetState = () => {
+    updateCourseMapHistoryResetAvailability();
     if (!clearButton) return;
     clearButton.textContent = planningSemesterOffset > 0 ? 'Exit - back to today' : 'Reset';
     const selectedCodes = Array.from(subjectState.entries())
@@ -10750,7 +10778,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
         ? getPlannedCount() >= 1 && getPlannedCount() <= 2
         : getLoadThreshold() > 0 && getPlannedCount() >= getLoadThreshold();
       mainGridDetailsButton.textContent = hasFullSelection
-        ? 'Your timetable details' : 'Your options - subject details';
+        ? 'Your timetable details' : 'Your options. See full details';
       mainGridDetailsButton.dataset.mode = hasSelected ? 'selected' : 'available';
       mainGridDetailsButton.classList.toggle('is-my-times', hasSelected);
       mainGridDetailsButton.classList.toggle('subject-details-ready', isOptionalSummerSemester()
@@ -12513,7 +12541,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     manualEntryMeta: new Map(
       Array.from(manualEntryMeta.entries()).map(([code, meta]) => [
         code,
-        { result: meta?.result || '', date: meta?.date || '' },
+        { ...meta },
       ])
     ),
     manualEntryResults: manualEntryResults.map((entry) => ({ ...entry })),
@@ -12531,7 +12559,69 @@ const TRIAGE_READ_MAX_ROWS = 0;
       Array.from(workbookCurrent.entries()).map(([code, meta]) => [code, { ...meta }])
     ),
     majorValue: majorDropdown?.dataset?.value || currentMajorValue || 'undecided',
+    currentEnrolmentOverrideCodes: currentEnrolmentOverrideCodes ? new Set(currentEnrolmentOverrideCodes) : null,
+    withdrawnCurrentEnrolments: new Set(withdrawnCurrentEnrolments),
   });
+
+  const courseMapHistoryFingerprint = snapshot => {
+    const stable = value => value && typeof value === 'object'
+      ? Array.isArray(value) ? value.map(stable)
+        : Object.fromEntries(Object.keys(value).sort().map(key => [key, stable(value[key])]))
+      : value;
+    const sorted = values => Array.from(values || [], stable)
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    const currentCodes = new Set([
+      ...(snapshot?.workbookCurrent?.keys() || []), ...(snapshot?.manualEntryCurrent?.keys() || []),
+      ...(snapshot?.currentEnrolmentOverrideCodes || []),
+    ]);
+    return JSON.stringify({
+      completed: sorted(Array.from(snapshot?.subjectState || [])
+        .filter(([code, state]) => state.completed && !currentCodes.has(code)).map(([code]) => code)),
+      credits: sorted((snapshot?.electivePlaceholderState || []).filter(Boolean)),
+      results: sorted(snapshot?.manualEntryResults), meta: sorted(snapshot?.manualEntryMeta),
+      current: sorted(snapshot?.manualEntryCurrent), workbookCurrent: sorted(snapshot?.workbookCurrent),
+      aliases: sorted(Array.from(snapshot?.manualEntryAliases || [], ([code, aliases]) => [code, [...aliases].sort()])),
+      unknown: sorted(snapshot?.manualEntryUnknown), withdrawn: sorted(snapshot?.withdrawnCurrentEnrolments),
+      currentCodes: sorted(currentCodes),
+    });
+  };
+  function updateCourseMapHistoryResetAvailability() {
+    if (!courseMapResetHistoryButton) return;
+    const studentLoaded = !!staffWorkbookState.getStudentRecord();
+    const baseline = studentLoaded ? loadedStudentSnapshot : null;
+    courseMapResetHistoryButton.disabled = courseMapHistoryFingerprint(captureStudentSnapshot()) ===
+      courseMapHistoryFingerprint(baseline);
+    courseMapResetHistoryButton.textContent = courseMapResetHistoryButton.disabled ? 'Reset'
+      : studentLoaded ? 'Undo manual history changes' : 'Clear history';
+  }
+  const resetCourseMapHistory = () => {
+    if (courseMapResetHistoryButton.disabled) return;
+    const current = captureStudentSnapshot();
+    let baseline = staffWorkbookState.getStudentRecord() ? loadedStudentSnapshot : null;
+    if (!baseline) {
+      baseline = { ...current, subjectState: new Map(), electivePlaceholderState: ['', '', '', ''],
+        electiveBitState: ['', '', '', ''], manualEntryAliases: new Map(), manualEntryMeta: new Map(),
+        manualEntryResults: [], manualEntryCurrent: new Map(), manualEntryUnknown: [], workbookCurrent: new Map(),
+        passForEnrolmentsOverrides: new Set(), currentEnrolmentsPlannedOverrides: new Set(),
+        currentEnrolmentOverrideCodes: null, withdrawnCurrentEnrolments: new Set() };
+    }
+    const restoredState = new Map(Array.from(current.subjectState, ([code, state]) => {
+      const completed = !!baseline.subjectState.get(code)?.completed;
+      return [code, { completed, toggled: !completed && state.toggled }];
+    }));
+    currentEnrolmentOverrideCodes = baseline.currentEnrolmentOverrideCodes
+      ? new Set(baseline.currentEnrolmentOverrideCodes) : null;
+    withdrawnCurrentEnrolments.clear();
+    restoreStudentSnapshot({ ...baseline, subjectState: restoredState, majorValue: current.majorValue,
+      passForEnrolmentsEnabled: current.passForEnrolmentsEnabled });
+    refreshCurrentEnrolmentStudentRecord();
+    passForEnrolmentsEnabled = current.passForEnrolmentsEnabled;
+    applyPassForEnrolmentsState();
+    updateSelectedList(); updateResetState(); updateWarnings(); updateBookmarkableSettingsUrl();
+    if (courseMapModal?.classList.contains('show')) {
+      updateCourseMapStatuses(); scheduleCourseMapRelayout();
+    }
+  };
 
   const restoreStudentSnapshot = (snapshot) => {
     if (!snapshot) return false;
@@ -12543,7 +12633,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     );
     manualEntryMeta.clear();
     snapshot.manualEntryMeta.forEach((meta, code) =>
-      manualEntryMeta.set(code, { result: meta?.result || '', date: meta?.date || '' })
+      manualEntryMeta.set(code, { ...meta })
     );
     manualEntryResults = Array.isArray(snapshot.manualEntryResults)
       ? snapshot.manualEntryResults.map((entry) => ({ ...entry }))
@@ -12551,13 +12641,13 @@ const TRIAGE_READ_MAX_ROWS = 0;
     workbookCurrent.clear();
     if (snapshot.workbookCurrent) {
       snapshot.workbookCurrent.forEach((meta, code) =>
-        workbookCurrent.set(code, { result: meta?.result || '', date: meta?.date || '' })
+        workbookCurrent.set(code, { ...meta })
       );
     }
     workbookCurrent.clear();
     if (snapshot.workbookCurrent) {
       snapshot.workbookCurrent.forEach((meta, code) =>
-        workbookCurrent.set(code, { result: meta?.result || '', date: meta?.date || '' })
+        workbookCurrent.set(code, { ...meta })
       );
     }
     manualEntryCurrent.clear();
@@ -13188,9 +13278,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const isOpen = courseMapKeyModal.classList.contains('show');
     openCourseMapKeyButton.checked = isOpen;
     if (courseMapKeyToggleLabel) {
-      courseMapKeyToggleLabel.textContent = isOpen
-        ? 'Colour Key (showing)'
-        : 'Colour Key (removed)';
+      courseMapKeyToggleLabel.textContent = 'Legend';
       courseMapKeyToggleLabel.classList.toggle('active', isOpen);
     }
   };
@@ -13203,9 +13291,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       toggleCourseMapNotesButton.checked = courseMapNotesOn;
     }
     if (courseMapNotesToggleLabel) {
-      courseMapNotesToggleLabel.textContent = courseMapNotesOn
-        ? 'Notes (showing)'
-        : 'Notes (removed)';
+      courseMapNotesToggleLabel.textContent = 'Notes';
       courseMapNotesToggleLabel.classList.toggle('active', courseMapNotesOn);
     }
     if (courseMapNotesEl) {
@@ -13218,7 +13304,10 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const showCourseMapKeyModal = () => {
     if (!courseMapKeyModal) return;
     // Always rebuild so the key reflects current mode/toggles.
-    buildCourseMapKey();
+    if (!buildCourseMapKey()) {
+      if (courseMapKeyModal.classList.contains('show')) hideCourseMapKeyModal();
+      return;
+    }
     syncCourseMapKeyPanelBottomOffset();
     positionCourseMapKeyPanelDefault();
     courseMapKeyModal.classList.add('show');
@@ -13266,13 +13355,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const syncCourseMapKeyAvailability = () => {
     if (!openCourseMapKeyButton || !courseMapKeyModal) return;
+    const hasItems = buildCourseMapKey();
     openCourseMapKeyButton.hidden = false;
+    openCourseMapKeyButton.disabled = !hasItems;
     openCourseMapKeyButton.style.display = '';
+    if (!hasItems && courseMapKeyModal.classList.contains('show')) hideCourseMapKeyModal();
     updateCourseMapKeyToggleButton();
-    // If the panel is open, keep it in sync with the current state.
-    if (courseMapKeyModal.classList.contains('show')) {
-      buildCourseMapKey();
-    }
   };
 
   const EMAIL_SCRIPTS_EXTRA_ROWS = [
@@ -15763,6 +15851,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       }
       updateCompletedModeUI();
       updateResetState();
+      scheduleNoSubjectsPopup();
       if (!completedMode) {
         conditionalRecompute({ force: true, usePlanned: true });
         updateWarnings();
@@ -21240,6 +21329,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   function applyStudentRecord(record) {
     if (!record) return;
+    endCourseMapHistoryEntry();
     remainingNoticeUnlocked = false;
     const nextId = getStudentRecordId(record);
     if (activeStudentId && nextId && nextId !== activeStudentId) {
@@ -25410,9 +25500,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
   };
 
   const renderOldCodesModal = () => {
-    if (!oldCodesTableBody) return;
+    if (!oldCodesTableBody || !ancientCodesTableBody) return;
     oldCodesTableBody.innerHTML = '';
-    const appendRow = ({ oldCode, newCode }, className = '') => {
+    ancientCodesTableBody.innerHTML = '';
+    const appendRow = (body, { oldCode, newCode }, className = '') => {
       const row = document.createElement('tr');
       if (className) row.className = className;
       const oldCell = document.createElement('td');
@@ -25423,20 +25514,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       newCell.textContent = `${newCode} ${getSubjectName(newCode)}`;
       row.appendChild(oldCell);
       row.appendChild(newCell);
-      oldCodesTableBody.appendChild(row);
+      body.appendChild(row);
     };
     const { priority, rest } = getOldCodeRows();
-    priority.forEach((row) => appendRow(row, 'old-codes-priority-row'));
-    if (priority.length && rest.length) {
-      const divider = document.createElement('tr');
-      divider.className = 'old-codes-divider-row';
-      const cell = document.createElement('td');
-      cell.colSpan = 2;
-      cell.setAttribute('aria-hidden', 'true');
-      divider.appendChild(cell);
-      oldCodesTableBody.appendChild(divider);
-    }
-    rest.forEach((row) => appendRow(row));
+    priority.forEach((row) => appendRow(oldCodesTableBody, row, 'old-codes-priority-row'));
+    rest.forEach((row) => appendRow(ancientCodesTableBody, row));
   };
 
   const showOldCodesModal = () => {
@@ -25579,7 +25661,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
   const updateCourseMapModeUi = () => {
     if (!courseMapModal) return;
     if (!courseMapMajorSwitchSnapshot && !courseMapMajorSwitchAnimating) {
-      courseMapStructureExplainMode = hasSelectedMajor();
+      courseMapStructureExplainMode = true;
       courseMapStructureExpandedStream = getSelectedMajorKey();
     }
     const staffMode = getCourseMapIsStaffMode();
@@ -25677,9 +25759,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     if (courseMapAiNamesToggleRow) courseMapAiNamesToggleRow.hidden = !showButton;
     courseMapAiNamesToggleButton.checked = !!courseMapAiNamesOn;
     if (courseMapAiNamesToggleLabel) {
-      courseMapAiNamesToggleLabel.textContent = courseMapAiNamesOn
-        ? 'Proposed AI course map names (showing)'
-        : 'Proposed AI course map names (removed)';
+      courseMapAiNamesToggleLabel.textContent = 'Proposed AI course map names';
       courseMapAiNamesToggleLabel.classList.toggle('active', !!courseMapAiNamesOn);
     }
   };
@@ -25695,7 +25775,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const displayParts = getCourseMapSubjectDisplayParts(subjectCode);
       const codeEl = cell.querySelector('.course-map-code');
       const nameEl = cell.querySelector('.course-map-name');
-      if (codeEl) codeEl.textContent = displayParts.code;
+      if (codeEl) {
+        const clock = codeEl.querySelector('.course-map-offering-clock');
+        codeEl.textContent = displayParts.code;
+        if (clock) codeEl.appendChild(clock);
+      }
       if (nameEl) nameEl.textContent = displayParts.name;
       cell.classList.toggle('course-map-ai-xx-code', courseMapAiNamesOn && /XX/i.test(displayParts.code));
     });
@@ -25704,7 +25788,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const displayParts = getCourseMapSubjectDisplayParts(subjectCode);
       const codeEl = cell.querySelector('.course-map-code');
       const nameEl = cell.querySelector('.course-map-name');
-      if (codeEl) codeEl.textContent = displayParts.code;
+      if (codeEl) {
+        const clock = codeEl.querySelector('.course-map-offering-clock');
+        codeEl.textContent = displayParts.code;
+        if (clock) codeEl.appendChild(clock);
+      }
       if (nameEl) nameEl.textContent = displayParts.name;
       cell.classList.toggle('course-map-ai-xx-code', courseMapAiNamesOn && /XX/i.test(displayParts.code));
     });
@@ -25836,53 +25924,83 @@ function buildStudentRecordsFromWorkbook(workbook) {
   };
 
   const buildCourseMapKey = () => {
-    if (!courseMapKeyModalBody) return;
+    if (!courseMapKeyModalBody) return false;
     courseMapKeyModalBody.innerHTML = '';
-    const { showCompleted, showSelected, showCurrent } = getCourseMapBlueKeyVisibility();
-    const showBlue = showCompleted || showSelected || showCurrent;
+    const cards = Array.from(courseMapContent?.querySelectorAll('.course-map-cell') || []).filter(cell => {
+      const code = cell.dataset.mirroredSubject || cell.dataset.subject;
+      return (validSubjectCodes.has(code) || validUseCodes.has(code)) && cell.getClientRects().length > 0 &&
+        getComputedStyle(cell).visibility !== 'hidden';
+    });
+    const hasStatus = status => cards.some(cell => cell.classList.contains(status));
     const showOther = !!courseMapPrereqColoursOn;
     const items = [];
-    if (showOther) {
-      items.push({ label: '(White background) Available to you this semseter', color: '#ffffff' });
+    const showAvailable = !courseMapModal.classList.contains('course-map-available-highlight-off') && hasStatus('course-map-available-highlight');
+    if (showAvailable) {
+      items.push({ label: 'You can choose this subject this semester', color: 'transparent', available: true,
+        tooltip: 'This subject is running this semester and it is open for you to select' });
     }
-    if (showCompleted) {
+    const showWhite = cards.some(cell => {
+      const code = cell.dataset.mirroredSubject || cell.dataset.subject;
+      const hasColour = ['passed', 'current', 'selected', 'next', 'later'].some(status =>
+        cell.classList.contains(`course-map-status-${status}`));
+      return !hasColour && (!showAvailable || !isRunningThisSemester(code) || (planningSemesterOffset === 0 &&
+        !Object.prototype.hasOwnProperty.call(timetable, code)));
+    });
+    if (showWhite) {
+      items.push({ label: showAvailable
+        ? "(White background) This subject is open to you but it's not running this semester."
+        : '(White background) This subject is open to you.', color: '#ffffff',
+        tooltip: "The subject doesn't have prerequisites or you have completed those prerequisites" });
+    }
+    if (hasStatus('course-map-status-passed')) {
       items.push({ label: 'Completed - passed or credit', color: '#cfe8ff' });
     }
-    if (showCurrent) {
-      items.push({
-        label: 'Current enrolment in your student record',
-        color: 'linear-gradient(135deg, #0b3d91, #9ecbff)',
-        textColor: '#fff',
-      });
+    if (hasStatus('course-map-status-current')) {
+      items.push({ label: 'Current enrolment in your student record',
+        color: passForEnrolmentsEnabled ? '#cfe8ff' : '#0b3d91' });
     }
-    if (showSelected) {
+    if (hasStatus('course-map-status-selected')) {
       items.push({ label: 'Selected here today', color: '#0b3d91', textColor: '#fff' });
     }
-    if (showOther) {
-      items.push({ label: 'You can tick off prerequisite requirements for this subject this semester and study it next semester', color: '#cfcfcf' });
-      items.push({ label: 'It will take at least 2 semesters to tick-off prerequisites', color: '#7d7d7d', textColor: '#fff' });
+    const summerOutlookNote = isOptionalSummerSemester()
+      ? 'Prerequisite shading and clocks look ahead from Semester 1 next year. Selected Summer subjects are assumed to be passed. No other Summer study is assumed.'
+      : '';
+    const prerequisiteTimingTooltip = 'Prerequisite timing assumes the required subjects are offered when needed. A clock marks a delay caused by a prerequisite in the chain not being offered in the planning semester. Enrolment also depends on the subject itself being offered and all enrolment requirements being met. ' + summerOutlookNote;
+    if (showOther && hasStatus('course-map-status-next')) {
+      items.push({ label: "This subject's prerequisite requirements take 1 semester to complete", color: '#cfcfcf', tooltip: prerequisiteTimingTooltip });
     }
-    if (!items.length) {
-      const empty = document.createElement('div');
-      empty.className = 'course-map-key-panel-item';
-      empty.textContent = 'No colour codes to show.';
-      courseMapKeyModalBody.appendChild(empty);
-      return;
+    if (showOther && hasStatus('course-map-status-later')) {
+      items.push({ label: "It will take at least 2 semesters to complete this subject's prerequisites.", color: '#7d7d7d', textColor: '#fff', tooltip: prerequisiteTimingTooltip });
+    }
+    if (showOther && toggleCourseMapClocks.checked && hasStatus('course-map-offering-delay')) {
+      items.push({ label: isOptionalSummerSemester()
+        ? "A prerequisite in this subject's chain is not offered in Semester 1 next year, which may delay study."
+        : "A prerequisite in this subject's chain is not running this semester, which may delay study.",
+        clock: true, tooltip: prerequisiteTimingTooltip });
+    }
+    if (summerOutlookNote && showOther && (hasStatus('course-map-status-next') || hasStatus('course-map-status-later'))) {
+      const outlookNote = document.createElement('p');
+      outlookNote.className = 'course-map-key-outlook';
+      outlookNote.textContent = summerOutlookNote;
+      courseMapKeyModalBody.appendChild(outlookNote);
     }
     items.forEach((item) => {
       const keyItem = document.createElement('div');
       keyItem.className = 'course-map-key-panel-item';
+      if (item.tooltip) keyItem.setAttribute('data-tooltip', item.tooltip);
       const swatch = document.createElement('span');
-      swatch.className = 'course-map-key-panel-swatch';
-      swatch.style.background = item.color;
+      swatch.className = item.clock ? 'course-map-offering-clock' : 'course-map-key-panel-swatch';
+      if (!item.clock) swatch.style.background = item.color;
       if (item.textColor) swatch.style.borderColor = '#666';
-      if (item.color === 'transparent') swatch.style.borderColor = 'transparent';
+      if (item.available) swatch.classList.add('available-subject-swatch');
       const label = document.createElement('span');
       label.textContent = item.label;
       keyItem.appendChild(swatch);
       keyItem.appendChild(label);
       courseMapKeyModalBody.appendChild(keyItem);
     });
+    initTooltips();
+    return items.length > 0;
   };
 
   const buildCourseMapNotes = () => {
@@ -25984,6 +26102,14 @@ function buildStudentRecordsFromWorkbook(workbook) {
     coreBlock.className = 'course-map-core-block';
     coreBlock.appendChild(buildCourseMapGrid(coreRows, 7, 'course-map-core-grid'));
     coreBlock.appendChild(buildCourseMapGrid(majorRows, 5, 'course-map-major-grid'));
+    const graduationHint = document.createElement('span');
+    graduationHint.className = 'course-map-graduation-hint';
+    graduationHint.textContent = 'Fill these 24 cards to graduate';
+    graduationHint.addEventListener('dblclick', () => {
+      wiggleSubjectCards(Array.from(courseMapContent.querySelectorAll('.course-map-cell.course-map-available-highlight'))
+        .filter(cell => getComputedStyle(cell).visibility !== 'hidden' && cell.getBoundingClientRect().width > 0));
+    });
+    coreBlock.appendChild(graduationHint);
     courseMapContent.appendChild(coreBlock);
 
     const streamsBlock = document.createElement('div');
@@ -25991,8 +26117,12 @@ function buildStudentRecordsFromWorkbook(workbook) {
     courseMapStreamsBlockEl = streamsBlock;
     const explainArrows = document.createElement('div');
     explainArrows.className = 'course-map-explain-arrows';
+    const electiveCaption = document.createElement('strong');
+    electiveCaption.className = 'course-map-electives-caption';
+    electiveCaption.textContent = 'Electives';
     explainArrows.innerHTML = '<span>↑</span><span>↑</span><span>↑</span><span>↑</span>';
     streamsBlock.appendChild(explainArrows);
+    explainArrows.appendChild(electiveCaption);
     const majorExplainArrows = document.createElement('div');
     majorExplainArrows.className = 'course-map-major-explain-arrows';
     majorExplainArrows.innerHTML = '<span>↑</span><span>↑</span><span>↑</span><span>↑</span><span>↑</span><span>↑</span>';
@@ -26051,12 +26181,16 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const staffPanel = document.createElement('div');
     staffPanel.className = 'course-map-staff-panel';
     staffPanel.hidden = true;
-    if (courseMapAddHistoryButton) staffPanel.appendChild(courseMapAddHistoryButton);
+    const historyActions = document.createElement('div');
+    historyActions.className = 'course-map-history-actions';
+    [courseMapAddHistoryButton, courseMapResetHistoryButton].filter(Boolean)
+      .forEach(button => historyActions.appendChild(button));
 
     const alertHost = document.createElement('div');
     alertHost.className = 'course-map-staff-alert-buttons-host';
     if (courseMapAlertButtons) alertHost.appendChild(courseMapAlertButtons);
     staffPanel.appendChild(alertHost);
+    staffPanel.appendChild(historyActions);
 
     const selectedListHost = document.createElement('div');
     selectedListHost.className = 'course-map-staff-selected-list-host';
@@ -26084,7 +26218,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const staffOpenWindowBtn = document.createElement('button');
     staffOpenWindowBtn.type = 'button';
     staffOpenWindowBtn.className = 'clear-button secondary course-map-staff-open-window hidden-initial';
-    staffOpenWindowBtn.textContent = 'Your options - subject details';
+    staffOpenWindowBtn.textContent = 'Your options. See full details';
     staffOpenWindowBtn.setAttribute('data-tooltip-html', 'Open the available subjects table with subject codes, names, streams, and availability.');
     staffOpenWindowBtn.style.display = 'none';
     staffOpenWindowBtn.addEventListener('click', () => {
@@ -26116,52 +26250,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
         preserveCodeBandBorder: true,
       });
     });
-    staffActions.appendChild(staffCopyTimetableBtn);
-    const staffEmailOptionsBtn = document.createElement('button');
-    staffEmailOptionsBtn.type = 'button';
-    staffEmailOptionsBtn.className = 'clear-button secondary modal-copy-codes course-map-email-options';
-    staffEmailOptionsBtn.setAttribute('aria-label', 'Email subject options to student');
-    staffEmailOptionsBtn.title = 'Email subject options to student';
-    staffEmailOptionsBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="m3 6 9 7 9-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-    staffEmailOptionsBtn.addEventListener('click', async () => {
-      if (staffEmailOptionsBtn.disabled) return;
-      const record = getActiveStudentRecord();
-      const recipients = [...new Set([record?.Institute_Email, record?.Primary_Email].map(value => String(value || '').trim()).filter(Boolean))].join('; ');
-      if (!recipients) { window.alert('Select a student with an email address first.'); return; }
-      staffEmailOptionsBtn.disabled = true;
-      try {
-        const options = Object.entries(timetable).filter(([id]) => isRunningThisSemester(id)).map(([id, data]) => ({ id, data, dayFull: data.day, slot: data.slot })).sort(compareByDaySlotThenCode);
-        const tableData = (rows, heading) => {
-          const table = document.createElement('table');
-          const header = table.createTHead().insertRow();
-          ['Code', 'Subject', 'Day', 'Time', 'Room', 'Lecturer'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
-          const body = table.createTBody();
-          rows.forEach(({ id, data, dayFull, slot }) => {
-            const row = body.insertRow();
-            [id, getSubjectName(id), dayFull || data.day || '', isOptionalSummerSemester() ? '9 AM to 4 PM' : formatTimeRange(getDisplayTimeRange(slot) || slot || ''), data.room || 'TBA', data.teacher || 'TBA'].forEach(value => { row.insertCell().textContent = value; });
-          });
-          return buildSimpleTableCopyData(table, heading);
-        };
-        const full = tableData(options, 'Full semester options');
-        const selected = tableData(getSelectedRows(), 'Current selections');
-        const copy = async part => {
-          if (window.ClipboardItem && navigator.clipboard?.write) await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([part.html], { type: 'text/html' }), 'text/plain': new Blob([part.text], { type: 'text/plain' }) })]);
-          else await navigator.clipboard.writeText(part.text);
-        };
-        await copy(full);
-        await new Promise(resolve => setTimeout(resolve, PERSONALS_CLIPBOARD_STEP_DELAY_MS));
-        await copy(selected);
-        const identity = getSemesterIdentityAfterOffset(planningSemesterOffset);
-        const semester = isOptionalSummerSemester() ? 'Summer' : identity.semester === 'S1' ? '1' : '2';
-        const subject = `Subject options for Semester ${semester}, ${String(identity.year).slice(-2)}`;
-        openTimetableEmailDraftSafe(recipients, `Hello ${getStudentFirstName(record) || ''}\n\n${selected.text}\n\n${full.text}`, 'Your current selections are on the clipboard, with the full semester options in clipboard history.', subject);
-        triggerFlash(staffEmailOptionsBtn);
-      } catch {
-        window.alert('Could not prepare the subject tables. Please check clipboard access and try again.');
-      } finally { staffEmailOptionsBtn.disabled = false; }
-    });
-    staffActions.appendChild(staffEmailOptionsBtn);
-
+    staffActions.insertBefore(staffCopyTimetableBtn, staffClearBtn);
 
     const staffInfoActions = document.createElement('div');
     staffInfoActions.className = 'course-map-staff-info-actions';
@@ -26254,6 +26343,52 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
   };
 
+  const getCourseMapMajorBounds = majorGrid => {
+    const rects = Array.from(majorGrid.querySelectorAll('[data-major-slot]'), cell => cell.getBoundingClientRect());
+    if (!rects.length) return null;
+    const left = Math.min(...rects.map(rect => rect.left));
+    const top = Math.min(...rects.map(rect => rect.top));
+    const right = Math.max(...rects.map(rect => rect.right));
+    const bottom = Math.max(...rects.map(rect => rect.bottom));
+    return { left, top, width: right - left, height: bottom - top };
+  };
+
+  const syncCourseMapPlaceholderHeight = () => {
+    const majorGrid = courseMapContent?.querySelector('.course-map-major-grid');
+    if (!majorGrid || !courseMapModal) return;
+    const width = getCourseMapMajorBounds(majorGrid)?.width || 0;
+    if (!width) return;
+    const probe = document.createElement('div');
+    const probeHost = document.createElement('div');
+    Object.assign(probeHost.style, { position: 'absolute', left: '0', top: '0', height: '0', overflow: 'hidden', width: `${width}px` });
+    probe.className = 'course-map-grid';
+    probe.setAttribute('aria-hidden', 'true');
+    Object.assign(probe.style, {
+      position: 'absolute', visibility: 'hidden', pointerEvents: 'none',
+      left: '0', top: '0', height: 'auto',
+      width: `${width}px`, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '2px',
+    });
+    const cards = [...courseMapContent.querySelectorAll('.course-map-stream-grid > .course-map-cell[data-subject]')];
+    const sharedCard = courseMapSharedEl?.querySelector('.course-map-shared-cell');
+    if (sharedCard) cards.push(sharedCard);
+    cards.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.removeAttribute('style');
+      clone.removeAttribute('hidden');
+      clone.classList.remove('course-map-shared-cell');
+      clone.style.minHeight = '64px';
+      clone.style.fontSize = getComputedStyle(card).fontSize;
+      probe.appendChild(clone);
+    });
+    probeHost.appendChild(probe);
+    courseMapContent.appendChild(probeHost);
+    const height = `${Math.ceil(Math.max(64, ...Array.from(probe.children, cell => cell.offsetHeight)))}px`;
+    probeHost.remove();
+    if (courseMapModal.style.getPropertyValue('--course-map-overlay-row-height') !== height) {
+      courseMapModal.style.setProperty('--course-map-overlay-row-height', height);
+    }
+  };
+
   const updateCourseMapStreamLabels = (afterPosition, layoutSettled = false) => {
     const explainMajorKey = courseMapStructureExplainMode ? courseMapStructureExpandedStream : '';
     const majorKey = explainMajorKey || getMajorKeyFromUi();
@@ -26271,6 +26406,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const labels = courseMapContent
       ? Array.from(courseMapContent.querySelectorAll('.course-map-stream-label'))
       : [];
+    if (labels.length && courseMapStreamsBlockEl) {
+      courseMapStreamsBlockEl.style.setProperty('--course-map-stream-label-font-size', getComputedStyle(labels[0]).fontSize);
+    }
     labels.forEach((label) => {
       const stream = label.dataset.stream || '';
       const isMajor = selectedMajor && stream === majorKey && courseMapIndicatorsOn;
@@ -26346,26 +26484,20 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
     if (courseMapStreamsBlockEl) {
       requestAnimationFrame(() => {
+        syncCourseMapPlaceholderHeight();
         const expandedExplainView = courseMapStructureExplainMode && !!courseMapStructureExpandedStream;
         if (expandedExplainView) {
           const selectedSection = courseMapStreamsBlockEl.querySelector('.course-map-structure-selected-stream');
           const majorGrid = courseMapContent?.querySelector('.course-map-major-grid');
           const bit372 = courseMapContent?.querySelector('.course-map-cell[data-subject="BIT372"]');
           if (selectedSection && majorGrid) {
-            // Measure at the overlay's final width, without the previous minimum height.
-            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${Math.max(0, majorGrid.getBoundingClientRect().width / 5 * 3)}px`);
-            courseMapModal.style.removeProperty('--course-map-overlay-row-height');
-            const overlayRowHeight = Math.max(64, ...[
-              ...selectedSection.querySelectorAll('.course-map-stream-grid > .course-map-cell'),
-              ...majorGrid.querySelectorAll('.course-map-cell'),
-            ].map(cell => cell.offsetHeight));
-            courseMapModal.style.setProperty('--course-map-overlay-row-height', `${Math.ceil(overlayRowHeight)}px`);
             const streamRect = courseMapStreamsBlockEl.getBoundingClientRect();
             const majorRect = majorGrid.getBoundingClientRect();
-            const targetWidth = Math.max(0, (majorRect.width / 5) * 3);
-            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-top', `${Math.round(majorRect.top - streamRect.top)}px`);
-            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-left', `${Math.round(majorRect.left - streamRect.left)}px`);
-            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${Math.round(targetWidth)}px`);
+            const bounds = getCourseMapMajorBounds(majorGrid);
+            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-top', `${bounds.top - streamRect.top}px`);
+            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-left', `${bounds.left - streamRect.left}px`);
+            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-width', `${bounds.width}px`);
+            courseMapStreamsBlockEl.style.setProperty('--course-map-expanded-height', `${bounds.height}px`);
             const setElectiveColumns = columns => {
               courseMapStreamsBlockEl.style.setProperty('--course-map-elective-columns', String(columns));
               courseMapStreamsBlockEl.style.setProperty('--course-map-elective-grid-width',
@@ -26388,10 +26520,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
             }
           }
         } else {
-          courseMapModal.style.removeProperty('--course-map-overlay-row-height');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-top');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-left');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-width');
+          courseMapStreamsBlockEl.style.removeProperty('--course-map-expanded-height');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-grid-width');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-columns');
           courseMapStreamsBlockEl.style.removeProperty('--course-map-elective-right-inset');
@@ -26413,7 +26545,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
             label.style.left = '';
             const coreBottom = courseMapContent.querySelector('.course-map-core-block')?.getBoundingClientRect().bottom;
             label.style.top = coreBottom == null ? ''
-              : `${Math.ceil(coreBottom - section.getBoundingClientRect().top + 20)}px`;
+              : `${coreBottom - section.getBoundingClientRect().top + 12}px`;
             label.style.width = '';
             return;
           }
@@ -26449,6 +26581,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
           label.style.left = `${Math.round(left)}px`;
           label.style.top = `${Math.round(top)}px`;
         });
+        positionCourseMapCoreConnector();
         updateCourseMapNotesOverlap();
         if (typeof afterPosition === 'function') {
           if (!layoutSettled) {
@@ -26517,7 +26650,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
         .filter(([, st]) => st?.toggled)
         .map(([code]) => code)
     );
-    const { completedMajorCount, plannedMajorCount } = getMajorCounts();
+    const summerOutlook = isOptionalSummerSemester();
+    if (summerOutlook) plannedSet.forEach(code => completedSet.add(code));
+    const majorCounts = getMajorCounts();
+    const completedMajorCount = majorCounts.completedMajorCount + (summerOutlook ? majorCounts.plannedMajorCount : 0);
+    const plannedMajorCount = majorCounts.plannedMajorCount;
     const memo = new Map();
     const currentCodes = new Set([
       ...Array.from(workbookCurrent.keys()).filter((code) => !withdrawnCurrentEnrolments.has(code)),
@@ -26559,6 +26696,23 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
       return '';
     };
+    const offeredInOutlook = code => summerOutlook
+      ? getSemesterAvailability(code) !== 'S2'
+      : isRunningThisSemester(code) && (planningSemesterOffset > 0 ||
+        Object.prototype.hasOwnProperty.call(timetable, code));
+    const unavailableEligibleCodes = new Set(Array.from(subjectState.keys()).filter(code =>
+      validSubjectCodes.has(code) && !getCourseMapStatusClass(code) &&
+      !(areElectivesFull() && isElectiveId(code)) &&
+      !offeredInOutlook(code)));
+    const offeringDelayedCodes = new Set(unavailableEligibleCodes);
+    const delayedQueue = [...unavailableEligibleCodes];
+    for (const code of delayedQueue) {
+      for (const dependent of dependents[code] || []) {
+        if (completedSet.has(dependent) || offeringDelayedCodes.has(dependent)) continue;
+        offeringDelayedCodes.add(dependent);
+        delayedQueue.push(dependent);
+      }
+    }
     const courseMapModalTarget = courseMapModal || document.getElementById('course-map-modal');
     if (!courseMapStructureExplainMode || !courseMapStructureExpandedStream) {
       courseMapContent?.querySelectorAll('.course-map-elective-landing-guide').forEach((guide) => guide.remove());
@@ -26856,14 +27010,15 @@ function buildStudentRecordsFromWorkbook(workbook) {
     }
     courseMapContent.querySelectorAll('.course-map-cell').forEach(cell => {
       const code = cell.dataset.mirroredSubject || cell.dataset.subject;
-      if (cell.dataset.electiveSlot) {
+      if (cell.classList.contains('course-map-placeholder')) {
+        const editableSubject = validSubjectCodes.has(code);
         const editableCredit = getCourseMapIsStaffMode() && courseMapHistoryEntryOn &&
-          (!code || validUseCodes.has(code));
+          (editableSubject || (cell.dataset.electiveSlot && (!code || validUseCodes.has(code))));
         cell.classList.toggle('course-map-staff-clickable', editableCredit);
         cell.tabIndex = editableCredit ? 0 : -1;
         if (editableCredit) {
           cell.setAttribute('role', 'button');
-          cell.setAttribute('aria-pressed', code ? 'true' : 'false');
+          cell.setAttribute('aria-pressed', editableSubject ? String(!!subjectState.get(code)?.completed) : String(!!code));
         } else {
           cell.removeAttribute('role');
           cell.removeAttribute('aria-pressed');
@@ -26874,9 +27029,31 @@ function buildStudentRecordsFromWorkbook(workbook) {
         && isRunningThisSemester(code) && !getCourseMapStatusClass(code)
         && !(areElectivesFull() && isElectiveId(code));
       cell.classList.toggle('course-map-available-highlight', available);
+      cell.classList.toggle('course-map-offering-delay', offeringDelayedCodes.has(code) &&
+        cell.classList.contains('course-map-status-next'));
+      const codeLabel = cell.querySelector('.course-map-code');
+      const delayed = cell.classList.contains('course-map-offering-delay');
+      let clock = codeLabel?.querySelector('.course-map-offering-clock');
+      if (codeLabel) codeLabel.removeAttribute('title');
+      if (codeLabel && delayed) {
+        if (!clock) {
+          clock = document.createElement('span');
+          clock.className = 'course-map-offering-clock';
+          clock.setAttribute('role', 'img');
+          codeLabel.appendChild(clock);
+        }
+        clock.title = summerOutlook
+          ? 'A prerequisite in this chain is not offered in Semester 1 next year. Selected Summer subjects are assumed to be passed. No other Summer study is assumed.'
+          : 'A subject in this prerequisite chain is not running this semester.';
+        clock.setAttribute('aria-label', clock.title);
+      } else {
+        clock?.remove();
+      }
     });
     syncCourseMapSemCountBadgesFromMainGrid();
     updateCourseMapStreamLabels();
+    updateCourseMapHistoryResetAvailability();
+    syncCourseMapKeyAvailability();
   };
 
   const renderCourseMapModal = () => {
@@ -26891,6 +27068,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     positionCourseMapArrows();
     positionCourseMapCoreConnector();
     positionCourseMapStaffPanel();
+    updateCourseMapHistoryResetAvailability();
   };
 
   const toggleCourseMapElectiveCredit = (cell) => {
@@ -26926,6 +27104,10 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const state = subjectState.get(id);
       if (!state) return false;
       const completed = !state.completed;
+      const historySource = Array.from(courseMapContent.querySelectorAll('.course-map-cell')).find(cell =>
+        (cell.dataset.mirroredSubject || cell.dataset.subject) === id &&
+        getComputedStyle(cell).visibility !== 'hidden' && cell.getBoundingClientRect().width > 0);
+      const historyStartRect = historySource?.getBoundingClientRect();
       manualEntryResults = manualEntryResults.filter(entry => entry.id !== id);
       manualEntryMeta.delete(id); manualEntryAliases.delete(id);
       manualEntryCurrent.delete(id); workbookCurrent.delete(id);
@@ -26942,6 +27124,15 @@ function buildStudentRecordsFromWorkbook(workbook) {
       conditionalRecompute({ force: true, usePlanned: false });
       updateSelectedList(); updateResetState(); updateWarnings(); updateBookmarkableSettingsUrl();
       updateCourseMapStatuses(); scheduleCourseMapRelayout();
+      if (completed && historyStartRect) requestAnimationFrame(() => {
+        const destination = courseMapElectivePlaceholders.find(cell => cell.dataset.mirroredSubject === id);
+        const end = destination?.getBoundingClientRect();
+        if (!end?.width || !end.height || destination === historySource) return;
+        destination.animate([
+          { transformOrigin: 'top left', zIndex: 100, transform: `translate(${historyStartRect.left - end.left}px, ${historyStartRect.top - end.top}px) scale(${historyStartRect.width / end.width}, ${historyStartRect.height / end.height})` },
+          { transformOrigin: 'top left', zIndex: 100, transform: 'none' },
+        ], { duration: 500, easing: 'ease-in-out' });
+      });
       return true;
     }
     if (completedMode) return false;
@@ -27780,7 +27971,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
         const boundaryCenter = boundaryCenters.length
           ? boundaryCenters.reduce((sum, value) => sum + value, 0) / boundaryCenters.length
           : fallbackXGap + sepWidth / 2;
-        const xGap = boundaryCenter - sepWidth / 2 - (courseMapStructureExplainMode ? 4 : 0);
+        const xGap = boundaryCenter - sepWidth / 2;
         addRect(
           { x: xGap, y: ms5Rect.y + ms5Rect.height, width: sepWidth, height: Math.max(0, ms6Rect.y - (ms5Rect.y + ms5Rect.height)) },
           { fill: sepColor }
@@ -29737,6 +29928,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     renderAllAlertButtons();
     syncCourseMapOverlayBounds();
     courseMapModal.classList.add('show');
+    scheduleNoSubjectsPopup();
     courseMapModal.setAttribute('aria-hidden', 'false');
     updateCourseMapStaffPanelState();
     syncCourseMapKeyPanelBottomOffset();
@@ -29873,9 +30065,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       toggleCourseMapPrereqButton.checked = courseMapPrereqColoursOn;
     }
     if (courseMapPrereqToggleLabel) {
-      courseMapPrereqToggleLabel.textContent = courseMapPrereqColoursOn
-        ? 'Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more (showing):'
-        : 'Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more (turned off):';
+      courseMapPrereqToggleLabel.textContent = 'Prerequisite shading - Light grey for 1 semester to satisfy prerequisites and dark grey for 2 or more';
       courseMapPrereqToggleLabel.classList.toggle('active', courseMapPrereqColoursOn);
     }
     updateCourseMapStreamLabels();
@@ -29892,9 +30082,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       toggleCourseMapListColoursButton.checked = courseMapListColoursOn;
     }
     if (courseMapListColoursToggleLabel) {
-      courseMapListColoursToggleLabel.textContent = courseMapListColoursOn
-        ? 'Available Subjects list background colours (showing)'
-        : 'Available Subjects list background colours (turned off)';
+      courseMapListColoursToggleLabel.textContent = 'Available Subjects list background colours';
       courseMapListColoursToggleLabel.classList.toggle('active', courseMapListColoursOn);
     }
   };
@@ -30015,10 +30203,19 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const es2Cell = coreBlock.querySelector('.course-map-major-grid .course-map-cell[data-elective-slot="2"]');
     const esLeftCell = es1Cell || es2Cell;
     if (ms5Cell && ms6Cell && esLeftCell) {
-      const ms5Rect = ms5Cell.getBoundingClientRect();
-      const ms6Rect = ms6Cell.getBoundingClientRect();
-      const esTopRect = (es1Cell || esLeftCell).getBoundingClientRect();
-      const esBottomRect = (es2Cell || esLeftCell).getBoundingClientRect();
+      // Read layout coordinates, unaffected by elective-card animation transforms.
+      const layoutRect = cell => {
+        const parent = cell.offsetParent;
+        if (!parent) return cell.getBoundingClientRect();
+        const rect = parent.getBoundingClientRect();
+        const left = rect.left + parent.clientLeft + cell.offsetLeft - parent.scrollLeft;
+        const top = rect.top + parent.clientTop + cell.offsetTop - parent.scrollTop;
+        return { left, top, right: left + cell.offsetWidth, bottom: top + cell.offsetHeight };
+      };
+      const ms5Rect = layoutRect(ms5Cell);
+      const ms6Rect = layoutRect(ms6Cell);
+      const esTopRect = layoutRect(es1Cell || esLeftCell);
+      const esBottomRect = layoutRect(es2Cell || esLeftCell);
       // Anchor the divider to the midpoint between the major/elective columns.
       // Using both rows keeps it stable when zoom introduces fractional layout values.
       const boundaryCenters = [];
@@ -30036,7 +30233,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const boundaryCenter = boundaryCenters.length
         ? boundaryCenters.reduce((sum, value) => sum + value, 0) / boundaryCenters.length
         : fallbackXGap + sepWidth / 2;
-      const xGap = boundaryCenter - sepWidth / 2 - (courseMapStructureExplainMode ? 4 : 0);
+      const xGap = boundaryCenter - sepWidth / 2;
       const yStart = ms5Rect.bottom - containerRect.top;
       const yEnd = ms6Rect.top - containerRect.top;
       msVert.style.left = fmt(xGap);
@@ -30063,9 +30260,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       toggleCourseMapPrereqTextButton.checked = courseMapPrereqTextOn;
     }
     if (courseMapPrereqTextToggleLabel) {
-      courseMapPrereqTextToggleLabel.textContent = courseMapPrereqTextOn
-        ? 'Prerequisite lists within subject cards (showing)'
-        : 'Prerequisite lists within subject cards (removed)';
+      courseMapPrereqTextToggleLabel.textContent = 'Prerequisite lists within subject cards';
       courseMapPrereqTextToggleLabel.classList.toggle('active', courseMapPrereqTextOn);
     }
     updateCourseMapStreamLabels();
@@ -30078,9 +30273,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       toggleCourseMapIndicatorsButton.checked = courseMapIndicatorsOn;
     }
     if (courseMapIndicatorsToggleLabel) {
-      courseMapIndicatorsToggleLabel.textContent = courseMapIndicatorsOn
-        ? 'Text below stream headings (showing)'
-        : 'Text below stream headings (removed)';
+      courseMapIndicatorsToggleLabel.textContent = 'Text below stream headings';
       courseMapIndicatorsToggleLabel.classList.toggle('active', courseMapIndicatorsOn);
     }
     updateCourseMapStreamLabels();
@@ -32269,12 +32462,102 @@ function buildStudentRecordsFromWorkbook(workbook) {
       .replace(/\bObject\s+Oriented\b/gi, 'OO')
       .replace(/\bFoundations\s+of\b/gi, 'Fndtn of');
 
+  const noSubjectsRequirementsMet = (code, completed) => {
+      const status = getRequisiteStatus({ id: code, completedSet: completed, plannedSet: new Set(), usePlanned: false });
+      if (!status.prereqMetNow || ((corequisites[code] || []).length > 0 && !status.coreqMetNow)) return false;
+      if (code !== getCapstoneStartCode()) return true;
+      const majorCodes = majorLayouts[getMajorKeyFromUi()] || [];
+      return getCapstoneRequirement({ completedSet: completed, plannedSet: new Set(), usePlanned: false,
+        completedMajorCount: majorCodes.filter(id => completed.has(id)).length, plannedMajorCount: 0 }).metNow;
+  };
+  const getOneSemesterPrerequisiteGaps = (candidateCodes, completedSet) => {
+    return [...new Set(candidateCodes)].filter(code => !completedSet.has(code)).map(code => {
+      const missing = [...new Set([...(prerequisites[code] || []), ...(corequisites[code] || [])])]
+        .filter(id => !completedSet.has(id));
+      if (!missing.length || missing.length > 2 || !missing.every(id => noSubjectsRequirementsMet(id, completedSet))) return null;
+      if (!noSubjectsRequirementsMet(code, new Set([...completedSet, ...missing]))) return null;
+      return { code, missing };
+    }).filter(Boolean).sort((a, b) => a.code.localeCompare(b.code));
+  };
+  function scheduleNoSubjectsPopup() {
+    if (!noSubjectsDialog) return;
+    clearTimeout(noSubjectsPopupTimer);
+    noSubjectsPopupTimer = setTimeout(() => {
+      if (semesterConfigError || getAvailableRows().length || getRemainingSubjectsCount() === 0 || isActiveStudentGraduated() ||
+          selectedListEl?.querySelector('.available-item-success')) {
+        lastNoSubjectsNotice = '';
+        if (noSubjectsDialog.open) noSubjectsDialog.close();
+        return;
+      }
+      if (completedMode || courseMapHistoryEntryOn || friendlyChat.open ||
+          codeModal?.classList.contains('show') || selectByTypingModal?.classList.contains('show') ||
+          courseMapAnimateChooser?.open) return;
+      if (courseMapMajorSwitchAnimating) { scheduleNoSubjectsPopup(); return; }
+      const completedSet = new Set(Array.from(subjectState).filter(([, state]) => state.completed).map(([code]) => code));
+      const candidates = [...getRemainingRows(), ...getRemainingElectiveRows()].map(row => row.id);
+      const key = JSON.stringify([activeStudentId, getMajorKeyFromUi(), currentSemesterKey, planningSemesterOffset,
+        [...completedSet].sort(), [...candidates].sort(), courseMapModal?.classList.contains('show')]);
+      if (key === lastNoSubjectsNotice) return;
+      const label = code => `<strong>${escapeHtml(code)}</strong> ${escapeHtml(getSubjectName(code))}`;
+      const subjectList = codes => codes.map(id => `<div>${label(id)}</div>`).join('') || 'None';
+      const requisites = code => [...new Set([...(prerequisites[code] || []), ...(corequisites[code] || [])])];
+      let explanation;
+      if (isOptionalSummerSemester()) {
+        const summerCodes = Object.keys(subjectMeta).filter(code => validSubjectCodes.has(code) &&
+          isRunningThisSemester(code) && !completedSet.has(code)).sort();
+        explanation = summerCodes.length
+          ? `<p>You haven't yet completed the prerequisites for these ${summerCodes.length} subjects that we are running this summer:</p>
+            <ul class="no-subjects-summer-list">${summerCodes.map(code => `<li>${label(code)}
+              <div><strong>${(prerequisites[code] || []).length === 1 ? 'Prerequisite' : 'Prerequisites'}:</strong> ${(prerequisites[code] || []).map(label).join('; ') || 'None'}</div>
+              ${(corequisites[code] || []).length ? `<div><strong>Corequisites:</strong> ${corequisites[code].map(label).join('; ')}</div>` : ''}</li>`).join('')}</ul>`
+          : '<p>You have already completed all the subjects running this Summer, based on your entered history.</p>';
+        const completedSummerSubjects = Object.keys(subjectMeta).filter(code => validSubjectCodes.has(code) &&
+          isRunningThisSemester(code) && completedSet.has(code)).sort().map(label);
+        if (summerCodes.length && completedSummerSubjects.length) {
+          const completedList = completedSummerSubjects.length > 1
+            ? `${completedSummerSubjects.slice(0, -1).join(', ')} and ${completedSummerSubjects.at(-1)}`
+            : completedSummerSubjects[0];
+          explanation += `<p>(You have already completed the other ${completedSummerSubjects.length === 1 ? 'subject' : 'subjects'} we are running this semester: ${completedList})</p>`;
+        }
+      } else {
+        const eligibleNotRunning = [...new Set(candidates)].filter(code => !isRunningThisSemester(code) &&
+          noSubjectsRequirementsMet(code, completedSet)).sort();
+        const oneSemesterAway = getOneSemesterPrerequisiteGaps(candidates.filter(isRunningThisSemester), completedSet);
+        explanation = `<h3>Eligible, but not running this semester</h3>${eligibleNotRunning.length
+          ? `<table><thead><tr><th>Subject</th><th>Requirements already satisfied</th></tr></thead><tbody>${eligibleNotRunning.map(code =>
+            `<tr><td>${label(code)}</td><td>${subjectList(requisites(code))}</td></tr>`).join('')}</tbody></table>`
+          : '<p>No remaining subjects fall into this group.</p>'}
+          <h3>Running, but one prerequisite semester away</h3>
+          <p>Complete the subjects on the right first. Future offerings still need to be checked.</p>${oneSemesterAway.length
+          ? `<table><thead><tr><th>Subject running this semester</th><th>Complete first</th></tr></thead><tbody>${oneSemesterAway.map(({ code, missing }) =>
+            `<tr><td>${label(code)}</td><td>${subjectList(missing)}</td></tr>`).join('')}</tbody></table>`
+          : '<p>No running subjects fall into this group. Other subjects may require a longer prerequisite sequence.</p>'}`;
+      }
+      document.getElementById('no-subjects-prerequisites').innerHTML = explanation;
+      lastNoSubjectsNotice = key;
+      if (!noSubjectsDialog.open) noSubjectsDialog.showModal();
+    }, 200);
+  }
+  ['close-no-subjects', 'exit-no-subjects'].forEach(id => document.getElementById(id)?.addEventListener('click', () => noSubjectsDialog.close()));
+  noSubjectsDialog?.addEventListener('keydown', event => {
+    if (event.key === 'Escape') event.stopPropagation();
+  });
+  noSubjectsDialog?.addEventListener('click', event => {
+    if (event.target !== noSubjectsDialog) return;
+    const rect = noSubjectsDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) noSubjectsDialog.close();
+  });
+
   const updateSelectedList = () => {
+    scheduleNoSubjectsPopup();
     if (majorSectionDescriptor) {
       const completed = getCompletedCount() + getUseCreditsCount() - getExcessCompletedElectiveCount();
-      majorSectionDescriptor.textContent = completed <= 4
-        ? 'Choose your major (it can be a guess if unsure).'
-        : 'Choose your Major';
+      majorSectionDescriptor.textContent = 'Choose your major';
+      if (!staffFacing) {
+        majorSectionDescriptor.textContent = completed <= 4
+          ? 'Choose your major (it can be a guess if unsure).'
+          : 'Choose your Major';
+      }
     }
 
     const optionsHeading = document.getElementById('semester-options-heading');
@@ -32748,20 +33031,23 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
   }
   if (showTimetableButton) showTimetableButton.addEventListener('click', () => showAvailableModal());
+  function wiggleSubjectCards(cards) {
+    cards.forEach(cell => {
+      cell.getAnimations().filter(animation => animation.id === 'available-card-wiggle')
+        .forEach(animation => animation.cancel());
+      cell.animate([0, 10, -10, 10, -10, 0].map(angle => ({
+        transform: `rotate(${angle}deg)`,
+        transformOrigin: '50% 50%',
+        zIndex: 1000,
+      })), { id: 'available-card-wiggle', duration: 500, easing: 'linear' });
+    });
+  }
   if (availableHeading) {
     const activateAvailable = () => {
       const cards = Array.from(document.querySelectorAll(
         '.main-grid .subject-card.can-select-now, .electives-grid .subject-card.can-select-now'
       )).filter(cell => !cell.classList.contains('completed') && !cell.classList.contains('toggled'));
-      cards.forEach(cell => {
-        cell.getAnimations().filter(animation => animation.id === 'available-card-wiggle')
-          .forEach(animation => animation.cancel());
-        cell.animate([0, 10, -10, 10, -10, 0].map(angle => ({
-          transform: `rotate(${angle}deg)`,
-          transformOrigin: '50% 50%',
-          zIndex: 1000,
-        })), { id: 'available-card-wiggle', duration: 500, easing: 'linear' });
-      });
+      wiggleSubjectCards(cards);
     };
     availableHeading.addEventListener('click', activateAvailable);
     availableHeading.addEventListener('keydown', (e) => {
@@ -33064,12 +33350,20 @@ function buildStudentRecordsFromWorkbook(workbook) {
   }
   if (historyButton) historyButton.addEventListener('click', showHistoryModal);
   if (remainingButton) remainingButton.addEventListener('click', showRemainingModal);
+  function endCourseMapHistoryEntry() {
+    if (!courseMapHistoryEntryOn) return;
+    courseMapHistoryEntryOn = false;
+    courseMapAddHistoryButton.setAttribute('aria-pressed', 'false');
+    courseMapAddHistoryButton.textContent = 'Add history';
+  }
   courseMapAddHistoryButton.addEventListener('click', () => {
     courseMapHistoryEntryOn = !courseMapHistoryEntryOn;
     courseMapAddHistoryButton.setAttribute('aria-pressed', String(courseMapHistoryEntryOn));
     courseMapAddHistoryButton.textContent = courseMapHistoryEntryOn ? 'Finish history' : 'Add history';
     updateCourseMapStatuses();
+    scheduleNoSubjectsPopup();
   });
+  courseMapResetHistoryButton?.addEventListener('click', resetCourseMapHistory);
   if (courseMapHistoryButton) courseMapHistoryButton.addEventListener('click', showHistoryModal);
   if (courseMapRemainingButton) courseMapRemainingButton.addEventListener('click', showRemainingModal);
   if (oldCodesButton) oldCodesButton.addEventListener('click', showOldCodesModal);
@@ -33473,6 +33767,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     courseMapLoadFilesButton.addEventListener('click', async (event) => {
       event.preventDefault();
       if (!getCourseMapIsStaffMode()) return;
+      endCourseMapHistoryEntry();
+      updateCourseMapStatuses();
       const buttonMode = String(courseMapLoadFilesButton.dataset.mode || '').toLowerCase();
       if (buttonMode === 'clear') {
         clearActiveStudentState();
@@ -33714,6 +34010,26 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
   }
   // Do not close the colour key modal on backdrop click; only via X.
+  const courseMapSemesterPillsToggle = document.getElementById('toggle-course-map-semester-pills');
+  courseMapSemesterPillsToggle.checked = new URLSearchParams(window.location.search).get('courseMapSemesterPills') !== '0';
+  courseMapModal.classList.toggle('course-map-semester-pills-off', !courseMapSemesterPillsToggle.checked);
+  courseMapSemesterPillsToggle.addEventListener('change', () => {
+    courseMapModal.classList.toggle('course-map-semester-pills-off', !courseMapSemesterPillsToggle.checked);
+    const url = new URL(window.location.href);
+    if (courseMapSemesterPillsToggle.checked) url.searchParams.delete('courseMapSemesterPills');
+    else url.searchParams.set('courseMapSemesterPills', '0');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  });
+  toggleCourseMapClocks.checked = new URLSearchParams(window.location.search).get('courseMapClocks') !== '0';
+  courseMapModal.classList.toggle('course-map-clocks-off', !toggleCourseMapClocks.checked);
+  toggleCourseMapClocks.addEventListener('change', () => {
+    courseMapModal.classList.toggle('course-map-clocks-off', !toggleCourseMapClocks.checked);
+    const url = new URL(window.location.href);
+    if (toggleCourseMapClocks.checked) url.searchParams.delete('courseMapClocks');
+    else url.searchParams.set('courseMapClocks', '0');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    syncCourseMapKeyAvailability();
+  });
   if (toggleCourseMapPrereqButton) {
     toggleCourseMapPrereqButton.addEventListener('change', () => {
       courseMapPrereqColoursOn = !!toggleCourseMapPrereqButton.checked;
@@ -33724,16 +34040,21 @@ function buildStudentRecordsFromWorkbook(workbook) {
   const courseMapAvailableHighlightToggle = document.getElementById('toggle-course-map-available-highlight');
   const applyCourseMapAvailableHighlight = enabled => {
     courseMapAvailableHighlightToggle.checked = enabled;
+    document.getElementById('course-map-available-highlight-label').textContent = 'Highlight available subjects';
     courseMapModal.classList.toggle('course-map-available-highlight-off', !enabled);
   };
-  applyCourseMapAvailableHighlight(new URLSearchParams(window.location.search).get('courseMapHighlight') !== '0');
+  const highlightParams = new URLSearchParams(window.location.search);
+  applyCourseMapAvailableHighlight(highlightParams.get('courseMapHighlight') !== '0' &&
+    highlightParams.get('courseMapAvailabilityBorders') !== '0');
   courseMapAvailableHighlightToggle.addEventListener('change', () => {
     const enabled = courseMapAvailableHighlightToggle.checked;
     applyCourseMapAvailableHighlight(enabled);
     const url = new URL(window.location.href);
+    url.searchParams.delete('courseMapAvailabilityBorders');
     if (enabled) url.searchParams.delete('courseMapHighlight');
     else url.searchParams.set('courseMapHighlight', '0');
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    syncCourseMapKeyAvailability();
   });
   if (toggleCourseMapListColoursButton) {
     toggleCourseMapListColoursButton.addEventListener('change', () => {
@@ -34019,7 +34340,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
     });
     courseMapContent.addEventListener('mouseover', (event) => {
-      const badgeTarget = event.target?.closest?.('.course-map-alt-indicator, .course-map-sem-count');
+      const badgeTarget = event.target?.closest?.('.course-map-alt-indicator, .course-map-sem-count, .course-map-offering-clock');
       if (badgeTarget && courseMapContent.contains(badgeTarget)) {
         courseMapTooltipTarget = null;
         if (courseMapTooltipTimer) clearTimeout(courseMapTooltipTimer);
@@ -34064,9 +34385,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
       const clickedCell = target?.closest?.('.course-map-cell[data-subject]');
       if (clickedCell && courseMapContent.contains(clickedCell)) {
-        const code = clickedCell.dataset.subject || '';
+        const code = clickedCell.dataset.mirroredSubject || clickedCell.dataset.subject || '';
         const isPlaceholderCell = clickedCell.classList.contains('course-map-placeholder');
-        if (!isPlaceholderCell && toggleCourseMapStaffSelectionByCode(code)) {
+        if ((!isPlaceholderCell || courseMapHistoryEntryOn) && toggleCourseMapStaffSelectionByCode(code)) {
           event.preventDefault();
           return;
         }
@@ -34078,6 +34399,11 @@ function buildStudentRecordsFromWorkbook(workbook) {
       if (!streamSection || !courseMapContent.contains(streamSection)) return;
       const streamKey = streamSection.dataset.stream;
       if (!['ns', 'ba', 'sd'].includes(streamKey || '')) return;
+      if (!hasSelectedMajor() && !courseMapMajorSwitchAnimating) {
+        event.preventDefault();
+        startCourseMapAnimation(streamKey);
+        return;
+      }
       if (courseMapStructureExplainMode && !courseMapMajorSwitchAnimating) {
         event.preventDefault();
         courseMapExplainStructureViewButton?.click();
@@ -34970,7 +35296,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     const electiveOptionsButton = document.createElement('button');
     electiveOptionsButton.type = 'button';
     electiveOptionsButton.className = 'clear-button see-elective-options';
-    electiveOptionsButton.textContent = 'See Elective Options ↓';
+    electiveOptionsButton.setAttribute('aria-label', 'See Elective Options');
+    electiveOptionsButton.innerHTML = '<span>See</span><span>Elective</span><span>Options</span><span class="elective-options-arrow" aria-hidden="true">↓</span>';
     electiveOptionsButton.hidden = true;
     mainGrid.appendChild(electiveOptionsButton);
     const pageSectionShortcuts = [
@@ -35021,9 +35348,9 @@ function buildStudentRecordsFromWorkbook(workbook) {
       const left = pair ? first.offsetLeft + first.offsetWidth / 2 : first.offsetLeft + 6;
       const right = pair ? last.offsetLeft + last.offsetWidth / 2 : last.offsetLeft + last.offsetWidth - 6;
       const position = {
-        left: `${left}px`,
+        left: `${(left + right) / 2}px`,
         top: `${first.offsetTop + first.offsetHeight - 8}px`,
-        width: `${right - left}px`,
+        maxWidth: `${right - left}px`,
       };
       Object.entries(position).forEach(([property, value]) => {
         if (electiveOptionsButton.style[property] !== value) electiveOptionsButton.style[property] = value;

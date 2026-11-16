@@ -28,7 +28,7 @@ Last Modified: 11/07/2026
   <link
     href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=Merriweather:wght@400;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261115-elective-button-layer">
+  <link rel="stylesheet" href="styles.css?v=20261116-semester-pills">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -252,9 +252,9 @@ Last Modified: 11/07/2026
               future semesters</button>
             <div class="page-section-shortcuts">
               <button id="scroll-to-colour-key" class="clear-button secondary page-section-shortcut" type="button"
-                hidden>See Colour Key ↘</button>
+                hidden>See Colour Key<span class="page-section-arrow">↘</span></button>
               <button id="scroll-to-sas-subjects" class="clear-button secondary page-section-shortcut" type="button"
-                hidden>See SAS information ↘</button>
+                hidden>See SAS information<span class="page-section-arrow">↘</span></button>
             </div>
             <div class="semester-timetable-section dim-when-complete">
               <button id="show-semester-timetable" class="clear-button secondary" type="button"
@@ -1211,6 +1211,11 @@ Last Modified: 11/07/2026
             </thead>
             <tbody id="old-codes-table-body"></tbody>
           </table>
+          <h3 class="ancient-codes-heading">Ancient codes</h3>
+          <table class="old-codes-table">
+            <thead><tr><th>Old subjects</th><th>New subjects</th></tr></thead>
+            <tbody id="ancient-codes-table-body"></tbody>
+          </table>
         </div>
       </div>
       <div class="modal-actions">
@@ -1218,6 +1223,17 @@ Last Modified: 11/07/2026
       </div>
     </div>
   </div>
+  <dialog id="no-subjects-dialog" aria-labelledby="no-subjects-title">
+    <header class="no-subjects-header">
+      <h2 id="no-subjects-title">No subjects available this semester</h2>
+      <button id="close-no-subjects" class="modal-close" type="button" aria-label="Close notice">×</button>
+    </header>
+    <div class="no-subjects-body">
+      <p>Given what has been entered as your history so far, there are no subjects available for you to select this semester. Check that all your passes and credits have been entered correctly.</p>
+      <div id="no-subjects-prerequisites"></div>
+    </div>
+    <footer class="no-subjects-actions"><button id="exit-no-subjects" class="clear-button" type="button">Exit</button></footer>
+  </dialog>
   <div id="history-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal subject-list-modal" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <div class="modal-header">
@@ -1447,19 +1463,10 @@ Last Modified: 11/07/2026
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-available-highlight" checked
-                  aria-label="Highlighting of available subjects">
+                  aria-label="Highlight available subjects">
                 <span class="slider"></span>
               </label>
-              <span class="switch-label">Highlighting of available subjects</span>
-            </div>
-            <div class="toggle-row course-map-show-hide-row" id="course-map-list-colours-row">
-              <label class="switch">
-                <input type="checkbox" id="toggle-course-map-list-colours"
-                  aria-label="Show available subjects list background colours">
-                <span class="slider"></span>
-              </label>
-              <span class="switch-label" id="course-map-list-colours-toggle-label">Available Subjects list background
-                colours (turned off)</span>
+              <span class="switch-label" id="course-map-available-highlight-label">Highlight available subjects</span>
             </div>
             <div class="toggle-row course-map-sem-count-toggle course-map-show-hide-row"
               id="course-map-sem-count-toggle-row" data-tooltip-html="Enable if you want to see how many semesters it is going to take, at minimum, to complete each subject.
@@ -1473,17 +1480,25 @@ Last Modified: 11/07/2026
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
-                <input type="checkbox" id="open-course-map-key" aria-label="Show colour key" checked>
+                <input type="checkbox" id="toggle-course-map-semester-pills" checked
+                  aria-label="Show alternating-semester labels">
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-key-toggle-label">Colour Key (showing)</span>
+              <span class="switch-label">Alternating-semester labels</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="open-course-map-key" aria-label="Show legend" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label" id="course-map-key-toggle-label">Legend</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
                 <input type="checkbox" id="toggle-course-map-notes" aria-label="Show notes" checked>
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-notes-toggle-label">Notes (showing)</span>
+              <span class="switch-label" id="course-map-notes-toggle-label">Notes</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
@@ -1491,7 +1506,14 @@ Last Modified: 11/07/2026
                 <span class="slider"></span>
               </label>
               <span class="switch-label" id="course-map-prereq-toggle-label">Prerequisite shading - Light grey for 1
-                semester to satisfy prerequisites and dark grey for 2 or more (showing):</span>
+                semester to satisfy prerequisites and dark grey for 2 or more</span>
+            </div>
+            <div class="toggle-row course-map-show-hide-row">
+              <label class="switch">
+                <input type="checkbox" id="toggle-course-map-clocks" aria-label="Show timetable delay clocks" checked>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">Timetable delay clocks</span>
             </div>
             <div class="toggle-row course-map-show-hide-row">
               <label class="switch">
@@ -1499,7 +1521,7 @@ Last Modified: 11/07/2026
                 <span class="slider"></span>
               </label>
               <span class="switch-label" id="course-map-prereq-text-toggle-label">Prerequisite lists within subject
-                cards (showing)</span>
+                cards</span>
             </div>
 
             <div class="toggle-row course-map-show-hide-row" id="course-map-ai-names-row" hidden>
@@ -1507,8 +1529,7 @@ Last Modified: 11/07/2026
                 <input type="checkbox" id="toggle-course-map-ai-names" aria-label="Show proposed AI course map names">
                 <span class="slider"></span>
               </label>
-              <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names
-                (removed)</span>
+              <span class="switch-label" id="course-map-ai-names-toggle-label">Proposed AI course map names</span>
             </div>
 
 
@@ -1547,6 +1568,8 @@ Last Modified: 11/07/2026
         </div>
         <button id="course-map-add-history" class="clear-button secondary" type="button" aria-pressed="false">Add
           history</button>
+        <button id="course-map-reset-history" class="clear-button secondary" type="button" disabled
+          data-tooltip="Undo history edits and restore the loaded student's original Strata history.">Reset</button>
         <button id="course-map-history" class="clear-button secondary" type="button"
           data-tooltip-html="Show the student's completed, credited, current, failed, and withdrawn subject history.">Your
           history</button>
@@ -1600,8 +1623,8 @@ Last Modified: 11/07/2026
       <div id="course-map-key-modal" class="course-map-key-panel" role="dialog" aria-modal="false"
         aria-labelledby="course-map-key-title" aria-hidden="true">
         <div class="course-map-key-panel-header">
-          <div class="course-map-key-panel-title" id="course-map-key-title">Colour Key</div>
-          <button class="modal-close" id="close-course-map-key" type="button" aria-label="Close colour key">X</button>
+          <div class="course-map-key-panel-title" id="course-map-key-title">Legend</div>
+          <button class="modal-close" id="close-course-map-key" type="button" aria-label="Close legend">X</button>
         </div>
         <div class="course-map-key-panel-body" id="course-map-key-modal-body"></div>
       </div>
@@ -1929,35 +1952,6 @@ Last Modified: 11/07/2026
                 </span>
                 StudDec
               </button>
-              <button id="open-supporting-docs-folder" class="clear-button secondary timetable-email" type="button"
-                hidden>
-                <span class="folder-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
-                      fill="currentColor" />
-                  </svg>
-                </span>
-                SD
-              </button>
-              <button id="open-student-forms-folder" class="clear-button secondary timetable-email" type="button" hidden
-                title="Open today's Student Forms folder.">
-                <span class="folder-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
-                      fill="currentColor" />
-                  </svg>
-                </span>
-                SFs
-              </button>
-              <button id="open-teacher-temp-folder" class="clear-button secondary timetable-email" type="button" hidden>
-                <span class="folder-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" role="img" focusable="false">
-                    <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v1H3V6zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
-                      fill="currentColor" />
-                  </svg>
-                </span>
-                Temp
-              </button>
               <button id="timetable-colours" class="clear-button secondary semester-timetable-toggle" type="button"
                 aria-pressed="false" hidden>Show Colours</button>
             </div>
@@ -2209,7 +2203,7 @@ Last Modified: 11/07/2026
   </dialog>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
-  <script src="script.js?v=20261115-elective-scroll-3"></script>
+  <script src="script.js?v=20261116-legend-wording"></script>
   <footer class="site-footer">
     <div>Created by Antony Di Serio for Melbourne Polytechnic</div>
     <div id="site-modified">Last modified: <time datetime="2026-11-09T03:08:34.556Z">2:08 PM, 09/11/2026</time>
