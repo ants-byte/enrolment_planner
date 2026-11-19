@@ -1,0 +1,166 @@
+{
+  "workbook": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Enrolment System\\Enrolment Data and Tracking.xlsx",
+  "forms": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms",
+  "running_subjects": [
+    "BIT108",
+    "BIT314",
+    "BIT352",
+    "BIT355"
+  ],
+  "matches": [
+    {
+      "student_id": "1517882",
+      "folder_name": "1517882 GASBARRO Gabriel",
+      "subjects": [
+        "BIT108"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\2026 11 17 Tuesday\\1517882 GASBARRO Gabriel\\Re SECOFFICIAL Student Declaration 26 SS.msg"
+    },
+    {
+      "student_id": "1580600",
+      "folder_name": "1580600 THAPA MAGAR Kiran",
+      "subjects": [
+        "BIT352"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\2026 11 17 Tuesday\\1580600 THAPA MAGAR Kiran\\Re SECOFFICIAL Student Declaration 26 SS.msg"
+    },
+    {
+      "student_id": "1554454",
+      "folder_name": "1554454 MANNICK, Himesh Krishn Done",
+      "subjects": [
+        "BIT355"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 02 Monday\\1554454 MANNICK, Himesh Krishn Done\\Re SECOFFICIAL Student Declaration 26 SS.msg"
+    },
+    {
+      "student_id": "1594961",
+      "folder_name": "1594961 Shing Shing OOI Done",
+      "subjects": [
+        "BIT108",
+        "BIT352"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 02 Monday\\1594961 Shing Shing OOI Done\\Re SECOFFICIAL Enrolment Summer Semester 2026.msg"
+    },
+    {
+      "student_id": "1574165",
+      "folder_name": "1574165 GONZALEZ CAMACHO Iker",
+      "subjects": [
+        "BIT108",
+        "BIT314"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 13 Fri\\1574165 GONZALEZ CAMACHO Iker\\Fw_ Re_ [SEC=OFFICIAL] Enrolment Summer Semester 2026.pdf"
+    },
+    {
+      "student_id": "1574165",
+      "folder_name": "1574165 GONZALEZ CAMACHO Iker",
+      "subjects": [
+        "BIT108",
+        "BIT314"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 13 Fri\\1574165 GONZALEZ CAMACHO Iker\\Re SECOFFICIAL Enrolment Summer Semester 2026.msg"
+    },
+    {
+      "student_id": "1567926",
+      "folder_name": "1567926 HAROON, Umair",
+      "subjects": [
+        "BIT314"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 15 Sunday\\1567926 HAROON, Umair\\Fw_ Re_ [SEC=OFFICIAL] Enrolment Summer Semester 2026.pdf"
+    },
+    {
+      "student_id": "1567926",
+      "folder_name": "1567926 HAROON, Umair",
+      "subjects": [
+        "BIT314"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 15 Sunday\\1567926 HAROON, Umair\\Re SECOFFICIAL Enrolment Summer Semester 2026.msg"
+    },
+    {
+      "student_id": "1572768",
+      "folder_name": "1572768 AHMED, Fahim",
+      "subjects": [
+        "BIT314",
+        "BIT352",
+        "BIT355"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 15 Sunday\\1572768 AHMED, Fahim\\Fw_ Re_ [SEC=OFFICIAL] Enrolment Summer Semester 2026.pdf"
+    },
+    {
+      "student_id": "1572768",
+      "folder_name": "1572768 AHMED, Fahim",
+      "subjects": [
+        "BIT314",
+        "BIT352",
+        "BIT355"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 15 Sunday\\1572768 AHMED, Fahim\\Re SECOFFICIAL Enrolment Summer Semester 2026.msg"
+    },
+    {
+      "student_id": "1606152",
+      "folder_name": "1606152 Hettiarachchi Panchal",
+      "subjects": [
+        "BIT352"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 16 Monday\\1606152 Hettiarachchi Panchal\\Fw_ Re_ [SEC=OFFICIAL] Student Declaration 26 SS.pdf"
+    },
+    {
+      "student_id": "1606152",
+      "folder_name": "1606152 Hettiarachchi Panchal",
+      "subjects": [
+        "BIT352"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 16 Monday\\1606152 Hettiarachchi Panchal\\Re SECOFFICIAL Student Declaration 26 SS.msg"
+    },
+    {
+      "student_id": "1574343",
+      "folder_name": "1574343 SAPKOTA, Debu",
+      "subjects": [
+        "BIT314",
+        "BIT352"
+      ],
+      "file": "C:\\Users\\addve\\OneDrive - Melbourne Polytechnic\\General - Bachelor of Information Technology Operations\\Enrol 26_SS\\Student Forms\\26 11 18 Wednesday\\1574343 SAPKOTA, Debu\\Re SECOFFICIAL Student Declaration 26 SS.msg"
+    }
+  ],
+  "warnings": [],
+  "meaning": "Subject references in saved emails; these do not themselves prove enrolment approval.",
+  "student_subjects": {
+    "1517882": [
+      "BIT108"
+    ],
+    "1580600": [
+      "BIT352"
+    ],
+    "1554454": [
+      "BIT355"
+    ],
+    "1594961": [
+      "BIT108",
+      "BIT352"
+    ],
+    "1574165": [
+      "BIT108",
+      "BIT314"
+    ],
+    "1567926": [
+      "BIT314"
+    ],
+    "1572768": [
+      "BIT314",
+      "BIT352",
+      "BIT355"
+    ],
+    "1606152": [
+      "BIT352"
+    ],
+    "1574343": [
+      "BIT314",
+      "BIT352"
+    ]
+  },
+  "sharepoint_subject_counts": {
+    "BIT108": 3,
+    "BIT314": 4,
+    "BIT352": 5,
+    "BIT355": 2
+  }
+}

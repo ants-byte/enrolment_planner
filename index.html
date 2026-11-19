@@ -731,6 +731,7 @@ Last Modified: 11/07/2026
         <div class="folder-shortcuts-modal-section">
           <h3>Main locations</h3>
           <div id="folder-shortcuts-main-host" class="folder-shortcuts-modal-buttons">
+            <button id="folder-shortcut-supporting-documents" class="folder-shortcut-btn" type="button">Supporting documents</button>
             <button id="folder-shortcut-semester-dialog" class="folder-shortcut-btn hidden-initial"
               type="button"></button>
             <button id="folder-shortcut-student-forms-date-main-dialog" class="folder-shortcut-btn hidden-initial"
@@ -1877,6 +1878,11 @@ Last Modified: 11/07/2026
         <div id="timetable-fees" class="timetable-fees" hidden></div>
         <p id="future-timetable-note" class="future-timetable-note" hidden>Class times, rooms, and teachers are decided
           in the month before semester begins.</p>
+        <div id="timetable-load-row" class="toggle-row load-row load-row-nonstandard timetable-load-row" hidden>
+          <button id="timetable-vary-load" class="clear-button secondary load-button" type="button"
+            aria-label="Toggle Summer subject count between 1 and 2">2</button>
+          <span>How many subjects will study?</span>
+        </div>
         <div class="timetable-actions subject-table-actions">
           <div class="modal-action-group">
             <button id="copy-timetable-codes" class="clear-button secondary modal-copy-codes" type="button"
@@ -1911,6 +1917,10 @@ Last Modified: 11/07/2026
               StudDec
             </button>
             <div class="timetable-email-actions">
+              <button id="email-options" class="clear-button secondary timetable-email" type="button" hidden>
+                <span class="email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M2 5h20v14H2V5zm2 2 8 6 8-6H4zm16 10V9l-8 6-8-6v8h16z" /></svg></span>
+                Options
+              </button>
               <button id="email-primary" class="clear-button secondary timetable-email" type="button" hidden>
                 <span class="email-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" role="img" focusable="false">
@@ -2034,9 +2044,7 @@ Last Modified: 11/07/2026
         <button class="modal-close" id="close-load-modal" aria-label="Close load modal">X</button>
       </div>
       <div class="modal-body">
-        <p id="load-summer-explanation" hidden>Summer School is optional. You can choose to study zero, 1 or 2 subjects,
-          but no more than 2. It is a 7-week intensive covering a full semester's work, so 2 subjects is a full study
-          load.</p>
+
         <div class="load-explanations">
           <div class="load-explanations-title">Explanations:</div>
           <p><strong>Domestic students</strong> can study full-time or part-time, up to the standard load of <span
@@ -2078,10 +2086,7 @@ Last Modified: 11/07/2026
           <label for="load-value">How many subjects I will study this semester:</label>
           <select id="load-value" class="load-value-select"></select>
 
-          <div id="summer-load-choices" hidden>
-            <button type="button" class="clear-button" data-summer-load="1">One subject</button>
-            <button type="button" class="clear-button" data-summer-load="2">Two subjects</button>
-          </div>
+
           <span id="load-lock-msg" class="load-lock-msg">You must study
             <span id="load-lock-standard-count"></span> subjects - a full load</span>
         </div>

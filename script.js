@@ -1548,6 +1548,11 @@ Behaviour: subject selection, completion mode, prerequisite gating, tooltips, ti
   let activeTriageThreeMeLane = DEFAULT_TRIAGE_THREE_ME_LANE;
   let showSemCounts = getShowSemCountsFromQuery();
   let triageSaveReminder = { studentId: '', armed: false, dismissed: false };
+  let activeStudentPreviouslyExplored = false;
+  let pendingStudentSelection = null;
+  let triageWorkbookLocked = false;
+  let triageLockTimer = null;
+  let triageLockGeneration = 0;
   let fileLocationsProfileOverride = '';
   let settingsSignOffDefaults = null;
   const getSettingsTriageMeDisplayName = () => {
@@ -3365,6 +3370,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
     'timetable-move-to-next-semester'
   );
   const timetableColoursButton = document.getElementById('timetable-colours');
+  const timetableColoursHome = timetableColoursButton?.parentElement;
+  const timetableLoadRow = document.getElementById('timetable-load-row');
+  const timetableVaryLoadButton = document.getElementById('timetable-vary-load');
   const copyTimetableCodes = document.getElementById('copy-timetable-codes');
   const toggleTimetableTableOnlyButton = document.getElementById('toggle-timetable-table-only');
   const timetableTitleEl = document.getElementById('timetable-title');
@@ -3372,6 +3380,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
   const timetableFees = document.getElementById('timetable-fees');
   const futureTimetableNote = document.getElementById('future-timetable-note');
   let timetablePreparedEl = null;
+  const emailOptionsButton = document.getElementById('email-options');
   const emailPrimaryButton = document.getElementById('email-primary');
   const emailInstituteButton = document.getElementById('email-institute');
   const emailBothButton = document.getElementById('email-both');
@@ -7952,6 +7961,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
       courseMapVaryLoadButton.classList.remove('disabled');
     }
     if (courseMapLoadLabel) courseMapLoadLabel.textContent = 'How many subjects will study?';
+    if (timetableVaryLoadButton) timetableVaryLoadButton.textContent = String(loadCount);
+
   };
 
   const electiveCodeOrder = ['USE101', 'USE102', 'USE201', 'USE301'];
@@ -8563,48 +8574,217 @@ const TRIAGE_READ_MAX_ROWS = 0;
     notOfferedSubjects: [],
   };
 
-  const getSummerSchoolOpportunityAlert = () => {
-    if (isOptionalSummerSemester()) return null;
-    const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
-    const planningSemesterKey = getSemesterKeyForOffset(0);
-    const isSemesterOneWindow =
-      planningSemesterKey === 'S1' &&
-      planningGuidance.earlyCompletion.semesterOneRemainingCounts.includes(remainingBeforeCurrent);
-    const isSemesterTwoWindow =
-      planningSemesterKey === 'S2' &&
-      planningGuidance.earlyCompletion.semesterTwoRemainingCounts.includes(remainingBeforeCurrent);
-    if (!isSemesterOneWindow && !isSemesterTwoWindow) return null;
-
-    const currentCodes = getCurrentStudyCodes();
-    const summerLikelyCodes = summerSchoolLikelySubjectCodes.filter((code) => currentCodes.has(code));
-    const severity = summerLikelyCodes.length ? 'warning' : 'info';
-    const leadClass = severity === 'warning' ? 'alert-title-warning' : 'alert-title-info';
-    const semesterLabel = getSemesterLabel(planningSemesterKey);
-    let title = 'Summer school likely';
-    let body = `Summer school will probably be available. This student has ${remainingBeforeCurrent} subjects remaining before the current ${semesterLabel.toLowerCase()} enrolment, so summer school may help keep the completion plan on track.`;
-    if (summerLikelyCodes.length === 1) {
-      const code = summerLikelyCodes[0];
-      const selectedSubject = `${code} ${getSubjectName(code)}`;
-      title = `${code} may be offered in Summer Semester.`;
-      body = `You have selected <i>${escapeHtml(selectedSubject)}</i> for this semester. Summer school will probably be available, and ${escapeHtml(code)} is one of ${summerSchoolLikelySubjectCodes.length} subjects most likely to run in summer school. Consider whether you should choose a different subject and keep ${escapeHtml(code)} for Summer Semester.`;
-    } else if (summerLikelyCodes.length > 1) {
-      const codeList = summerLikelyCodes.join(' and ');
-      const selectedSubjects = summerLikelyCodes
-        .map((code) => `<i>${escapeHtml(`${code} ${getSubjectName(code)}`)}</i>`)
-        .join(' and ');
-      title = `${codeList} may be offered in Summer Semester.`;
-      body = `You have selected both ${selectedSubjects} for this semester. Summer school will probably be available, and these are the ${summerSchoolLikelySubjectCodes.length} subjects most likely to run in summer school. Consider whether you should choose different subjects and keep one or both for Summer Semester.`;
+  // Conditional examples, not published future timetables. Keep this calculation
+  // pure so the sequencing, credit limits and Summer assumptions can be checked.
+  const calculateEarlyGradPlans = (input) => {
+    const { subjects, majors, core, completed, current, start, electiveLimit, useCredits, capstone } = input;
+    const periods = [];
+    let period = { ...start };
+    for (let i = 0; i < 21; i += 1) {
+      periods.push({ ...period, index: i });
+      period = period.semester === 'SS' ? { year: period.year + 1, semester: 'S1' }
+        : { year: period.year, semester: period.semester === 'S1' ? 'S2' : 'SS' };
     }
+    const combinations = (items, size) => {
+      const out = [];
+      const walk = (at, chosen) => {
+        if (chosen.length === size) { out.push(chosen); return; }
+        for (let i = at; i <= items.length - size + chosen.length; i += 1) walk(i + 1, [...chosen, items[i]]);
+      };
+      walk(0, []);
+      return out;
+    };
+    const run = (major, mode) => {
+      const required = new Set([...core, ...majors[major]]);
+      const electiveCount = done => useCredits + [...done].filter(code => code.startsWith('USE:') || (subjects[code] && !required.has(code))).length;
+      if (electiveCount(new Set([...completed, ...current])) > electiveLimit) return null;
+      const finished = done => [...required].every(code => done.has(code)) && electiveCount(done) === electiveLimit;
+      const priority = code => [...required].filter(id => (subjects[id]?.prerequisites || []).includes(code)).length * 10
+        + (required.has(code) ? 5 : 0) + (subjects[code]?.availability !== 'Any' ? 2 : 0);
+      let states = [{ done: new Set(completed), plan: [], overloadYear: null, summerBits: 0, external: 0 }];
+      for (const term of periods) {
+        const next = new Map();
+        for (const state of states) {
+          if (state.overloadYear !== null && term.year > state.overloadYear) continue;
+          const summer = term.semester === 'SS';
+          const room = electiveLimit - electiveCount(state.done);
+          const mandatory = term.index === 0 ? current.filter(code => !state.done.has(code)) : [];
+          const summerAllowed = mode !== 'baseline' && mode !== 'overload';
+          let eligible = Object.keys(subjects).filter(code => {
+            const subject = subjects[code];
+            if (state.done.has(code) || (!required.has(code) && room <= 0)) return false;
+            if (!subject.prerequisites.every(pre => state.done.has(pre))) return false;
+            if (summer) return term.index === 0 ? subject.currentSummer : summerAllowed && subject.futureSummer;
+            return subject.availability === 'Any' || subject.availability === term.semester;
+          });
+          if (summer && summerAllowed && room > 0) {
+            if (mode === 'civil' && !input.civilUsed && !state.done.has('USE:CIVIL')) eligible.push('USE:CIVIL');
+            if (mode === 'other') {
+              for (let i = 1; i <= 2; i += 1) if (!state.done.has(`USE:OTHER${i}`)) eligible.push(`USE:OTHER${i}`);
+            }
+          }
+          // Current enrolments/selections are commitments, not extra completions.
+          if (mandatory.some(code => !eligible.includes(code))) continue;
+          if (summer && !summerAllowed) eligible = mandatory;
+          const caps = summer ? [2] : mode !== 'baseline' && state.overloadYear === null ? [4, 5] : [4];
+          for (const cap of caps) {
+            if (mandatory.length > cap) continue;
+            const ordered = eligible.filter(code => !mandatory.includes(code)).sort((a, b) => priority(b) - priority(a) || a.localeCompare(b));
+            // Retain alternatives that preserve USE capacity and prerequisite chains.
+            const pool = [...new Set([...ordered.slice(0, 8), ...ordered.filter(code => code.startsWith('USE:'))])];
+            const mandatoryElectives = mandatory.filter(code => !required.has(code)).length;
+            const selectable = pool.filter(code => required.has(code)).length +
+              Math.min(Math.max(0, room - mandatoryElectives), pool.filter(code => !required.has(code)).length);
+            const size = Math.min(cap - mandatory.length, selectable);
+            const sizes = summer ? [...new Set([0, 1, size])].filter(n => n <= size) : [size];
+            for (const n of sizes) for (const choice of combinations(pool, n)) {
+              const chosen = [...mandatory, ...choice];
+              const done = new Set([...state.done, ...chosen]);
+              if (electiveCount(done) > electiveLimit) continue;
+              if (chosen.some(code => (subjects[code]?.corequisites || []).some(pre => !done.has(pre)))) continue;
+              const majorBefore = majors[major].filter(code => state.done.has(code)).length;
+              const majorAfter = majors[major].filter(code => done.has(code)).length;
+              if (chosen.includes(capstone.start) && (majorBefore < capstone.minimumCompleted || majorAfter < capstone.minimumConcurrent)) continue;
+              // Capstone's two parts must occupy consecutive regular semesters.
+              const lastRegular = [...state.plan].reverse().find(entry => entry.semester !== 'SS');
+              if (!summer && state.done.has(capstone.start) && !state.done.has(capstone.end) &&
+                lastRegular?.codes.includes(capstone.start) && !chosen.includes(capstone.end)) continue;
+              if (summer && term.index === 0 && chosen.some((a, i) => chosen.slice(i + 1).some(b => subjects[a]?.slot && subjects[a].slot === subjects[b]?.slot))) continue;
+              const plan = [...state.plan, { ...term, codes: chosen }];
+              const overloadYear = chosen.length === 5 ? term.year : state.overloadYear;
+              const summerBits = state.summerBits + (summer ? chosen.filter(code => !code.startsWith('USE:')).length : 0);
+              const external = state.external + chosen.filter(code => code.startsWith('USE:')).length;
+              const result = { done, plan, overloadYear, summerBits, external, major, mode, finish: term.index };
+              if (finished(done)) return result;
+              const key = [...done].sort().join(',') + ':' + overloadYear;
+              if (!next.has(key)) next.set(key, result);
+            }
+          }
+        }
+        const ranked = [...next.values()].sort((a, b) => {
+          const score = state => [...required].filter(code => state.done.has(code)).length * 10 + electiveCount(state.done);
+          return score(b) - score(a) || a.external - b.external;
+        });
+        const lanes = new Map();
+        states = ranked.filter(state => {
+          const lane = `${state.overloadYear}:${state.external}`;
+          const count = lanes.get(lane) || 0;
+          lanes.set(lane, count + 1);
+          return count < 12;
+        });
+        if (!states.length) break;
+      }
+      return null;
+    };
+    const baseline = run(input.major, 'baseline');
+    if (!baseline) return { baseline: null, options: [] };
+    const options = [];
+    for (const major of Object.keys(majors)) {
+      if (major !== input.major && [...completed, ...current].includes(capstone.start)) continue;
+      for (const mode of ['overload', 'bit', 'civil', 'other']) {
+        const option = run(major, mode);
+        if (option && option.finish < baseline.finish &&
+          (mode !== 'civil' || option.done.has('USE:CIVIL')) &&
+          (mode !== 'other' || option.external > 0)) options.push(option);
+      }
+    }
+    return { baseline, options: options.sort((a, b) => a.finish - b.finish || a.external - b.external) };
+  };
 
-    return {
-      severity,
-      title,
-      html: `<p><strong class="alert-inline-title ${leadClass}">${title}</strong> <span class="alert-inline-text">${body}</span></p>`,
+  let earlyGradCache = { key: '', value: null };
+  const getEarlyGradAnalysis = () => {
+    const current = [...getCurrentStudyCodes()].filter(code => validSubjectCodes.has(code));
+    const completed = [...subjectState].filter(([code, state]) => state.completed && validSubjectCodes.has(code) && !current.includes(code)).map(([code]) => code);
+    const usedCivil = [...manualEntryResults, ...manualEntryUnknown].some(entry =>
+      /\bBET207\b/i.test(entry.displayCode || entry.id || '') && (getGradeStatus(entry.result) === 'pass' || /CRT|RPL/i.test(entry.result || '')))
+      || [...manualEntryAliases].some(([code, aliases]) => subjectState.get(code)?.completed && [...aliases].some(alias => /\bBET207\b/i.test(alias)));
+    const start = isOptionalSummerSemester() ? getConfiguredSemesterIdentity() : getSemesterIdentityAfterOffset(planningSemesterOffset);
+    if (!start || completed.length + current.length + electivePlaceholderState.filter(Boolean).length === 0 || getRemainingSubjectsNotPlanned() <= 0) return null;
+    const input = {
+      subjects: Object.fromEntries([...validSubjectCodes].map(code => [code, {
+        prerequisites: prerequisites[code] || [], corequisites: corequisites[code] || [], availability: getSemesterAvailability(code),
+        currentSummer: !!timetable[code], slot: timetable[code] ? `${timetable[code].day}:${timetable[code].time}` : '',
+        futureSummer: !summerSchoolGuidance.notOfferedSubjects.includes(code) &&
+          !getSubjectMajorKeys(code).some(key => summerSchoolGuidance.notOfferedMajorStreams.includes(key.toUpperCase())),
+      }])),
+      majors: majorLayouts, major: getMajorKeyFromUi(), core: [...validSubjectCodes].filter(code => subjectMeta[code]?.classes?.includes('core')),
+      completed, current, start, electiveLimit: programRequirements.elective, useCredits: electivePlaceholderState.filter(Boolean).length,
+      civilUsed: usedCivil, capstone: { start: getCapstoneStartCode(), end: capstoneGuidance.subjects[1],
+        minimumCompleted: getCapstoneStartSpecialRequirement()?.minimumCompletedMajorSubjects ?? Infinity,
+        minimumConcurrent: getCapstoneStartSpecialRequirement()?.minimumCompletedOrConcurrentMajorSubjects ?? Infinity },
+    };
+    const key = JSON.stringify(input);
+    if (earlyGradCache.key !== key) earlyGradCache = { key, value: { ...calculateEarlyGradPlans(input), input } };
+    return earlyGradCache.value;
+  };
+
+  const getEarlyGradChatContext = () => {
+    const analysis = getEarlyGradAnalysis();
+    if (!analysis?.baseline) return null;
+    const { baseline, options, input } = analysis;
+    const pack = plan => ({ major: plan.major.toUpperCase(), source: plan.mode,
+      overloadYear: plan.overloadYear,
+      periods: plan.plan.filter(term => term.codes.length).map(term => [term.year, term.semester, term.codes]),
+    });
+    const examples = [...new Set([options[0], ...['civil', 'bit', 'other'].map(mode => options.find(plan => plan.mode === mode))].filter(Boolean))];
+    return { conditional: true, completedCount: input.completed.length + input.useCredits,
+      remainingCount: baseline.plan.reduce((sum, term) => sum + term.codes.length, 0),
+      civilPreviouslyCredited: input.civilUsed ? true : null,
+      baseline: pack(baseline), examples: examples.map(pack),
+      assumptions: 'Passes, actual offerings, place and credit/load approvals required. Future Summers are unconfirmed. USE:CIVIL means BET207 Engineering Management 1, once per degree; USE:OTHER1/2 means distinct approved subjects in unused elective slots. Existing USE sources must be checked. At most two subjects per Summer across all schools. A bounded search supplies examples, not proof of impossibility.',
     };
   };
 
+  const getSummerSchoolOpportunityAlert = () => {
+    const analysis = getEarlyGradAnalysis();
+    if (!analysis?.options.length) return null;
+    const { baseline, options, input } = analysis;
+    const best = options[0];
+    const chosen = [best];
+    for (const mode of ['civil', 'bit', 'other']) {
+      const option = options.find(entry => entry.mode === mode);
+      if (option && !chosen.includes(option)) chosen.push(option);
+    }
+    const finishLabel = plan => formatLongSemesterIdentity(plan.plan.at(-1));
+    const regularSemestersSaved = baseline.plan.filter(term => term.index > best.finish && term.semester !== 'SS').length;
+    const earlierText = regularSemestersSaved ? `${regularSemestersSaved} semester${regularSemestersSaved === 1 ? '' : 's'} earlier` : 'earlier';
+    const remainingSubjects = baseline.plan.reduce((sum, term) => sum + term.codes.length, 0);
+    const completedSubjects = input.completed.length + input.useCredits;
+    const planHtml = (plan, title) => `<p class="alert-inline-text"><strong>${escapeHtml(title)}</strong><br>${plan.plan.filter(term => term.codes.length).map(term =>
+      `${escapeHtml(formatLongSemesterIdentity(term))}${term.semester === 'SS' && term.index > 0 ? ' (offerings unconfirmed)' : ''}: ${term.codes.length === 5 ? '<strong>5</strong>' : term.codes.length} (${term.codes.map(code => code === 'USE:CIVIL' ? 'BET207 as USE' : code.startsWith('USE:') ? 'approved USE subject' : code).join(', ')})`).join('<br>')}</p>`;
+    let html = `<p><strong class="alert-inline-title alert-title-info">Early graduation options</strong> <span class="alert-inline-text">The standard-load example finishes in <strong>${escapeHtml(finishLabel(baseline))}</strong>. That is, it is expected that under normal progression and pass rates you will graduate in ${escapeHtml(finishLabel(baseline))}.</span></p><p class="alert-inline-text">The following shows that you <strong>may</strong> have options for completing ${earlierText} &mdash; <strong>${escapeHtml(finishLabel(best))}</strong> &mdash; if every required offering, pass, credit and approval is secured.</p>`;
+    html += planHtml(baseline, 'Standard-load example');
+    chosen.forEach(option => {
+      const majorNote = option.major !== input.major ? `, changing major to ${getMajorNameFromKey(option.major)}` : '';
+      html += planHtml(option, `Conditional example${majorNote}`);
+    });
+    if (chosen.some(option => option.overloadYear !== null)) html += '<p class="alert-inline-text">The <strong>five-subject option</strong> requires approval, a past-year average of CR (Credit) or greater, and the final year of study. Only one five-subject semester is permitted: at most nine subjects across that year\'s two regular semesters (4+<strong>5</strong> or <strong>5</strong>+4, never <strong>5</strong>+<strong>5</strong>).</p>';
+    const summerTerms = baseline.plan.filter(term => term.semester === 'SS').length;
+    if (chosen.some(option => option.mode === 'civil') || (summerTerms >= 2 && chosen.some(option => option.external))) {
+      html += '<p class="alert-inline-text">The Bachelor of Engineering Technology (Civil) was the only MP school that ran a Summer program. It offered one subject that BIT students could study without prerequisite concerns - BET207 Engineering Management 1. A suitable offering might recur in future Summers, but might not. BET207 may fill one unused elective slot as USE, at most once across the degree and at most once in any Summer, subject to confirming the offering, place and credit approval.</p>';
+      if (input.useCredits && !input.civilUsed) html += '<p class="alert-inline-text">The sources of existing USE credits must be checked: the BET207 example applies only if BET207 has not already been credited.</p>';
+      if (input.civilUsed) html += '<p class="alert-inline-text">Your history already records BET207 as passed or credited, so these examples do not count it again.</p>';
+    }
+    if (chosen.some(option => option.summerBits || option.external)) html += '<p class="alert-inline-text">Future BIT Summer subjects and places are unknown; Summer may not run and individual subjects may be cancelled for insufficient demand. These are conditional subject sequences, not confirmed timetables.</p>';
+    if (summerTerms >= 2) html += `<p class="alert-inline-text">There are ${summerTerms} Summers in this example's completion window. Finding four BIT subjects across those Summers to complete has an almost zero chance of being possible because we do not guarantee to run Summer each year and because we only offer 2 to 4 subjects each Summer; suitable Summer subjects from other schools could improve the prospects, within the available USE slots. A final Summer can bring completion forward when only one or two suitable subjects remain.</p>`;
+    if (options.some(option => option.mode === 'civil') || isOptionalSummerSemester()) html += `<p class="alert-inline-text">${isOptionalSummerSemester() ? 'Two eligible BIT subjects can be studied in the current Summer when available.' : 'A Summer may provide two eligible BIT subjects, but future offerings are unknown.'} Adding a USE subject (studying a subject at another school and claiming a Credit Transfer) would give you a load of three subjects in one Summer: studying three subjects in one Summer will not be accepted without extraordinary circumstances because the study load would be too high. The examples never schedule more than two.</p>`;
+    html += `<p class="alert-inline-text">${remainingSubjects} subjects remain; ${completedSubjects} subjects are completed (including approved credits).</p>`;
+    const warnAboutSummerChoices = !isOptionalSummerSemester() && input.current.some(code => summerSchoolLikelySubjectCodes.includes(code));
+    if (warnAboutSummerChoices) html += '<p class="alert-inline-text">Your current selections include subjects historically more likely to run in BIT Summer. Before using them now or reserving them for Summer, check the complete prerequisite sequence and keep a suitable USE slot free only where your regular-semester choices allow it.</p>';
+    const other = options.find(option => option.mode === 'other' && option.external <= 2);
+    const currentBitOption = isOptionalSummerSemester() && options.some(option => option.mode === 'bit' && option.plan[0].codes.length > 0);
+    if (other && summerTerms === 1 && !currentBitOption && (other.external === 2 || input.civilUsed)) {
+      html += '<p class="alert-inline-text">(You may fill the remaining USE slots with approved diploma-level-or-higher subjects from another MP school or an external provider. Finding another offering is your responsibility. You can start your pursuit by replying to this email from enrol_bit asking which MP schools are running Summer.)</p>';
+    }
+    // Format text nodes only, leaving attributes and subject-code prefixes intact.
+    html = html.replace(/\bBIT\b/, 'Bachelor of Information Technology (BIT)')
+      .split(/(<[^>]+>)/).map(part => part.startsWith('<') ? part : part.replace(/\b(?:Summer(?:s)?|USE(?:\d{3})?|(?!BIT)[A-Z]{2,}\d{3})\b/g, word => `<strong>${word}</strong>`)).join('');
+    return { severity: warnAboutSummerChoices ? 'warning' : 'info', title: 'Early graduation options',
+      html: warnAboutSummerChoices ? html.replace('alert-title-info', 'alert-title-warning') : html };
+  };
+
   const getCapstoneEarlyCompletionCautionAlert = () => {
-    if (isOptionalSummerSemester()) return null;
+    if (isOptionalSummerSemester() || getEarlyGradAnalysis()?.options.length) return null;
     const remainingBeforeCurrent = getRemainingSubjectsNotPlanned();
     const planningSemesterKey = getSemesterKeyForOffset(0);
     const hasEarlyCompletionOption =
@@ -9642,6 +9822,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const studentFormsPath = semesterPath ? joinPath(semesterPath, 'Student Forms') : '';
     const teacherTempInfo = getTeacherTempFolderInfo(semesterPath);
     const teacherTempPath = teacherTempInfo.effectivePath || teacherTempInfo.rootPath || '';
+    if (emailOptionsButton) emailOptionsButton.hidden = !!record;
     if (emailPrimaryButton) {
       emailPrimaryButton.hidden = !shouldShow;
       setActionButtonDisabledState(emailPrimaryButton, !primary);
@@ -11854,22 +12035,6 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const syncLoadFormState = () => {
     if (!loadModal) return;
-    const summer = isOptionalSummerSemester();
-    document.getElementById('load-summer-explanation').hidden = !summer;
-    loadModal.classList.toggle('summer-load-mode', summer);
-    document.getElementById('summer-load-choices').hidden = !summer;
-    loadModal.querySelectorAll('.load-explanations, .modal-body > .toggle-row, #load-error').forEach((element) => {
-      element.style.display = summer ? 'none' : '';
-    });
-    if (applyLoadModal) applyLoadModal.hidden = summer;
-    if (cancelLoadModal) cancelLoadModal.textContent = 'Cancel';
-    if (summer) {
-      loadValueInput.closest('.toggle-row').style.display = '';
-      populateLoadSelect([1, 2], summerLoadCap);
-      if (loadLockMsg) loadLockMsg.style.display = 'none';
-      setLoadError('');
-      return;
-    }
     if (!domesticLoad) {
       studentType = 'international';
     }
@@ -11899,12 +12064,19 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   const showLoadModal = () => {
+    if (isOptionalSummerSemester()) {
+      summerLoadCap = summerLoadCap === 2 ? 1 : 2;
+      conditionalRecompute({ force: true, usePlanned: false });
+      updateResetState();
+      updateSelectedList();
+      updateVaryLoadLabel();
+      return;
+    }
     if (!loadModal) return;
     syncLoadFormState();
     loadModal.classList.add('show');
     loadModal.setAttribute('aria-hidden', 'false');
-    if (isOptionalSummerSemester()) loadModal.querySelector('[data-summer-load]').focus();
-    else if (loadValueInput && !loadValueInput.disabled) loadValueInput.focus();
+    if (loadValueInput && !loadValueInput.disabled) loadValueInput.focus();
   };
 
   const hideLoadModal = () => {
@@ -11915,15 +12087,6 @@ const TRIAGE_READ_MAX_ROWS = 0;
 
   const applyLoadSettings = () => {
     if (!loadModal) return;
-    if (isOptionalSummerSemester()) {
-      summerLoadCap = loadValueInput?.value === '1' ? 1 : 2;
-      hideLoadModal();
-      conditionalRecompute({ force: true, usePlanned: false });
-      updateResetState();
-      updateSelectedList();
-      updateVaryLoadLabel();
-      return;
-    }
     const type = !domesticLoad
       ? 'international'
       : loadTypeInternational && loadTypeInternational.checked
@@ -12133,47 +12296,33 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
 
   initDropZone();
-  const maybeShowTriageSaveReminder = (event = null, returnFocusElement = courseMapStudentSearchInput) => {
-    const studentId = getLoadedCourseMapStudentId();
-    if (
-      !useTriageWriter ||
-      !studentId ||
-      !triageSaveReminder.armed ||
-      triageSaveReminder.dismissed ||
-      triageSaveReminder.studentId !== studentId ||
-      triageRecords.has(studentId)
-    ) {
-      return false;
-    }
-    const record = getActiveStudentRecord() || findStudentRecordById(studentId);
-    if (!record) return false;
-    triageSaveReminder = { studentId, armed: false, dismissed: true };
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    syncCourseMapSearchFromSidebar({ force: true });
-    showCourseMapStudentNoteModal('Add to Triage', buildCourseMapTriageEditFormHtml(record), {
-      html: true,
-      triage: true,
-      triageEdit: true,
-      triageReminderHeading: 'Did you need to write to Triage?',
-      returnFocusElement,
+  const queueStudentSwitch = (record) => {
+    const current = getActiveStudentRecord();
+    const currentId = getStudentRecordId(current);
+    if (!useTriageWriter || !currentId || !record || getStudentRecordId(record) === currentId) return false;
+    const snapshot = captureStudentSnapshot();
+    const changed = loadedStudentSnapshot && (
+      courseMapHistoryFingerprint(snapshot) !== courseMapHistoryFingerprint(loadedStudentSnapshot) ||
+      JSON.stringify([...snapshot.subjectState].filter(([, state]) => state.toggled).map(([code]) => code).sort()) !==
+      JSON.stringify([...loadedStudentSnapshot.subjectState].filter(([, state]) => state.toggled).map(([code]) => code).sort()));
+    const missing = !activeStudentPreviouslyExplored && !!studentDataPreview?.querySelector('.student-summary-triage-missing');
+    if (!changed && !missing) return false;
+    pendingStudentSelection = record;
+    clearStudentSearchDropdown();
+    showCourseMapStudentNoteModal('Add to Triage', buildCourseMapTriageEditFormHtml(current), {
+      html: true, triage: true, triageEdit: true,
+      triageReminderHeading: 'Save to Triage before switching students?',
     });
     return true;
   };
+  const handleStudentSwitchPaste = (event) => {
+    const text = event.clipboardData?.getData('text') || '';
+    const id = text.match(/\b(?:s)?(\d{7})\b/i)?.[1];
+    const record = id ? findStudentRecordById(id) : null;
+    if (record && queueStudentSwitch(record)) event.preventDefault();
+  };
   if (studentIdInput) {
-    ['pointerdown', 'beforeinput', 'paste'].forEach((eventName) => {
-      studentIdInput.addEventListener(eventName, (event) => {
-        maybeShowTriageSaveReminder(event, studentIdInput);
-      }, true);
-    });
-    studentIdInput.addEventListener('focus', () => {
-      maybeShowTriageSaveReminder(null, studentIdInput);
-    });
-    studentIdInput.addEventListener('click', () => {
-      maybeShowTriageSaveReminder(null, studentIdInput);
-    });
+    studentIdInput.addEventListener('paste', handleStudentSwitchPaste);
     studentIdInput.addEventListener('input', handleStudentIdInput);
     studentIdInput.addEventListener('keydown', (event) => {
       if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
@@ -12230,19 +12379,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
         courseMapStudentSearchInput.select();
       } catch { }
     };
-    ['pointerdown', 'keydown', 'beforeinput', 'paste'].forEach((eventName) => {
-      courseMapStudentSearchInput.addEventListener(eventName, (event) => {
-        maybeShowTriageSaveReminder(event, courseMapStudentSearchInput);
-      }, true);
-    });
-    courseMapStudentSearchInput.addEventListener('focus', () => {
-      if (maybeShowTriageSaveReminder(null, courseMapStudentSearchInput)) return;
-      requestAnimationFrame(selectCourseMapSearchContents);
-    });
-    courseMapStudentSearchInput.addEventListener('click', () => {
-      if (maybeShowTriageSaveReminder(null, courseMapStudentSearchInput)) return;
-      requestAnimationFrame(selectCourseMapSearchContents);
-    });
+    courseMapStudentSearchInput.addEventListener('paste', handleStudentSwitchPaste);
+    courseMapStudentSearchInput.addEventListener('focus', () => requestAnimationFrame(selectCourseMapSearchContents));
+    courseMapStudentSearchInput.addEventListener('click', () => requestAnimationFrame(selectCourseMapSearchContents));
     courseMapStudentSearchInput.addEventListener('mouseup', (event) => {
       if (document.activeElement !== courseMapStudentSearchInput) return;
       event.preventDefault();
@@ -13488,7 +13627,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
       'Student Declaration for ongoing students',
       'Student Declaration',
     ],
-    'student-dec-returned': ['Declaration follow up - Thanks'],
+    'student-dec-returned': ['Student Dec returned'],
     'eform-strata-welcome-email-sent': ['eForm (Strata Welcome) email sent'],
     'link-to-start-application': [
       'Link to Start Application',
@@ -14041,6 +14180,13 @@ const TRIAGE_READ_MAX_ROWS = 0;
   };
   const updateTimetableAvailableColoursButton = () => {
     if (!timetableModal || !timetableColoursButton) return;
+    if (timetableLoadRow) {
+      const summer = isOptionalSummerSemester();
+      timetableLoadRow.hidden = !summer;
+      const host = summer ? timetableLoadRow : timetableColoursHome;
+      if (host && timetableColoursButton.parentElement !== host) host.appendChild(timetableColoursButton);
+      if (timetableVaryLoadButton) timetableVaryLoadButton.textContent = String(summerLoadCap);
+    }
     timetableColoursButton.hidden = false;
     timetableColoursButton.disabled = false;
     timetableColoursButton.textContent = timetableAvailableColoursOn ? 'Hide Colours' : 'Show Colours';
@@ -15332,7 +15478,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
         ? comparison.sourceCurrentCodes.filter(code => !comparison.triageCurrentCodes.includes(code)) : [],
     };
     const history = { passed, credited, enrolmentSources, repeatFailureCounts: Object.fromEntries(getRepeatFailCounts().map(item => [item.code, item.count])), current, currentTreatedAsPassed: current.filter(code => passForEnrolmentsOverrides.has(code)), failed, unspecifiedElectiveCredits: electivePlaceholderState.filter(Boolean).length, major: getSelectedMajorKey().toUpperCase() || 'undecided', selected };
-    return history;
+    return { ...history, earlyCompletion: getEarlyGradChatContext() };
   }
   if (window.localPlannerBridge && staffFacing && location.hostname === '127.0.0.1') {
     window.getLocalPlannerAcademicContext = () => {
@@ -15371,7 +15517,12 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const history = getAcademicPlannerContext();
     const { passed, credited, current, selected, failed } = history;
     const completed = [...passed, ...credited];
-    const context = JSON.stringify(history);
+    let context = JSON.stringify(history);
+    // Leave room for the question within the chat's per-message text limit.
+    while (context.length > 4500 && history.earlyCompletion?.examples.length) {
+      history.earlyCompletion.examples.pop();
+      context = JSON.stringify(history);
+    }
     if (context === friendlyMainContext) return;
     friendlyMainContext = context;
     friendlyResetUndo = null;
@@ -21332,6 +21483,7 @@ const TRIAGE_READ_MAX_ROWS = 0;
     endCourseMapHistoryEntry();
     remainingNoticeUnlocked = false;
     const nextId = getStudentRecordId(record);
+    activeStudentPreviouslyExplored = recentStudents.some(entry => entry.id === nextId);
     if (activeStudentId && nextId && nextId !== activeStudentId) {
       loadedStudentSnapshot = null;
       staffWorkbookState.setStudentRecord(null);
@@ -21708,8 +21860,9 @@ const TRIAGE_READ_MAX_ROWS = 0;
     const record = findStudentRecordById(id);
     if (record) applyStudentSearchSelection(record);
   };
-  const applyStudentSearchSelection = (record) => {
+  const applyStudentSearchSelection = (record, { committed = true, skipReminder = false } = {}) => {
     if (!record) return;
+    if (committed && !skipReminder && queueStudentSwitch(record)) return;
     const id = getStudentRecordId(record);
     if (id && activeStudentId && id !== activeStudentId) {
       clearActiveStudentState({ keepInput: true, keepExtractedId: false, skipPreviewUpdate: true });
@@ -21859,8 +22012,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
           getStudentRecordId(record).includes(numericQuery)
         );
       }
-      if (matches.length === 1 && !suppressStudentSearchAutocomplete) {
-        applyStudentSearchSelection(matches[0]);
+      if (matches.length === 1 && !suppressStudentSearchAutocomplete && (!activeStudentId || getStudentRecordId(matches[0]) === activeStudentId)) {
+        applyStudentSearchSelection(matches[0], { committed: false });
         return;
       }
       renderStudentSearchDropdown(matches);
@@ -21940,8 +22093,8 @@ const TRIAGE_READ_MAX_ROWS = 0;
       }
     });
 
-    if (results.length === 1) {
-      applyStudentSearchSelection(results[0]);
+    if (results.length === 1 && (!activeStudentId || getStudentRecordId(results[0]) === activeStudentId)) {
+      applyStudentSearchSelection(results[0], { committed: false });
       return;
     }
 
@@ -23393,18 +23546,18 @@ function buildStudentRecordsFromWorkbook(workbook) {
     return opened;
   }
 
-  const buildStudentFormsReturnedClipboardData = async () => {
+  const buildStudentFormsReturnedClipboardData = async (record = getActiveStudentRecord()) => {
+    const name = toProperCase(record?.Given_Name || '').trim();
     await parseEmailScripts();
-    const section = await extractEmailScriptsSectionByHeadings(
-      getEmailScriptsSectionHeadings('student-dec-returned')
-    );
-    const sectionText = String(section?.text || '').trim();
-    return {
-      plain: ['Received, thanks ', '', sectionText]
-        .filter((part, index) => index < 2 || part)
-        .join('\n'),
-      html: `<p>Received, thanks </p>${section?.html || ''}`,
-    };
+    const section = await extractEmailScriptsSectionByHeadings(getEmailScriptsSectionHeadings('student-dec-returned'));
+    if (!section?.text?.trim()) return null;
+    const replaceName = text => name ? text.replace(/\bX{4,}\b/gi, () => name) : text;
+    const plain = replaceName(section.text);
+    const html = section.html
+      ? section.html.split(/(<[^>]+>)/).map(part => part.startsWith('<') ? part :
+        (name ? part.replace(/\bX{4,}\b/gi, () => escapeHtml(name)) : part)).join('')
+      : `<p>${escapeHtml(plain).replace(/\n/g, '<br>')}</p>`;
+    return { plain, html };
   };
 
   async function launchStudentFormsCreateWorkflow(button = null) {
@@ -23426,13 +23579,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
     try {
       const opened = await openFolderShortcutPath(targetPath, 'Student Forms student folder', { mkdirPath: targetPath });
       if (!opened) return false;
-      const response = await buildStudentFormsReturnedClipboardData().catch(() => ({
-        plain: 'Received, thanks ',
-        html: '<p>Received, thanks </p>',
-      }));
-      await copyHtmlPlainToClipboard(response.html, response.plain);
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      const response = await buildStudentFormsReturnedClipboardData(record).catch(() => null);
+      if (response) {
+        await copyHtmlPlainToClipboard(response.html, response.plain);
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
       await copyPlainText(targetPath);
+      if (!response) window.alert('The Student Forms folder was opened and its path copied, but the reply could not be copied. Load Email Scripts and check that it contains the heading "Student Dec returned".');
       if (button) triggerFlash(button);
       return true;
     } finally {
@@ -28989,6 +29142,36 @@ function buildStudentRecordsFromWorkbook(workbook) {
     if (courseMapFullStudentDetailsContent) courseMapFullStudentDetailsContent.innerHTML = '';
   };
 
+  const monitorTriageWorkbookLock = () => {
+    clearTimeout(triageLockTimer);
+    const generation = ++triageLockGeneration;
+    const poll = async () => {
+      let locked = false;
+      if (triageWorkbookDirectoryHandle && triageWorkbookFileName) {
+        try {
+          await triageWorkbookDirectoryHandle.getFileHandle(`~$${triageWorkbookFileName.replace(/^~\$/, '')}`);
+          locked = true;
+        } catch { }
+      }
+      if (generation !== triageLockGeneration || !courseMapStudentNoteModal?.classList.contains('show')) return;
+      triageWorkbookLocked = locked;
+      let warning = courseMapStudentNoteModal.querySelector('.triage-workbook-lock-warning');
+      if (locked && !warning) {
+        warning = document.createElement('p');
+        warning.className = 'triage-workbook-lock-warning';
+        warning.setAttribute('role', 'status');
+        courseMapStudentNoteModal.querySelector('.modal-header').after(warning);
+      }
+      if (warning) {
+        warning.textContent = `You will need to save the Triage workbook (${triageWorkbookFileName}) first before you can 'Save' from here. Close it in Excel after saving.`;
+        if (!locked) warning.remove();
+      }
+      if (courseMapTriageEditButton?.getAttribute('aria-busy') !== 'true') updateCourseMapTriageSaveVisibility();
+      triageLockTimer = setTimeout(poll, 2000);
+    };
+    void poll();
+  };
+
   const showCourseMapStudentNoteModal = (title, text, options = {}) => {
     if (!courseMapStudentNoteModal || !courseMapStudentNoteContent) return;
     courseMapStudentNoteModal.querySelector('.course-map-triage-reminder-heading')?.remove();
@@ -29021,6 +29204,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     }
     courseMapStudentNoteModal.classList.add('show');
     courseMapStudentNoteModal.setAttribute('aria-hidden', 'false');
+    if (triageActionsEnabled) monitorTriageWorkbookLock();
     const triageForm = document.getElementById('course-map-triage-edit-form');
     const isNewTriageRow = triageForm?.dataset.newTriageRow === 'true';
     updateCourseMapLoadFilesButtonVisibility();
@@ -29092,6 +29276,13 @@ function buildStudentRecordsFromWorkbook(workbook) {
     }
     courseMapStudentNoteModal.classList.remove('show');
     courseMapStudentNoteModal.setAttribute('aria-hidden', 'true');
+    clearTimeout(triageLockTimer);
+    triageLockGeneration += 1;
+    triageWorkbookLocked = false;
+    courseMapStudentNoteModal.querySelector('.triage-workbook-lock-warning')?.remove();
+    const nextStudent = pendingStudentSelection;
+    pendingStudentSelection = null;
+    if (nextStudent) queueMicrotask(() => applyStudentSearchSelection(nextStudent, { skipReminder: true }));
     courseMapStudentNoteModal.querySelector('.course-map-triage-reminder-heading')?.remove();
     if (courseMapStudentNoteContent) courseMapStudentNoteContent.textContent = '';
     if (courseMapTriageActions) courseMapTriageActions.hidden = true;
@@ -29513,6 +29704,12 @@ function buildStudentRecordsFromWorkbook(workbook) {
       return;
     }
     courseMapTriageEditButton.textContent = 'Save';
+    if (triageWorkbookLocked) {
+      courseMapTriageEditButton.hidden = false;
+      courseMapTriageEditButton.disabled = true;
+      courseMapTriageEditButton.setAttribute('aria-disabled', 'true');
+      return;
+    }
     const changedValues = getCourseMapTriageChangedValues(form);
     const hasEnrolmentType = !!String(getCourseMapTriageFormValues(form).statusDetails || '').trim();
     courseMapTriageEditButton.disabled = false;
@@ -33139,6 +33336,18 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
   }
   // Image export button removed from UI; keep export helpers for internal use.
+  emailOptionsButton?.addEventListener('click', async () => {
+    if (!await copyTimetableToClipboard()) {
+      window.alert('Could not copy the timetable to clipboard.');
+      return;
+    }
+    window.location.href = 'mailto:?subject=Enrolment%20options';
+  });
+  document.getElementById('folder-shortcut-supporting-documents')?.addEventListener('click', async () => {
+    const semesterPath = await getOperationalSemesterFolderPath();
+    if (semesterPath) void openFolderShortcutPath(joinPath(semesterPath, 'Supporting Documents'), 'Supporting documents');
+    else window.alert('Semester folder path unavailable.');
+  });
   if (emailPrimaryButton) {
     emailPrimaryButton.addEventListener('click', () => {
       sendTimetableEmail('primary');
@@ -34543,6 +34752,7 @@ function buildStudentRecordsFromWorkbook(workbook) {
     });
   }
   if (varyLoadButton) varyLoadButton.addEventListener('click', showLoadModal);
+  if (timetableVaryLoadButton) timetableVaryLoadButton.addEventListener('click', showLoadModal);
   if (errorButton) errorButton.addEventListener('click', () => showAlertModal('error'));
   if (warningButton) warningButton.addEventListener('click', () => showAlertModal('warning'));
   if (infoButton) infoButton.addEventListener('click', () => showAlertModal('info'));
@@ -34791,9 +35001,8 @@ function buildStudentRecordsFromWorkbook(workbook) {
     return electiveWarningEl;
   };
 
-  const getActiveElectiveCodes = () => {
+  const getActiveElectiveCodes = (majorKey = getMajorKeyFromUi()) => {
     const useCodes = electivePlaceholderState.filter(Boolean);
-    const majorKey = getMajorKeyFromUi();
     const majorSet = new Set(majorLayouts[majorKey] || []);
     const slotCodes = getElectiveSlotCodes(majorKey);
     const activeBits = slotCodes.filter((code) => {
@@ -34934,7 +35143,12 @@ function buildStudentRecordsFromWorkbook(workbook) {
         .map((d) => `<li><strong>${d.code}</strong> - ${d.name}</li>`)
         .join('');
       const alertCount = uniqueCodes.length;
-      const alertHtml = `<h4 class="inline-heading">Too many electives.</h4><span class="tight-lead"> You currently have ${alertCount} electives selected/enrolled, but our course has slots for only ${programRequirements.elective} Electives.</span><ul>${detailList}</ul>${useNote}`;
+      const alternativeMajor = Object.keys(majorLayouts).find(key =>
+        key !== getMajorKeyFromUi() && new Set(getActiveElectiveCodes(key)).size <= programRequirements.elective);
+      const heading = alternativeMajor
+        ? `Should your major be ${getMajorNameFromKey(alternativeMajor)}? With ${getMajorNameFromKey(getMajorKeyFromUi())} you have too many Electives`
+        : 'Too many electives.';
+      const alertHtml = `<h4 class="inline-heading">${escapeHtml(heading)}</h4><span class="tight-lead"> You currently have ${alertCount} electives selected/enrolled, but our course has slots for only ${programRequirements.elective} Electives.</span><ul>${detailList}</ul>${useNote}`;
       electiveError = { title: 'Too many electives', html: alertHtml };
     } else {
       electiveError = null;
@@ -35165,13 +35379,6 @@ function buildStudentRecordsFromWorkbook(workbook) {
       }
       syncLoadFormState();
     });
-  loadModal?.querySelectorAll('[data-summer-load]').forEach(button => {
-    button.addEventListener('click', () => {
-      if (!isOptionalSummerSemester()) return;
-      loadValueInput.value = button.dataset.summerLoad;
-      applyLoadSettings();
-    });
-  });
   if (applyLoadModal) applyLoadModal.addEventListener('click', applyLoadSettings);
   document.getElementById('load-label')?.addEventListener('dblclick', resetLoadToFullLoad);
   courseMapLoadLabel?.addEventListener('dblclick', resetLoadToFullLoad);

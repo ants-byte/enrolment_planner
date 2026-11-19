@@ -28,6 +28,11 @@ const worker = { fetch: async (request, env) => {
     assert(!('temperature' in body));
     if (env.providerError) return Response.json({ error: { code: env.providerError, message: 'private details' } }, { status: 429 });
     const messages = body.input.map(item => item.type === 'function_call_output' ? { role: 'tool', content: item.output } : item);
+    if (!messages[0]?.content.startsWith('COURSE_SCOPE_CHECK:')) {
+      assert.match(messages[0].content, /FIRST relevant response about subject planning or course completion/);
+      assert.match(messages[0].content, /How could I finish one semester earlier/);
+      assert.match(messages[0].content, /website-calculated CONDITIONAL evidence/);
+    }
     const result = messages[0]?.content.startsWith('COURSE_SCOPE_CHECK:')
       ? { response: env.scopeDecision || 'ALLOW' } : await env.AI.run(body.model, { messages, tools: body.tools });
     const output = result.tool_calls?.length

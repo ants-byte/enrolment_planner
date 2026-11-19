@@ -26,9 +26,16 @@ try {
     if !WinWaitActive("ahk_id " MainHwnd, , 10)
         throw Error("Could not activate Strata.")
 
-    SendEvent("!a")
+    MenuControl := "WindowsForms10.Window.8.app.0.3ce0bb8_r6_ad112"
+    ControlClick(MenuControl, "ahk_id " MainHwnd, , "Left", 1, "X60 Y12")
     Sleep(300)
-    SendEvent("{Down}{Right}re{Enter}")
+    SendEvent("{Enter}")
+    Sleep(300)
+    SendEvent("{Down}{Right}") ; Action > Strata.
+    Sleep(300)
+    SendEvent("{Down 7}{Right}") ; Enrolments & Delivery.
+    Sleep(300)
+    SendEvent("{Down 2}{Enter}") ; Student Class Enrolments.
 
     ReportHwnd := WinWait(ReportTitle, , 20)
     if !ReportHwnd

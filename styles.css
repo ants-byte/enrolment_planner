@@ -5845,7 +5845,7 @@ body:has(.modal-overlay.show) .not-running-tooltip {
   position: absolute;
   right: 4px;
   bottom: 4px;
-  z-index: 16;
+  z-index: 0;
   pointer-events: auto;
 }
 
@@ -14372,14 +14372,16 @@ body.completed-mode #clear-selections {
 #friendly-chat .friendly-reset-card button { background: linear-gradient(to bottom, var(--btn-primary-start), var(--btn-primary-end)); border-color: var(--btn-primary-border); color: #fff; }
 #friendly-chat .friendly-reset-card button:hover { background: linear-gradient(to bottom, var(--btn-primary-hover-start), var(--btn-primary-hover-end)); }
 
-#load-modal.summer-load-mode #load-value { display: none; }
-#load-modal.summer-load-mode .toggle-row:has(#load-value) { flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 24px; }
-#summer-load-choices:not([hidden]) { display: flex; gap: 8px; margin-top: 4px; }
-
-#load-modal.summer-load-mode #apply-load-modal { display: none; }
-#summer-load-choices .clear-button { white-space: nowrap; width: auto; flex: 0 0 auto; padding: 12px; }
-
 .available-heading-row:has(+ .semester-options-heading) { margin-bottom: 0; }
 
 .toggle-row[hidden]:has(#pass-for-enrolments),
 #course-map-pass-for-enrolments-row[hidden] { display: none; }
+
+.triage-workbook-lock-warning { border: 3px solid #ed8500; padding: 10px; margin: 10px 16px; }
+
+
+#email-options[hidden] { display: none; }
+
+#timetable-modal .timetable-load-row:not([hidden]) { display: flex; flex-wrap: nowrap; margin: 12px 0; }
+#timetable-modal .timetable-load-row[hidden] { display: none; }
+#timetable-modal .timetable-load-row #timetable-colours { width: auto; flex: 0 0 auto; padding-left: 32px; padding-right: 32px; margin-left: 0; }

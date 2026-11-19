@@ -38,12 +38,35 @@ function studentOnly(value) {
   };
 }
 const codes = value => Array.isArray(value) ? [...new Set(value.filter(code => typeof code === 'string' && /^(BIT\d{3}|USE\d{3})$/.test(code)))].slice(0, 100) : [];
+const earlyCompletionOnly = value => {
+  if (!value || value.conditional !== true) return null;
+  const plan = value => {
+    if (!value || !['NS', 'BA', 'SD'].includes(value.major) ||
+      !['baseline', 'overload', 'bit', 'civil', 'other'].includes(value.source)) return null;
+    return { major: value.major, source: value.source,
+      overloadYear: Number.isInteger(value.overloadYear) ? value.overloadYear : null,
+      periods: (Array.isArray(value.periods) ? value.periods : []).slice(0, 21).filter(term =>
+        Array.isArray(term) && Number.isInteger(term[0]) && term[0] >= 2000 && term[0] <= 2100 &&
+        ['S1', 'S2', 'SS'].includes(term[1]) && Array.isArray(term[2])).map(([year, semester, subjects]) =>
+        [year, semester, subjects.filter(code => typeof code === 'string' && /^(BIT\d{3}|USE:(?:CIVIL|OTHER[12]))$/.test(code)).slice(0, 5)]),
+    };
+  };
+  const baseline = plan(value.baseline);
+  if (!baseline) return null;
+  const count = value => Number.isInteger(value) && value >= 0 && value <= 40 ? value : null;
+  return { conditional: true, completedCount: count(value.completedCount), remainingCount: count(value.remainingCount),
+    civilPreviouslyCredited: value.civilPreviouslyCredited === true ? true : null,
+    baseline, examples: (Array.isArray(value.examples) ? value.examples : []).slice(0, 4).map(plan).filter(Boolean),
+    assumptions: String(value.assumptions || '').slice(0, 1000),
+  };
+};
 export function academicOnly(value) {
   if (!value || typeof value !== 'object') throw new Error('Invalid academic context');
   return {
     ...Object.fromEntries(['passed', 'credited', 'current', 'currentTreatedAsPassed', 'failed', 'selected'].map(key => [key, codes(value[key])])),
     major: ['NS', 'BA', 'SD'].includes(value.major) ? value.major : 'undecided',
     studentKey: /^[a-f0-9-]{36}$/.test(value.studentKey || '') ? value.studentKey : null,
+    earlyCompletion: earlyCompletionOnly(value.earlyCompletion),
     alerts: Object.fromEntries(['error', 'warning', 'info'].map(type => [type,
       (Array.isArray(value.alerts?.[type]) ? value.alerts[type] : []).slice(0, 40).map(message => ({
         title: String(message?.title || '').slice(0, 200), details: String(message?.details || '').slice(0, 2000),

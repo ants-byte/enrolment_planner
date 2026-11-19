@@ -1343,7 +1343,7 @@ const updateTriageFieldValuesInWorkbook = (buffer, studentId, values = {}, parse
   console.info('[Triage save worker] columns found', { idCol, fieldCols });
 
   let targetRow = -1;
-  const idColName = XLSX.utils.encode_col(5);
+  const idColName = XLSX.utils.encode_col(getVisibleTriageStudentIdColumn(sheetXml, sharedStrings) ?? idCol);
   const idCellRegex = new RegExp(`<c\\b[^>]*\\br="${idColName}(\\d+)"[^>]*(?:/>|(?<!/)>[\\s\\S]*?<\\/c>)`, 'g');
   let idMatch = null;
   while ((idMatch = idCellRegex.exec(sheetXml))) {
@@ -1412,7 +1412,7 @@ const addTriageRowToWorkbook = (buffer, studentId, values = {}, parseInfo = null
     return { ok: false, error: 'One or more editable Triage columns were not found.', sheetCount };
   }
 
-  const idColName = XLSX.utils.encode_col(idCol);
+  const idColName = XLSX.utils.encode_col(getVisibleTriageStudentIdColumn(sheetXml, sharedStrings) ?? idCol);
   const idCellRegex = new RegExp(`<c\\b[^>]*\\br="${idColName}(\\d+)"[^>]*(?:/>|(?<!/)>[\\s\\S]*?<\\/c>)`, 'g');
   let idMatch = null;
   while ((idMatch = idCellRegex.exec(sheetXml))) {

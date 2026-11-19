@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { createLocalServer, academicOnly, currentPlanning } from './local-planner-server.mjs';
 const common = currentPlanning(academicOnly({ major: 'undecided' }));
+const earlyCompletion = academicOnly({ earlyCompletion: { conditional: true, completedCount: 6, remainingCount: 18,
+  baseline: { major: 'NS', source: 'baseline', periods: [[2027, 'S1', ['BIT108', 'Private Name']]] },
+  examples: [{ major: 'BA', source: 'civil', periods: [[2027, 'SS', ['USE:CIVIL']]] }],
+  studentName: 'Private Name', assumptions: 'Future offerings are unconfirmed.',
+} }).earlyCompletion;
+assert.deepEqual(earlyCompletion.baseline.periods, [[2027, 'S1', ['BIT108']]]);
+assert.deepEqual(earlyCompletion.examples[0].periods, [[2027, 'SS', ['USE:CIVIL']]]);
+assert(!JSON.stringify(earlyCompletion).includes('Private Name'));
 assert(common.eligibleOptions.every(option => option.category === 'core'));
 const provisional = currentPlanning(academicOnly({ major: 'SD', current: ['BIT111'], currentTreatedAsPassed: ['BIT111', 'BIT242'] }));
 assert.deepEqual(provisional.provisionalCurrentPasses, ['BIT111']);
